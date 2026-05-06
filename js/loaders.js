@@ -1,8 +1,6 @@
 $(window).scroll(function (event) {
 
 	var scroll = $(window).scrollTop();
-	WorkFrameTopDistance = $('#work-frame').offset().top;
-	distanceOfStaticBoxFromTop = (WorkFrameTopDistance - scroll);
 
 	/* Hide Particle JS if out of viewport */
 	if (scroll > window.innerHeight)
@@ -11,38 +9,7 @@ $(window).scroll(function (event) {
 	}
 	else
 	{
-		$('#particles-js').css("display","initial");	
-	}
-
-
-	/* Fix and release from Top */
-
-	if(distanceOfStaticBoxFromTop <= 50)
-	{
-		$('#dev-profile').css("position","fixed");
-		$('#dev-profile').css("top","50px");
-		$('#dev-profile').css("bottom","auto");
-		$('#dev-profile').css("transform","translateX(1010px)");
-	}
-
-	else
-	{
-		$('#dev-profile').css("position","static");
-		$('#dev-profile').css("top","auto");
-		$('#dev-profile').css("right","auto");
-		$('#dev-profile').css("transform","none");
-	}
-
-	/* Fix and release from Bottom */
-
-	if ((WorkFrameTopDistance + $('#work-frame').height()) <= ($('#dev-profile').offset().top + $('#dev-profile').height()))
-	{
-		$('#dev-profile').css("position","absolute");
-		$('#dev-profile').css("display","block");
-		$('#dev-profile').css("bottom","0px");
-		$('#dev-profile').css("top","auto");
-		$('#dev-profile').css("right","none");
-		$('#dev-profile').css("transform","translateX(1010px)");
+		$('#particles-js').css("display","initial");
 	}
 
 	/* Float lede up on sroll */

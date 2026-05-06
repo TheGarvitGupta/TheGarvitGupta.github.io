@@ -133,6 +133,9 @@
     float: right;
     width: 230px;
     height: auto;
+    position: sticky;
+    top: 50px;
+    align-self: flex-start;
 }
 .head-stat {
     width: 100%;
