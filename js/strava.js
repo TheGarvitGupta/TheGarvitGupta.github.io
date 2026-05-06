@@ -26,7 +26,7 @@
 		if (data.profileUrl) {
 			$(".strava-link").attr("href", data.profileUrl);
 		}
-		var ytd = Math.round(miles).toLocaleString("en-US");
+		var ytd = miles.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 		var lifetime = Math.round(lifetimeMiles).toLocaleString("en-US");
 		$(".run-stats").text("Ran " + ytd + " miles this year, " + lifetime + " lifetime");
 	}
