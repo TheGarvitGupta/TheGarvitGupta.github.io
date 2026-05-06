@@ -1,7 +1,6 @@
 /* Gallery: auto-discover photos in images/photographs/ via GitHub's contents
-   API, shuffle, and assign one to each tile (no repeats). Drop a new photo
-   into the folder on master and it shows up next page load. If the API call
-   fails (rate limit, offline), fall back to the snapshot list below. */
+   API, shuffle, and page through them 12 at a time with prev/next arrows.
+   Worker source: github contents API */
 
 (() => {
 	const REPO_API = "https://api.github.com/repos/TheGarvitGupta/TheGarvitGupta.github.io/contents/images/photographs";
@@ -13,8 +12,14 @@
 		"photograph-10.jpeg", "photograph-11.jpeg", "photograph-12.jpeg",
 		"photograph-13.jpeg", "photograph-14.jpeg", "photograph-15.jpeg",
 		"photograph-16.jpeg", "photograph-17.jpeg", "photograph-18.jpeg",
-		"photograph-19.jpeg", "photograph-20.jpeg", "photograph-21.jpeg"
+		"photograph-19.jpeg", "photograph-20.jpeg", "photograph-21.jpeg",
+		"photograph-22.jpeg"
 	];
+	const PAGE_SIZE = 12;
+
+	let allPhotos = [];
+	let currentPage = 0;
+	let lightbox = null;
 
 	const shuffle = (arr) => {
 		for (let i = arr.length - 1; i > 0; i--) {
@@ -24,8 +29,6 @@
 		return arr;
 	};
 
-	// Browser auto-placement (Chrome + WebKit) skips one cell when items mix
-	// explicit and auto placement, so we place every cell explicitly via JS.
 	let lastBp = null;
 	let featuredPos = null;
 	const applyLayout = () => {
@@ -65,38 +68,47 @@
 
 	addEventListener("resize", applyLayout);
 
-	const populate = (filenames) => {
-		applyLayout();
+	const showPage = (page) => {
+		if (!allPhotos.length) return;
+		const numPages = Math.ceil(allPhotos.length / PAGE_SIZE);
+		currentPage = ((page % numPages) + numPages) % numPages;
+		const start = currentPage * PAGE_SIZE;
+
 		const imgs = document.querySelectorAll(".gallery .image-container img");
-		const pool = shuffle(filenames.slice());
 		imgs.forEach((img, i) => {
-			if (i >= pool.length) return;
-			const url = `images/photographs/${pool[i]}`;
+			const idx = (start + i) % allPhotos.length;
+			const url = `images/photographs/${allPhotos[idx]}`;
 			img.src = url;
 			if (img.parentElement?.tagName === "A") img.parentElement.href = url;
 		});
-		setupLightbox(filenames);
+		applyLayout();
+		rebuildLightbox();
 	};
 
-	const setupLightbox = (allPhotos) => {
-		if (typeof GLightbox !== "function") return;
-		// Sort tiles by rendered position so the visual top-left is index 0.
-		const containers = [...document.querySelectorAll(".gallery .image-container")];
-		containers.sort((a, b) => {
-			const ar = a.getBoundingClientRect();
-			const br = b.getBoundingClientRect();
-			return Math.abs(ar.top - br.top) > 1 ? ar.top - br.top : ar.left - br.left;
+	const setArrowsHidden = (hidden) => {
+		document.querySelectorAll(".gallery-arrow").forEach(el => {
+			el.classList.toggle("hidden", hidden);
 		});
-		const displayed = containers
-			.map(c => c.querySelector("img")?.src.split("/").pop())
-			.filter(Boolean);
-		const seen = new Set(displayed);
-		const ordered = [...displayed, ...allPhotos.filter(n => !seen.has(n))];
-		const elements = ordered.map(name => ({
+	};
+
+	const rebuildLightbox = () => {
+		if (typeof GLightbox !== "function") return;
+		if (lightbox) { try { lightbox.destroy(); } catch (e) {} lightbox = null; }
+
+		const elements = allPhotos.map(name => ({
 			href: `images/photographs/${name}`,
 			type: "image"
 		}));
-		const lightbox = GLightbox({ elements, touchNavigation: true, loop: true });
+
+		lightbox = GLightbox({
+			elements,
+			touchNavigation: true,
+			loop: true,
+			selector: ".__glightbox_disabled__",
+			onOpen: () => setArrowsHidden(true),
+			onClose: () => setArrowsHidden(false),
+		});
+
 		document.querySelectorAll(".gallery a.gallery-link").forEach(link => {
 			link.addEventListener("click", e => {
 				e.preventDefault();
@@ -111,14 +123,21 @@
 		? document.addEventListener("DOMContentLoaded", cb)
 		: cb();
 
+	const init = (photos) => {
+		allPhotos = shuffle(photos.slice());
+		document.querySelector(".gallery-prev")?.addEventListener("click", () => showPage(currentPage - 1));
+		document.querySelector(".gallery-next")?.addEventListener("click", () => showPage(currentPage + 1));
+		showPage(0);
+	};
+
 	fetch(REPO_API)
 		.then(r => r.ok ? r.json() : Promise.reject(`API ${r.status}`))
 		.then(items => items
 			.filter(it => it.type === "file" && IMAGE_RE.test(it.name))
 			.map(it => it.name))
-		.then(photos => onReady(() => populate(photos)))
+		.then(photos => onReady(() => init(photos)))
 		.catch(err => {
 			console.warn("Gallery: GitHub API failed, using fallback list", err);
-			onReady(() => populate(FALLBACK));
+			onReady(() => init(FALLBACK));
 		});
 })();
