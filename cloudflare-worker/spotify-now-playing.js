@@ -18,7 +18,7 @@ export default {
 		const cors = {
 			"Access-Control-Allow-Origin": "*",
 			"Access-Control-Allow-Methods": "GET, OPTIONS",
-			"Cache-Control": "public, max-age=10",
+			"Cache-Control": "public, max-age=2",
 			"Content-Type": "application/json",
 		};
 		if (request.method === "OPTIONS") {

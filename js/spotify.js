@@ -5,7 +5,7 @@
 
 (function () {
 	var WORKER_URL = "https://www.garvitgupta.com/api/spotify";
-	var POLL_MS = 10000;
+	var POLL_MS = 2000;
 
 	var state = null;        // last response from worker
 	var fetchedAt = 0;       // local timestamp of last fetch (for progress interpolation)
