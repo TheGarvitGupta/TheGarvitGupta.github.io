@@ -73,14 +73,28 @@
 		currentPage = ((page % numPages) + numPages) % numPages;
 		const start = currentPage * PAGE_SIZE;
 
-		const imgs = document.querySelectorAll(".gallery .image-container img");
-		imgs.forEach((img, i) => {
+		applyLayout();
+
+		// assign photos in visual reading order (row → col) so the featured
+		// cell gets whichever photo falls at its grid position, not always #1
+		const containers = Array.from(document.querySelectorAll(".gallery .image-container"));
+		containers.sort((a, b) => {
+			const aRow = parseInt(a.style.gridRow) || 1;
+			const aCol = parseInt(a.style.gridColumn) || 1;
+			const bRow = parseInt(b.style.gridRow) || 1;
+			const bCol = parseInt(b.style.gridColumn) || 1;
+			return aRow !== bRow ? aRow - bRow : aCol - bCol;
+		});
+
+		containers.forEach((container, i) => {
+			const img = container.querySelector("img");
 			const idx = (start + i) % allPhotos.length;
 			const url = `images/photographs/${allPhotos[idx]}`;
 			img.src = url;
-			if (img.parentElement?.tagName === "A") img.parentElement.href = url;
+			const link = container.querySelector("a.gallery-link");
+			if (link) link.href = url;
 		});
-		applyLayout();
+
 		rebuildLightbox();
 	};
 
