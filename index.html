@@ -81,17 +81,17 @@
 			<a class="navlink" href="#contact"><div class="nav-dot"><div class="nav-text">Let's Talk</div></div></a>
 		</div>
 
-		<a style="height:0px;width:0px;" name="home"></a>
+		<a name="home"></a>
 		
 
 
 		<div class="home-page">
-			<div style="z-index:100000" class="introduction">
+			<div class="introduction">
 				<div class="name">GARVIT GUPTA</div>
 				<div class="designation"> Software Engineer</div>
 			</div>
 			<a class="spotify-link" href="" target="_blank">
-				<div style="z-index:100000" class="spotify">
+				<div class="spotify">
 					<div class="spotify-album-art"></div>
 					<div class="spotify-music-track"></div>
 					<div class="spotify-music-artist"></div>
@@ -102,7 +102,7 @@
 					</div>
 				</div>
 			</a>
-			<div id="particles-js" style="height:100%;"></div>
+			<div id="particles-js"></div>
 			<a href="#about">
 				<div class="downButton">
 					<div class="bounceUpDown down-arrow"></div>
@@ -112,8 +112,7 @@
 		<div class="section">
 			<a id="aboutAnchor" name="about"></a>
 		</div>
-		<div class="page" id="aboutMe" style="min-height:300px;">
-			<div style="min-height:300px;">
+		<div class="page" id="aboutMe">
 				<div id="garvit-polymer">
 					<div class="poly-loading"></div>
 					<div class="poly-container-desktop">
@@ -576,11 +575,11 @@
 					</div>
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1370" class="polylion-mobile">
 						<defs>
-							<filter id="dilate_2">
+							<filter id="dilate_2_mobile">
 								<feMorphology  radius="1" in="SourceGraphic" operator="dilate"></feMorphology>
 							</filter>
 						</defs>
-						<g filter="url(#dilate_2)">
+						<g filter="url(#dilate_2_mobile)">
 							<polygon fill="#CC8B85" points="864.22,389.8 875.55,482.52 844.26,578.13" data-svg-origin="859.9049987792969 483.9649963378906"></polygon>
 							<polygon fill="#3F3430" points="840.37,108.41 854.94,151.76 793.93,148.61" data-svg-origin="824.4349975585938 130.08499908447266"></polygon>
 							<polygon fill="#D78484" points="660.08,583.57 625.92,639.11 578.75,686.58" data-svg-origin="619.4150085449219 635.0750122070312"></polygon>
@@ -1033,13 +1032,13 @@
 				</div>
 				<div class="clearfix">
 					<div class="about-text">
-						<p class="" style="display: inline">Hello! I am a software engineer at Apple. I graduated with a master's in computer science from </p>
+						<p class="inline-p">Hello! I am a software engineer at Apple. I graduated with a master's in computer science from </p>
 						<a class="upenn" style="display: inline; text-decoration: none; color: #333" target="_blank" href="https://www.cis.upenn.edu/prospective-students/graduate/mse.php">University of Pennsylvania.</a>
-						<p class="" style="display: inline">I'm passionate about delivering incredibly detailed and intuitive experiences through the products I build.</p><p></p>
+						<p class="inline-p">I'm passionate about delivering incredibly detailed and intuitive experiences through the products I build.</p>
 
-						<p class="" style="display: inline">Previously, I have collaborated with teams from Nokia and Microsoft to build one of the top downloaded apps on the</p>
+						<p class="inline-p">Previously, I have collaborated with teams from Nokia and Microsoft to build one of the top downloaded apps on the</p>
 						<a class="windows" style="display: inline; text-decoration: none; color: #333" target="_blank" href="/status-tiles/">Windows</a>
-						<p class="" style="display: inline">platform. I have also built products for universities and organizations that understand and solve their problems.</p>
+						<p class="inline-p">platform. I have also built products for universities and organizations that understand and solve their problems.</p>
 						
 						<div>
 							<a class="strava-link" target="_blank" rel="noopener">
@@ -1054,19 +1053,18 @@
 						</div>
 
 						<div class="social-container">
-							<a style="float:left;width:42px;margin-right:10px;" target="_blank" href="https://www.linkedin.com/in/garvitgupta">
+							<a class="social-icon-link" target="_blank" href="https://www.linkedin.com/in/garvitgupta">
 								<div class="social-icon social-linkedin" style="background-image:url('images/icons/social/linkedin-svg.svg');background-size:23px"></div>
 							</a>
-							<a style="float:left;width:42px;margin-right:10px;" target="_blank" href="https://www.twitter.com/thegarvitgupta">
+							<a class="social-icon-link" target="_blank" href="https://www.twitter.com/thegarvitgupta">
 								<div class="social-icon social-twitter" style="background-image:url('images/icons/social/twitter-svg.svg');background-size:25px;"></div>
 							</a>
-							<a style="float:left;width:42px;margin-right:10px;" target="_blank" href="https://www.github.com/thegarvitgupta">
+							<a class="social-icon-link" target="_blank" href="https://www.github.com/thegarvitgupta">
 								<div class="social-icon social-github" style="background-image:url('images/icons/social/github-svg.svg');background-size:25px;"></div>
 							</a>
 						</div>
 					</div>
 				</div>
-			</div>
 		</div>
 
 		<div class="section">
@@ -1327,35 +1325,36 @@
 			</div>
 			<div class="copyright">2026. Garvit Gupta. All rights reserved.</div>
 		</div>
-	</body>
-	<!-- Polylion -->
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.17.0/TweenMax.min.js"></script>
-	<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
-	<!-- Spotify realtime stream -->
-	<script type="text/javascript" src="js/spotify.js?v=6"></script>
-	<script type="text/javascript" src="js/strava.js?v=5"></script>
-	<!-- Run to display -->
-	<script src="polylion-execute.js?v=2"></script>
-	<!-- All Loaders with scroll animations -->
-	<script src="https://cdn.jsdelivr.net/npm/glightbox@3/dist/js/glightbox.min.js"></script>
-	<script src="js/gallery.js?v=13"></script>
-	<script src="js/loaders.js?v=4"></script>
-	<!-- Particle JS -->
-	<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-	<script src="particle-support.js"></script>
-	<script src="js/contact-form.js?v=2"></script>
-	<!-- Document Load and Images Prefetch-->
-	<script src="js/loadUncover.js"></script>
 
-	<!-- Social Profiles Schema -->
-	<script type="application/ld+json">
-	{ "@context" : "http://schema.org",
-	  "@type" : "Person",
-	  "name" : "Garvit Gupta",
-	  "url" : "https://www.garvitgupta.com",
-	  "sameAs" : [ "https://www.facebook.com/TheGarvitGupta",
-	      "https://www.linkedin.com/in/garvitgupta",
-	      "https://www.twitter.com/thegarvitgupta"] 
-	}
-	</script>
+		<!-- Polylion -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.17.0/TweenMax.min.js"></script>
+		<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+		<!-- Spotify realtime stream -->
+		<script type="text/javascript" src="js/spotify.js?v=6"></script>
+		<script type="text/javascript" src="js/strava.js?v=5"></script>
+		<!-- Run to display -->
+		<script src="polylion-execute.js?v=2"></script>
+		<!-- All Loaders with scroll animations -->
+		<script src="https://cdn.jsdelivr.net/npm/glightbox@3/dist/js/glightbox.min.js"></script>
+		<script src="js/gallery.js?v=13"></script>
+		<script src="js/loaders.js?v=4"></script>
+		<!-- Particle JS -->
+		<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+		<script src="particle-support.js"></script>
+		<script src="js/contact-form.js?v=2"></script>
+		<!-- Document Load and Images Prefetch-->
+		<script src="js/loadUncover.js"></script>
+
+		<!-- Social Profiles Schema -->
+		<script type="application/ld+json">
+		{ "@context" : "http://schema.org",
+		  "@type" : "Person",
+		  "name" : "Garvit Gupta",
+		  "url" : "https://www.garvitgupta.com",
+		  "sameAs" : [ "https://www.facebook.com/TheGarvitGupta",
+		      "https://www.linkedin.com/in/garvitgupta",
+		      "https://www.twitter.com/thegarvitgupta"]
+		}
+		</script>
+	</body>
 </html>
