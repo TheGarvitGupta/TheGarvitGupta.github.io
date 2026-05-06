@@ -42,10 +42,9 @@
 			$(".spotify-device")
 				.removeClass("ago")
 				.text(state.deviceName ? "Listening on " + state.deviceName : "");
-			$(".spotify-music-bar").css({ "display": "block" });
 		} else {
 			$(".spotify-device").addClass("ago");
-			$(".spotify-music-bar").css({ "display": "none" });
+			$(".spotify-progress").css({ "width": "0%" });
 		}
 
 		$(".spotify").css({ "display": "block" });
@@ -60,7 +59,7 @@
 			var current = Math.min((state.progressMs || 0) + elapsed, state.durationMs);
 			$(".spotify-progress").css({ "width": (current * 100 / state.durationMs) + "%" });
 		} else if (state.playedAt) {
-			$(".spotify-device").text(relativeTime(state.playedAt));
+			$(".spotify-device").text("Listening " + relativeTime(state.playedAt));
 		}
 	}
 
