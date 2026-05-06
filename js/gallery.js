@@ -19,7 +19,15 @@
 		"photograph-10.jpeg",
 		"photograph-11.jpeg",
 		"photograph-12.jpeg",
-		"photograph-13.jpeg"
+		"photograph-13.jpeg",
+		"photograph-14.jpeg",
+		"photograph-15.jpeg",
+		"photograph-16.jpeg",
+		"photograph-17.jpeg",
+		"photograph-18.jpeg",
+		"photograph-19.jpeg",
+		"photograph-20.jpeg",
+		"photograph-21.jpeg"
 	];
 
 	function shuffle(arr) {
