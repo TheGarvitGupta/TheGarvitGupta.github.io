@@ -154,11 +154,7 @@ $(window).scroll(function (event) {
 		{
 			/* Low Poly */
 			polygonLoaded = 1;
-			setTimeout(
-				function(){
-					tmax_tl.staggerFromTo(polylion_shapes, polylion_duration, polylion_staggerFrom, polylion_staggerTo, polylion_stagger, 0);
-				}, 450
-			);
+			tmax_tl.staggerFromTo(polylion_shapes, polylion_duration, polylion_staggerFrom, polylion_staggerTo, polylion_stagger, 0);
 
 			/* Animate social icons */
 			setTimeout(

@@ -924,8 +924,8 @@ input {
 }
 .completed-run-bar {
     height: 4px;
-    -webkit-transition: 0.2s ease-in-out;
-    transition: 0.2s ease-in-out;
+    -webkit-transition: width 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: width 1.4s cubic-bezier(0.22, 1, 0.36, 1);
     background-color: #000000;
     position: absolute;
     left: 0;
@@ -971,8 +971,8 @@ input {
     position: absolute;
     top: -38px;
     margin-left: -25px;
-    -webkit-transition: 0.2s ease-in-out;
-    transition: 0.2s ease-in-out;
+    -webkit-transition: left 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: left 1.4s cubic-bezier(0.22, 1, 0.36, 1);
     cursor: default;
     -webkit-transform: scaleX(-1);
     transform: scaleX(-1);

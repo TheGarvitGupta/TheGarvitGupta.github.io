@@ -7,8 +7,8 @@ var tmax_opts = {
 
 var tmax_tl = new TimelineMax(tmax_opts),
   polylion_shapes = $('svg.polylion > g polygon'),
-  polylion_stagger = 0.005,
-  polylion_duration = 2;
+  polylion_stagger = 0.003,
+  polylion_duration = 1;
 
 var polylion_staggerFrom = {
   scale: 0,
