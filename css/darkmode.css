@@ -1,3 +1,20 @@
+/* Copyright toggle (mobile only) */
+.copyright-toggle {
+    display: none;
+    cursor: pointer;
+    color: #000000;
+    -webkit-user-select: none;
+    user-select: none;
+}
+@media screen and (max-width: 1180px) {
+    .copyright-toggle {
+        display: inline;
+    }
+}
+html.dark-mode .copyright-toggle {
+    color: #ffffff;
+}
+
 /* Theme toggle nav item */
 .nav-dot-toggle {
     cursor: pointer;

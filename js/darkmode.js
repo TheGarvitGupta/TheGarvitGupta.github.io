@@ -9,32 +9,41 @@
 
     function initToggle() {
         var dot = document.getElementById('theme-nav-toggle');
-        var text = document.getElementById('theme-nav-text');
+        var navText = document.getElementById('theme-nav-text');
+        var copyright = document.getElementById('copyright-toggle');
         if (!dot) return;
 
-        text.textContent = html.classList.contains('dark-mode') ? 'Light' : 'Dark';
+        function syncLabels() {
+            var label = html.classList.contains('dark-mode') ? 'Light Mode' : 'Dark Mode';
+            navText.textContent = label;
+            if (copyright) copyright.textContent = label;
+        }
+
+        function toggle() {
+            if (html.classList.contains('dark-mode')) {
+                html.classList.remove('dark-mode');
+                localStorage.setItem('colorMode', 'light');
+            } else {
+                html.classList.add('dark-mode');
+                localStorage.setItem('colorMode', 'dark');
+            }
+            syncLabels();
+            if (typeof window.reinitParticles === 'function') {
+                window.reinitParticles();
+            }
+        }
+
+        syncLabels();
 
         setTimeout(function () {
             dot.classList.add('nav-dot-hint');
             setTimeout(function () {
                 dot.classList.remove('nav-dot-hint');
-            }, 750 + 750); // 750ms visible after 750ms fade-in
+            }, 750 + 750);
         }, 1500);
 
-        dot.addEventListener('click', function () {
-            if (html.classList.contains('dark-mode')) {
-                html.classList.remove('dark-mode');
-                localStorage.setItem('colorMode', 'light');
-                text.textContent = 'Dark';
-            } else {
-                html.classList.add('dark-mode');
-                localStorage.setItem('colorMode', 'dark');
-                text.textContent = 'Light';
-            }
-            if (typeof window.reinitParticles === 'function') {
-                window.reinitParticles();
-            }
-        });
+        dot.addEventListener('click', toggle);
+        if (copyright) copyright.addEventListener('click', toggle);
     }
 
     if (document.readyState === 'loading') {
