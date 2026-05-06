@@ -1,142 +1,60 @@
-var refreshTry = true;
-var access_token = "null";
-var refresh_token = "null";
-$.ajaxSetup({ cache: false });
+/* Now-playing display. Hits a Cloudflare Worker that holds the Spotify
+   refresh token and returns sanitized currently-playing JSON.
+   Worker source: cloudflare-worker/spotify-now-playing.js */
 
-$(document).ready(function() {
+(function () {
+	var WORKER_URL = "/api/spotify";
+	var POLL_MS = 15000;
 
-	$.ajax({
-		url: 'https://www.garvitgupta.com/spotify/get_spotify_access_token.php',
-		success: function(data) {
-			access_token = data;
-			console.log("Access token: " + access_token);
+	var lastFetched = 0;
+	var lastProgressMs = 0;
+	var lastDurationMs = 1;
+	var lastIsPlaying = false;
 
-			$.ajax({
-				url: 'https://www.garvitgupta.com/spotify/get_spotify_refresh_token.php',
-				success: function(data) {
-					refresh_token = data;
-					console.log("Refresh token: " + refresh_token);
-					
-					fetchOnceTrackData(access_token, refresh_token);
-				}
-			});
+	function show(data) {
+		lastFetched = Date.now();
+		lastProgressMs = data.progressMs || 0;
+		lastDurationMs = data.durationMs || 1;
+		lastIsPlaying = !!data.playing;
+
+		$(".spotify-music-track").html(data.track || "");
+		$(".spotify-music-artist").html(data.artist || "");
+		if (data.albumArt) {
+			$(".spotify-album-art").css({ "background-image": "url(" + data.albumArt + ")" });
 		}
+		if (data.url) {
+			$(".spotify-link").attr("href", data.url);
+		}
+		$(".spotify").css({ "display": "block" });
+		setTimeout(function () { $(".spotify").css({ "opacity": "1" }); }, 200);
+	}
+
+	function hide() {
+		lastIsPlaying = false;
+		$(".spotify").css({ "opacity": "0" });
+		setTimeout(function () { $(".spotify").css({ "display": "none" }); }, 200);
+	}
+
+	function tickProgress() {
+		if (!lastIsPlaying || !lastDurationMs) return;
+		var elapsed = Date.now() - lastFetched;
+		var current = Math.min(lastProgressMs + elapsed, lastDurationMs);
+		$(".spotify-progress").css({ "width": (current * 100 / lastDurationMs) + "%" });
+	}
+
+	function poll() {
+		fetch(WORKER_URL, { cache: "no-store" })
+			.then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+			.then(function (data) {
+				if (!data || !data.playing) { hide(); return; }
+				show(data);
+			})
+			.catch(function (err) { console.warn("Spotify worker fetch failed", err); });
+	}
+
+	$(document).ready(function () {
+		poll();
+		setInterval(poll, POLL_MS);
+		setInterval(tickProgress, 500);
 	});
-});
-
-function fetchOnceTrackData(access_token, refresh_token) {
-
-	console.log("Attempting to get track information using access token: " + access_token);
-
-	$.ajax({
-		url: 'https://api.spotify.com/v1/me/player/currently-playing',
-		headers: {
-			'Authorization':'Bearer ' + access_token
-		},
-		method: 'GET',
-
-		success: function(data){
-			updateUINow(data);
-			console.log('Success - fetch once sucessful, token working fine. Track update starting with ' + access_token);
-			updateTrackUI(access_token, refresh_token);
-		},
-		error: function(data) {
-			console.log("Could not use the access token to fetch track details.");
-			
-			if (refreshTry) {
-				refreshTry = false;
-				console.log("Attempting to refresh the access token...");
-				refreshAccessToken(refresh_token);
-			}
-
-			$.get("https://www.garvitgupta.com/spotify/get_spotify_access_token.php", function( data ) {
-				access_token = data;
-				console.log("Access token now is " + access_token);
-
-				$.get("https://www.garvitgupta.com/spotify/get_spotify_refresh_token.php", function( data ) {
-					refresh_token = data;
-
-					fetchOnceTrackData(access_token, refresh_token);
-				});
-			});
-		}
-  	});
-}
-
-function refreshAccessToken(refresh_token) {
-
-	$.post("https://accounts.spotify.com/api/token",
-		{
-			grant_type: "refresh_token",
-			refresh_token: refresh_token,
-			client_id: "6f9f2995dc574ebcaea5eb13669f0802",
-			client_secret: "79eb037afe8647ee9d5e28cfc16e82f9"
-		},
-		function(data, status){
-			var access_token = data.access_token;
-			updateAccessToken(access_token);
-
-			var refresh_token = data.refresh_token;
-			if (refresh_token != undefined) {
-				updateRefreshToken(refresh_token);
-			}
-		});
-}
-
-function updateTrackUI(access_token, refresh_token) {
-	console.log("Yey");
-	window.setInterval(function(){
-			
-		$.ajax({
-			url: 'https://api.spotify.com/v1/me/player/currently-playing',
-			headers: {
-				'Authorization':'Bearer ' + access_token
-			},
-			method: 'GET',
-
-			success: function(data){
-				console.log('success: ' + JSON.stringify(data));
-				if (JSON.stringify(data) == undefined) {
-					console.log("User is not playing anything right now.");
-
-					// Hide spotify player
-					$(".spotify").css({"opacity": "0"});
-					setTimeout(function() {
-				   		$(".spotify").css({"display": "none"});	
-					}, 200);
-				}
-				else {
-					updateUINow(data);
-					console.log("Updated UI");
-				}
-			},
-			error: function(data) {
-				console.log("Couldn't update UI");
-			}
-		});
-	}, 5000);
-}
-
-function updateAccessToken(access_token) {
-	console.log("Updating access token");
-	$.post("https://www.garvitgupta.com/spotify/update_spotify_access_token.php", {"access_token": access_token}).done(	function( data ) {
-    	console.log("Response: " + data);
-  	});
-}
-
-function updateRefreshToken(refresh_token) {
-	console.log("Updating refresh token");
-	$.post("https://www.garvitgupta.com/spotify/update_spotify_refresh_token.php", {"refresh_token": refresh_token});
-}
-
-function updateUINow(data) {
-	$(".spotify-progress").css({"width": data.progress_ms * 100/data.item.duration_ms + "%"});
-	$(".spotify-music-track").html(data.item.name);
-	$(".spotify-music-artist").html(data.item.album.artists[0].name);
-	$(".spotify-album-art").css({"background-image":"url(" + data.item.album.images[1].url + ")"});
-	$(".spotify-link").attr("href", data.item.external_urls.spotify);
-	$(".spotify").css({"display": "block"});
-	setTimeout(function() {
-   		$(".spotify").css({"opacity": "1"});
-	}, 200);
-}
+})();
