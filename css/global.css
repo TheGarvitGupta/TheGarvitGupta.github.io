@@ -189,6 +189,7 @@ input {
     padding-bottom: 100px;
 }
 .section {
+    display: block;
     height: 0px;
     overflow: hidden;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
@@ -467,15 +468,6 @@ input {
     max-width: 100%;
     -webkit-transition: all 0.2s ease-in-out;
     transition: all 0.2s ease-in-out;
-}
-.polylion-mobile {
-    height: 300px;
-    float: right;
-    max-width: 100%;
-    -webkit-transition: all 0.2s ease-in-out;
-    transition: all 0.2s ease-in-out;
-    opacity: 1;
-    display: none;
 }
 #garvit-polymer {
     width: 40%;
@@ -1063,5 +1055,7 @@ input {
 
 #particles-js { height: 100%; }
 #aboutMe { min-height: 300px; }
+.relative { position: relative; }
+#contactMe { min-height: 575px; }
 .inline-p { display: inline; }
 .social-icon-link { float: left; width: 42px; margin-right: 10px; }
