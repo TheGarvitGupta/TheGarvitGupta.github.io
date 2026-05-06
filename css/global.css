@@ -29,10 +29,10 @@ input {
     position: fixed;
     top: 50%;
     right: 0;
-    margin-top: -80px;
+    margin-top: -90px;
     z-index: 1000;
     width: 15px;
-    height: 150px;
+    height: 180px;
     margin-right: 12px;
 }
 .nav-dot {
@@ -61,6 +61,8 @@ input {
     margin-left: 0px;
 }
 .nav-text {
+    -webkit-user-select: none;
+    user-select: none;
     height: 12px;
     width: 100px;
     text-align: right;
@@ -564,6 +566,7 @@ input {
     padding: 15px;
     line-height: 20px;
     box-sizing: border-box;
+    background-color: transparent;
 }
 .contact-form {
     color: #333;
