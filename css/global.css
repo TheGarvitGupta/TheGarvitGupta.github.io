@@ -909,7 +909,7 @@ input {
 .run-stats {
     clear: left;
     font-family: 'Open Sans', 'Roboto', sans-serif;
-    font-size: 11px;
+    font-size: 10px;
     color: #2380F0;
     padding-top: 8px;
 }
