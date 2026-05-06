@@ -330,8 +330,8 @@
         position: relative;
         margin-top: 50px;
         height: 42px;
-        margin-left: 50%;
-        left: -99px;
+        left: 50%;
+        transform: translateX(-50%);
     }
 }
 @media screen and (max-width: 826px) {
