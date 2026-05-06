@@ -497,30 +497,19 @@ input {
 .submit-parent {
     cursor: pointer;
     margin-top: 15px;
-    height: 42px;
     float: right;
-    display: flex;
-    flex-direction: row-reverse;
-    align-items: stretch;
+    display: block;
+    background-color: #000;
+    border-radius: 6px;
+    overflow: hidden;
+    -webkit-transition: background-color 0.2s ease-in-out;
+    transition: background-color 0.2s ease-in-out;
 }
-.submit-button {
-    padding: 0 20px;
-    height: 42px;
-    min-height: 42px;
-    max-height: 42px;
-    box-sizing: border-box;
-    background-color: #64B5F6;
-    line-height: 42px;
-    font-size: 14px;
-    font-family: 'Montserrat', sans-serif;
-    text-transform: uppercase;
-    font-weight: 600;
-    -webkit-font-smoothing:antialiased;
-    color: #fff;
-    letter-spacing: 2px;
-    white-space: nowrap;
-    flex: 0 0 auto;
-    border-radius: 8px 0 0 8px;
+.submit-parent:hover {
+    background-color: #2196F3;
+}
+.submit-parent:hover .lede-button-arrow {
+    background-position: 3px;
 }
 .social-container {
     position: absolute;
@@ -529,20 +518,6 @@ input {
     -webkit-transition: all 0.2s ease-in-out;
     transition: all 0.2s ease-in-out;
     width: 156px;
-}
-.submit-icon {
-    height: 42px;
-    min-height: 42px;
-    max-height: 42px;
-    width: 42px;
-    box-sizing: border-box;
-    background-color: #2196F3;
-    background-image: url('../images/icons/right.png');
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 10px;
-    flex: 0 0 auto;
-    border-radius: 0 8px 8px 0;
 }
 .social-icon {
     height: 42px;
