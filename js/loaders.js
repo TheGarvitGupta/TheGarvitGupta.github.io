@@ -12,18 +12,19 @@ function flashNav(idx) {
 	}, 1500);
 }
 
+var particlesHidden = false;
 $(window).scroll(function (event) {
 
 	var scroll = $(window).scrollTop();
 
-	/* Hide Particle JS if out of viewport */
-	if (scroll > window.innerHeight)
-	{
-		$('#particles-js').css("display","none");
-	}
-	else
-	{
-		$('#particles-js').css("display","initial");
+	/* Hide Particle JS if out of viewport.
+	   Use visibility (not display) so the parent keeps its dimensions —
+	   otherwise a window resize while hidden makes particles.js shrink
+	   the canvas to 0x0 and it never recovers when shown again. */
+	var shouldHide = scroll > window.innerHeight;
+	if (shouldHide !== particlesHidden) {
+		$('#particles-js').css("visibility", shouldHide ? "hidden" : "visible");
+		particlesHidden = shouldHide;
 	}
 
 	/* Float lede up on sroll */
