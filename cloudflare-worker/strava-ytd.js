@@ -55,13 +55,10 @@ export default {
 			const stats = await statsRes.json();
 			const ytd = stats.ytd_run_totals || {};
 			const all = stats.all_run_totals || {};
-			const ytdMeters = ytd.distance || 0;
-			const lifetimeMeters = all.distance || 0;
-			const M_PER_MILE = 1609.344;
 
 			return json({
-				ytdMiles: ytdMeters / M_PER_MILE,
-				lifetimeMiles: lifetimeMeters / M_PER_MILE,
+				ytdMeters: Math.round(ytd.distance || 0),
+				lifetimeMeters: Math.round(all.distance || 0),
 				ytdRunCount: ytd.count || 0,
 				lifetimeRunCount: all.count || 0,
 				profileUrl: `https://www.strava.com/athletes/${env.STRAVA_ATHLETE_ID}`,
