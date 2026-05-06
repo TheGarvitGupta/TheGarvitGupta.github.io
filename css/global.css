@@ -78,6 +78,7 @@ input {
     padding-top: 10px;
     padding-bottom: 10px;
     opacity: 0;
+    text-shadow: 0 0 3px #fff, 0 0 6px #fff, 0 0 10px #fff, 0 0 16px rgba(255, 255, 255, 0.9), 0 0 24px rgba(255, 255, 255, 0.7);
 }
 .nav-dot:hover .nav-text {
     opacity: 1;
