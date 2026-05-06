@@ -108,4 +108,5 @@ Archived files kept for reference, not served by the site:
 
 - `cloudflare-worker/` — worker source (canonical copy; the live workers are deployed from here)
 - `css/separators/` — unused vendor CSS from an old section-separator experiment
+- `js/stopScroll.js` — unused `disableScroll`/`enableScroll` utilities, never wired up
 - `images/` — old mockup images, duplicate work screenshots, replaced social icon PNGs
