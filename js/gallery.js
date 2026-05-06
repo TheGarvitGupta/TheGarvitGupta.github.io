@@ -102,9 +102,64 @@
 				link.href = url;
 			}
 		}
-		if (typeof GLightbox === "function") {
-			GLightbox({ selector: ".gallery .glightbox", touchNavigation: true, loop: true });
-		}
+		setupLightbox(filenames);
+	}
+
+	function setupLightbox(allPhotos) {
+		if (typeof GLightbox !== "function") return;
+		// Lightbox slide order: displayed tiles first (sorted by visual grid
+		// position so the top-left tile is index 0), then any photos in the
+		// folder that aren't shown on the page. Looping wraps the last photo
+		// back to the top-left tile.
+		var containers = Array.prototype.slice.call(
+			document.querySelectorAll(".gallery .image-container")
+		);
+		// Sort by actual rendered position so the top-left tile is always
+		// index 0, regardless of which tile (featured or small) ended up there.
+		containers.sort(function (a, b) {
+			var ar = a.getBoundingClientRect();
+			var br = b.getBoundingClientRect();
+			if (Math.abs(ar.top - br.top) > 1) return ar.top - br.top;
+			return ar.left - br.left;
+		});
+		var displayed = [];
+		var displayedSet = {};
+		containers.forEach(function (c) {
+			var img = c.querySelector("img");
+			if (img && img.src) {
+				var name = img.src.split("/").pop();
+				displayed.push(name);
+				displayedSet[name] = true;
+			}
+		});
+		var rest = allPhotos.filter(function (n) { return !displayedSet[n]; });
+		var orderedNames = displayed.concat(rest);
+		var elements = orderedNames.map(function (name) {
+			return { href: "images/photographs/" + name, type: "image" };
+		});
+		var lightbox = GLightbox({
+			elements: elements,
+			// Disable selector-based auto-binding; we handle clicks manually
+			// below so the lightbox uses the full `elements` list (all photos
+			// in the folder) instead of just the 12 visible tiles' data-gallery.
+			selector: ".__glightbox_disabled__",
+			touchNavigation: true,
+			loop: true
+		});
+		var links = document.querySelectorAll(".gallery a.glightbox");
+		links.forEach(function (link) {
+			link.addEventListener("click", function (e) {
+				e.preventDefault();
+				var href = link.getAttribute("href");
+				for (var i = 0; i < elements.length; i++) {
+					if (elements[i].href === href) {
+						lightbox.openAt(i);
+						return;
+					}
+				}
+				lightbox.openAt(0);
+			});
+		});
 	}
 
 	function whenReady(cb) {
