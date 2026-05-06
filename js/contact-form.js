@@ -29,7 +29,18 @@ $(".checkimage-feedback").click(function() {
 $(".submit-parent").click(function() {
 	var name    = $('#contactName').val();
 	var message = $('#contactMessage').val();
-	var subject = encodeURIComponent(name ? "Hey from " + name : "Hey");
-	var body    = encodeURIComponent(message || "");
-	window.location.href = "mailto:garvitgupta@icloud.com?subject=" + subject + "&body=" + body;
+
+	var selected = [];
+	if (intentApp)      selected.push("Mobile App");
+	if (intentWeb)      selected.push("Website");
+	if (intentJob)      selected.push("Work");
+	if (intentFeedback) selected.push("Feedback");
+
+	var body = "";
+	if (selected.length) body += "Interested in: " + selected.join(", ") + "\n\n";
+	if (message)         body += message;
+
+	window.location.href = "mailto:garvitgupta@icloud.com"
+		+ "?subject=" + encodeURIComponent(name ? "Hey from " + name : "Hey")
+		+ "&body="    + encodeURIComponent(body);
 });

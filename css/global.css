@@ -236,6 +236,7 @@ input {
     width: 50px;
     background-size: 50px;
     position: absolute;
+    border-radius: 8px;
 }
 .spotify-music-track {
     text-transform: none;
@@ -289,12 +290,15 @@ input {
     width: 100%;
     height: 3px;
     background-color: #D9D9D9;
+    border-radius: 2px;
+    overflow: hidden;
 }
 .spotify-progress {
     height: 3px;
     position: absolute;
     background-color: #000000;
     transition: 0.2s ease-in-out;
+    border-radius: 2px;
 }
 .spotify-device.ago {
     color: #888;
@@ -352,6 +356,8 @@ input {
     /* Material */
     
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    border-radius: 12px;
+    overflow: hidden;
     transition: all 0.2s ease-in-out;
 }
 .showcase-box:hover {
@@ -396,6 +402,7 @@ input {
     background-position: center;
     background-size: 100%;
     background-size: cover;
+    border-radius: 12px;
     border-bottom-left-radius: 0px;
     border-bottom-right-radius: 0px;
 }
@@ -445,6 +452,7 @@ input {
 }
 .textareaHighlight {
     border: 1px solid black;
+    border-radius: 6px;
 }
 .textareaHighlight:active {
     color: #2196F3;
@@ -512,6 +520,7 @@ input {
     letter-spacing: 2px;
     white-space: nowrap;
     flex: 0 0 auto;
+    border-radius: 8px 0 0 8px;
 }
 .social-container {
     position: absolute;
@@ -533,6 +542,7 @@ input {
     background-repeat: no-repeat;
     background-size: 10px;
     flex: 0 0 auto;
+    border-radius: 0 8px 8px 0;
 }
 .social-icon {
     height: 42px;
@@ -543,6 +553,7 @@ input {
     margin-right: 10px;
     float: left;
     background-size: 42px;
+    border-radius: 8px;
     -webkit-transition: all 0.2s ease-in-out;
     transition: all 0.2s ease-in-out;
     opacity: 0;
@@ -582,6 +593,7 @@ input {
     width: 98px;
     height: 98px;
     border: 1px solid black;
+    border-radius: 12px;
     padding: 0;
     background-size: 36px;
     background-position: center 19px;
@@ -591,8 +603,6 @@ input {
     transition: all 0.2s ease-in-out;
     margin-bottom: 0px;
     display: inline-block;
-}
-.checkimage {
     -webkit-user-select: none;
     user-select: none;
 }
@@ -753,6 +763,7 @@ input {
     background-color: #E0E0E0;
     position: relative;
     margin-top: 50px;
+    border-radius: 2px;
 }
 .strava-link {
     display: block;
@@ -779,6 +790,7 @@ input {
     position: absolute;
     left: 0;
     top: 0;
+    border-radius: 2px;
 }
 .bar-marker {
     box-sizing: border-box;
@@ -880,6 +892,8 @@ input {
     aspect-ratio: 20 / 9;
     grid-auto-flow: dense;
     gap: 2px;
+    border-radius: 12px;
+    overflow: hidden;
 }
 
 .image-container {
@@ -922,7 +936,6 @@ input {
 .social-linkedin { background-image: url('../images/icons/social/linkedin-svg.svg'); background-size: 23px; }
 .social-twitter { background-image: url('../images/icons/social/twitter-svg.svg'); background-size: 25px; }
 .social-github { background-image: url('../images/icons/social/github-svg.svg'); background-size: 25px; }
-#contactEmail { text-transform: lowercase; }
 .contact-form-label { float: left; width: 155px; }
 .contact-checkboxes { padding-top: 15px; padding-bottom: 15px; }
 .textarea-wrapper { height: 120px; }
