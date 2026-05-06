@@ -996,7 +996,6 @@ input {
     opacity: 0.4;
     transition: opacity 0.15s ease-in-out;
     z-index: 1001;
-    filter: brightness(0);
 }
 
 .gallery-arrow:hover {
