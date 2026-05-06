@@ -71,10 +71,7 @@
         margin-right: 0px;
         padding-right: 0px;
     }
-    .extra-text {
-        display: none;
-    }
-    .static-box:after {
+.static-box:after {
         width: 0px;
     }
     .static-inner {
@@ -85,11 +82,7 @@
     .garvit-gupta {
         width: 450px;
     }
-    .testimonial {
-        padding: 50px;
-        padding-top: 75px;
-    }
-    .static {
+.static {
         margin-top: 150px;
     }
 }
@@ -106,9 +99,6 @@
     .about-text {
         font-size: 14px;
     }
-    .cycle-bar {
-        display: none;
-    }
     .run-bar {
         margin-left: 0;
     }
@@ -122,23 +112,6 @@
     }
 }
 @media screen and (max-width: 1023px) {
-    .left-test {
-        margin-top: 50px;
-        float: left;
-        position: relative;
-        width: 100%;
-        margin-right: 0px;
-    }
-    .right-test {
-        margin-top: 50px;
-        float: left;
-        position: relative;
-        width: 100%;
-    }
-    .person {
-        left: 50%;
-        -webkit-transform: translate(-50%);
-    }
     #message-received-parent {
         margin: auto;
         width: 100%;
@@ -298,9 +271,6 @@
         margin-left: 50%;
         left: -164px;
         position: absolute;
-    }
-    .cycle-bar {
-        display: none;
     }
     .strava-link {
         float: none;

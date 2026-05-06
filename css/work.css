@@ -77,20 +77,8 @@
 .lb1:hover {
     background-color: #FFCA28;
 }
-.lb2:hover {
-    background-color: #0277BD;
-}
-.lb3:hover {
-    background-color: #00695C;
-}
 .lb4:hover {
     background-color: #37474F;
-}
-.lb5:hover {
-    background-color: #C62828;
-}
-.lb6:hover {
-    background-color: #00838F;
 }
 .lede-button-text {
     font-family: 'Montserrat', sans-serif;

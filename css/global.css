@@ -332,11 +332,6 @@ input {
     background-position: center;
     opacity: 1;
 }
-.cover-spinner {
-    bottom: 100px;
-    background-size: 30px 30px;
-    background-image: url('../images/spinner/spinner-black.gif');
-}
 .clearfix:after {
     content: " ";
     display: block;
@@ -552,13 +547,6 @@ input {
     transition: all 0.2s ease-in-out;
     opacity: 0;
 }
-.social-paypal {
-    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMzBweCIgaGVpZ2h0PSIzMHB4IiB2aWV3Qm94PSIwIDAgMzAgMzAiIHZlcnNpb249IjEuMSI+CiAgICA8ZyBpZD0iUGFnZS0xIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj4KICAgICAgICA8ZyBpZD0iTmF2LUFzc2V0cyIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTUwLjAwMDAwMCwgLTUwLjAwMDAwMCkiPgogICAgICAgICAgICA8ZyBpZD0iaWNQUExvZ29UcmFuc3BhcmVudFdoaXRlMzAiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUwLjAwMDAwMCwgNTAuMDAwMDAwKSI+CiAgICAgICAgICAgICAgICA8cmVjdCBpZD0iU3BlY3MiIGZpbGw9IiNERTAwNjMiIG9wYWNpdHk9IjAiIHg9IjAiIHk9IjAiIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCIvPgogICAgICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMi45MDQ4MjgsIDEuNzcwMDAwKSIgZmlsbD0iI0ZGRkZGRiI+CiAgICAgICAgICAgICAgICAgICAgPHBhdGggZD0iTTE5LjUxODEwNjgsMi4yNjUzNzY1OSBDMTguMjY1MDU5OCwwLjgzNzc4Njc0NyAxNi4wMDE0MjAxLDAuMjI2MTk4NjYzIDEzLjEwNTE5NTYsMC4yMjYxOTg2NjMgTDQuNjk3ODIzODcsMC4yMjYxOTg2NjMgQzQuMTA2MDE1NDMsMC4yMjYxOTg2NjMgMy42MDIwOTY2MSwwLjY1Njc4OTczMyAzLjUwOTc5ODc0LDEuMjQxMzc5NzggTDAuMDA5MDkyMDI5MDcsMjMuNDM4NDQ1OSBDLTAuMDYwMDYyNDk1LDIzLjg3NjQ3NTIgMC4yNzg1NDY3MDksMjQuMjcyMzU0NSAwLjcyMTg1MjAwNSwyNC4yNzIzNTQ1IEw1LjkxMjAyMzAyLDI0LjI3MjM1NDUgTDUuNTUzODUyMTgsMjYuNTQzNzcwNiBDNS40OTM1MTQxNywyNi45MjY5Nzc0IDUuNzg5NDE4MzksMjcuMjczNTQ0IDYuMTc3MzQ0OTYsMjcuMjczNTQ0IEwxMC41NTE5ODg1LDI3LjI3MzU0NCBDMTEuMDY5OTU4NywyNy4yNzM1NDQgMTEuNTEwNzg0MywyNi44OTY2NzM1IDExLjU5MTUxMDUsMjYuMzg1MzYzOCBMMTEuNjM0NDkxLDI2LjE2MzA0MzMgTDEyLjQ1ODU1OTUsMjAuOTM3NTQ2NSBMMTIuNTExNzM0MSwyMC42NDg4MzI4IEMxMi41OTI0NjAzLDIwLjEzNzI0NzcgMTMuMDMzMjg1OSwxOS43NjA2NTI3IDEzLjU1MDk4MDUsMTkuNzYwNjUyNyBMMTQuMjA1MzMxMSwxOS43NjA2NTI3IEMxOC40NDM1OTQyLDE5Ljc2MDY1MjcgMjEuNzYyMTg0OCwxOC4wMzg4Mzk0IDIyLjczMTcyNTgsMTMuMDU5NjMwOCBDMjMuMTM3MDA5OCwxMC45NzkxMjkzIDIyLjkyNzYxNzcsOS4yNDI0Mzk1OCAyMS44NTYxMzU4LDguMDIxNDY3MzMgQzIxLjUzMTg1MzQsNy42NTIzMTA1NiAyMS4xMjg3NzM1LDcuMzQ2NzkyMDEgMjAuNjU4NDY3Niw3LjA5Nzc0ODkzIEMyMC45ODg1MzU4LDQuOTkzODMwODIgMjAuNjU2MjYzNSwzLjU2MjEwODYyIDE5LjUxODEwNjgsMi4yNjUzNzY1OSBaIiBpZD0iRmlsbC04IiBmaWxsLW9wYWNpdHk9IjAuNjgiLz4KICAgICAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMjAuNjU4NDY3Niw3LjA5ODM5NTA2IEMyMC45ODg1MzU4LDQuOTk0Mjc5MTIgMjAuNjU2MjYzNSwzLjU2MjQyMjMgMTkuNTE4MTA2OCwyLjI2NTU2ODMzIEMxOC4yNjUwNTk4LDAuODM3ODQ0MjU0IDE2LjAwMTQyMDEsMC4yMjYxOTg2NjMgMTMuMTA1MTk1NiwwLjIyNjE5ODY2MyBMNC42OTc4MjM4NywwLjIyNjE5ODY2MyBDNC4xMDYwMTU0MywwLjIyNjE5ODY2MyAzLjYwMjA5NjYxLDAuNjU2ODMwMjIxIDMuNTA5Nzk4NzQsMS4yNDE0NzUyNCBMMC4wMDkwOTIwMjkwNywyMy40NDA2Mjg1IEMtMC4wNjAwNjI0OTUsMjMuODc4Njk5IDAuMjc4NTQ2NzA5LDI0LjI3NDYxNTUgMC43MjE4NTIwMDUsMjQuMjc0NjE1NSBMNS45MTIwMjMwMiwyNC4yNzQ2MTU1IEw3LjIxNTc2NDg5LDE2LjAwNzQ4MTUgTDcuMTc1MjY0MDMsMTYuMjY2NzQyMSBDNy4yNjc1NjE5LDE1LjY4MjA5NyA3Ljc2NzM0Nzk4LDE1LjI1MTE5IDguMzU5MTU2NDIsMTUuMjUxMTkgTDEwLjgyNjEyNywxNS4yNTExOSBDMTUuNjcwODAwOSwxNS4yNTExOSAxOS40NjQxMDU2LDEzLjI4MjkwMzQgMjAuNTcyNTA2Niw3LjU5MDc0MjIxIEMyMC42MDUyOTMsNy40MjI0MDE5MSAyMC42MzMzOTU3LDcuMjU5MDIwOSAyMC42NTg0Njc2LDcuMDk4Mzk1MDYiIGlkPSJGaWxsLTkiIGZpbGwtb3BhY2l0eT0iMC43Ii8+CiAgICAgICAgICAgICAgICAgICAgPHBhdGggZD0iTTguNjE2MjEyODgsNy4xMjY0OTc2OSBDOC42NzE4NjcxMiw2Ljc3NDY2MzcyIDguODk3NTE0NzUsNi40ODY3NDk0NiA5LjIwMTQwODkzLDYuMzQxMDAxNDggQzkuMzM5NzE3OTgsNi4yNzQ4Nzc2NCA5LjQ5NDAwNjk2LDYuMjM3OTU4NDkgOS42NTU3MzQ4Nyw2LjIzNzk1ODQ5IEwxNi4yNDU4MDI4LDYuMjM3OTU4NDkgQzE3LjAyNjYxNTMsNi4yMzc5NTg0OSAxNy43NTQ1Mjg2LDYuMjg5MjA0NDcgMTguNDE5ODk5OSw2LjM5NjM4MDIxIEMxOC42MTAyODE0LDYuNDI2OTYyNDkgMTguNzk1MTUyNyw2LjQ2MjIyODU0IDE4Ljk3NTA2NDcsNi41MDIxNzgzNiBDMTkuMTU0NzAxMSw2LjU0MTg1MjY3IDE5LjMyOTM3ODMsNi41ODY0ODYyNyAxOS40OTgyNjk2LDYuNjM2MDc5MTUgQzE5LjU4Mjg1Myw2LjY2MDYwMDA4IDE5LjY2NTc4MzQsNi42ODY0OTg1OSAxOS43NDc2MTE2LDYuNzEzNzc0NjggQzIwLjA3NDM3MzYsNi44MjIwNTI0OCAyMC4zNzg1NDMzLDYuOTUwMTY3NDMgMjAuNjU4NDY3Niw3LjA5ODM5NTA2IEMyMC45ODg1MzU4LDQuOTk0Mjc5MTIgMjAuNjU2MjYzNSwzLjU2MjQyMjMgMTkuNTE4MTA2OCwyLjI2NTU2ODMzIEMxOC4yNjUwNTk4LDAuODM3ODQ0MjU0IDE2LjAwMTQyMDEsMC4yMjYxOTg2NjMgMTMuMTA1MTk1NiwwLjIyNjE5ODY2MyBMNC42OTc4MjM4NywwLjIyNjE5ODY2MyBDNC4xMDYwMTU0MywwLjIyNjE5ODY2MyAzLjYwMjA5NjYxLDAuNjU2ODMwMjIxIDMuNTA5Nzk4NzQsMS4yNDE0NzUyNCBMMC4wMDkwOTIwMjkwNywyMy40NDA2Mjg1IEMtMC4wNjAwNjI0OTUsMjMuODc4Njk5IDAuMjc4NTQ2NzA5LDI0LjI3NDYxNTUgMC43MjE4NTIwMDUsMjQuMjc0NjE1NSBMNS45MTIwMjMwMiwyNC4yNzQ2MTU1IEw4LjYxNjIxMjg4LDcuMTI2NDk3NjkiIGlkPSJGaWxsLTEwIi8+CiAgICAgICAgICAgICAgICA8L2c+CiAgICAgICAgICAgIDwvZz4KICAgICAgICA8L2c+CiAgICA8L2c+Cjwvc3ZnPg==');
-    background-size: 24px;
-}
-.social-facebook:hover {
-    background-color: #3b5998;
-}
 .social-twitter:hover {
     background-color: rgb(95, 173, 226);
 }
@@ -567,59 +555,6 @@ input {
 }
 .social-linkedin:hover {
     background-color: #0077B5;
-}
-.social-paypal {
-    position: relative;
-}
-.social-paypal:hover {
-    background-color: #0070ba;
-}
-.p-anchor:hover + .paypal-tooltip {
-    opacity: 1;
-    top: 60px;
-    background-color: #0070ba;
-}
-.p-anchor:hover + .paypal-tooltip:before {
-    border-right-color: #0070ba;
-    border-bottom-color: #0070ba;
-}
-.paypal-tooltip {
-    top: 42px;
-    top: 56px;
-    position: absolute;
-    right: 0px;
-
-    font-size: 10px;
-    font-family: 'Open Sans', 'Roboto', sans-serif;
-    letter-spacing: 0.7px;
-
-    padding: 4px;
-    padding-left: 6px;
-    padding-right: 6px;
-
-    background-color: #333333;
-    color: #ffffff;
-    opacity: 0;
-    transition: all 0.2s ease-in-out;
-    -webkit-transition: all 0.2s ease-in-out;
-    cursor: default;
-
-    font-weight: 600;
-    -webkit-font-smoothing: antialiased;
-}
-.paypal-tooltip:before {
-    content: ' ';
-    right: 0px;
-    position: absolute;
-    height: 0px;
-    width: 0px;
-    border: solid 4px transparent;
-    border-color: rgba(0,0,0,0);
-    border-color: transparent;
-    border-right-color: #333;
-    border-bottom-color: #333;
-    -webkit-transition: all 0.2s ease-in-out;
-    top: -8px;
 }
 .textareaHighlight {
     resize: vertical;
@@ -776,77 +711,6 @@ input {
     margin: auto;
     background-position: left;
 }
-.left-test {
-    margin-top: 50px;
-    float: left;
-    position: relative;
-    width: 45%;
-    margin-right: 10%;
-}
-.right-test {
-    margin-top: 50px;
-    float: left;
-    position: relative;
-    width: 45%;
-}
-.testimonial {
-    float: left;
-    background-color: rgb(240, 240, 240);
-    padding: 75px;
-    width: 100%;
-    font-size: 15px;
-    font-family: 'Open Sans', 'Roboto', sans-serif;
-    box-sizing: border-box;
-    position: relative;
-    margin-bottom: 20%;
-}
-.person {
-    position: absolute;
-    height: 65px;
-    color: white;
-    line-height: 65px;
-    padding-left: 80px;
-    padding-right: 15px;
-    font-family: 'Open Sans', 'Roboto', sans-serif;
-    background-image: url("http://www.nbr.co.nz/sites/default/files/story_imgs/Vladimir-Putin-web.jpg");
-    background-position: left;
-    background-size: 65px;
-    background-repeat: no-repeat;
-    top: -32.5px;
-    left: -32.5px;
-    background-color: #2196F3;
-    font-size: 16px;
-}
-.cycle-bar {
-    float: left;
-    height: 4px;
-    width: 200px;
-    background-color: #E0E0E0;
-    position: relative;
-    margin-top: 50px;
-}
-.completed-bar {
-    height: 4px;
-    -webkit-transition: 0.2s ease-in-out;
-    transition: 0.2s ease-in-out;
-    background-color: rgb(0, 144, 247);
-    background-color: #2196F3;
-    position: absolute;
-    left: 0;
-    top: 0;
-}
-.bar-marker {
-    box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
-    height: 4px;
-    width: 100%;
-    position: absolute;
-    top: 7px;
-    left: 0px;
-    border-left: 1px solid #E0E0E0;
-    border-right: 1px solid #E0E0E0;
-}
 .bar-min {
     font-family: 'Open Sans', 'Roboto', sans-serif;
     font-size: 10px;
@@ -868,23 +732,6 @@ input {
     text-align: center;
     color: #E0E0E0;
 }
-.cycle-icon {
-    width: 50px;
-    text-align: center;
-    font-size: 28px;
-    position: absolute;
-    top: -38px;
-    margin-left: -25px;
-    -webkit-transition: 0.2s ease-in-out;
-    transition: 0.2s ease-in-out;
-    cursor: default;
-    -webkit-transform: scaleX(-1);
-    transform: scaleX(-1);
-    -webkit-filter: FlipH;
-    filter: FlipH;
-    -ms-filter: "FlipH";
-}
-
 /* Run bar*/
 .run-bar {
     float: left;
