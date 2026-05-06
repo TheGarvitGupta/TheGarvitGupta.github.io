@@ -308,6 +308,11 @@
     .cycle-bar {
         display: none;
     }
+    .strava-link {
+        float: none;
+        margin-left: auto;
+        margin-right: auto;
+    }
     .run-bar {
         float: none;
         margin-left: auto;

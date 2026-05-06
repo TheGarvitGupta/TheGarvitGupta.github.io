@@ -17,7 +17,6 @@
     background-image: url("../images/work/status_tiles_lead.jpg");
     background-size: cover;
     background-position: center;
-    border-radius: 5px;
 }
 .lede-image-container {
     background-color: rgb(240, 240, 240);
@@ -26,7 +25,6 @@
     position: absolute;
     width: 696px;
     top: 50px;
-    border-radius: 5px;
 }
 .bg-editable {
     position: absolute;
@@ -75,7 +73,6 @@
     background-color: #000;
     z-index: 500;
     opacity: 0;
-    border-radius: 5px;
 }
 .lb1:hover {
     background-color: #FFCA28;
@@ -131,7 +128,6 @@
     top: 0;
     left: 150px;
     background-color: #004D40;
-    border-radius: 5px;
 }
 .static {
     float: right;
@@ -166,7 +162,6 @@
     line-height: 10px;
     padding-left: 6.5px;
     background-color: black;
-    border-radius: 5px;
 }
 .static-box {
     width: 100%;
@@ -181,7 +176,6 @@
     height: 2px;
     bottom: 0px;
     background-color: #333;
-    border-radius: 5px;
 }
 .box-logo {
     width: 100%;
