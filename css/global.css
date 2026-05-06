@@ -592,10 +592,13 @@ input {
     margin-bottom: 0px;
     display: inline-block;
 }
-.checkimage:hover {
-    border: 1px solid #2196F3;
+.checkimage:hover,
+.checkimage.selected {
+    border-color: #2196F3;
+    background-color: #E1F5FE;
 }
-.checkimage:hover .clickImageText {
+.checkimage:hover .clickImageText,
+.checkimage.selected .clickImageText {
     color: #2196F3;
 }
 .checkimage-app {
@@ -613,16 +616,20 @@ input {
 .checkimage-feedback {
     background-image: url('../images/icons/contact/mail.png');
 }
-.checkimage-app:hover {
+.checkimage-app:hover,
+.checkimage-app.selected {
     background-image: url('../images/icons/contact/app-blue.png');
 }
-.checkimage-web:hover {
+.checkimage-web:hover,
+.checkimage-web.selected {
     background-image: url('../images/icons/contact/web-blue.png');
 }
-.checkimage-job:hover {
+.checkimage-job:hover,
+.checkimage-job.selected {
     background-image: url('../images/icons/contact/job-blue.png');
 }
-.checkimage-feedback:hover {
+.checkimage-feedback:hover,
+.checkimage-feedback.selected {
     background-image: url('../images/icons/contact/mail-blue.png');
 }
 .clickImageText {
