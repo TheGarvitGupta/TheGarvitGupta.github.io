@@ -40,7 +40,7 @@ $(".submit-parent").click(function() {
 	if (selected.length) body += "Interested in: " + selected.join(", ") + "\n\n";
 	if (message)         body += message;
 
-	window.location.href = "mailto:garvitgupta@icloud.com"
+	window.location.href = "mailto:hey@garvitgupta.com"
 		+ "?subject=" + encodeURIComponent(name ? "Hey from " + name : "Hey")
 		+ "&body="    + encodeURIComponent(body);
 });
