@@ -293,6 +293,9 @@ input {
     background-color: #000000;
     transition: 0.2s ease-in-out;
 }
+.spotify-device.ago {
+    color: #888;
+}
 .name {
     font-size: 64px;
     -webkit-transition: all 1.5s ease-in-out;
