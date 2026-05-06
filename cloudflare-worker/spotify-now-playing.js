@@ -83,7 +83,6 @@ export default {
 					});
 				}
 			}
-
 			return json({ playing: false });
 		} catch (err) {
 			return json({ error: "exception", detail: String(err) }, 500);

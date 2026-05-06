@@ -4,7 +4,7 @@
    Worker source: cloudflare-worker/spotify-now-playing.js */
 
 (function () {
-	var WORKER_URL = "/api/spotify";
+	var WORKER_URL = "https://www.garvitgupta.com/api/spotify";
 	var POLL_MS = 10000;
 
 	var state = null;        // last response from worker
