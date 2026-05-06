@@ -103,43 +103,60 @@ $(window).scroll(function (event) {
 			$(".nav-dot:eq(1)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(2)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(3)").removeClass("nav-dot-selected");
-			page = 1;					
+			$(".nav-dot:eq(4)").removeClass("nav-dot-selected");
+			page = 1;
 		}
 	}
 
 	if (page!=2)
 	{
-		if (($(window).scrollTop() + 1 >= $('#aboutAnchor').offset().top) && ($(window).scrollTop() < $('#workAnchor').offset().top))
+		if (($(window).scrollTop() + 1 >= $('#aboutAnchor').offset().top) && ($(window).scrollTop() < $('#lifeAnchor').offset().top))
 		{
 			$(".nav-dot:eq(1)").addClass("nav-dot-selected");
 			$(".nav-dot:eq(0)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(2)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(3)").removeClass("nav-dot-selected");
+			$(".nav-dot:eq(4)").removeClass("nav-dot-selected");
 			page = 2;
 		}
 	}
 
 	if (page!=3)
 	{
-		if (($(window).scrollTop() + 1 >= $('#workAnchor').offset().top) && ($(window).scrollTop() < $('#contactAnchor').offset().top))
+		if (($(window).scrollTop() + 1 >= $('#lifeAnchor').offset().top) && ($(window).scrollTop() < $('#workAnchor').offset().top))
 		{
 			$(".nav-dot:eq(2)").addClass("nav-dot-selected");
 			$(".nav-dot:eq(0)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(1)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(3)").removeClass("nav-dot-selected");
-			page = 3;					
+			$(".nav-dot:eq(4)").removeClass("nav-dot-selected");
+			page = 3;
 		}
 	}
 
 	if (page!=4)
 	{
-		if ($(window).scrollTop() + 1 >= $('#contactAnchor').offset().top)
+		if (($(window).scrollTop() + 1 >= $('#workAnchor').offset().top) && ($(window).scrollTop() < $('#contactAnchor').offset().top))
 		{
 			$(".nav-dot:eq(3)").addClass("nav-dot-selected");
 			$(".nav-dot:eq(0)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(1)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(2)").removeClass("nav-dot-selected");
-			page = 4;					
+			$(".nav-dot:eq(4)").removeClass("nav-dot-selected");
+			page = 4;
+		}
+	}
+
+	if (page!=5)
+	{
+		if ($(window).scrollTop() + 1 >= $('#contactAnchor').offset().top)
+		{
+			$(".nav-dot:eq(4)").addClass("nav-dot-selected");
+			$(".nav-dot:eq(0)").removeClass("nav-dot-selected");
+			$(".nav-dot:eq(1)").removeClass("nav-dot-selected");
+			$(".nav-dot:eq(2)").removeClass("nav-dot-selected");
+			$(".nav-dot:eq(3)").removeClass("nav-dot-selected");
+			page = 5;
 		}
 	}
 
