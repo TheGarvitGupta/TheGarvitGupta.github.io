@@ -157,6 +157,7 @@
     line-height: 10px;
     padding-left: 6.5px;
     background-color: black;
+    border-radius: 4px;
 }
 .static-box {
     width: 100%;
