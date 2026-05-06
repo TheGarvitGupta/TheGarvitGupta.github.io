@@ -1,39 +1,64 @@
 (function () {
     var html = document.documentElement;
-    var stored = localStorage.getItem('colorMode');
-    if (stored === 'light') {
-        html.classList.remove('dark-mode');
-    } else {
-        html.classList.add('dark-mode');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    var STORAGE_KEY = 'colorModeOverride'; // versioned key — avoids stale values from old implementation
+
+    function applyMode(dark) {
+        html.classList.toggle('dark-mode', dark);
+    }
+
+    function isDark() {
+        return html.classList.contains('dark-mode');
+    }
+
+    function syncLabels() {
+        var navText = document.getElementById('theme-nav-text');
+        var copyright = document.getElementById('copyright-toggle');
+        var label = isDark() ? 'Light Mode' : 'Dark Mode';
+        if (navText) navText.textContent = label;
+        if (copyright) copyright.textContent = label + '.';
+    }
+
+    // Apply on load: manual override takes priority, otherwise follow OS
+    var override = localStorage.getItem(STORAGE_KEY);
+    applyMode(override === 'dark' || (override === null && mq.matches));
+
+    // Follow OS changes when no manual override is set
+    function onOSChange(e) {
+        if (!localStorage.getItem(STORAGE_KEY)) {
+            applyMode(e.matches);
+            syncLabels();
+            if (typeof window.reinitParticles === 'function') {
+                window.reinitParticles();
+            }
+        }
+    }
+    if (mq.addEventListener) {
+        mq.addEventListener('change', onOSChange);
+    } else if (mq.addListener) {
+        mq.addListener(onOSChange);
     }
 
     function initToggle() {
         var dot = document.getElementById('theme-nav-toggle');
-        var navText = document.getElementById('theme-nav-text');
-        var copyright = document.getElementById('copyright-toggle');
         if (!dot) return;
 
-        function syncLabels() {
-            var label = html.classList.contains('dark-mode') ? 'Light Mode' : 'Dark Mode';
-            navText.textContent = label;
-            if (copyright) copyright.textContent = label + '.';
-        }
+        syncLabels();
 
         function toggle() {
-            if (html.classList.contains('dark-mode')) {
-                html.classList.remove('dark-mode');
-                localStorage.setItem('colorMode', 'light');
+            var dark = !isDark();
+            applyMode(dark);
+            // If toggled back to match OS, clear override so OS is followed again
+            if (dark === mq.matches) {
+                localStorage.removeItem(STORAGE_KEY);
             } else {
-                html.classList.add('dark-mode');
-                localStorage.setItem('colorMode', 'dark');
+                localStorage.setItem(STORAGE_KEY, dark ? 'dark' : 'light');
             }
             syncLabels();
             if (typeof window.reinitParticles === 'function') {
                 window.reinitParticles();
             }
         }
-
-        syncLabels();
 
         setTimeout(function () {
             dot.classList.add('nav-dot-hint');
@@ -43,6 +68,7 @@
         }, 1500);
 
         dot.addEventListener('click', toggle);
+        var copyright = document.getElementById('copyright-toggle');
         if (copyright) copyright.addEventListener('click', toggle);
     }
 
