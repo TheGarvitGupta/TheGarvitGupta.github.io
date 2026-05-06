@@ -74,41 +74,10 @@ $(".checkimage-feedback" ).click(function toggleApp() {
 
 /* Send Button */
 
-$( ".submit-parent" ).click(function() {
-	
-
-	//$("#submit-icon").css("background-image", "none");
-	//$("#submit-icon").html('<svg class="spinner" style="margin-left:10px;margin-top:10px;" width="22px" height="22px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg"><circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle></svg>');
-	
-	$(".cssload-container").css("opacity", "1");
-
-	var name = $('#contactName').val();
-	var email = $('#contactEmail').val();;
-	var number = $('#contactNumber').val();;
-	var message = $('#contactMessage').val();;
-
-	xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function () {
-		if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-			var Reply = xmlhttp.responseText;
-			if(Reply == '1')
-			{	
-				$(".contact-form").addClass("bounceOutUp");
-				setTimeout(showResponse, 1000);
-			}
-			else
-			{
-				alert("We detected an error in the input of the form. Did you miss filling in some detail?")
-				$("#submit-icon").html('');
-				$("#submit-icon").css("background-image", "url('images/icons/right.png')");
-			}
-		}
-	}
-	xmlhttp.open("POST","php/receiveMessage.php",true);
-	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-	xmlhttp.send("Name=" + name + "&Email=" + email + "&Number=" + number + "&Message=" + message + "&App=" + intentApp + "&Web=" + intentWeb + "&Job=" + intentJob + "&Feedback=" + intentFeedback);
-	xmlhttp.onerror = function(){
-		alert("We detected an error in the input of the form. Did you miss filling in some detail?")
-		$(".cssload-container").css("opacity", "0");
-	};
+$(".submit-parent").click(function() {
+	var name    = $('#contactName').val();
+	var message = $('#contactMessage').val();
+	var subject = encodeURIComponent(name ? "Hey from " + name : "Hey");
+	var body    = encodeURIComponent(message || "");
+	window.location.href = "mailto:garvitgupta@icloud.com?subject=" + subject + "&body=" + body;
 });

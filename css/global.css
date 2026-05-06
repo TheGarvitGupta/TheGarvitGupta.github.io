@@ -515,11 +515,13 @@ input {
     background-color: #64B5F6;
     line-height: 42px;
     font-size: 14px;
+    font-family: 'Montserrat', sans-serif;
     text-transform: uppercase;
     font-weight: 600;
     -webkit-font-smoothing:antialiased;
     color: #fff;
     letter-spacing: 2px;
+    white-space: nowrap;
     flex: 0 0 auto;
 }
 .social-container {
