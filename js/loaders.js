@@ -1,3 +1,17 @@
+var navFlashTimeout;
+function flashNav(idx) {
+	if (navFlashTimeout) {
+		clearTimeout(navFlashTimeout);
+	}
+	$(".nav-dot").removeClass("nav-flash");
+	var $dot = $(".nav-dot:eq(" + idx + ")");
+	$dot.addClass("nav-flash");
+	navFlashTimeout = setTimeout(function () {
+		$dot.removeClass("nav-flash");
+		navFlashTimeout = null;
+	}, 1500);
+}
+
 $(window).scroll(function (event) {
 
 	var scroll = $(window).scrollTop();
@@ -71,6 +85,7 @@ $(window).scroll(function (event) {
 			$(".nav-dot:eq(2)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(3)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(4)").removeClass("nav-dot-selected");
+			flashNav(0);
 			page = 1;
 		}
 	}
@@ -84,6 +99,7 @@ $(window).scroll(function (event) {
 			$(".nav-dot:eq(2)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(3)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(4)").removeClass("nav-dot-selected");
+			flashNav(1);
 			page = 2;
 		}
 	}
@@ -97,6 +113,7 @@ $(window).scroll(function (event) {
 			$(".nav-dot:eq(1)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(3)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(4)").removeClass("nav-dot-selected");
+			flashNav(2);
 			page = 3;
 		}
 	}
@@ -110,6 +127,7 @@ $(window).scroll(function (event) {
 			$(".nav-dot:eq(1)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(2)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(4)").removeClass("nav-dot-selected");
+			flashNav(3);
 			page = 4;
 		}
 	}
@@ -123,6 +141,7 @@ $(window).scroll(function (event) {
 			$(".nav-dot:eq(1)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(2)").removeClass("nav-dot-selected");
 			$(".nav-dot:eq(3)").removeClass("nav-dot-selected");
+			flashNav(4);
 			page = 5;
 		}
 	}
