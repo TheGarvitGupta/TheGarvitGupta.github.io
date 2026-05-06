@@ -972,60 +972,41 @@ input {
     margin-right: auto;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    aspect-ratio: 20 / 9;
+    grid-auto-flow: dense;
     gap: 2px;
-}
-
-.box-container {
-    display: contents;
-}
-
-.one-box-container .image-container {
-    grid-column: span 2;
-    grid-row: span 2;
-}
-
-.image-container {
-    aspect-ratio: 4 / 3;
-    background-color: rgb(150, 150, 150);
+    border-radius: 5px;
     overflow: hidden;
 }
 
-/* Round only the outer corner of each gallery corner photo */
-.one-box-container .image-container {
-    border-top-left-radius: 5px;
+.image-container {
+    background-color: rgb(150, 150, 150);
+    overflow: hidden;
+    position: relative;
 }
-.fiv-box-container .image-container:last-child {
-    border-bottom-right-radius: 5px;
-}
-.six-box-container .image-container:nth-child(3) {
-    border-top-right-radius: 5px;
-}
-.fiv-box-container .image-container:first-child {
-    border-bottom-left-radius: 5px;
+
+/* Featured (2x2 span) and all other items get explicit grid-row/grid-column
+   from JS — CSS auto-placement is unreliable when mixing explicit + auto. */
+
+.image-container a,
+.image-container img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .image-container img {
     object-fit: cover;
-    height: 100%;
-    width: 100%;
-    display: block;
 }
 
 @media screen and (max-width: 1180px) {
     .gallery {
         grid-template-columns: repeat(3, 1fr);
-    }
-    /* In 3-col mode the corner photos shift: top-right is now 1st of six-box, bottom-left is now 3rd of fiv-box */
-    .six-box-container .image-container:nth-child(3) {
-        border-top-right-radius: 0;
-    }
-    .fiv-box-container .image-container:first-child {
-        border-bottom-left-radius: 0;
-    }
-    .six-box-container .image-container:first-child {
-        border-top-right-radius: 5px;
-    }
-    .fiv-box-container .image-container:nth-child(3) {
-        border-bottom-left-radius: 5px;
+        grid-template-rows: repeat(5, 1fr);
+        aspect-ratio: 4 / 5;
     }
 }

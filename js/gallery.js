@@ -40,11 +40,70 @@
 		return arr;
 	}
 
+	// Browser auto-placement (Chrome + WebKit) skips one cell when items mix
+	// explicit and auto placement, so we place every cell explicitly via JS.
+	// The featured (2x2) lands at a random valid position; the 11 others fill
+	// the remaining cells in row-major order.
+	var lastBreakpoint = null;
+	function applyLayout() {
+		var gallery = document.querySelector(".gallery");
+		if (!gallery) return;
+		var featured = gallery.querySelector(".image-container.featured");
+		var others = Array.prototype.slice.call(
+			gallery.querySelectorAll(".image-container:not(.featured)")
+		);
+		if (!featured) return;
+
+		var isMobile = window.matchMedia("(max-width: 1180px)").matches;
+		var cols = isMobile ? 3 : 5;
+		var rows = isMobile ? 5 : 3;
+
+		// Re-randomize only when crossing the breakpoint (or first run),
+		// so random resizes within a breakpoint don't reshuffle.
+		var bp = isMobile ? "m" : "d";
+		if (bp !== lastBreakpoint) {
+			lastBreakpoint = bp;
+			// Featured starts at col 1..(cols-1), row 1..2.
+			var fc = 1 + Math.floor(Math.random() * (cols - 1));
+			var fr = 1 + Math.floor(Math.random() * 2);
+			gallery.dataset.fc = fc;
+			gallery.dataset.fr = fr;
+		}
+		var fc = parseInt(gallery.dataset.fc, 10);
+		var fr = parseInt(gallery.dataset.fr, 10);
+
+		featured.style.gridColumn = fc + " / span 2";
+		featured.style.gridRow = fr + " / span 2";
+
+		var cells = [];
+		for (var r = 1; r <= rows; r++) {
+			for (var c = 1; c <= cols; c++) {
+				var inFeat = r >= fr && r < fr + 2 && c >= fc && c < fc + 2;
+				if (!inFeat) cells.push([r, c]);
+			}
+		}
+		for (var i = 0; i < others.length && i < cells.length; i++) {
+			others[i].style.gridRow = cells[i][0];
+			others[i].style.gridColumn = cells[i][1];
+		}
+	}
+
+	window.addEventListener("resize", applyLayout);
+
 	function populate(filenames) {
+		applyLayout();
 		var imgs = document.querySelectorAll(".gallery .image-container img");
 		var pool = shuffle(filenames.slice());
 		for (var i = 0; i < imgs.length && i < pool.length; i++) {
-			imgs[i].src = "images/photographs/" + pool[i];
+			var url = "images/photographs/" + pool[i];
+			imgs[i].src = url;
+			var link = imgs[i].parentElement;
+			if (link && link.tagName === "A") {
+				link.href = url;
+			}
+		}
+		if (typeof GLightbox === "function") {
+			GLightbox({ selector: ".gallery .glightbox", touchNavigation: true, loop: true });
 		}
 	}
 
