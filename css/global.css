@@ -1059,3 +1059,11 @@ input {
 #contactMe { min-height: 575px; }
 .inline-p { display: inline; }
 .social-icon-link { float: left; width: 42px; margin-right: 10px; }
+.social-linkedin { background-image: url('../images/icons/social/linkedin-svg.svg'); background-size: 23px; }
+.social-twitter { background-image: url('../images/icons/social/twitter-svg.svg'); background-size: 25px; }
+.social-github { background-image: url('../images/icons/social/github-svg.svg'); background-size: 25px; }
+#contactEmail { text-transform: lowercase; }
+.contact-form-label { float: left; width: 155px; }
+.contact-checkboxes { padding-top: 15px; padding-bottom: 15px; }
+.textarea-wrapper { height: 120px; }
+.contact-intro { height: 72px; padding-bottom: 25px; line-height: 28px; }
