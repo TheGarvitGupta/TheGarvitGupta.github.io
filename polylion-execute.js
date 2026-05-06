@@ -5,8 +5,13 @@ var tmax_opts = {
   yoyo: false
 };
 
+var polylion_shapes = $($('svg.polylion > g polygon').get().sort(function(a, b) {
+  var aY = parseFloat((a.getAttribute('data-svg-origin') || '0 0').split(' ')[1]);
+  var bY = parseFloat((b.getAttribute('data-svg-origin') || '0 0').split(' ')[1]);
+  return bY - aY; // bottom (high Y) first → animates bottom-up
+}));
+
 var tmax_tl = new TimelineMax(tmax_opts),
-  polylion_shapes = $('svg.polylion > g polygon'),
   polylion_stagger = 0.003,
   polylion_duration = 1;
 
