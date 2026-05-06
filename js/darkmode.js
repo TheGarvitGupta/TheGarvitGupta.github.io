@@ -16,7 +16,7 @@
         function syncLabels() {
             var label = html.classList.contains('dark-mode') ? 'Light Mode' : 'Dark Mode';
             navText.textContent = label;
-            if (copyright) copyright.textContent = label;
+            if (copyright) copyright.textContent = label + '.';
         }
 
         function toggle() {
