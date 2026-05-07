@@ -194,6 +194,12 @@ html.dark-mode .lb4:hover {
     background-color: #37474F;
 }
 
+/* Latte icon */
+html.dark-mode .latte-icon {
+    -webkit-filter: invert(1);
+    filter: invert(1);
+}
+
 /* Contact polygon */
 html.dark-mode #contactMe::after {
     opacity: 0.02;
