@@ -443,6 +443,7 @@ input {
     border-left: 0px;
     border-top: 0px;
     border-right: 0px;
+    background-color: transparent;
     border-radius: 0px;
     outline: none;
     -webkit-transition: all 0.2s ease-in-out;
