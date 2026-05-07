@@ -933,4 +933,15 @@ input {
 .contact-checkboxes { padding-top: 15px; padding-bottom: 15px; }
 .textarea-wrapper { height: 120px; }
 .contact-intro { height: 72px; padding-bottom: 25px; line-height: 28px; }
-.latte-icon { width: 22px; height: 22px; vertical-align: middle; margin-bottom: 8px; }
+.latte-icon {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    background-image: url("../images/latte.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    vertical-align: middle;
+    margin-bottom: 7px;
+    margin-left: 2px;
+}
