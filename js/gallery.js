@@ -4,7 +4,8 @@
 
 (() => {
 	const REPO_API = "https://api.github.com/repos/TheGarvitGupta/TheGarvitGupta.github.io/contents/images/photographs";
-	const IMAGE_RE = /\.(jpe?g|png|webp|gif)$/i;
+	const IMAGE_RE = /\.(jpe?g|png|webp|gif|mp4)$/i;
+	const VIDEO_RE = /\.mp4$/i;
 	const FALLBACK = [
 		"photograph-1.jpeg", "photograph-2.jpeg", "photograph-3.jpeg",
 		"photograph-4.jpeg", "photograph-5.jpeg", "photograph-6.jpeg",
@@ -87,12 +88,37 @@
 		});
 
 		containers.forEach((container, i) => {
-			const img = container.querySelector("img");
 			const idx = (start + i) % allPhotos.length;
-			const url = `images/photographs/${allPhotos[idx]}`;
-			img.src = url;
+			const name = allPhotos[idx];
+			const url = `images/photographs/${name}`;
 			const link = container.querySelector("a.gallery-link");
 			if (link) link.href = url;
+
+			const isVideo = VIDEO_RE.test(name);
+			let existing = container.querySelector("video, img");
+
+			if (isVideo) {
+				if (!existing || existing.tagName !== "VIDEO") {
+					const vid = document.createElement("video");
+					vid.autoplay = true;
+					vid.muted = true;
+					vid.loop = true;
+					vid.playsInline = true;
+					vid.setAttribute("playsinline", "");
+					existing?.replaceWith(vid);
+					existing = vid;
+				}
+				existing.src = url;
+				existing.load();
+			} else {
+				if (!existing || existing.tagName !== "IMG") {
+					const img = document.createElement("img");
+					img.alt = "";
+					existing?.replaceWith(img);
+					existing = img;
+				}
+				existing.src = url;
+			}
 		});
 
 		rebuildLightbox();
@@ -110,7 +136,7 @@
 
 		const elements = allPhotos.map(name => ({
 			href: `images/photographs/${name}`,
-			type: "image"
+			type: VIDEO_RE.test(name) ? "video" : "image"
 		}));
 
 		lightbox = GLightbox({
