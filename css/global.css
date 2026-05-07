@@ -908,7 +908,8 @@ input {
     display: block;
 }
 
-.image-container img {
+.image-container img,
+.image-container video {
     object-fit: cover;
 }
 
