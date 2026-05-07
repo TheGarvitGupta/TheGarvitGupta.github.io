@@ -152,10 +152,10 @@ input {
 }
 
 .upenn {
-    padding-left: 24px;
+    padding-left: 22px;
     background-image: url("../images/penn.png");
-    background-size: 19px;
-    background-position: 1px;
+    background-size: 16px;
+    background-position: 1px center;
     background-repeat: no-repeat;
     color: #333;
     text-decoration: none;
