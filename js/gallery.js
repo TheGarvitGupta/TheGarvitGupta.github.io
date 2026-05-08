@@ -98,25 +98,22 @@
 			const link = container.querySelector("a.gallery-link");
 			if (link) link.href = fullUrl;
 
+			// always start fresh — avoids re-fetching thumbs on stale survivor elements
+			container.querySelectorAll("video, img").forEach(el => el.remove());
+
 			const isVideo = VIDEO_RE.test(name);
-			// remove any stale full-res overlay from a previous page
-			container.querySelectorAll("video, img").forEach((el, i) => { if (i > 0) el.remove(); });
-			let existing = container.querySelector("video, img");
+			const anchor = container.querySelector("a.gallery-link");
 
 			if (isVideo) {
-				if (!existing || existing.tagName !== "VIDEO") {
-					const vid = document.createElement("video");
-					vid.autoplay = true;
-					vid.muted = true;
-					vid.loop = true;
-					vid.playsInline = true;
-					vid.setAttribute("playsinline", "");
-					existing?.replaceWith(vid);
-					existing = vid;
-				}
-				existing.src = thumbUrl;
-				existing.load();
-				const thumb = existing;
+				const thumb = document.createElement("video");
+				thumb.autoplay = true;
+				thumb.muted = true;
+				thumb.loop = true;
+				thumb.playsInline = true;
+				thumb.setAttribute("playsinline", "");
+				thumb.src = thumbUrl;
+				anchor ? anchor.prepend(thumb) : container.prepend(thumb);
+				thumb.load();
 				thumbReady.push(new Promise(res => {
 					thumb.addEventListener("canplay", res, { once: true });
 					thumb.play().catch(() => {});
@@ -140,14 +137,10 @@
 					}, { once: true });
 				});
 			} else {
-				if (!existing || existing.tagName !== "IMG") {
-					const img = document.createElement("img");
-					img.alt = "";
-					existing?.replaceWith(img);
-					existing = img;
-				}
-				existing.src = thumbUrl;
-				const thumb = existing;
+				const thumb = document.createElement("img");
+				thumb.alt = "";
+				thumb.src = thumbUrl;
+				anchor ? anchor.prepend(thumb) : container.prepend(thumb);
 				thumbReady.push(new Promise(res => {
 					if (thumb.complete) res();
 					else thumb.addEventListener("load", res, { once: true });
