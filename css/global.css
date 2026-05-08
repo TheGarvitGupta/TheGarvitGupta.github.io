@@ -213,14 +213,15 @@ input {
     font-family: 'Open Sans', 'Roboto', sans-serif;
     margin-left: auto;
     margin-right: auto;
-    text-align: center;
+    text-align: right;
     position: relative;
     top: 40%;
     -webkit-transform: translateY(-50%);
     transform: translateY(-50%);
     text-transform: uppercase;
     color: #222222;
-    width: 600px;
+    width: -webkit-fit-content;
+    width: fit-content;
     z-index: 100000;
 }
 .spotify-link {
@@ -328,6 +329,7 @@ input {
     -webkit-transition: all 1.5s ease-in-out;
     transition: all 1.5s ease-in-out;
     text-transform: none;
+    opacity: 0.75;
 }
 .downButton {
     position: absolute;

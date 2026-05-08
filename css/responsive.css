@@ -354,7 +354,8 @@
         font-size: 20px;
     }
     .introduction {
-        width: 100%;
+        width: -webkit-fit-content;
+        width: fit-content;
     }
     .page {
         padding-left: 50px;
