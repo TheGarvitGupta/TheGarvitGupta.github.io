@@ -67,12 +67,30 @@ export default {
 			const ytd = stats.ytd_run_totals || {};
 			const all = stats.all_run_totals || {};
 
+			// 3. Fetch latest run activity to check if one happened today.
+			const actRes = await fetch(
+				"https://www.strava.com/api/v3/athlete/activities?per_page=1&type=Run",
+				{ headers: { "Authorization": `Bearer ${access_token}` } }
+			);
+			let latestRunDate = null;
+			let latestRunMiles = null;
+			if (actRes.ok) {
+				const acts = await actRes.json();
+				if (acts.length > 0) {
+					// start_date_local is "2026-05-07T08:30:00Z" — take the date part
+					latestRunDate = (acts[0].start_date_local || "").slice(0, 10);
+					latestRunMiles = (acts[0].distance || 0) / 1609.344;
+				}
+			}
+
 			const result = {
 				ytdMeters: Math.round(ytd.distance || 0),
 				lifetimeMeters: Math.round(all.distance || 0),
 				ytdRunCount: ytd.count || 0,
 				lifetimeRunCount: all.count || 0,
 				profileUrl: `https://www.strava.com/athletes/${env.STRAVA_ATHLETE_ID}`,
+				latestRunDate,
+				latestRunMiles,
 			};
 
 			// Store in KV with TTL

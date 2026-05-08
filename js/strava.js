@@ -13,6 +13,14 @@
 	var pending = null;
 	var revealed = false;
 
+	function todayLocalDate() {
+		var d = new Date();
+		var y = d.getFullYear();
+		var m = String(d.getMonth() + 1).padStart(2, "0");
+		var day = String(d.getDate()).padStart(2, "0");
+		return y + "-" + m + "-" + day;
+	}
+
 	function reveal(data) {
 		var miles = data.ytdMiles != null
 			? data.ytdMiles
@@ -28,7 +36,17 @@
 		}
 		var ytd = miles.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 		var lifetime = Math.round(lifetimeMiles).toLocaleString("en-US");
-		$(".run-stats").text("Ran " + ytd + " miles this year, " + lifetime + " lifetime");
+		var $stats = $(".run-stats");
+
+		var ranToday = data.latestRunDate && data.latestRunDate === todayLocalDate();
+		if (ranToday) {
+			var todayMiles = (data.latestRunMiles || 0).toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+			$stats.text("Ran " + todayMiles + " miles today, " + ytd + " this year");
+			$stats.attr("title", lifetime + " lifetime miles");
+		} else {
+			$stats.text("Ran " + ytd + " miles this year, " + lifetime + " lifetime");
+			$stats.removeAttr("title");
+		}
 	}
 
 	function tryReveal() {
