@@ -10,6 +10,7 @@ done
 # Start site preview server
 python3 -m http.server 8080 --directory "$ROOT" --bind 127.0.0.1 &
 SITE_PID=$!
+trap 'kill $SITE_PID 2>/dev/null' EXIT INT TERM
 
 # Open site in browser
 sleep 0.4

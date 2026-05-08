@@ -90,7 +90,7 @@
 		containers.forEach((container, i) => {
 			const idx = (start + i) % allPhotos.length;
 			const name = allPhotos[idx];
-			const thumbUrl = `images/photographs/thumb_${name}`;
+			const thumbUrl = `images/photographs/thumbs/${name}`;
 			const fullUrl  = `images/photographs/${name}`;
 			const link = container.querySelector("a.gallery-link");
 			if (link) link.href = fullUrl;

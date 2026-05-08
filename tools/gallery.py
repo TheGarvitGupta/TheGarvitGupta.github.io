@@ -21,6 +21,7 @@ from pathlib import Path
 # ── Paths ────────────────────────────────────────────────────────────────────
 REPO_ROOT   = Path(__file__).parent.parent
 PHOTO_DIR   = REPO_ROOT / "images" / "photographs"
+THUMB_DIR   = PHOTO_DIR / "thumbs"
 PORT        = 8765
 
 # ── Processing settings ──────────────────────────────────────────────────────
@@ -38,14 +39,11 @@ MEDIA_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".mov"}
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def is_thumb(name: str) -> bool:
-    return name.startswith("thumb_")
-
-def full_name(name: str) -> str:
-    return name.removeprefix("thumb_")
-
-def thumb_name(name: str) -> str:
-    return f"thumb_{name}" if not is_thumb(name) else name
+def thumb_path(name: str) -> Path:
+    stem = Path(name).stem
+    ext  = Path(name).suffix.lower()
+    thumb_ext = ".mp4" if ext in {".mp4", ".mov"} else ".jpg"
+    return THUMB_DIR / (stem + thumb_ext)
 
 def list_photos():
     """Return sorted list of original (non-thumb) filenames."""
@@ -392,22 +390,27 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(body)
 
         elif path == "/api/photos":
-            photos = []
-            for name in list_photos():
-                stem = Path(name).stem
-                ext  = Path(name).suffix.lower()
-                thumb_ext = ".mp4" if ext in {".mp4", ".mov"} else ".jpg"
-                has_thumb = (PHOTO_DIR / f"thumb_{stem}{thumb_ext}").exists()
-                photos.append({"name": name, "hasThumb": has_thumb})
+            photos = [{"name": name, "hasThumb": thumb_path(name).exists()}
+                      for name in list_photos()]
             self.send_json(photos)
 
         elif path == "/api/missing-thumbs":
-            missing = [f.name for f in sorted(PHOTO_DIR.iterdir())
-                       if f.is_file() and not is_thumb(f.name)
-                       and f.suffix.lower() in MEDIA_EXT
-                       and not (PHOTO_DIR / thumb_name(f.name)).exists()
-                       and not (PHOTO_DIR / thumb_name(f.stem + ".jpg")).exists()]
+            missing = [name for name in list_photos() if not thumb_path(name).exists()]
             self.send_json(missing)
+
+        elif path.startswith("/thumbs/"):
+            filename = urllib.parse.unquote(path[len("/thumbs/"):])
+            filepath = THUMB_DIR / filename
+            if not filepath.exists():
+                self.send_response(404); self.end_headers(); return
+            ext = filepath.suffix.lower()
+            mime = "video/mp4" if ext == ".mp4" else "image/jpeg"
+            data = filepath.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", mime)
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
 
         elif path.startswith("/photos/"):
             filename = urllib.parse.unquote(path[len("/photos/"):])
@@ -430,14 +433,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         if path.startswith("/api/photos/"):
             filename = urllib.parse.unquote(path[len("/api/photos/"):])
-            for name in [filename, thumb_name(filename)]:
-                f = PHOTO_DIR / name
-                if f.exists():
-                    f.unlink()
-                # also try .jpg variant (in case ext changed during processing)
-                f_jpg = f.with_suffix(".jpg")
-                if f_jpg.exists() and f_jpg.name != f.name:
-                    f_jpg.unlink()
+            f = PHOTO_DIR / filename
+            if f.exists(): f.unlink()
+            t = thumb_path(filename)
+            if t.exists(): t.unlink()
             self.send_json({"ok": True})
         else:
             self.send_response(404); self.end_headers()
@@ -455,13 +454,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 stem = src.stem
                 if ext in {".mp4", ".mov"}:
                     dest_full  = PHOTO_DIR / (stem + ".mp4")
-                    dest_thumb = PHOTO_DIR / ("thumb_" + stem + ".mp4")
+                    dest_thumb = THUMB_DIR  / (stem + ".mp4")
                     process_video(src, dest_full, dest_thumb)
                 else:
                     dest_full  = PHOTO_DIR / (stem + ".jpg")
-                    dest_thumb = PHOTO_DIR / ("thumb_" + stem + ".jpg")
+                    dest_thumb = THUMB_DIR  / (stem + ".jpg")
                     process_image(src, dest_full, dest_thumb)
-                # Remove original if a differently-named output was produced
                 if src != dest_full and src.exists():
                     src.unlink()
                 self.send_json({"ok": True})
@@ -506,14 +504,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
         stem = Path(original_name).stem
         try:
             if ext in {".mp4", ".mov"}:
-                out_name  = stem + ".mp4"
+                out_name   = stem + ".mp4"
                 dest_full  = PHOTO_DIR / out_name
-                dest_thumb = PHOTO_DIR / ("thumb_" + out_name)
+                dest_thumb = THUMB_DIR  / out_name
                 final_name = process_video(tmp, dest_full, dest_thumb)
             else:
                 out_name   = stem + ".jpg"
                 dest_full  = PHOTO_DIR / out_name
-                dest_thumb = PHOTO_DIR / ("thumb_" + out_name)
+                dest_thumb = THUMB_DIR  / out_name
                 final_name = process_image(tmp, dest_full, dest_thumb)
 
             self.send_json({"ok": True, "name": final_name})
@@ -539,6 +537,7 @@ def main():
         sys.exit(1)
 
     PHOTO_DIR.mkdir(parents=True, exist_ok=True)
+    THUMB_DIR.mkdir(parents=True, exist_ok=True)
 
     # Kill any previous instance on this port
     pids = subprocess.run(["lsof", "-ti", f"tcp:{PORT}"], capture_output=True, text=True).stdout.split()
