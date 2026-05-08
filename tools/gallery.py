@@ -181,9 +181,15 @@ HTML = r"""<!DOCTYPE html>
   <button id="btn-process" onclick="processExisting()" style="margin-left:auto;padding:6px 14px;font-size:13px;cursor:pointer;border:1px solid #ccc;border-radius:6px;background:#fff;">
     Generate missing thumbnails
   </button>
-  <button id="btn-commit" onclick="commitChanges()" style="padding:6px 14px;font-size:13px;cursor:pointer;border:1px solid #ccc;border-radius:6px;background:#fff;">
-    Commit
-  </button>
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+    <button id="btn-discard" onclick="discardChanges()" style="display:none;padding:6px 14px;font-size:13px;cursor:pointer;border:1px solid #f5c0c0;border-radius:6px;background:#fff5f5;color:#c0392b;">
+      Discard
+    </button>
+    <button id="btn-commit" onclick="commitChanges()" style="padding:6px 14px;font-size:13px;cursor:pointer;border:1px solid #ccc;border-radius:6px;background:#fff;display:flex;align-items:center;gap:8px;">
+      <span>Commit</span>
+      <span id="commit-badge" style="display:none;font-size:11px;background:#f0f0f0;border-radius:4px;padding:2px 7px;color:#444;font-weight:500;letter-spacing:.2px;"></span>
+    </button>
+  </div>
 </header>
 
 <div id="drop-zone">
@@ -214,6 +220,7 @@ async function load() {
   photos = await r.json();
   document.getElementById('count').textContent = photos.length + ' photos';
   render();
+  refreshPending();
 }
 
 function isVideo(name) { return /\.mp4$/i.test(name); }
@@ -360,18 +367,58 @@ async function processExisting() {
 
 load();
 
+async function refreshPending() {
+  const r = await fetch('/api/pending');
+  const d = await r.json();
+  const parts = [];
+  if (d.addedPhotos)   parts.push(`+${d.addedPhotos} photo${d.addedPhotos > 1 ? 's' : ''}`);
+  if (d.addedVideos)   parts.push(`+${d.addedVideos} video${d.addedVideos > 1 ? 's' : ''}`);
+  if (d.deletedPhotos) parts.push(`-${d.deletedPhotos} photo${d.deletedPhotos > 1 ? 's' : ''}`);
+  if (d.deletedVideos) parts.push(`-${d.deletedVideos} video${d.deletedVideos > 1 ? 's' : ''}`);
+  const badge = document.getElementById('commit-badge');
+  const discard = document.getElementById('btn-discard');
+  const commit = document.getElementById('btn-commit');
+  if (parts.length) {
+    badge.textContent = parts.join('  ');
+    badge.style.display = 'inline-block';
+    discard.style.display = 'inline-block';
+    commit.style.borderColor = '#2196F3';
+  } else {
+    badge.style.display = 'none';
+    discard.style.display = 'none';
+    commit.style.borderColor = '#ccc';
+  }
+}
+
 async function commitChanges() {
   const btn = document.getElementById('btn-commit');
+  const label = btn.querySelector('span');
   btn.disabled = true;
-  btn.textContent = 'Committing…';
+  label.textContent = 'Committing…';
   try {
     const r = await fetch('/api/commit', { method: 'POST' });
     const data = await r.json();
-    btn.textContent = data.ok ? '✓ Committed' : '✗ ' + (data.error || 'Error');
-    setTimeout(() => { btn.textContent = 'Commit'; btn.disabled = false; }, 3000);
+    label.textContent = data.ok ? '✓ Committed' : '✗ ' + (data.error || 'Error');
+    setTimeout(() => { label.textContent = 'Commit'; btn.disabled = false; refreshPending(); }, 2000);
   } catch (e) {
-    btn.textContent = '✗ Error';
-    setTimeout(() => { btn.textContent = 'Commit'; btn.disabled = false; }, 3000);
+    label.textContent = '✗ Error';
+    setTimeout(() => { label.textContent = 'Commit'; btn.disabled = false; }, 2000);
+  }
+}
+
+async function discardChanges() {
+  const btn = document.getElementById('btn-discard');
+  btn.disabled = true;
+  btn.textContent = 'Discarding…';
+  try {
+    await fetch('/api/discard', { method: 'POST' });
+    btn.textContent = 'Discard';
+    btn.disabled = false;
+    load();
+    refreshPending();
+  } catch (e) {
+    btn.textContent = 'Discard';
+    btn.disabled = false;
   }
 }
 </script>
@@ -403,6 +450,26 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
+
+        elif path == "/api/pending":
+            diff = subprocess.run(
+                ["git", "status", "--porcelain", "images/photographs/"],
+                cwd=str(REPO_ROOT), capture_output=True, text=True).stdout
+            added_photos = added_videos = deleted_photos = deleted_videos = 0
+            for line in diff.splitlines():
+                if len(line) < 4: continue
+                status = line[:2].strip()
+                fpath  = line[3:].strip()
+                if "/thumbs/" in fpath: continue
+                is_vid = fpath.lower().endswith(".mp4")
+                if status in ("A", "??"):
+                    if is_vid: added_videos += 1
+                    else: added_photos += 1
+                elif status == "D":
+                    if is_vid: deleted_videos += 1
+                    else: deleted_photos += 1
+            self.send_json({"addedPhotos": added_photos, "addedVideos": added_videos,
+                            "deletedPhotos": deleted_photos, "deletedVideos": deleted_videos})
 
         elif path == "/api/photos":
             photos = [{"name": name, "hasThumb": thumb_path(name).exists()}
@@ -457,6 +524,21 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(404); self.end_headers()
 
     def do_POST(self):
+        if self.path == "/api/discard":
+            try:
+                # Remove untracked new files
+                subprocess.run(
+                    ["git", "clean", "-fd", "images/photographs/"],
+                    cwd=str(REPO_ROOT), check=True, capture_output=True)
+                # Restore deleted/modified tracked files
+                subprocess.run(
+                    ["git", "checkout", "--", "images/photographs/"],
+                    cwd=str(REPO_ROOT), capture_output=True)
+                self.send_json({"ok": True})
+            except Exception as e:
+                self.send_json({"ok": False, "error": str(e)})
+            return
+
         if self.path == "/api/commit":
             try:
                 date = "Thu May 8 08:45:00 2026 -0700"
