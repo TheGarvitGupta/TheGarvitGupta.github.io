@@ -1,0 +1,481 @@
+#!/usr/bin/env python3
+"""
+Gallery manager — run with: python3 tools/gallery.py
+Opens a browser UI to add/delete photos and videos.
+Generates thumb_ (low-res) and full-res versions automatically.
+
+Requirements: pip install Pillow  +  brew install ffmpeg
+"""
+
+import http.server
+import json
+import os
+import shutil
+import subprocess
+import sys
+import threading
+import urllib.parse
+import webbrowser
+from pathlib import Path
+
+# ── Paths ────────────────────────────────────────────────────────────────────
+REPO_ROOT   = Path(__file__).parent.parent
+PHOTO_DIR   = REPO_ROOT / "images" / "photographs"
+PORT        = 8765
+
+# ── Processing settings ──────────────────────────────────────────────────────
+IMG_THUMB_W  = 800
+IMG_FULL_W   = 2560
+IMG_THUMB_Q  = 72
+IMG_FULL_Q   = 88
+
+VID_THUMB_W  = 640
+VID_FULL_W   = 1280
+VID_THUMB_CRF = 32
+VID_FULL_CRF  = 24
+
+MEDIA_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".mov"}
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+def is_thumb(name: str) -> bool:
+    return name.startswith("thumb_")
+
+def full_name(name: str) -> str:
+    return name.removeprefix("thumb_")
+
+def thumb_name(name: str) -> str:
+    return f"thumb_{name}" if not is_thumb(name) else name
+
+def list_photos():
+    """Return sorted list of original (non-thumb) filenames."""
+    files = []
+    for f in sorted(PHOTO_DIR.iterdir()):
+        if f.is_file() and not is_thumb(f.name) and f.suffix.lower() in MEDIA_EXT:
+            files.append(f.name)
+    return files
+
+def process_image(src: Path, dest_full: Path, dest_thumb: Path):
+    from PIL import Image, ImageOps
+    img = Image.open(src)
+    img = ImageOps.exif_transpose(img)
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+
+    def save_resized(target: Path, max_w: int, quality: int):
+        w, h = img.size
+        if w > max_w:
+            ratio = max_w / w
+            img_r = img.resize((max_w, int(h * ratio)), Image.LANCZOS)
+        else:
+            img_r = img
+        target.parent.mkdir(parents=True, exist_ok=True)
+        img_r.save(str(target), "JPEG", quality=quality, optimize=True)
+
+    # Save as .jpg regardless of input format
+    dest_full  = dest_full.with_suffix(".jpg")
+    dest_thumb = dest_thumb.with_suffix(".jpg")
+    save_resized(dest_full,  IMG_FULL_W,  IMG_FULL_Q)
+    save_resized(dest_thumb, IMG_THUMB_W, IMG_THUMB_Q)
+    return dest_full.name  # return final filename (may differ from input if ext changed)
+
+def process_video(src: Path, dest_full: Path, dest_thumb: Path):
+    def run(args):
+        subprocess.run(args, check=True, capture_output=True)
+
+    dest_full  = dest_full.with_suffix(".mp4")
+    dest_thumb = dest_thumb.with_suffix(".mp4")
+
+    # Full res
+    run(["ffmpeg", "-y", "-i", str(src),
+         "-vf", f"scale={VID_FULL_W}:-2",
+         "-c:v", "libx264", "-crf", str(VID_FULL_CRF), "-preset", "fast",
+         "-an", "-movflags", "+faststart", str(dest_full)])
+
+    # Thumb
+    run(["ffmpeg", "-y", "-i", str(src),
+         "-vf", f"scale={VID_THUMB_W}:-2",
+         "-c:v", "libx264", "-crf", str(VID_THUMB_CRF), "-preset", "fast",
+         "-an", "-movflags", "+faststart", str(dest_thumb)])
+
+    return dest_full.name
+
+# ── HTTP handler ─────────────────────────────────────────────────────────────
+
+HTML = r"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gallery Manager</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; background: #f5f5f5; color: #111; }
+  header { padding: 20px 24px; background: #fff; border-bottom: 1px solid #e0e0e0;
+           display: flex; align-items: center; gap: 16px; }
+  header h1 { font-size: 18px; font-weight: 600; }
+  header span { font-size: 13px; color: #888; }
+
+  #drop-zone {
+    margin: 24px; border: 2px dashed #ccc; border-radius: 10px;
+    padding: 32px; text-align: center; cursor: pointer;
+    transition: background .15s, border-color .15s; background: #fff;
+  }
+  #drop-zone.dragover { background: #e8f0fe; border-color: #2196F3; }
+  #drop-zone p { color: #666; font-size: 15px; }
+  #drop-zone input { display: none; }
+
+  #progress { margin: 0 24px 16px; display: none; }
+  #progress-bar { height: 4px; background: #2196F3; border-radius: 2px;
+                  transition: width .2s; }
+  #progress-label { font-size: 12px; color: #666; margin-top: 4px; }
+
+  #grid {
+    margin: 0 24px 40px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  @media (max-width: 900px) {
+    #grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .tile {
+    position: relative;
+    aspect-ratio: 1;
+    background: #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .tile img, .tile video {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .tile .del {
+    position: absolute; top: 6px; right: 6px;
+    background: rgba(0,0,0,.55); color: #fff;
+    border: none; border-radius: 50%; width: 26px; height: 26px;
+    font-size: 14px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    opacity: 0; transition: opacity .15s;
+  }
+  .tile:hover .del { opacity: 1; }
+  .tile .label {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,.45); color: #fff;
+    font-size: 10px; padding: 3px 6px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    opacity: 0; transition: opacity .15s;
+  }
+  .tile:hover .label { opacity: 1; }
+
+  /* Lightbox */
+  #lb { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.9);
+        z-index: 9999; align-items: center; justify-content: center; }
+  #lb.open { display: flex; }
+  #lb img, #lb video { max-width: 92vw; max-height: 92vh; object-fit: contain; border-radius: 4px; }
+  #lb-close { position: absolute; top: 16px; right: 20px; color: #fff;
+               font-size: 28px; cursor: pointer; background: none; border: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Gallery Manager</h1>
+  <span id="count"></span>
+</header>
+
+<div id="drop-zone">
+  <p>Drop photos or videos here, or <strong>click to browse</strong></p>
+  <p style="font-size:12px;color:#aaa;margin-top:6px;">
+    Generates thumb + full-res versions automatically
+  </p>
+  <input type="file" id="file-input" multiple accept="image/*,video/mp4,video/mov,video/quicktime">
+</div>
+
+<div id="progress">
+  <div id="progress-bar" style="width:0%"></div>
+  <div id="progress-label"></div>
+</div>
+
+<div id="grid"></div>
+
+<div id="lb">
+  <button id="lb-close">✕</button>
+</div>
+
+<script>
+let photos = [];
+let lbIdx = 0;
+
+async function load() {
+  const r = await fetch('/api/photos');
+  photos = await r.json();
+  document.getElementById('count').textContent = photos.length + ' photos';
+  render();
+}
+
+function isVideo(name) { return /\.mp4$/i.test(name); }
+
+function render() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  photos.forEach((name, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+
+    if (isVideo(name)) {
+      const v = document.createElement('video');
+      v.autoplay = true; v.muted = true; v.loop = true; v.playsInline = true;
+      v.src = '/photos/thumb_' + name;
+      v.onerror = () => { v.src = '/photos/' + name; };
+      tile.appendChild(v);
+    } else {
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.src = '/photos/thumb_' + name;
+      img.onerror = () => { img.src = '/photos/' + name; };
+      tile.appendChild(img);
+    }
+
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = name;
+    tile.appendChild(label);
+
+    const del = document.createElement('button');
+    del.className = 'del';
+    del.textContent = '×';
+    del.title = 'Delete';
+    del.onclick = async e => {
+      e.stopPropagation();
+      await fetch('/api/photos/' + encodeURIComponent(name), { method: 'DELETE' });
+      load();
+    };
+    tile.appendChild(del);
+
+    tile.onclick = () => openLightbox(i);
+    grid.appendChild(tile);
+  });
+}
+
+// ── Lightbox ────────────────────────────────────────────────────────────────
+const lb = document.getElementById('lb');
+let lbEl = null;
+
+function openLightbox(i) {
+  lbIdx = i;
+  lb.classList.add('open');
+  showLb();
+}
+function showLb() {
+  if (lbEl) lbEl.remove();
+  const name = photos[lbIdx];
+  if (isVideo(name)) {
+    lbEl = document.createElement('video');
+    lbEl.src = '/photos/' + name;
+    lbEl.controls = true; lbEl.autoplay = true; lbEl.loop = true; lbEl.muted = true;
+  } else {
+    lbEl = document.createElement('img');
+    lbEl.src = '/photos/' + name;
+  }
+  lb.appendChild(lbEl);
+}
+document.getElementById('lb-close').onclick = () => { lb.classList.remove('open'); if(lbEl) lbEl.remove(); };
+document.addEventListener('keydown', e => {
+  if (!lb.classList.contains('open')) return;
+  if (e.key === 'Escape') document.getElementById('lb-close').click();
+});
+
+// ── Upload ───────────────────────────────────────────────────────────────────
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+async function handleFiles(files) {
+  const prog = document.getElementById('progress');
+  const bar  = document.getElementById('progress-bar');
+  const lbl  = document.getElementById('progress-label');
+  prog.style.display = 'block';
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    lbl.textContent = `Processing ${i + 1} / ${files.length}: ${file.name}`;
+    bar.style.width = ((i / files.length) * 100) + '%';
+
+    const fd = new FormData();
+    fd.append('file', file);
+    await fetch('/api/upload', { method: 'POST', body: fd });
+  }
+
+  bar.style.width = '100%';
+  lbl.textContent = 'Done!';
+  setTimeout(() => { prog.style.display = 'none'; bar.style.width = '0%'; }, 1500);
+  fileInput.value = '';
+  load();
+}
+
+load();
+</script>
+</body>
+</html>
+"""
+
+
+class Handler(http.server.BaseHTTPRequestHandler):
+
+    def log_message(self, fmt, *args):
+        pass  # silence default access log
+
+    def send_json(self, data, status=200):
+        body = json.dumps(data).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self):
+        path = urllib.parse.urlparse(self.path).path
+
+        if path == "/":
+            body = HTML.encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        elif path == "/api/photos":
+            self.send_json(list_photos())
+
+        elif path.startswith("/photos/"):
+            filename = urllib.parse.unquote(path[len("/photos/"):])
+            filepath = PHOTO_DIR / filename
+            if not filepath.exists():
+                self.send_response(404); self.end_headers(); return
+            ext = filepath.suffix.lower()
+            mime = "video/mp4" if ext == ".mp4" else "image/jpeg" if ext in (".jpg",".jpeg") else "image/png"
+            data = filepath.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", mime)
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        else:
+            self.send_response(404); self.end_headers()
+
+    def do_DELETE(self):
+        path = urllib.parse.urlparse(self.path).path
+        if path.startswith("/api/photos/"):
+            filename = urllib.parse.unquote(path[len("/api/photos/"):])
+            for name in [filename, thumb_name(filename)]:
+                f = PHOTO_DIR / name
+                if f.exists():
+                    f.unlink()
+                # also try .jpg variant (in case ext changed during processing)
+                f_jpg = f.with_suffix(".jpg")
+                if f_jpg.exists() and f_jpg.name != f.name:
+                    f_jpg.unlink()
+            self.send_json({"ok": True})
+        else:
+            self.send_response(404); self.end_headers()
+
+    def do_POST(self):
+        if self.path != "/api/upload":
+            self.send_response(404); self.end_headers(); return
+
+        content_type = self.headers.get("Content-Type", "")
+        length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(length)
+
+        # Parse multipart manually
+        import email.parser, email.policy
+        boundary = None
+        for part in content_type.split(";"):
+            p = part.strip()
+            if p.startswith("boundary="):
+                boundary = p[len("boundary="):].strip('"')
+        if not boundary:
+            self.send_json({"error": "no boundary"}, 400); return
+
+        # Use cgi module for multipart parsing
+        import io, cgi
+        environ = {"REQUEST_METHOD": "POST", "CONTENT_TYPE": content_type,
+                   "CONTENT_LENGTH": str(length)}
+        fs = cgi.FieldStorage(fp=io.BytesIO(body), environ=environ)
+        file_item = fs["file"]
+        original_name = Path(file_item.filename).name
+        ext = Path(original_name).suffix.lower()
+
+        if ext not in MEDIA_EXT:
+            self.send_json({"error": "unsupported type"}, 400); return
+
+        # Save temp file
+        tmp = PHOTO_DIR / f"_tmp_{original_name}"
+        tmp.write_bytes(file_item.file.read())
+
+        # Determine output name (always .jpg for images, .mp4 for video)
+        stem = Path(original_name).stem
+        try:
+            if ext in {".mp4", ".mov"}:
+                out_name  = stem + ".mp4"
+                dest_full  = PHOTO_DIR / out_name
+                dest_thumb = PHOTO_DIR / ("thumb_" + out_name)
+                final_name = process_video(tmp, dest_full, dest_thumb)
+            else:
+                out_name   = stem + ".jpg"
+                dest_full  = PHOTO_DIR / out_name
+                dest_thumb = PHOTO_DIR / ("thumb_" + out_name)
+                final_name = process_image(tmp, dest_full, dest_thumb)
+
+            self.send_json({"ok": True, "name": final_name})
+        except Exception as e:
+            self.send_json({"error": str(e)}, 500)
+        finally:
+            if tmp.exists():
+                tmp.unlink()
+
+
+# ── Entry point ───────────────────────────────────────────────────────────────
+
+def main():
+    # Check dependencies
+    try:
+        import PIL
+    except ImportError:
+        print("Missing Pillow. Run:  pip install Pillow")
+        sys.exit(1)
+
+    if not shutil.which("ffmpeg"):
+        print("Missing ffmpeg. Run:  brew install ffmpeg")
+        sys.exit(1)
+
+    PHOTO_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Kill any previous instance on this port
+    pids = subprocess.run(["lsof", "-ti", f"tcp:{PORT}"], capture_output=True, text=True).stdout.split()
+    if pids:
+        subprocess.run(["kill"] + pids)
+        import time; time.sleep(0.5)
+
+    server = http.server.HTTPServer(("127.0.0.1", PORT), Handler)
+    url = f"http://localhost:{PORT}"
+    print(f"Gallery manager running at {url}")
+    print("Press Ctrl+C to stop.\n")
+
+    threading.Timer(0.5, lambda: webbrowser.open(url)).start()
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nStopped.")
+
+
+if __name__ == "__main__":
+    main()

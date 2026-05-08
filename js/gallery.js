@@ -90,9 +90,10 @@
 		containers.forEach((container, i) => {
 			const idx = (start + i) % allPhotos.length;
 			const name = allPhotos[idx];
-			const url = `images/photographs/${name}`;
+			const thumbUrl = `images/photographs/thumb_${name}`;
+			const fullUrl  = `images/photographs/${name}`;
 			const link = container.querySelector("a.gallery-link");
-			if (link) link.href = url;
+			if (link) link.href = fullUrl;
 
 			const isVideo = VIDEO_RE.test(name);
 			let existing = container.querySelector("video, img");
@@ -108,7 +109,7 @@
 					existing?.replaceWith(vid);
 					existing = vid;
 				}
-				existing.src = url;
+				existing.src = thumbUrl;
 				existing.load();
 			} else {
 				if (!existing || existing.tagName !== "IMG") {
@@ -117,7 +118,7 @@
 					existing?.replaceWith(img);
 					existing = img;
 				}
-				existing.src = url;
+				existing.src = thumbUrl;
 			}
 		});
 
@@ -172,7 +173,7 @@
 	fetch(REPO_API)
 		.then(r => r.ok ? r.json() : Promise.reject(`API ${r.status}`))
 		.then(items => items
-			.filter(it => it.type === "file" && IMAGE_RE.test(it.name))
+			.filter(it => it.type === "file" && IMAGE_RE.test(it.name) && !it.name.startsWith("thumb_"))
 			.map(it => it.name))
 		.then(photos => onReady(() => init(photos)))
 		.catch(err => {
