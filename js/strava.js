@@ -14,12 +14,21 @@
 	var pending = null;
 	var revealed = false;
 
-	function todayLocalDate() {
-		var d = new Date();
+	function localDateString(d) {
 		var y = d.getFullYear();
 		var m = String(d.getMonth() + 1).padStart(2, "0");
 		var day = String(d.getDate()).padStart(2, "0");
 		return y + "-" + m + "-" + day;
+	}
+
+	function todayLocalDate() {
+		return localDateString(new Date());
+	}
+
+	function yesterdayLocalDate() {
+		var d = new Date();
+		d.setDate(d.getDate() - 1);
+		return localDateString(d);
 	}
 
 	function isMetric() {
@@ -43,12 +52,15 @@
 			: (data.lifetimeMeters || 0) / M_PER_MILE;
 
 		var $stats = $(".run-stats");
-		var ranToday = data.latestRunDate && data.latestRunDate === todayLocalDate();
+		var latestDate  = data.latestRunDate || "";
+		var ranToday     = latestDate === todayLocalDate();
+		var ranYesterday = latestDate === yesterdayLocalDate();
 
-		if (ranToday) {
-			var todayDist = fmtDist(data.latestRunMiles || 0, true);
-			var ytdDist   = fmtDist(miles, true);
-			$stats.text("Ran " + todayDist + " today, " + ytdDist + " this year");
+		if (ranToday || ranYesterday) {
+			var recentDist = fmtDist(data.latestRunMiles || 0, true);
+			var ytdDist    = fmtDist(miles, true);
+			var when       = ranToday ? "today" : "yesterday";
+			$stats.text("Ran " + recentDist + " " + when + ", " + ytdDist + " this year");
 			$stats.attr("title", fmtDist(lifetimeMiles, false) + " lifetime");
 		} else {
 			$stats.text("Ran " + fmtDist(miles, true) + " this year, " + fmtDist(lifetimeMiles, false) + " lifetime");
