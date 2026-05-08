@@ -87,6 +87,9 @@
 			return aRow !== bRow ? aRow - bRow : aCol - bCol;
 		});
 
+		const upgrades = [];
+		const thumbReady = [];
+
 		containers.forEach((container, i) => {
 			const idx = (start + i) % allPhotos.length;
 			const name = allPhotos[idx];
@@ -113,25 +116,29 @@
 				}
 				existing.src = thumbUrl;
 				existing.load();
-				existing.play().catch(() => {});
-
 				const thumb = existing;
-				const full = document.createElement("video");
-				full.autoplay = false;
-				full.muted = true;
-				full.loop = true;
-				full.playsInline = true;
-				full.setAttribute("playsinline", "");
-				full.style.opacity = "0";
-				full.style.transition = "opacity 0.4s ease";
-				full.style.zIndex = "1";
-				full.src = fullUrl;
-				thumb.after(full);
-				full.addEventListener("canplaythrough", () => {
-					full.play().catch(() => {});
-					full.style.opacity = "1";
-					full.addEventListener("transitionend", () => thumb.remove(), { once: true });
-				}, { once: true });
+				thumbReady.push(new Promise(res => {
+					thumb.addEventListener("canplay", res, { once: true });
+					thumb.play().catch(() => {});
+				}));
+				upgrades.push(() => {
+					const full = document.createElement("video");
+					full.autoplay = false;
+					full.muted = true;
+					full.loop = true;
+					full.playsInline = true;
+					full.setAttribute("playsinline", "");
+					full.style.opacity = "0";
+					full.style.transition = "opacity 0.4s ease";
+					full.style.zIndex = "1";
+					full.src = fullUrl;
+					thumb.after(full);
+					full.addEventListener("canplaythrough", () => {
+						full.play().catch(() => {});
+						full.style.opacity = "1";
+						full.addEventListener("transitionend", () => thumb.remove(), { once: true });
+					}, { once: true });
+				});
 			} else {
 				if (!existing || existing.tagName !== "IMG") {
 					const img = document.createElement("img");
@@ -140,21 +147,28 @@
 					existing = img;
 				}
 				existing.src = thumbUrl;
-
 				const thumb = existing;
-				const full = new Image();
-				full.alt = "";
-				full.style.opacity = "0";
-				full.style.transition = "opacity 0.4s ease";
-				full.style.zIndex = "1";
-				thumb.after(full);
-				full.onload = () => {
-					full.style.opacity = "1";
-					full.addEventListener("transitionend", () => thumb.remove(), { once: true });
-				};
-				full.src = fullUrl;
+				thumbReady.push(new Promise(res => {
+					if (thumb.complete) res();
+					else thumb.addEventListener("load", res, { once: true });
+				}));
+				upgrades.push(() => {
+					const full = new Image();
+					full.alt = "";
+					full.style.opacity = "0";
+					full.style.transition = "opacity 0.4s ease";
+					full.style.zIndex = "1";
+					thumb.after(full);
+					full.onload = () => {
+						full.style.opacity = "1";
+						full.addEventListener("transitionend", () => thumb.remove(), { once: true });
+					};
+					full.src = fullUrl;
+				});
 			}
 		});
+
+		Promise.all(thumbReady).then(() => upgrades.forEach(fn => fn()));
 
 		rebuildLightbox();
 	};
