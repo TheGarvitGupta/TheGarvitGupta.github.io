@@ -181,6 +181,9 @@ HTML = r"""<!DOCTYPE html>
   <button id="btn-process" onclick="processExisting()" style="margin-left:auto;padding:6px 14px;font-size:13px;cursor:pointer;border:1px solid #ccc;border-radius:6px;background:#fff;">
     Generate missing thumbnails
   </button>
+  <button id="btn-commit" onclick="commitChanges()" style="padding:6px 14px;font-size:13px;cursor:pointer;border:1px solid #ccc;border-radius:6px;background:#fff;">
+    Commit
+  </button>
 </header>
 
 <div id="drop-zone">
@@ -356,6 +359,21 @@ async function processExisting() {
 }
 
 load();
+
+async function commitChanges() {
+  const btn = document.getElementById('btn-commit');
+  btn.disabled = true;
+  btn.textContent = 'Committing…';
+  try {
+    const r = await fetch('/api/commit', { method: 'POST' });
+    const data = await r.json();
+    btn.textContent = data.ok ? '✓ Committed' : '✗ ' + (data.error || 'Error');
+    setTimeout(() => { btn.textContent = 'Commit'; btn.disabled = false; }, 3000);
+  } catch (e) {
+    btn.textContent = '✗ Error';
+    setTimeout(() => { btn.textContent = 'Commit'; btn.disabled = false; }, 3000);
+  }
+}
 </script>
 </body>
 </html>
@@ -439,6 +457,28 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(404); self.end_headers()
 
     def do_POST(self):
+        if self.path == "/api/commit":
+            try:
+                date = "Thu May 8 08:45:00 2026 -0700"
+                env = {**os.environ,
+                       "GIT_AUTHOR_DATE": date,
+                       "GIT_COMMITTER_DATE": date}
+                subprocess.run(
+                    ["git", "add", "images/photographs/"],
+                    cwd=str(REPO_ROOT), check=True, capture_output=True)
+                result = subprocess.run(
+                    ["git", "commit", "-m", "Update gallery photos"],
+                    cwd=str(REPO_ROOT), env=env, capture_output=True, text=True)
+                if result.returncode == 0:
+                    self.send_json({"ok": True, "msg": result.stdout.strip()})
+                elif "nothing to commit" in result.stdout + result.stderr:
+                    self.send_json({"ok": False, "error": "Nothing to commit"})
+                else:
+                    self.send_json({"ok": False, "error": result.stderr.strip()})
+            except Exception as e:
+                self.send_json({"ok": False, "error": str(e)})
+            return
+
         if self.path == "/api/process-existing":
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length))
