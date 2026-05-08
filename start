@@ -18,5 +18,37 @@ open "http://localhost:8080"
 # Start gallery manager (opens its own browser tab)
 python3 "$ROOT/tools/gallery.py"
 
-# Clean up site server when gallery exits
+# Clean up site server and close browser tabs when gallery exits
 kill $SITE_PID 2>/dev/null
+osascript -e '
+tell application "Safari"
+  set tabsToClose to {}
+  repeat with w in windows
+    repeat with t in tabs of w
+      set u to URL of t
+      if u starts with "http://localhost:8080" or u starts with "http://localhost:8765" then
+        set end of tabsToClose to t
+      end if
+    end repeat
+  end repeat
+  repeat with t in tabsToClose
+    close t
+  end repeat
+end tell
+' 2>/dev/null
+osascript -e '
+tell application "Google Chrome"
+  repeat with w in windows
+    set tabsToClose to {}
+    repeat with t in tabs of w
+      set u to URL of t
+      if u starts with "http://localhost:8080" or u starts with "http://localhost:8765" then
+        set end of tabsToClose to t
+      end if
+    end repeat
+    repeat with t in tabsToClose
+      close t
+    end repeat
+  end repeat
+end tell
+' 2>/dev/null
