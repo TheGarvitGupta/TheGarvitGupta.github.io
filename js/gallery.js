@@ -7,13 +7,13 @@
 	const IMAGE_RE = /\.(jpe?g|png|webp|gif|mp4)$/i;
 	const VIDEO_RE = /\.mp4$/i;
 	const FALLBACK = [
-		"photograph-1.jpeg", "photograph-2.jpeg", "photograph-3.jpeg",
-		"photograph-4.jpeg", "photograph-5.jpeg", "photograph-6.jpeg",
-		"photograph-7.jpeg", "photograph-8.jpeg", "photograph-9.jpeg",
-		"photograph-10.jpeg", "photograph-11.jpeg", "photograph-12.jpeg",
-		"photograph-13.jpeg", "photograph-14.jpeg", "photograph-15.jpeg",
-		"photograph-16.jpeg", "photograph-17.jpeg", "photograph-18.jpeg",
-		"photograph-19.jpeg", "photograph-20.jpeg", "photograph-21.jpeg"
+		"photograph-1.jpg", "photograph-2.jpg", "photograph-3.jpg",
+		"photograph-4.jpg", "photograph-5.jpg", "photograph-6.jpg",
+		"photograph-7.jpg", "photograph-8.jpg", "photograph-9.jpg",
+		"photograph-10.jpg", "photograph-11.jpg", "photograph-12.jpg",
+		"photograph-13.jpg", "photograph-14.jpg", "photograph-15.jpg",
+		"photograph-16.jpg", "photograph-17.jpg", "photograph-18.jpg",
+		"photograph-19.jpg", "photograph-20.jpg", "photograph-21.jpg"
 	];
 	const PAGE_SIZE = 12;
 

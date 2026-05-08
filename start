@@ -1,0 +1,22 @@
+#!/bin/sh
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+# Kill anything already on these ports
+for port in 8765 8080; do
+  pids=$(lsof -ti tcp:$port 2>/dev/null)
+  [ -n "$pids" ] && kill $pids && sleep 0.3
+done
+
+# Start site preview server
+python3 -m http.server 8080 --directory "$ROOT" --bind 127.0.0.1 &
+SITE_PID=$!
+
+# Open site in browser
+sleep 0.4
+open "http://localhost:8080"
+
+# Start gallery manager (opens its own browser tab)
+python3 "$ROOT/tools/gallery.py"
+
+# Clean up site server when gallery exits
+kill $SITE_PID 2>/dev/null

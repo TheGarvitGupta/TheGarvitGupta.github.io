@@ -142,7 +142,7 @@ HTML = r"""<!DOCTYPE html>
 
   .tile {
     position: relative;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 1;
     background: #ddd;
     border-radius: 4px;
     overflow: hidden;
@@ -183,6 +183,9 @@ HTML = r"""<!DOCTYPE html>
 <header>
   <h1>Gallery Manager</h1>
   <span id="count"></span>
+  <button id="btn-process" onclick="processExisting()" style="margin-left:auto;padding:6px 14px;font-size:13px;cursor:pointer;border:1px solid #ccc;border-radius:6px;background:#fff;">
+    Generate missing thumbnails
+  </button>
 </header>
 
 <div id="drop-zone">
@@ -220,22 +223,29 @@ function isVideo(name) { return /\.mp4$/i.test(name); }
 function render() {
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
-  photos.forEach((name, i) => {
+  photos.forEach((photo, i) => {
+    const { name, hasThumb } = photo;
     const tile = document.createElement('div');
     tile.className = 'tile';
 
     if (isVideo(name)) {
       const v = document.createElement('video');
       v.autoplay = true; v.muted = true; v.loop = true; v.playsInline = true;
-      v.src = '/photos/thumb_' + name;
-      v.onerror = () => { v.src = '/photos/' + name; };
+      v.src = '/photos/' + name;
       tile.appendChild(v);
     } else {
       const img = document.createElement('img');
       img.loading = 'lazy';
-      img.src = '/photos/thumb_' + name;
-      img.onerror = () => { img.src = '/photos/' + name; };
+      img.src = '/photos/' + name;
       tile.appendChild(img);
+    }
+
+    if (!hasThumb) {
+      const badge = document.createElement('div');
+      badge.title = 'No thumbnail — click "Generate missing thumbnails"';
+      badge.style.cssText = 'position:absolute;top:6px;left:6px;background:#ff9800;color:#fff;font-size:9px;padding:2px 5px;border-radius:3px;font-weight:600;letter-spacing:.3px;';
+      badge.textContent = 'NO THUMB';
+      tile.appendChild(badge);
     }
 
     const label = document.createElement('div');
@@ -270,7 +280,7 @@ function openLightbox(i) {
 }
 function showLb() {
   if (lbEl) lbEl.remove();
-  const name = photos[lbIdx];
+  const { name } = photos[lbIdx];
   if (isVideo(name)) {
     lbEl = document.createElement('video');
     lbEl.src = '/photos/' + name;
@@ -320,6 +330,36 @@ async function handleFiles(files) {
   load();
 }
 
+async function processExisting() {
+  const r = await fetch('/api/missing-thumbs');
+  const missing = await r.json();
+  if (!missing.length) { alert('All thumbnails are up to date.'); return; }
+
+  const prog = document.getElementById('progress');
+  const bar  = document.getElementById('progress-bar');
+  const lbl  = document.getElementById('progress-label');
+  const btn  = document.getElementById('btn-process');
+  prog.style.display = 'block';
+  btn.disabled = true;
+
+  for (let i = 0; i < missing.length; i++) {
+    const name = missing[i];
+    lbl.textContent = `Processing ${i + 1} / ${missing.length}: ${name}`;
+    bar.style.width = ((i / missing.length) * 100) + '%';
+    await fetch('/api/process-existing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: name })
+    });
+  }
+
+  bar.style.width = '100%';
+  lbl.textContent = `Done — processed ${missing.length} photo${missing.length > 1 ? 's' : ''}.`;
+  btn.disabled = false;
+  setTimeout(() => { prog.style.display = 'none'; bar.style.width = '0%'; }, 2000);
+  load();
+}
+
 load();
 </script>
 </body>
@@ -352,7 +392,22 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(body)
 
         elif path == "/api/photos":
-            self.send_json(list_photos())
+            photos = []
+            for name in list_photos():
+                stem = Path(name).stem
+                ext  = Path(name).suffix.lower()
+                thumb_ext = ".mp4" if ext in {".mp4", ".mov"} else ".jpg"
+                has_thumb = (PHOTO_DIR / f"thumb_{stem}{thumb_ext}").exists()
+                photos.append({"name": name, "hasThumb": has_thumb})
+            self.send_json(photos)
+
+        elif path == "/api/missing-thumbs":
+            missing = [f.name for f in sorted(PHOTO_DIR.iterdir())
+                       if f.is_file() and not is_thumb(f.name)
+                       and f.suffix.lower() in MEDIA_EXT
+                       and not (PHOTO_DIR / thumb_name(f.name)).exists()
+                       and not (PHOTO_DIR / thumb_name(f.stem + ".jpg")).exists()]
+            self.send_json(missing)
 
         elif path.startswith("/photos/"):
             filename = urllib.parse.unquote(path[len("/photos/"):])
@@ -388,6 +443,32 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(404); self.end_headers()
 
     def do_POST(self):
+        if self.path == "/api/process-existing":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length))
+            filename = body["filename"]
+            src = PHOTO_DIR / filename
+            if not src.exists():
+                self.send_json({"error": "not found"}, 404); return
+            ext = src.suffix.lower()
+            try:
+                stem = src.stem
+                if ext in {".mp4", ".mov"}:
+                    dest_full  = PHOTO_DIR / (stem + ".mp4")
+                    dest_thumb = PHOTO_DIR / ("thumb_" + stem + ".mp4")
+                    process_video(src, dest_full, dest_thumb)
+                else:
+                    dest_full  = PHOTO_DIR / (stem + ".jpg")
+                    dest_thumb = PHOTO_DIR / ("thumb_" + stem + ".jpg")
+                    process_image(src, dest_full, dest_thumb)
+                # Remove original if a differently-named output was produced
+                if src != dest_full and src.exists():
+                    src.unlink()
+                self.send_json({"ok": True})
+            except Exception as e:
+                self.send_json({"error": str(e)}, 500)
+            return
+
         if self.path != "/api/upload":
             self.send_response(404); self.end_headers(); return
 

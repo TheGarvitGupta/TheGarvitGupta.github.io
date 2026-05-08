@@ -921,7 +921,7 @@ input {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     grid-template-rows: repeat(3, 1fr);
-    aspect-ratio: 20 / 9;
+    aspect-ratio: 5 / 3;
     grid-auto-flow: dense;
     gap: 2px;
     border-radius: 12px;
@@ -953,7 +953,7 @@ input {
     .gallery {
         grid-template-columns: repeat(3, 1fr);
         grid-template-rows: repeat(5, 1fr);
-        aspect-ratio: 4 / 5;
+        aspect-ratio: 3 / 5;
     }
 }
 
