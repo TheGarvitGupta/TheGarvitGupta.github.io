@@ -35,12 +35,13 @@
 		return window.GG && window.GG.units === "metric";
 	}
 
-	function fmtDist(miles, decimals) {
-		if (isMetric()) {
-			var km = miles * KM_PER_MILE;
-			return (decimals ? km.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : Math.round(km).toLocaleString("en-US")) + " km";
-		}
-		return (decimals ? miles.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : Math.round(miles).toLocaleString("en-US")) + " miles";
+	function fmtDist(miles, decimals, omitUnit) {
+		var unit = isMetric() ? " km" : " miles";
+		var val = isMetric() ? miles * KM_PER_MILE : miles;
+		var str = decimals
+			? val.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+			: Math.round(val).toLocaleString("en-US");
+		return str + (omitUnit ? "" : unit);
 	}
 
 	function renderStats(data) {
@@ -58,12 +59,12 @@
 
 		if (ranToday || ranYesterday) {
 			var recentDist = fmtDist(data.latestRunMiles || 0, true);
-			var ytdDist    = fmtDist(miles, true);
+			var ytdDist    = fmtDist(miles, true, true);
 			var when       = ranToday ? "today" : "yesterday";
 			$stats.text("Ran " + recentDist + " " + when + ", " + ytdDist + " this year");
 			$stats.attr("title", fmtDist(lifetimeMiles, false) + " lifetime");
 		} else {
-			$stats.text("Ran " + fmtDist(miles, true) + " this year, " + fmtDist(lifetimeMiles, false) + " lifetime");
+			$stats.text("Ran " + fmtDist(miles, true) + " this year, " + fmtDist(lifetimeMiles, false, true) + " lifetime");
 			$stats.removeAttr("title");
 		}
 	}
