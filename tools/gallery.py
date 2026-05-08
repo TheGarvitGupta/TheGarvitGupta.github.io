@@ -466,11 +466,34 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 subprocess.run(
                     ["git", "add", "images/photographs/"],
                     cwd=str(REPO_ROOT), check=True, capture_output=True)
+                # Build commit message from staged diff
+                diff = subprocess.run(
+                    ["git", "diff", "--cached", "--name-status"],
+                    cwd=str(REPO_ROOT), capture_output=True, text=True).stdout
+                added_photos = added_videos = deleted_photos = deleted_videos = 0
+                for line in diff.splitlines():
+                    parts = line.split("\t")
+                    if len(parts) < 2: continue
+                    status, path = parts[0], parts[-1]
+                    if "/thumbs/" in path: continue
+                    is_vid = path.lower().endswith(".mp4")
+                    if status == "A":
+                        if is_vid: added_videos += 1
+                        else: added_photos += 1
+                    elif status == "D":
+                        if is_vid: deleted_videos += 1
+                        else: deleted_photos += 1
+                parts = []
+                if added_photos:  parts.append(f"Added {added_photos} photo{'s' if added_photos > 1 else ''}")
+                if added_videos:  parts.append(f"Added {added_videos} video{'s' if added_videos > 1 else ''}")
+                if deleted_photos: parts.append(f"Deleted {deleted_photos} photo{'s' if deleted_photos > 1 else ''}")
+                if deleted_videos: parts.append(f"Deleted {deleted_videos} video{'s' if deleted_videos > 1 else ''}")
+                msg = ", ".join(parts) if parts else "Update gallery photos"
                 result = subprocess.run(
-                    ["git", "commit", "-m", "Update gallery photos"],
+                    ["git", "commit", "-m", msg],
                     cwd=str(REPO_ROOT), env=env, capture_output=True, text=True)
                 if result.returncode == 0:
-                    self.send_json({"ok": True, "msg": result.stdout.strip()})
+                    self.send_json({"ok": True, "msg": msg})
                 elif "nothing to commit" in result.stdout + result.stderr:
                     self.send_json({"ok": False, "error": "Nothing to commit"})
                 else:
