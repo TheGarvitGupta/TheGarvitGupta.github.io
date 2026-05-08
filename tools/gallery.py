@@ -397,16 +397,50 @@ async function refreshPending() {
   }
 }
 
+let pendingPush = false;
+
 async function commitChanges() {
   const btn = document.getElementById('btn-commit');
   const label = btn.querySelector('span');
+
+  if (pendingPush) {
+    btn.disabled = true;
+    label.textContent = 'Pushing…';
+    try {
+      const r = await fetch('/api/push', { method: 'POST' });
+      const data = await r.json();
+      if (data.ok) {
+        label.textContent = '✓ Pushed';
+        pendingPush = false;
+        btn.style.borderColor = '#ccc';
+      } else {
+        label.textContent = '✗ ' + (data.error || 'Error');
+      }
+      setTimeout(() => { label.textContent = pendingPush ? 'Push' : 'Commit'; btn.disabled = false; refreshPending(); }, 2000);
+    } catch (e) {
+      label.textContent = '✗ Error';
+      setTimeout(() => { label.textContent = 'Push'; btn.disabled = false; }, 2000);
+    }
+    return;
+  }
+
   btn.disabled = true;
   label.textContent = 'Committing…';
   try {
     const r = await fetch('/api/commit', { method: 'POST' });
     const data = await r.json();
-    label.textContent = data.ok ? '✓ Committed' : '✗ ' + (data.error || 'Error');
-    setTimeout(() => { label.textContent = 'Commit'; btn.disabled = false; refreshPending(); }, 2000);
+    if (data.ok) {
+      pendingPush = true;
+      label.textContent = 'Push';
+      btn.style.borderColor = '#2196F3';
+      btn.style.opacity = '1';
+      btn.disabled = false;
+      document.getElementById('btn-discard').style.display = 'none';
+      document.getElementById('commit-badge').style.display = 'none';
+    } else {
+      label.textContent = '✗ ' + (data.error || 'Error');
+      setTimeout(() => { label.textContent = 'Commit'; btn.disabled = false; refreshPending(); }, 2000);
+    }
   } catch (e) {
     label.textContent = '✗ Error';
     setTimeout(() => { label.textContent = 'Commit'; btn.disabled = false; }, 2000);
@@ -531,6 +565,19 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(404); self.end_headers()
 
     def do_POST(self):
+        if self.path == "/api/push":
+            try:
+                result = subprocess.run(
+                    ["git", "push"],
+                    cwd=str(REPO_ROOT), capture_output=True, text=True)
+                if result.returncode == 0:
+                    self.send_json({"ok": True})
+                else:
+                    self.send_json({"ok": False, "error": result.stderr.strip()})
+            except Exception as e:
+                self.send_json({"ok": False, "error": str(e)})
+            return
+
         if self.path == "/api/discard":
             try:
                 # Remove untracked new files
