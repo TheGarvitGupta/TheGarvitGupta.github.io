@@ -60,11 +60,26 @@
             }
         }
 
+        // Show dark mode hint, then units hint, then hide both bottom-up
+        var HINT_DUR = 1500; // ms each hint stays visible
         setTimeout(function () {
             dot.classList.add('nav-dot-hint');
+            // Units appears at same time (or just after)
+            setTimeout(function () {
+                if (typeof window.GG !== 'undefined' && typeof window.GG.showUnitsHint === 'function') {
+                    window.GG.showUnitsHint();
+                }
+            }, 200);
+            // Units (lower) hides first
+            setTimeout(function () {
+                if (typeof window.GG !== 'undefined' && typeof window.GG.hideUnitsHint === 'function') {
+                    window.GG.hideUnitsHint();
+                }
+            }, HINT_DUR);
+            // Dark mode hides shortly after
             setTimeout(function () {
                 dot.classList.remove('nav-dot-hint');
-            }, 750 + 750);
+            }, HINT_DUR + 200);
         }, 1500);
 
         dot.addEventListener('click', toggle);

@@ -6,7 +6,8 @@
 (function () {
 	var WORKER_URL = "https://www.garvitgupta.com/api/strava";
 	var M_PER_MILE = 1609.344;
-	// Goal of 1000 km, displayed in miles. 1000 km = 621.371 miles.
+	var KM_PER_MILE = 1.60934;
+	// Goal: 1 000 000 m = 1000 km ≈ 621 mi
 	var GOAL_MILES = 1000000 / M_PER_MILE;
 	var TRIGGER_SELECTOR = ".run-bar";
 
@@ -21,33 +22,58 @@
 		return y + "-" + m + "-" + day;
 	}
 
-	function reveal(data) {
+	function isMetric() {
+		return window.GG && window.GG.units === "metric";
+	}
+
+	function fmtDist(miles, decimals) {
+		if (isMetric()) {
+			var km = miles * KM_PER_MILE;
+			return (decimals ? km.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : Math.round(km).toLocaleString("en-US")) + " km";
+		}
+		return (decimals ? miles.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : Math.round(miles).toLocaleString("en-US")) + " miles";
+	}
+
+	function renderStats(data) {
 		var miles = data.ytdMiles != null
 			? data.ytdMiles
 			: (data.ytdMeters || 0) / M_PER_MILE;
 		var lifetimeMiles = data.lifetimeMiles != null
 			? data.lifetimeMiles
 			: (data.lifetimeMeters || 0) / M_PER_MILE;
+
+		var $stats = $(".run-stats");
+		var ranToday = data.latestRunDate && data.latestRunDate === todayLocalDate();
+
+		if (ranToday) {
+			var todayDist = fmtDist(data.latestRunMiles || 0, true);
+			var ytdDist   = fmtDist(miles, true);
+			$stats.text("Ran " + todayDist + " today, " + ytdDist + " this year");
+			$stats.attr("title", fmtDist(lifetimeMiles, false) + " lifetime");
+		} else {
+			$stats.text("Ran " + fmtDist(miles, true) + " this year, " + fmtDist(lifetimeMiles, false) + " lifetime");
+			$stats.removeAttr("title");
+		}
+	}
+
+	function reveal(data) {
+		var miles = data.ytdMiles != null
+			? data.ytdMiles
+			: (data.ytdMeters || 0) / M_PER_MILE;
 		var pct = Math.min((miles / GOAL_MILES) * 100, 100);
 		$(".completed-run-bar").css({ width: pct + "%" });
 		$(".run-icon").css({ left: pct + "%" });
 		if (data.profileUrl) {
 			$(".strava-link").attr("href", data.profileUrl);
 		}
-		var ytd = miles.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-		var lifetime = Math.round(lifetimeMiles).toLocaleString("en-US");
-		var $stats = $(".run-stats");
-
-		var ranToday = data.latestRunDate && data.latestRunDate === todayLocalDate();
-		if (ranToday) {
-			var todayMiles = (data.latestRunMiles || 0).toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-			$stats.text("Ran " + todayMiles + " miles today, " + ytd + " this year");
-			$stats.attr("title", lifetime + " lifetime miles");
-		} else {
-			$stats.text("Ran " + ytd + " miles this year, " + lifetime + " lifetime");
-			$stats.removeAttr("title");
-		}
+		renderStats(data);
 	}
+
+	// Expose for units toggle to call on unit change
+	window.GG = window.GG || {};
+	window.GG.refreshStrava = function () {
+		if (pending && revealed) renderStats(pending);
+	};
 
 	function tryReveal() {
 		if (revealed || !pending) return;
