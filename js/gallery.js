@@ -127,7 +127,7 @@
 				full.style.zIndex = "1";
 				full.src = fullUrl;
 				thumb.after(full);
-				full.addEventListener("canplay", () => {
+				full.addEventListener("canplaythrough", () => {
 					full.currentTime = thumb.currentTime;
 					full.play().catch(() => {});
 					full.style.opacity = "1";
