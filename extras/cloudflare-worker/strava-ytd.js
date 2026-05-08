@@ -16,7 +16,7 @@
 //        Variable name: KV  (create a new namespace called "strava-cache")
 
 const CACHE_KEY = "strava:stats";
-const CACHE_TTL = 90; // seconds — re-fetch from Strava at most once every 90s (safely under 1000/day limit)
+const CACHE_TTL = 90; // seconds — re-fetch from Strava at most once every 90s
 
 export default {
 	async fetch(request, env) {
@@ -105,9 +105,13 @@ export default {
 				latestRunMiles,
 			};
 
-			// Store in KV with TTL
+			// Only write to KV if data changed (saves KV write quota)
 			if (env.KV) {
-				await env.KV.put(CACHE_KEY, JSON.stringify(result), { expirationTtl: CACHE_TTL });
+				const existing = await env.KV.get(CACHE_KEY);
+				const existingData = existing ? JSON.parse(existing) : null;
+				if (!existingData || existingData.ytdMeters !== result.ytdMeters || existingData.latestRunDate !== result.latestRunDate) {
+					await env.KV.put(CACHE_KEY, JSON.stringify(result), { expirationTtl: CACHE_TTL });
+				}
 			}
 
 			return jsonCached(result);
