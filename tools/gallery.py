@@ -84,20 +84,23 @@ def process_image(src: Path, dest_full: Path, dest_thumb: Path):
     from PIL import Image, ImageOps
     img = Image.open(src)
 
-    # Build sanitized EXIF: keep date/camera, strip GPS (tag 34853)
+    # Rotate first (bakes orientation into pixels)
+    img = ImageOps.exif_transpose(img)
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+
+    # Build sanitized EXIF: keep date/camera, strip GPS (34853) and orientation
+    # (274) since rotation is now baked in
     exif_bytes = None
     try:
         exif = img.getexif()
         if exif:
-            if 34853 in exif:
-                del exif[34853]
+            for tag in (34853, 274):
+                if tag in exif:
+                    del exif[tag]
             exif_bytes = exif.tobytes()
     except Exception:
         pass
-
-    img = ImageOps.exif_transpose(img)
-    if img.mode in ("RGBA", "P"):
-        img = img.convert("RGB")
 
     def save_resized(target: Path, max_w: int, quality: int, square: bool = False):
         w, h = img.size
