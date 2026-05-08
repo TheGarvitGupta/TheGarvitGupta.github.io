@@ -46,9 +46,10 @@ def thumb_path(name: str) -> Path:
     return THUMB_DIR / (stem + thumb_ext)
 
 def list_photos():
-    """Return sorted list of original (non-thumb) filenames."""
-    return [f.name for f in sorted(PHOTO_DIR.iterdir())
-            if f.is_file() and f.suffix.lower() in MEDIA_EXT]
+    """Return list of original (non-thumb) filenames, newest first by mtime."""
+    files = [f for f in PHOTO_DIR.iterdir()
+             if f.is_file() and f.suffix.lower() in MEDIA_EXT]
+    return [f.name for f in sorted(files, key=lambda f: f.stat().st_mtime, reverse=True)]
 
 def capture_date(path: Path) -> str | None:
     """Return capture date as 'Mon D YYYY' string, or None if unavailable."""
@@ -83,9 +84,21 @@ def capture_date(path: Path) -> str | None:
 def process_image(src: Path, dest_full: Path, dest_thumb: Path):
     from PIL import Image, ImageOps
     img = Image.open(src)
+    img.load()  # force full decode so EXIF is available
 
-    # Rotate first (bakes orientation into pixels)
-    img = ImageOps.exif_transpose(img)
+    # Read orientation and rotate manually (more reliable than exif_transpose)
+    ORIENTATION_ROTATIONS = {2: Image.FLIP_LEFT_RIGHT, 3: Image.ROTATE_180,
+                              4: Image.FLIP_TOP_BOTTOM, 5: Image.TRANSPOSE,
+                              6: Image.ROTATE_270, 7: Image.TRANSVERSE,
+                              8: Image.ROTATE_90}
+    try:
+        raw = img._getexif() or {}
+        orientation = raw.get(274, 1)  # 274 = Orientation tag
+        if orientation in ORIENTATION_ROTATIONS:
+            img = img.transpose(ORIENTATION_ROTATIONS[orientation])
+    except Exception:
+        pass
+
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
 
@@ -218,6 +231,16 @@ HTML = r"""<!DOCTYPE html>
     white-space: nowrap; pointer-events: none;
   }
 
+  .tile .replace-overlay {
+    display: none; position: absolute; inset: 0;
+    background: rgba(33,150,243,.75); color: #fff;
+    font-size: 13px; font-weight: 600;
+    align-items: center; justify-content: center;
+    border-radius: 4px; pointer-events: none;
+  }
+  .tile.drop-target .replace-overlay { display: flex; }
+  .tile.drop-target { outline: 3px solid #2196F3; }
+
   /* Lightbox */
   #lb { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.9);
         z-index: 9999; align-items: center; justify-content: center; }
@@ -331,6 +354,36 @@ function render() {
       load();
     };
     tile.appendChild(del);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'replace-overlay';
+    overlay.textContent = 'Replace';
+    tile.appendChild(overlay);
+
+    // Drag-to-replace
+    tile.addEventListener('dragover', e => {
+      if (!e.dataTransfer.types.includes('Files')) return;
+      e.preventDefault(); e.stopPropagation();
+      tile.classList.add('drop-target');
+    });
+    tile.addEventListener('dragleave', e => {
+      if (!tile.contains(e.relatedTarget)) tile.classList.remove('drop-target');
+    });
+    tile.addEventListener('drop', async e => {
+      e.preventDefault(); e.stopPropagation();
+      tile.classList.remove('drop-target');
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('replace', name);
+      overlay.textContent = '…';
+      overlay.style.display = 'flex';
+      await fetch('/api/upload', { method: 'POST', body: fd });
+      overlay.style.display = '';
+      overlay.textContent = 'Replace';
+      load();
+    });
 
     tile.onclick = () => openLightbox(i);
     grid.appendChild(tile);
@@ -754,18 +807,22 @@ class Handler(http.server.BaseHTTPRequestHandler):
         parts = body.split(sep)
         file_data = None
         original_name = None
+        replace_name = None  # set when drag-dropping onto an existing tile
         for part in parts:
-            if b'filename="' not in part:
-                continue
             header_end = part.find(b"\r\n\r\n")
             if header_end == -1:
                 continue
             headers = part[:header_end].decode(errors="replace")
+            # Plain field (replace=oldname)
+            if 'name="replace"' in headers and b'filename="' not in part[:header_end]:
+                replace_name = part[header_end + 4:].rstrip(b"\r\n").decode().strip()
+                continue
+            if b'filename="' not in part:
+                continue
             for line in headers.splitlines():
                 if 'filename="' in line:
                     original_name = line.split('filename="')[1].rstrip('"').strip()
             file_data = part[header_end + 4:].rstrip(b"\r\n")
-            break
 
         if not original_name or file_data is None:
             self.send_json({"error": "no file"}, 400); return
@@ -780,19 +837,34 @@ class Handler(http.server.BaseHTTPRequestHandler):
         tmp = PHOTO_DIR / f"_tmp_{original_name}"
         tmp.write_bytes(file_data)
 
-        # Determine output name (always .jpg for images, .mp4 for video)
-        stem = Path(original_name).stem
+        # If replacing, use the old file's stem so it saves in-place;
+        # preserve the old mtime so sort order doesn't change
+        old_mtime = None
+        if replace_name:
+            stem = Path(replace_name).stem
+            old_file = PHOTO_DIR / replace_name
+            if old_file.exists():
+                old_mtime = old_file.stat().st_mtime
+            old_thumb = thumb_path(replace_name)
+            if old_thumb.exists():
+                old_thumb.unlink()
+        else:
+            stem = Path(original_name).stem
+
         try:
             if ext in {".mp4", ".mov"}:
-                out_name   = stem + ".mp4"
-                dest_full  = PHOTO_DIR / out_name
-                dest_thumb = THUMB_DIR  / out_name
+                dest_full  = PHOTO_DIR / (stem + ".mp4")
+                dest_thumb = THUMB_DIR  / (stem + ".mp4")
                 final_name = process_video(tmp, dest_full, dest_thumb)
             else:
-                out_name   = stem + ".jpg"
-                dest_full  = PHOTO_DIR / out_name
-                dest_thumb = THUMB_DIR  / out_name
+                dest_full  = PHOTO_DIR / (stem + ".jpg")
+                dest_thumb = THUMB_DIR  / (stem + ".jpg")
                 final_name = process_image(tmp, dest_full, dest_thumb)
+
+            # Restore mtime so replaced photo stays in its original position
+            if old_mtime is not None:
+                final_path = PHOTO_DIR / final_name
+                os.utime(final_path, (old_mtime, old_mtime))
 
             self.send_json({"ok": True, "name": final_name})
         except Exception as e:
