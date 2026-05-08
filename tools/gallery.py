@@ -178,10 +178,10 @@ HTML = r"""<!DOCTYPE html>
 <header>
   <h1>Gallery Manager</h1>
   <span id="count"></span>
-  <button id="btn-process" onclick="processExisting()" style="margin-left:auto;padding:6px 14px;font-size:13px;cursor:pointer;border:1px solid #ccc;border-radius:6px;background:#fff;">
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+  <button id="btn-process" onclick="processExisting()" style="display:none;padding:6px 14px;font-size:13px;cursor:pointer;border:1px solid #ccc;border-radius:6px;background:#fff;">
     Generate missing thumbnails
   </button>
-  <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
     <button id="btn-discard" onclick="discardChanges()" style="display:none;padding:6px 14px;font-size:13px;cursor:pointer;border:1px solid #f5c0c0;border-radius:6px;background:#fff5f5;color:#c0392b;">
       Discard
     </button>
@@ -361,6 +361,7 @@ async function processExisting() {
   bar.style.width = '100%';
   lbl.textContent = `Done — processed ${missing.length} photo${missing.length > 1 ? 's' : ''}.`;
   btn.disabled = false;
+  btn.style.display = 'none';
   setTimeout(() => { prog.style.display = 'none'; bar.style.width = '0%'; }, 2000);
   load();
 }
@@ -368,8 +369,10 @@ async function processExisting() {
 load();
 
 async function refreshPending() {
-  const r = await fetch('/api/pending');
+  const [r, mr] = await Promise.all([fetch('/api/pending'), fetch('/api/missing-thumbs')]);
   const d = await r.json();
+  const missing = await mr.json();
+  document.getElementById('btn-process').style.display = missing.length ? 'inline-block' : 'none';
   const parts = [];
   if (d.addedPhotos)   parts.push(`+${d.addedPhotos} photo${d.addedPhotos > 1 ? 's' : ''}`);
   if (d.addedVideos)   parts.push(`+${d.addedVideos} video${d.addedVideos > 1 ? 's' : ''}`);
