@@ -47,11 +47,8 @@ def thumb_path(name: str) -> Path:
 
 def list_photos():
     """Return sorted list of original (non-thumb) filenames."""
-    files = []
-    for f in sorted(PHOTO_DIR.iterdir()):
-        if f.is_file() and not is_thumb(f.name) and f.suffix.lower() in MEDIA_EXT:
-            files.append(f.name)
-    return files
+    return [f.name for f in sorted(PHOTO_DIR.iterdir())
+            if f.is_file() and f.suffix.lower() in MEDIA_EXT]
 
 def process_image(src: Path, dest_full: Path, dest_thumb: Path):
     from PIL import Image, ImageOps
