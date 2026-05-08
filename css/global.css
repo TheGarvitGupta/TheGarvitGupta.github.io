@@ -938,17 +938,14 @@ input {
    from JS — CSS auto-placement is unreliable when mixing explicit + auto. */
 
 .image-container a,
-.image-container img {
+.image-container img,
+.image-container video {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     display: block;
-}
-
-.image-container img,
-.image-container video {
     object-fit: cover;
 }
 
