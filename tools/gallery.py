@@ -50,9 +50,51 @@ def list_photos():
     return [f.name for f in sorted(PHOTO_DIR.iterdir())
             if f.is_file() and f.suffix.lower() in MEDIA_EXT]
 
+def capture_date(path: Path) -> str | None:
+    """Return capture date as 'Mon D YYYY' string, or None if unavailable."""
+    ext = path.suffix.lower()
+    try:
+        if ext in {".mp4", ".mov"}:
+            result = subprocess.run(
+                ["ffprobe", "-v", "quiet", "-print_format", "json",
+                 "-show_entries", "format_tags=creation_time", str(path)],
+                capture_output=True, text=True)
+            data = json.loads(result.stdout)
+            ts = data.get("format", {}).get("tags", {}).get("creation_time")
+            if ts:
+                from datetime import datetime
+                dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                return dt.strftime("%-m/%-d/%y")
+        else:
+            from PIL import Image
+            from PIL.ExifTags import TAGS
+            img = Image.open(path)
+            exif = img._getexif()
+            if exif:
+                for tag_id, val in exif.items():
+                    if TAGS.get(tag_id) == "DateTimeOriginal":
+                        from datetime import datetime
+                        dt = datetime.strptime(val, "%Y:%m:%d %H:%M:%S")
+                        return dt.strftime("%-m/%-d/%y")
+    except Exception:
+        pass
+    return None
+
 def process_image(src: Path, dest_full: Path, dest_thumb: Path):
     from PIL import Image, ImageOps
     img = Image.open(src)
+
+    # Build sanitized EXIF: keep date/camera, strip GPS (tag 34853)
+    exif_bytes = None
+    try:
+        exif = img.getexif()
+        if exif:
+            if 34853 in exif:
+                del exif[34853]
+            exif_bytes = exif.tobytes()
+    except Exception:
+        pass
+
     img = ImageOps.exif_transpose(img)
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
@@ -65,7 +107,10 @@ def process_image(src: Path, dest_full: Path, dest_thumb: Path):
         else:
             img_r = img
         target.parent.mkdir(parents=True, exist_ok=True)
-        img_r.save(str(target), "JPEG", quality=quality, optimize=True)
+        kwargs = {"quality": quality, "optimize": True}
+        if exif_bytes:
+            kwargs["exif"] = exif_bytes
+        img_r.save(str(target), "JPEG", **kwargs)
 
     # Save as .jpg regardless of input format
     dest_full  = dest_full.with_suffix(".jpg")
@@ -234,7 +279,7 @@ function render() {
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
   photos.forEach((photo, i) => {
-    const { name, hasThumb, originalSize, thumbSize } = photo;
+    const { name, hasThumb, originalSize, thumbSize, captureDate } = photo;
     const tile = document.createElement('div');
     tile.className = 'tile';
 
@@ -260,9 +305,10 @@ function render() {
 
     const label = document.createElement('div');
     label.className = 'label';
-    label.textContent = thumbSize != null
+    const sizes = thumbSize != null
       ? `${fmtSize(thumbSize)} · ${fmtSize(originalSize)}`
       : fmtSize(originalSize);
+    label.textContent = captureDate ? `${captureDate}  •  ${sizes}` : sizes;
     tile.appendChild(label);
 
     const del = document.createElement('button');
@@ -528,6 +574,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 "hasThumb": thumb_path(name).exists(),
                 "originalSize": fsize(PHOTO_DIR / name),
                 "thumbSize": fsize(thumb_path(name)) if thumb_path(name).exists() else None,
+                "captureDate": capture_date(PHOTO_DIR / name),
             } for name in list_photos()]
             self.send_json(photos)
 
