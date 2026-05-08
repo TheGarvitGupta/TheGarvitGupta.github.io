@@ -201,7 +201,7 @@ HTML = r"""<!DOCTYPE html>
     gap: 6px;
   }
   @media (max-width: 900px) {
-    #grid { grid-template-columns: repeat(3, 1fr); }
+    #grid { grid-template-columns: repeat(2, 1fr); }
   }
 
   .tile {

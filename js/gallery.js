@@ -15,7 +15,7 @@
 		"photograph-16.jpg", "photograph-17.jpg", "photograph-18.jpg",
 		"photograph-19.jpg", "photograph-20.jpg", "photograph-21.jpg"
 	];
-	const PAGE_SIZE = 12;
+	const pageSize = () => matchMedia("(max-width: 1180px)").matches ? 11 : 12;
 
 	let allPhotos = [];
 	let currentPage = 0;
@@ -38,12 +38,12 @@
 		const others = gallery.querySelectorAll(".image-container:not(.featured)");
 
 		const isMobile = matchMedia("(max-width: 1180px)").matches;
-		const [cols, rows] = isMobile ? [3, 5] : [5, 3];
+		const [cols, rows] = isMobile ? [2, 7] : [5, 3];
 		const bp = isMobile ? "m" : "d";
 		if (bp !== lastBp) {
 			lastBp = bp;
 			featuredPos = {
-				fc: 1 + Math.floor(Math.random() * (cols - 1)),
+				fc: cols === 2 ? 1 : 1 + Math.floor(Math.random() * (cols - 1)),
 				fr: 1 + Math.floor(Math.random() * 2)
 			};
 		}
@@ -58,18 +58,24 @@
 				if (!inFeat) cells.push([r, c]);
 			}
 		}
-		others.forEach((el, i) => {
-			if (cells[i]) {
-				el.style.gridRow = cells[i][0];
-				el.style.gridColumn = cells[i][1];
+		// Hide any containers beyond the available non-featured cells
+		Array.from(others).forEach((el, i) => {
+			const cell = cells[i];
+			if (cell) {
+				el.style.display = "";
+				el.style.gridRow = cell[0];
+				el.style.gridColumn = cell[1];
+			} else {
+				el.style.display = "none";
 			}
 		});
 	};
 
-	addEventListener("resize", applyLayout);
+	addEventListener("resize", () => showPage(currentPage));
 
 	const showPage = (page) => {
 		if (!allPhotos.length) return;
+		const PAGE_SIZE = pageSize();
 		const numPages = Math.ceil(allPhotos.length / PAGE_SIZE);
 		currentPage = ((page % numPages) + numPages) % numPages;
 		const start = currentPage * PAGE_SIZE;
@@ -87,7 +93,7 @@
 			return aRow !== bRow ? aRow - bRow : aCol - bCol;
 		});
 
-		containers.forEach((container, i) => {
+		containers.filter(c => c.style.display !== "none").forEach((container, i) => {
 			const idx = (start + i) % allPhotos.length;
 			const name = allPhotos[idx];
 			const thumbUrl = `images/photographs/thumbs/${name}`;

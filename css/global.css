@@ -951,9 +951,9 @@ input {
 
 @media screen and (max-width: 1180px) {
     .gallery {
-        grid-template-columns: repeat(3, 1fr);
-        grid-template-rows: repeat(5, 1fr);
-        aspect-ratio: 3 / 5;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(7, 1fr);
+        aspect-ratio: 2 / 7;
     }
 }
 
