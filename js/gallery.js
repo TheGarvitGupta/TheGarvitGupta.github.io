@@ -111,6 +111,7 @@
 				}
 				existing.src = thumbUrl;
 				existing.load();
+				existing.play().catch(() => {});
 			} else {
 				if (!existing || existing.tagName !== "IMG") {
 					const img = document.createElement("img");
