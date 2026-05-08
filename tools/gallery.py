@@ -471,8 +471,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(length)
 
-        # Parse multipart manually
-        import email.parser, email.policy
         boundary = None
         for part in content_type.split(";"):
             p = part.strip()
@@ -481,13 +479,28 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if not boundary:
             self.send_json({"error": "no boundary"}, 400); return
 
-        # Use cgi module for multipart parsing
-        import io, cgi
-        environ = {"REQUEST_METHOD": "POST", "CONTENT_TYPE": content_type,
-                   "CONTENT_LENGTH": str(length)}
-        fs = cgi.FieldStorage(fp=io.BytesIO(body), environ=environ)
-        file_item = fs["file"]
-        original_name = Path(file_item.filename).name
+        # Parse multipart manually (cgi module removed in Python 3.13)
+        sep = f"--{boundary}".encode()
+        parts = body.split(sep)
+        file_data = None
+        original_name = None
+        for part in parts:
+            if b'filename="' not in part:
+                continue
+            header_end = part.find(b"\r\n\r\n")
+            if header_end == -1:
+                continue
+            headers = part[:header_end].decode(errors="replace")
+            for line in headers.splitlines():
+                if 'filename="' in line:
+                    original_name = line.split('filename="')[1].rstrip('"').strip()
+            file_data = part[header_end + 4:].rstrip(b"\r\n")
+            break
+
+        if not original_name or file_data is None:
+            self.send_json({"error": "no file"}, 400); return
+
+        original_name = Path(original_name).name
         ext = Path(original_name).suffix.lower()
 
         if ext not in MEDIA_EXT:
@@ -495,7 +508,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
         # Save temp file
         tmp = PHOTO_DIR / f"_tmp_{original_name}"
-        tmp.write_bytes(file_item.file.read())
+        tmp.write_bytes(file_data)
 
         # Determine output name (always .jpg for images, .mp4 for video)
         stem = Path(original_name).stem
