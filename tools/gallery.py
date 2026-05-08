@@ -386,10 +386,14 @@ async function refreshPending() {
     badge.style.display = 'inline-block';
     discard.style.display = 'inline-block';
     commit.style.borderColor = '#2196F3';
+    commit.style.opacity = '1';
+    commit.disabled = false;
   } else {
     badge.style.display = 'none';
     discard.style.display = 'none';
     commit.style.borderColor = '#ccc';
+    commit.style.opacity = '0.4';
+    commit.disabled = true;
   }
 }
 
