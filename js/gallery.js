@@ -96,6 +96,8 @@
 			if (link) link.href = fullUrl;
 
 			const isVideo = VIDEO_RE.test(name);
+			// remove any stale full-res overlay from a previous page
+			container.querySelectorAll("video, img").forEach((el, i) => { if (i > 0) el.remove(); });
 			let existing = container.querySelector("video, img");
 
 			if (isVideo) {
@@ -112,6 +114,25 @@
 				existing.src = thumbUrl;
 				existing.load();
 				existing.play().catch(() => {});
+
+				const thumb = existing;
+				const full = document.createElement("video");
+				full.autoplay = false;
+				full.muted = true;
+				full.loop = true;
+				full.playsInline = true;
+				full.setAttribute("playsinline", "");
+				full.style.opacity = "0";
+				full.style.transition = "opacity 0.4s ease";
+				full.style.zIndex = "1";
+				full.src = fullUrl;
+				thumb.after(full);
+				full.addEventListener("canplay", () => {
+					full.currentTime = thumb.currentTime;
+					full.play().catch(() => {});
+					full.style.opacity = "1";
+					full.addEventListener("transitionend", () => thumb.remove(), { once: true });
+				}, { once: true });
 			} else {
 				if (!existing || existing.tagName !== "IMG") {
 					const img = document.createElement("img");
@@ -120,9 +141,18 @@
 					existing = img;
 				}
 				existing.src = thumbUrl;
-				const target = existing;
+
+				const thumb = existing;
 				const full = new Image();
-				full.onload = () => { if (target.src.includes("/thumbs/")) target.src = fullUrl; };
+				full.alt = "";
+				full.style.opacity = "0";
+				full.style.transition = "opacity 0.4s ease";
+				full.style.zIndex = "1";
+				thumb.after(full);
+				full.onload = () => {
+					full.style.opacity = "1";
+					full.addEventListener("transitionend", () => thumb.remove(), { once: true });
+				};
 				full.src = fullUrl;
 			}
 		});
