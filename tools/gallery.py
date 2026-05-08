@@ -156,13 +156,12 @@ HTML = r"""<!DOCTYPE html>
   }
   .tile:hover .del { opacity: 1; }
   .tile .label {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    background: rgba(0,0,0,.45); color: #fff;
-    font-size: 10px; padding: 3px 6px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    opacity: 0; transition: opacity .15s;
+    position: absolute; bottom: 6px; left: 6px;
+    background: rgba(0,0,0,.6); color: #fff;
+    font-size: 10px; padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap; pointer-events: none;
   }
-  .tile:hover .label { opacity: 1; }
 
   /* Lightbox */
   #lb { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.9);
@@ -225,11 +224,17 @@ async function load() {
 
 function isVideo(name) { return /\.mp4$/i.test(name); }
 
+function fmtSize(bytes) {
+  if (bytes == null) return '?';
+  if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+  return Math.round(bytes / 1024) + ' KB';
+}
+
 function render() {
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
   photos.forEach((photo, i) => {
-    const { name, hasThumb } = photo;
+    const { name, hasThumb, originalSize, thumbSize } = photo;
     const tile = document.createElement('div');
     tile.className = 'tile';
 
@@ -255,7 +260,9 @@ function render() {
 
     const label = document.createElement('div');
     label.className = 'label';
-    label.textContent = name;
+    label.textContent = thumbSize != null
+      ? `${fmtSize(thumbSize)} · ${fmtSize(originalSize)}`
+      : fmtSize(originalSize);
     tile.appendChild(label);
 
     const del = document.createElement('button');
@@ -513,8 +520,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
                             "deletedPhotos": deleted_photos, "deletedVideos": deleted_videos})
 
         elif path == "/api/photos":
-            photos = [{"name": name, "hasThumb": thumb_path(name).exists()}
-                      for name in list_photos()]
+            def fsize(p):
+                try: return p.stat().st_size
+                except: return None
+            photos = [{
+                "name": name,
+                "hasThumb": thumb_path(name).exists(),
+                "originalSize": fsize(PHOTO_DIR / name),
+                "thumbSize": fsize(thumb_path(name)) if thumb_path(name).exists() else None,
+            } for name in list_photos()]
             self.send_json(photos)
 
         elif path == "/api/missing-thumbs":
