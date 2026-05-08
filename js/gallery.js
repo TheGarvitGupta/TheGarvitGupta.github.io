@@ -128,7 +128,6 @@
 				full.src = fullUrl;
 				thumb.after(full);
 				full.addEventListener("canplaythrough", () => {
-					full.currentTime = thumb.currentTime;
 					full.play().catch(() => {});
 					full.style.opacity = "1";
 					full.addEventListener("transitionend", () => thumb.remove(), { once: true });
