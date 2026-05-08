@@ -99,9 +99,16 @@ def process_image(src: Path, dest_full: Path, dest_thumb: Path):
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
 
-    def save_resized(target: Path, max_w: int, quality: int):
+    def save_resized(target: Path, max_w: int, quality: int, square: bool = False):
         w, h = img.size
-        if w > max_w:
+        if square:
+            # Center-crop to square first, then resize
+            side = min(w, h)
+            left = (w - side) // 2
+            top  = (h - side) // 2
+            img_r = img.crop((left, top, left + side, top + side))
+            img_r = img_r.resize((max_w, max_w), Image.LANCZOS)
+        elif w > max_w:
             ratio = max_w / w
             img_r = img.resize((max_w, int(h * ratio)), Image.LANCZOS)
         else:
@@ -116,7 +123,7 @@ def process_image(src: Path, dest_full: Path, dest_thumb: Path):
     dest_full  = dest_full.with_suffix(".jpg")
     dest_thumb = dest_thumb.with_suffix(".jpg")
     save_resized(dest_full,  IMG_FULL_W,  IMG_FULL_Q)
-    save_resized(dest_thumb, IMG_THUMB_W, IMG_THUMB_Q)
+    save_resized(dest_thumb, IMG_THUMB_W, IMG_THUMB_Q, square=True)
     return dest_full.name  # return final filename (may differ from input if ext changed)
 
 def process_video(src: Path, dest_full: Path, dest_thumb: Path):
@@ -132,9 +139,9 @@ def process_video(src: Path, dest_full: Path, dest_thumb: Path):
          "-c:v", "libx264", "-crf", str(VID_FULL_CRF), "-preset", "fast",
          "-an", "-movflags", "+faststart", str(dest_full)])
 
-    # Thumb
+    # Thumb — center-crop to square then resize
     run(["ffmpeg", "-y", "-i", str(src),
-         "-vf", f"scale={VID_THUMB_W}:-2",
+         "-vf", f"crop=min(iw\\,ih):min(iw\\,ih),scale={VID_THUMB_W}:{VID_THUMB_W}",
          "-c:v", "libx264", "-crf", str(VID_THUMB_CRF), "-preset", "fast",
          "-an", "-movflags", "+faststart", str(dest_thumb)])
 
