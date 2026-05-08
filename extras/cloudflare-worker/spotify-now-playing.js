@@ -81,13 +81,26 @@ export default {
 			return new Response(null, { headers: cors });
 		}
 
-		const json = (body, status = 200) =>
-			new Response(JSON.stringify(body), { status, headers: cors });
+		// Serve from Cloudflare edge cache if fresh (max 2s)
+		const cache = caches.default;
+		const cacheKey = new Request(request.url);
+		const cachedRes = await cache.match(cacheKey);
+		if (cachedRes) return cachedRes;
+
+		const json = (body, status = 200) => {
+			const res = new Response(JSON.stringify(body), { status, headers: cors });
+			return res;
+		};
+		const jsonCached = async (body, status = 200) => {
+			const res = new Response(JSON.stringify(body), { status, headers: cors });
+			await cache.put(cacheKey, res.clone());
+			return res;
+		};
 
 		try {
 			// Always try Spotify live first
 			const track = await fetchSpotify(env);
-			if (track) return json(track);
+			if (track) return jsonCached(track);
 
 			// Not playing — try recently-played from Spotify
 			const access_token = await getAccessToken(env);
@@ -98,7 +111,7 @@ export default {
 				const data = await recentRes.json();
 				const item = data.items && data.items[0];
 				if (item) {
-					return json({
+					return jsonCached({
 						playing: false,
 						track: item.track.name,
 						artist: item.track.artists.map(a => a.name).join(", "),
@@ -115,10 +128,10 @@ export default {
 				const data = JSON.parse(cached);
 				data.playedAt = new Date(data.cachedAt).toISOString();
 				delete data.cachedAt;
-				return json(data);
+				return jsonCached(data);
 			}
 
-			return json({ playing: false });
+			return jsonCached({ playing: false });
 		} catch (err) {
 			return json({ error: "exception", detail: String(err) }, 500);
 		}

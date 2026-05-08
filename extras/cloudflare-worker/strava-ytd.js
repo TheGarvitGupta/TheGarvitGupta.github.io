@@ -29,14 +29,26 @@ export default {
 		if (request.method === "OPTIONS") {
 			return new Response(null, { headers: cors });
 		}
+
+		// Serve from Cloudflare edge cache if fresh (max 90s, matching KV TTL)
+		const cache = caches.default;
+		const cacheKey = new Request(request.url);
+		const cachedEdge = await cache.match(cacheKey);
+		if (cachedEdge) return cachedEdge;
+
 		const json = (body, status = 200) =>
 			new Response(JSON.stringify(body), { status, headers: cors });
+		const jsonCached = async (body, status = 200) => {
+			const res = new Response(JSON.stringify(body), { status, headers: cors });
+			await cache.put(cacheKey, res.clone());
+			return res;
+		};
 
 		try {
-			// Return cached response if fresh
+			// Return cached response if fresh (KV layer)
 			if (env.KV) {
 				const cached = await env.KV.get(CACHE_KEY);
-				if (cached) return json({ ...JSON.parse(cached), cached: true });
+				if (cached) return jsonCached({ ...JSON.parse(cached), cached: true });
 			}
 
 			// 1. Refresh access token (Strava tokens expire every 6 hours).
@@ -98,7 +110,7 @@ export default {
 				await env.KV.put(CACHE_KEY, JSON.stringify(result), { expirationTtl: CACHE_TTL });
 			}
 
-			return json(result);
+			return jsonCached(result);
 		} catch (err) {
 			return json({ error: "exception", detail: String(err) }, 500);
 		}
