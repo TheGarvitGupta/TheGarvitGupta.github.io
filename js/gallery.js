@@ -7,19 +7,31 @@
 	const IMAGE_RE = /\.(jpe?g|png|webp|gif|mp4)$/i;
 	const VIDEO_RE = /\.mp4$/i;
 	const FALLBACK = [
-		"photograph-1.jpg", "photograph-2.jpg", "photograph-3.jpg",
-		"photograph-4.jpg", "photograph-5.jpg", "photograph-6.jpg",
-		"photograph-7.jpg", "photograph-8.jpg", "photograph-9.jpg",
-		"photograph-10.jpg", "photograph-11.jpg", "photograph-12.jpg",
-		"photograph-13.jpg", "photograph-14.jpg", "photograph-15.jpg",
-		"photograph-16.jpg", "photograph-17.jpg", "photograph-18.jpg",
-		"photograph-19.jpg", "photograph-20.jpg", "photograph-21.jpg"
+		"photograph-2.jpg",   "photograph-3.jpg",  "photograph-4.jpg",
+		"photograph-5.jpg",   "photograph-6.jpg",  "photograph-7.jpg",
+		"photograph-8.jpg",   "photograph-9.jpg",  "photograph-10.jpg",
+		"photograph-12.jpg",  "photograph-13.jpg", "photograph-15.jpg",
+		"photograph-16.jpg",  "photograph-18.jpg", "photograph-20.jpg",
+		"photograph-22.mp4",
+		"IMG_20210227_142846_Original.jpg",
+		"IMG_2072.jpg", "IMG_2083.mp4", "IMG_2406.jpg",
+		"IMG_2464.jpg", "IMG_2481.jpg", "IMG_3043.jpg",
+		"IMG_3194.jpg", "IMG_4700.jpg", "IMG_5660.jpg",
+		"IMG_5978.jpg", "IMG_8239.jpg", "IMG_8373.jpg",
+		"Photo_6553705_DJI_105_jpg_4887766_0_202196175122_photo_original.jpg",
+		"DJI_20251213104838_0010_D.mp4",
+		"ScreenRecording_03-03-2026 08-46-09_1.mp4",
 	];
 	const PAGE_SIZE = 12;
+	const CONVERGE_PX = 40;
+	const CONVERGE_JITTER_ANGLE = 20 * (Math.PI / 180); // ±20° in radians
+	const CONVERGE_JITTER_DIST  = 10; // ±10px
+	const CONVERGE_ROTATION_MAX = 12; // ±12° rotation
 
 	let allPhotos = [];
 	let currentPage = 0;
 	let lightbox = null;
+	let hasConverged = false;
 
 	const shuffle = (arr) => {
 		for (let i = arr.length - 1; i > 0; i--) {
@@ -60,75 +72,158 @@
 		}
 		others.forEach((el, i) => {
 			if (cells[i]) {
-				el.style.gridRow = cells[i][0];
+				el.style.gridRow    = cells[i][0];
 				el.style.gridColumn = cells[i][1];
 			}
 		});
+
+		// corner border-radius — applied to container + media so transform doesn't break clipping
+		gallery.querySelectorAll(".image-container").forEach(el => {
+			const rStart  = parseInt(el.style.gridRow)    || 1;
+			const cStart  = parseInt(el.style.gridColumn) || 1;
+			const rowSpan = el.classList.contains("featured") ? 2 : 1;
+			const colSpan = el.classList.contains("featured") ? 2 : 1;
+			const rEnd = rStart + rowSpan - 1;
+			const cEnd = cStart + colSpan - 1;
+			const tl = rStart === 1    && cStart === 1;
+			const tr = rStart === 1    && cEnd   === cols;
+			const bl = rEnd   === rows && cStart === 1;
+			const br = rEnd   === rows && cEnd   === cols;
+			const radius = `${tl ? 12 : 0}px ${tr ? 12 : 0}px ${br ? 12 : 0}px ${bl ? 12 : 0}px`;
+			if (tl || tr || bl || br) {
+				el.style.borderRadius = radius;
+				el.querySelectorAll("img, video").forEach(m => m.style.borderRadius = radius);
+			} else {
+				el.style.borderRadius = "";
+				el.querySelectorAll("img, video").forEach(m => m.style.borderRadius = "");
+			}
+		});
+
+		return [cols, rows];
 	};
 
+	const applyConvergeOffsets = (cols, rows) => {
+		const cx = (cols + 1) / 2;
+		const cy = (rows + 1) / 2;
+
+		document.querySelectorAll(".gallery .image-container").forEach(el => {
+			const col = parseFloat(el.style.gridColumn) || cx;
+			const row = parseFloat(el.style.gridRow)    || cy;
+			const dx = col - cx;
+			const dy = row - cy;
+			const baseAngle = Math.atan2(dy, dx);
+			const jitteredAngle = baseAngle + (Math.random() * 2 - 1) * CONVERGE_JITTER_ANGLE;
+			const dist = CONVERGE_PX + (Math.random() * 2 - 1) * CONVERGE_JITTER_DIST;
+			el.dataset.ox  = Math.cos(jitteredAngle) * dist;
+			el.dataset.oy  = Math.sin(jitteredAngle) * dist;
+			el.dataset.rot = (Math.random() * 2 - 1) * CONVERGE_ROTATION_MAX;
+			el.style.transition = "none";
+			el.style.transform  = `translate(${el.dataset.ox}px, ${el.dataset.oy}px) rotate(${el.dataset.rot}deg)`;
+		});
+	};
+
+	let scrollHandler = null;
+
+	const initScrollConverge = (upgrades) => {
+		if (scrollHandler) window.removeEventListener("scroll", scrollHandler);
+		const gallery = document.querySelector(".gallery");
+		if (!gallery) return;
+
+		scrollHandler = () => {
+			const { top, height } = gallery.getBoundingClientRect();
+			const vh = window.innerHeight;
+			// 0 when gallery top hits bottom of screen, 1 when gallery bottom hits bottom of screen
+			const progress = Math.max(0, Math.min(1, (vh - top) / height));
+
+			gallery.querySelectorAll(".image-container").forEach(el => {
+				const ox  = parseFloat(el.dataset.ox)  || 0;
+				const oy  = parseFloat(el.dataset.oy)  || 0;
+				const rot = parseFloat(el.dataset.rot) || 0;
+				const t   = 1 - progress;
+				el.style.transition = "none";
+				el.style.transform  = `translate(${ox * t}px, ${oy * t}px) rotate(${rot * t}deg)`;
+			});
+
+			if (progress >= 1) {
+				hasConverged = true;
+				window.removeEventListener("scroll", scrollHandler);
+				scrollHandler = null;
+				upgrades.forEach(fn => fn());
+			}
+		};
+
+		window.addEventListener("scroll", scrollHandler, { passive: true });
+		scrollHandler(); // apply immediately in case gallery is already (partially) visible
+	};
+
+	// resolves after all promises settle OR after a timeout, so the animation
+	// always fires even if a thumbnail hangs (e.g. network stall)
+	const allSettledOrTimeout = (promises, ms = 4000) =>
+		Promise.race([
+			Promise.allSettled(promises),
+			new Promise(res => setTimeout(res, ms))
+		]);
+
 	addEventListener("resize", applyLayout);
+
+	const makeVideo = (src, cr) => {
+		const v = document.createElement("video");
+		v.muted = true;
+		v.loop  = true;
+		v.playsInline = true;
+		v.setAttribute("playsinline", "");
+		if (cr) v.style.borderRadius = cr;
+		v.src = src;
+		return v;
+	};
 
 	const showPage = (page) => {
 		if (!allPhotos.length) return;
 		const numPages = Math.ceil(allPhotos.length / PAGE_SIZE);
 		currentPage = ((page % numPages) + numPages) % numPages;
-		const start = currentPage * PAGE_SIZE;
+		const start  = currentPage * PAGE_SIZE;
 
-		applyLayout();
+		const [cols, rows] = applyLayout();
 
 		// assign photos in visual reading order (row → col) so the featured
 		// cell gets whichever photo falls at its grid position, not always #1
 		const containers = Array.from(document.querySelectorAll(".gallery .image-container"));
 		containers.sort((a, b) => {
-			const aRow = parseInt(a.style.gridRow) || 1;
+			const aRow = parseInt(a.style.gridRow)    || 1;
 			const aCol = parseInt(a.style.gridColumn) || 1;
-			const bRow = parseInt(b.style.gridRow) || 1;
+			const bRow = parseInt(b.style.gridRow)    || 1;
 			const bCol = parseInt(b.style.gridColumn) || 1;
 			return aRow !== bRow ? aRow - bRow : aCol - bCol;
 		});
 
-		const upgrades = [];
+		const upgrades   = [];
 		const thumbReady = [];
 
 		containers.forEach((container, i) => {
-			const idx = (start + i) % allPhotos.length;
-			const name = allPhotos[idx];
+			const idx      = (start + i) % allPhotos.length;
+			const name     = allPhotos[idx];
 			const thumbUrl = `images/photographs/thumbs/${name}`;
 			const fullUrl  = `images/photographs/${name}`;
-			const link = container.querySelector("a.gallery-link");
-			if (link) link.href = fullUrl;
+			const anchor   = container.querySelector("a.gallery-link");
+			if (anchor) anchor.href = fullUrl;
 
-			// always start fresh — avoids re-fetching thumbs on stale survivor elements
+			// start fresh — avoids re-fetching thumbs on stale survivor elements
 			container.querySelectorAll("video, img").forEach(el => el.remove());
 
-			const isVideo = VIDEO_RE.test(name);
-			const anchor = container.querySelector("a.gallery-link");
+			const cr = container.style.borderRadius;
 
-			if (isVideo) {
-				const thumb = document.createElement("video");
+			if (VIDEO_RE.test(name)) {
+				const thumb = makeVideo(thumbUrl, cr);
 				thumb.autoplay = true;
-				thumb.muted = true;
-				thumb.loop = true;
-				thumb.playsInline = true;
-				thumb.setAttribute("playsinline", "");
-				thumb.src = thumbUrl;
 				anchor ? anchor.prepend(thumb) : container.prepend(thumb);
-				thumb.load();
 				thumbReady.push(new Promise(res => {
 					thumb.addEventListener("canplay", res, { once: true });
+					thumb.addEventListener("error",   res, { once: true });
 					thumb.play().catch(() => {});
 				}));
 				upgrades.push(() => {
-					const full = document.createElement("video");
-					full.autoplay = false;
-					full.muted = true;
-					full.loop = true;
-					full.playsInline = true;
-					full.setAttribute("playsinline", "");
-					full.style.opacity = "0";
-					full.style.transition = "opacity 0.4s ease";
-					full.style.zIndex = "1";
-					full.src = fullUrl;
+					const full = makeVideo(fullUrl, cr);
+					full.style.cssText += "opacity:0;transition:opacity 0.4s ease;z-index:1;";
 					thumb.after(full);
 					full.addEventListener("canplaythrough", () => {
 						full.play().catch(() => {});
@@ -137,20 +232,23 @@
 					}, { once: true });
 				});
 			} else {
-				const thumb = document.createElement("img");
+				const thumb = new Image();
 				thumb.alt = "";
+				if (cr) thumb.style.borderRadius = cr;
 				thumb.src = thumbUrl;
 				anchor ? anchor.prepend(thumb) : container.prepend(thumb);
 				thumbReady.push(new Promise(res => {
 					if (thumb.complete) res();
-					else thumb.addEventListener("load", res, { once: true });
+					else {
+						thumb.addEventListener("load",  res, { once: true });
+						thumb.addEventListener("error", res, { once: true });
+					}
 				}));
 				upgrades.push(() => {
 					const full = new Image();
 					full.alt = "";
-					full.style.opacity = "0";
-					full.style.transition = "opacity 0.4s ease";
-					full.style.zIndex = "1";
+					full.style.cssText = "opacity:0;transition:opacity 0.4s ease;z-index:1;";
+					if (cr) full.style.borderRadius = cr;
 					thumb.after(full);
 					full.onload = () => {
 						full.style.opacity = "1";
@@ -161,7 +259,12 @@
 			}
 		});
 
-		Promise.all(thumbReady).then(() => upgrades.forEach(fn => fn()));
+		if (!hasConverged) {
+			applyConvergeOffsets(cols, rows);
+			allSettledOrTimeout(thumbReady).then(() => initScrollConverge(upgrades));
+		} else {
+			allSettledOrTimeout(thumbReady).then(() => upgrades.forEach(fn => fn()));
+		}
 
 		rebuildLightbox();
 	};
@@ -186,18 +289,25 @@
 			touchNavigation: true,
 			loop: true,
 			selector: ".__glightbox_disabled__",
-			onOpen: () => setArrowsHidden(true),
+			onOpen:  () => setArrowsHidden(true),
 			onClose: () => setArrowsHidden(false),
 		});
 
-		document.querySelectorAll(".gallery a.gallery-link").forEach(link => {
-			link.addEventListener("click", e => {
-				e.preventDefault();
-				const href = link.getAttribute("href");
-				const idx = elements.findIndex(el => el.href === href);
-				lightbox.openAt(idx >= 0 ? idx : 0);
-			});
-		});
+		// delegated listener attached once to the gallery element
+		if (!document.querySelector(".gallery")?._galleryClickBound) {
+			const gallery = document.querySelector(".gallery");
+			if (gallery) {
+				gallery._galleryClickBound = true;
+				gallery.addEventListener("click", e => {
+					const link = e.target.closest("a.gallery-link");
+					if (!link) return;
+					e.preventDefault();
+					const href = link.getAttribute("href");
+					const idx  = elements.findIndex(el => el.href === href);
+					lightbox?.openAt(idx >= 0 ? idx : 0);
+				});
+			}
+		}
 	};
 
 	const onReady = (cb) => document.readyState === "loading"

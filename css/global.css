@@ -882,6 +882,7 @@ input {
 }
 
 
+
 .gallery-arrow {
     position: absolute;
     top: 50%;
@@ -924,8 +925,8 @@ input {
     aspect-ratio: 5 / 3;
     grid-auto-flow: dense;
     gap: 2px;
-    border-radius: 12px;
-    overflow: hidden;
+    border-radius: 0;
+    overflow: visible;
 }
 
 .image-container {
@@ -933,6 +934,7 @@ input {
     overflow: hidden;
     position: relative;
 }
+
 
 /* Featured (2x2 span) and all other items get explicit grid-row/grid-column
    from JS — CSS auto-placement is unreliable when mixing explicit + auto. */
