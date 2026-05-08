@@ -120,6 +120,10 @@
 					existing = img;
 				}
 				existing.src = thumbUrl;
+				const target = existing;
+				const full = new Image();
+				full.onload = () => { if (target.src.includes("/thumbs/")) target.src = fullUrl; };
+				full.src = fullUrl;
 			}
 		});
 
