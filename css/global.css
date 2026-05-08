@@ -332,7 +332,41 @@ input {
     -webkit-transition: all 1.5s ease-in-out;
     transition: all 1.5s ease-in-out;
     text-transform: none;
-    opacity: 0.75;
+    opacity: 1;
+}
+.weather-icon {
+    height: 2.2em;
+    width: 2.2em;
+    vertical-align: middle;
+    position: relative;
+    top: -0.05em;
+    cursor: pointer;
+    display: inline-block;
+    overflow: hidden;
+}
+.weather-icon-slide-out {
+    -webkit-animation: weather-slide-out 0.15s ease-in forwards;
+    animation: weather-slide-out 0.15s ease-in forwards;
+}
+.weather-icon-slide-in {
+    -webkit-animation: weather-slide-in 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+    animation: weather-slide-in 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+@-webkit-keyframes weather-slide-out {
+    from { opacity: 1; -webkit-transform: translateX(0);    transform: translateX(0); }
+    to   { opacity: 0; -webkit-transform: translateX(-40%); transform: translateX(-40%); }
+}
+@keyframes weather-slide-out {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(-40%); }
+}
+@-webkit-keyframes weather-slide-in {
+    from { opacity: 0; -webkit-transform: translateX(40%); transform: translateX(40%); }
+    to   { opacity: 1; -webkit-transform: translateX(0);   transform: translateX(0); }
+}
+@keyframes weather-slide-in {
+    from { opacity: 0; transform: translateX(40%); }
+    to   { opacity: 1; transform: translateX(0); }
 }
 .downButton {
     position: absolute;

@@ -4,8 +4,9 @@
    Caches last known result in localStorage for instant first paint. */
 
 (function () {
-	var CACHE_KEY = "gg:weather:v1";
+	var CACHE_KEY = "gg:weather:v2";
 	var CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+	var ICON_BASE = "images/weather/";
 
 	var LOCATIONS = {
 		sf: {
@@ -18,24 +19,40 @@
 		},
 	};
 
-	var CONDITION_EMOJIS = [
-		[/thunder|storm/i,                  "⛈️"],
-		[/snow|blizzard/i,                  "❄️"],
-		[/sleet|freezing/i,                 "🌨️"],
-		[/rain|shower|drizzle/i,            "🌧️"],
-		[/fog|mist|haze/i,                  "🌫️"],
-		[/overcast|mostly cloudy/i,         "☁️"],
-		[/partly cloudy|partly sunny/i,     "⛅"],
-		[/mostly sunny|mostly clear/i,      "🌤️"],
-		[/sunny|clear/i,                    "☀️"],
-		[/wind/i,                           "🌬️"],
+	var ALL_ICONS = [
+		"day.svg", "night.svg",
+		"cloudy-day-1.svg", "cloudy-day-2.svg", "cloudy-day-3.svg",
+		"cloudy-night-1.svg", "cloudy-night-2.svg", "cloudy-night-3.svg",
+		"cloudy.svg",
+		"rainy-1.svg", "rainy-2.svg", "rainy-3.svg", "rainy-4.svg", "rainy-5.svg", "rainy-6.svg", "rainy-7.svg",
+		"snowy-1.svg", "snowy-2.svg", "snowy-3.svg", "snowy-4.svg", "snowy-5.svg", "snowy-6.svg",
+		"thunder.svg",
 	];
 
-	function conditionEmoji(shortForecast) {
-		for (var i = 0; i < CONDITION_EMOJIS.length; i++) {
-			if (CONDITION_EMOJIS[i][0].test(shortForecast)) return CONDITION_EMOJIS[i][1];
+	var CONDITION_ICONS = [
+		[/thunder|storm/i,                  "thunder.svg",       "thunder.svg"],
+		[/snow|blizzard/i,                  "snowy-3.svg",       "snowy-3.svg"],
+		[/sleet|freezing/i,                 "snowy-6.svg",       "snowy-6.svg"],
+		[/rain|shower|drizzle/i,            "rainy-3.svg",       "rainy-3.svg"],
+		[/fog|mist|haze/i,                  "cloudy.svg",        "cloudy-night-3.svg"],
+		[/overcast|mostly cloudy/i,         "cloudy-day-3.svg",  "cloudy-night-3.svg"],
+		[/partly cloudy|partly sunny/i,     "cloudy-day-2.svg",  "cloudy-night-2.svg"],
+		[/mostly sunny|mostly clear/i,      "cloudy-day-1.svg",  "cloudy-night-1.svg"],
+		[/sunny|clear/i,                    "day.svg",           "night.svg"],
+		[/wind/i,                           "cloudy-day-1.svg",  "cloudy-night-1.svg"],
+	];
+
+	var easterEggInterval = null;
+	var easterEggIndex = 0;
+	var animating = false;
+
+	function conditionIcon(shortForecast, isDaytime) {
+		for (var i = 0; i < CONDITION_ICONS.length; i++) {
+			if (CONDITION_ICONS[i][0].test(shortForecast)) {
+				return ICON_BASE + CONDITION_ICONS[i][isDaytime ? 1 : 2];
+			}
 		}
-		return "🌡️";
+		return ICON_BASE + (isDaytime ? "day.svg" : "night.svg");
 	}
 
 	function isCupertinoTime() {
@@ -48,14 +65,63 @@
 
 	function ftToC(f) { return Math.round((f - 32) * 5 / 9); }
 
+	function stopEasterEgg() {
+		if (easterEggInterval) {
+			clearInterval(easterEggInterval);
+			easterEggInterval = null;
+		}
+	}
+
+	function slideToIcon(newSrc) {
+		if (animating) return;
+		animating = true;
+		var $img = $(".weather-icon");
+		$img.addClass("weather-icon-slide-out");
+		setTimeout(function () {
+			$img.attr("src", newSrc);
+			$img.removeClass("weather-icon-slide-out").addClass("weather-icon-slide-in");
+			setTimeout(function () {
+				$img.removeClass("weather-icon-slide-in");
+				animating = false;
+			}, 300);
+		}, 150);
+	}
+
+	function startEasterEgg() {
+		if (easterEggInterval) return; // already running
+		var currentSrc = $(".weather-icon").attr("src") || "";
+		var currentFile = currentSrc.split("/").pop();
+		easterEggIndex = ALL_ICONS.indexOf(currentFile);
+		if (easterEggIndex === -1) easterEggIndex = 0;
+		var startIndex = easterEggIndex;
+
+		easterEggInterval = setInterval(function () {
+			easterEggIndex = (easterEggIndex + 1) % ALL_ICONS.length;
+			slideToIcon(ICON_BASE + ALL_ICONS[easterEggIndex]);
+			if (easterEggIndex === startIndex) stopEasterEgg();
+		}, 1000);
+	}
+
+	function onIconTap() {
+		if (easterEggInterval) {
+			stopEasterEgg();
+		} else {
+			startEasterEgg();
+		}
+	}
+
+	function buildDisplay(icon, temp, label) {
+		return '<img src="' + icon + '" class="weather-icon" alt="Weather icon by amCharts">' + temp + " &ndash; " + label;
+	}
+
 	function renderWeather(tempF, shortForecast, label, isDaytime) {
-		var emoji = conditionEmoji(shortForecast);
-		if (!isDaytime && /sunny|clear/i.test(shortForecast)) emoji = "🌙";
+		var icon = conditionIcon(shortForecast, isDaytime);
 		var $el = $(".designation");
 		if (!$el.length) return;
 		$el.data("weather-f", tempF);
 		$el.data("weather-label", label);
-		$el.data("weather-emoji", emoji);
+		$el.data("weather-icon", icon);
+		stopEasterEgg();
 		updateWeatherDisplay();
 	}
 
@@ -64,16 +130,16 @@
 		if (!$el.data("weather-f")) return;
 		var tempF  = $el.data("weather-f");
 		var label  = $el.data("weather-label");
-		var emoji  = $el.data("weather-emoji");
+		var icon   = $el.data("weather-icon");
 		var useMetric = window.GG && window.GG.units === "metric";
 		var temp = useMetric ? ftToC(tempF) + "°C" : Math.round(tempF) + "°F";
-		$el.html(emoji + " " + temp + " &ndash; " + label);
+		$el.html(buildDisplay(icon, temp, label));
+		$(".weather-icon").on("click", onIconTap);
 	}
 
 	window.GG = window.GG || {};
 	window.GG.refreshWeather = updateWeatherDisplay;
 
-	// Returns cached data if still fresh, null otherwise
 	function getCache() {
 		try {
 			var raw = localStorage.getItem(CACHE_KEY);
@@ -111,14 +177,12 @@
 			.catch(function (err) { console.warn("Weather fetch failed", err); });
 	}
 
-	// Render from cache immediately if fresh — no fetch needed
 	var cached = getCache();
 	if (cached) {
 		$(document).ready(function () {
 			renderWeather(cached.tempF, cached.shortForecast, cached.label, cached.isDaytime);
 		});
 	} else {
-		// Cache is stale or missing — fetch from NWS
 		$(document).ready(function () {
 			fetchWeather(isCupertinoTime() ? LOCATIONS.cupertino : LOCATIONS.sf);
 		});
