@@ -142,18 +142,19 @@ def process_image(src: Path, dest_full: Path, dest_thumb: Path):
     save_resized(dest_thumb, IMG_THUMB_W, IMG_THUMB_Q, square=True)
     return dest_full.name  # return final filename (may differ from input if ext changed)
 
-def process_video(src: Path, dest_full: Path, dest_thumb: Path):
+def process_video(src: Path, dest_full: Path, dest_thumb: Path, thumb_only: bool = False):
     def run(args):
         subprocess.run(args, check=True, capture_output=True)
 
     dest_full  = dest_full.with_suffix(".mp4")
     dest_thumb = dest_thumb.with_suffix(".mp4")
 
-    # Full res
-    run(["ffmpeg", "-y", "-i", str(src),
-         "-vf", f"scale={VID_FULL_W}:-2",
-         "-c:v", "libx264", "-crf", str(VID_FULL_CRF), "-preset", "fast",
-         "-an", "-movflags", "+faststart", str(dest_full)])
+    if not thumb_only:
+        # Full res
+        run(["ffmpeg", "-y", "-i", str(src),
+             "-vf", f"scale={VID_FULL_W}:-2",
+             "-c:v", "libx264", "-crf", str(VID_FULL_CRF), "-preset", "fast",
+             "-an", "-movflags", "+faststart", str(dest_full)])
 
     # Thumb — center-crop to square then resize
     run(["ffmpeg", "-y", "-i", str(src),
@@ -775,7 +776,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 if ext in {".mp4", ".mov"}:
                     dest_full  = PHOTO_DIR / (stem + ".mp4")
                     dest_thumb = THUMB_DIR  / (stem + ".mp4")
-                    process_video(src, dest_full, dest_thumb)
+                    process_video(src, dest_full, dest_thumb, thumb_only=True)
                 else:
                     dest_full  = PHOTO_DIR / (stem + ".jpg")
                     dest_thumb = THUMB_DIR  / (stem + ".jpg")
