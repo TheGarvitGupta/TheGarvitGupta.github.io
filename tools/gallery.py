@@ -619,7 +619,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 fpath  = line[3:].strip()
                 if "/thumbs/" in fpath: continue
                 is_vid = fpath.lower().endswith(".mp4")
-                if status in ("A", "??"):
+                if status in ("A", "??", "M"):
                     if is_vid: added_videos += 1
                     else: added_photos += 1
                 elif status == "D":
