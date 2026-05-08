@@ -56,12 +56,16 @@ async function fetchSpotify(env) {
 				deviceName: data.device?.name || null,
 				deviceType: data.device?.type || null,
 			};
-			// Cache the playing track with current timestamp (strip progress, add cachedAt)
+			// Only write to KV if the track changed (saves KV write quota)
 			const cached = { ...track, playing: false, cachedAt: Date.now() };
 			delete cached.progressMs;
 			delete cached.deviceName;
 			delete cached.deviceType;
-			await env.SPOTIFY_CACHE.put(CACHE_KEY, JSON.stringify(cached));
+			const existing = await env.SPOTIFY_CACHE.get(CACHE_KEY);
+			const existingTrack = existing ? JSON.parse(existing).track : null;
+			if (existingTrack !== track.track) {
+				await env.SPOTIFY_CACHE.put(CACHE_KEY, JSON.stringify(cached));
+			}
 			return track;
 		}
 	}
