@@ -142,7 +142,7 @@ HTML = r"""<!DOCTYPE html>
 
   .tile {
     position: relative;
-    aspect-ratio: 1;
+    aspect-ratio: 4 / 3;
     background: #ddd;
     border-radius: 4px;
     overflow: hidden;
