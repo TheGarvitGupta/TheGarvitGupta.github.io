@@ -499,3 +499,8 @@
         margin-top: 4%;
     }
 }
+@media (pointer: coarse) {
+    .gallery-arrow {
+        display: none;
+    }
+}

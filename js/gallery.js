@@ -177,10 +177,25 @@
 		return v;
 	};
 
+	const updateDots = (numPages) => {
+		const container = document.querySelector(".gallery-dots");
+		if (!container) return;
+		container.innerHTML = "";
+		for (let i = 0; i < numPages; i++) {
+			const dot = document.createElement("div");
+			dot.className = "gallery-dot" + (i === currentPage ? " selected" : "");
+			dot.addEventListener("click", () => showPage(i));
+			container.appendChild(dot);
+		}
+		document.querySelector(".gallery-prev")?.classList.toggle("disabled", currentPage === 0);
+		document.querySelector(".gallery-next")?.classList.toggle("disabled", currentPage === numPages - 1);
+	};
+
 	const showPage = (page) => {
 		if (!allPhotos.length) return;
 		const numPages = Math.ceil(allPhotos.length / PAGE_SIZE);
-		currentPage = ((page % numPages) + numPages) % numPages;
+		page = Math.max(0, Math.min(numPages - 1, page)); // no wrapping
+		currentPage = page;
 		const start  = currentPage * PAGE_SIZE;
 
 		const [cols, rows] = applyLayout();
@@ -200,15 +215,24 @@
 		const thumbReady = [];
 
 		containers.forEach((container, i) => {
-			const idx      = (start + i) % allPhotos.length;
+			// start fresh — avoids re-fetching thumbs on stale survivor elements
+			container.querySelectorAll("video, img").forEach(el => el.remove());
+
+			if (start + i >= allPhotos.length) {
+				// last page may have fewer than PAGE_SIZE photos — leave cell empty
+				const anchor = container.querySelector("a.gallery-link");
+				if (anchor) anchor.href = "";
+				thumbReady.push(Promise.resolve());
+				upgrades.push(() => {});
+				return;
+			}
+
+			const idx      = start + i;
 			const name     = allPhotos[idx];
 			const thumbUrl = `images/photographs/thumbs/${name}`;
 			const fullUrl  = `images/photographs/${name}`;
 			const anchor   = container.querySelector("a.gallery-link");
 			if (anchor) anchor.href = fullUrl;
-
-			// start fresh — avoids re-fetching thumbs on stale survivor elements
-			container.querySelectorAll("video, img").forEach(el => el.remove());
 
 			const cr = container.style.borderRadius;
 
@@ -266,6 +290,7 @@
 			allSettledOrTimeout(thumbReady).then(() => upgrades.forEach(fn => fn()));
 		}
 
+		updateDots(numPages);
 		rebuildLightbox();
 	};
 
@@ -316,8 +341,8 @@
 
 	const init = (photos) => {
 		allPhotos = shuffle(photos.slice());
-		document.querySelector(".gallery-prev")?.addEventListener("click", () => showPage(currentPage - 1));
-		document.querySelector(".gallery-next")?.addEventListener("click", () => showPage(currentPage + 1));
+		document.querySelector(".gallery-prev")?.addEventListener("click", (e) => { if (!e.currentTarget.classList.contains("disabled")) showPage(currentPage - 1); });
+		document.querySelector(".gallery-next")?.addEventListener("click", (e) => { if (!e.currentTarget.classList.contains("disabled")) showPage(currentPage + 1); });
 		showPage(0);
 	};
 
