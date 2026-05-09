@@ -219,13 +219,14 @@
 			container.querySelectorAll("video, img").forEach(el => el.remove());
 
 			if (start + i >= allPhotos.length) {
-				// last page may have fewer than PAGE_SIZE photos — leave cell empty
+				container.style.background = "transparent";
 				const anchor = container.querySelector("a.gallery-link");
 				if (anchor) anchor.href = "";
 				thumbReady.push(Promise.resolve());
 				upgrades.push(() => {});
 				return;
 			}
+			container.style.background = "";
 
 			const idx      = start + i;
 			const name     = allPhotos[idx];
