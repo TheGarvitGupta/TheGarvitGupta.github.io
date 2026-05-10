@@ -226,8 +226,8 @@ input {
     transform: translateY(-50%);
     text-transform: uppercase;
     color: #222222;
-    width: -webkit-fit-content;
-    width: fit-content;
+    width: -webkit-max-content;
+    width: max-content;
     z-index: 100000;
 }
 .spotify-link {
@@ -345,6 +345,11 @@ input {
     top: -0.05em;
     cursor: pointer;
     display: inline-block;
+}
+.weather-icon-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 .weather-icon-slide-out {
     -webkit-animation: weather-slide-out 0.15s ease-in forwards;
@@ -988,6 +993,15 @@ input {
     height: 100%;
     display: block;
     object-fit: cover;
+}
+
+@media screen and (max-width: 768px) {
+    .name        { font-size: 10vw; }
+    .designation { font-size: 4vw; }
+}
+@media screen and (max-width: 480px) {
+    .name        { font-size: 11vw; }
+    .designation { font-size: 4.5vw; }
 }
 
 @media screen and (max-width: 1180px) {

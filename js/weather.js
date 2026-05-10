@@ -48,6 +48,31 @@
 	var easterEggInterval = null;
 	var easterEggIndex = 0;
 	var animating = false;
+	var svgCache = {};
+
+	function fetchSVG(src, cb) {
+		if (svgCache[src]) { cb(svgCache[src]); return; }
+		fetch(src)
+			.then(function (r) { return r.text(); })
+			.then(function (text) {
+				var match = text.match(/<svg[\s\S]*<\/svg>/i);
+				if (!match) return;
+				var svg = match[0];
+				// Ensure the SVG fills its container
+				svg = svg.replace(/<svg/, '<svg class="weather-icon-svg"');
+				svgCache[src] = svg;
+				cb(svg);
+			})
+			.catch(function () {});
+	}
+
+	function setIconSVG(src) {
+		var $el = $(".weather-icon");
+		if (!$el.length) return;
+		fetchSVG(src, function (svg) {
+			$el.html(svg);
+		});
+	}
 
 	function conditionIcon(shortForecast, isDaytime) {
 		for (var i = 0; i < CONDITION_ICONS.length; i++) {
@@ -78,13 +103,13 @@
 	function slideToIcon(newSrc) {
 		if (animating) return;
 		animating = true;
-		var $img = $(".weather-icon");
-		$img.addClass("weather-icon-slide-out");
+		var $icon = $(".weather-icon");
+		$icon.addClass("weather-icon-slide-out");
 		setTimeout(function () {
-			$img.attr("data", newSrc);
-			$img.removeClass("weather-icon-slide-out").addClass("weather-icon-slide-in");
+			setIconSVG(newSrc);
+			$icon.removeClass("weather-icon-slide-out").addClass("weather-icon-slide-in");
 			setTimeout(function () {
-				$img.removeClass("weather-icon-slide-in");
+				$icon.removeClass("weather-icon-slide-in");
 				animating = false;
 			}, 300);
 		}, 150);
@@ -92,8 +117,8 @@
 
 	function startEasterEgg() {
 		if (easterEggInterval) return; // already running
-		var currentSrc = $(".weather-icon").attr("data") || "";
-		var currentFile = currentSrc.split("/").pop();
+		var currentFile = $(".weather-icon").data("icon-src") || "";
+		currentFile = currentFile.split("/").pop();
 		easterEggIndex = ALL_ICONS.indexOf(currentFile);
 		if (easterEggIndex === -1) easterEggIndex = 0;
 		var startIndex = easterEggIndex;
@@ -114,7 +139,7 @@
 	}
 
 	function buildDisplay(icon, temp, label) {
-		return '<object data="' + icon + '" type="image/svg+xml" class="weather-icon" aria-label="Weather icon by amCharts"></object>' + temp + " &ndash; " + label;
+		return '<span class="weather-icon" data-icon-src="' + icon + '" aria-label="Weather icon by amCharts"></span>' + temp + " &ndash; " + label;
 	}
 
 	function renderWeather(tempF, shortForecast, label, isDaytime) {
@@ -144,6 +169,7 @@
 		var useMetric = window.GG && window.GG.units === "metric";
 		var temp = useMetric ? ftToC(tempF) + "°C" : Math.round(tempF) + "°F";
 		$el.html(buildDisplay(icon, temp, label));
+		setIconSVG(icon);
 		$(".weather-icon").on("click", onIconTap);
 	}
 
