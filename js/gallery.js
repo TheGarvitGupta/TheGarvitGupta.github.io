@@ -37,7 +37,6 @@
 
 	let strip, stage;
 	let sections = []; // { gallery, cols, rows, thumbReady, upgrades } indexed by page
-	let drag = null;
 
 	const shuffle = (arr) => {
 		for (let i = arr.length - 1; i > 0; i--) {
@@ -237,15 +236,6 @@
 		return g;
 	};
 
-	const mountOnStage = (gallery, translateXPct) => {
-		gallery.style.cssText = [
-			"position:absolute", "top:0", "left:0",
-			"width:100%", "height:100%",
-			"overflow:visible", "display:grid",
-			`transform:translateX(${translateXPct}%)`,
-		].join(";");
-	};
-
 	// direction: 1 = right (next), -1 = left (prev)
 	// isNew: true = first time seeing this section (slide + tile convergence)
 	//        false = revisiting (clean slide only, tiles already settled)
@@ -253,8 +243,10 @@
 		const easing = `${ANIM_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`;
 
 		const oldGallery = strip.firstElementChild;
-		if (oldGallery) mountOnStage(oldGallery, 0);
-		mountOnStage(gallery, direction * 100);
+		if (oldGallery) {
+			oldGallery.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;display:grid;transform:translateX(0)";
+		}
+		gallery.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;display:grid;transform:translateX(${direction * 100}%)`;
 		stage.appendChild(gallery);
 
 		if (isNew) {
@@ -293,158 +285,6 @@
 		}, ANIM_MS + 50);
 	};
 
-	const ensureSection = (idx) => {
-		const numPages = Math.ceil(allPhotos.length / PAGE_SIZE);
-		if (idx < 0 || idx >= numPages || sections[idx]) return;
-		const g = createGallerySection();
-		const [cols, rows] = applyLayout(g, true);
-		const { thumbReady, upgrades } = populateGallery(g, idx * PAGE_SIZE, cols, rows);
-		sections[idx] = { gallery: g, cols, rows, thumbReady, upgrades };
-	};
-
-	const commitDrag = (direction, e) => {
-		const numPages  = Math.ceil(allPhotos.length / PAGE_SIZE);
-		const targetIdx = currentPage + direction;
-		if (targetIdx < 0 || targetIdx >= numPages) { drag = null; return; }
-		const isNew = !sections[targetIdx];
-		ensureSection(targetIdx);
-		const { gallery, cols, rows } = sections[targetIdx];
-		const currentGallery = strip.firstElementChild;
-		if (!currentGallery) { drag = null; return; }
-		// move current gallery out of strip onto stage so both siblings animate freely
-		stage.insertBefore(currentGallery, strip);
-		mountOnStage(currentGallery, 0);
-		mountOnStage(gallery, direction * 100);
-		stage.appendChild(gallery);
-		if (isNew) {
-			const explosionEdge = direction > 0 ? 'left' : 'right';
-			applyExplosionOffsets(gallery, cols, rows, explosionEdge);
-			gallery.querySelectorAll(".image-container").forEach(el => { el.style.opacity = "0"; });
-		}
-		Object.assign(drag, { direction, targetIdx, isNew, oldGallery: currentGallery, gallery, cols, rows, progress: 0 });
-		drag.committed = true;
-	};
-
-	const onDragStart = (e) => {
-		if (e.button !== undefined && e.button !== 0) return;
-		if (transitioning || drag) return;
-		ensureSection(currentPage - 1);
-		ensureSection(currentPage + 1);
-		drag = { startX: e.clientX, startY: e.clientY, lastX: e.clientX, lastT: Date.now(), vel: 0, committed: false, pointerId: e.pointerId };
-		document.addEventListener("pointermove",   onDragMove);
-		document.addEventListener("pointerup",     onDragEnd);
-		document.addEventListener("pointercancel", onDragEnd);
-	};
-
-	const onDragMove = (e) => {
-		if (!drag || e.pointerId !== drag.pointerId) return;
-		const dx = e.clientX - drag.startX;
-		const dy = e.clientY - drag.startY;
-		if (!drag.committed) {
-			if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-			if (Math.abs(dy) >= Math.abs(dx)) {
-				drag = null;
-				document.removeEventListener("pointermove",   onDragMove);
-				document.removeEventListener("pointerup",     onDragEnd);
-				document.removeEventListener("pointercancel", onDragEnd);
-				return;
-			}
-			commitDrag(dx < 0 ? 1 : -1, e);
-			if (!drag) return;
-		}
-		e.preventDefault();
-		const now = Date.now(); const dt = now - drag.lastT;
-		if (dt > 0) drag.vel = (e.clientX - drag.lastX) / dt;
-		drag.lastX = e.clientX; drag.lastT = now;
-		const { direction, oldGallery, gallery, isNew } = drag;
-		const progress = Math.max(0, Math.min(1, -direction * (e.clientX - drag.startX) / stage.offsetWidth));
-		drag.progress = progress;
-		oldGallery.style.transition = "none";
-		oldGallery.style.transform  = `translateX(${-direction * progress * 100}%)`;
-		oldGallery.style.opacity    = String(1 - progress * 0.6);
-		gallery.style.transition = "none";
-		gallery.style.transform  = `translateX(${direction * (1 - progress) * 100}%)`;
-		if (isNew) {
-			gallery.querySelectorAll(".image-container").forEach(el => {
-				const ox  = parseFloat(el.dataset.ox)  || 0;
-				const oy  = parseFloat(el.dataset.oy)  || 0;
-				const rot = parseFloat(el.dataset.rot) || 0;
-				el.style.transition = "none";
-				el.style.transform  = `translate(${ox * (1 - progress)}px, ${oy * (1 - progress)}px) rotate(${rot * (1 - progress)}deg)`;
-				el.style.opacity    = String(progress);
-			});
-		}
-	};
-
-	const onDragEnd = (e) => {
-		if (!drag || e.pointerId !== drag.pointerId) return;
-		document.removeEventListener("pointermove",   onDragMove);
-		document.removeEventListener("pointerup",     onDragEnd);
-		document.removeEventListener("pointercancel", onDragEnd);
-		if (!drag.committed) { drag = null; return; }
-		const { direction, targetIdx, isNew, oldGallery, gallery, progress, vel } = drag;
-		drag = null;
-		const snapForward = progress > 0.35 || (-direction * vel > 0.25);
-		const easing = `${ANIM_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`;
-		const finalize = () => {
-			oldGallery.remove();
-			gallery.removeAttribute("style");
-			strip.innerHTML = "";
-			strip.appendChild(gallery);
-			transitioning = false;
-		};
-		if (snapForward) {
-			transitioning = true;
-			currentPage = targetIdx;
-			oldGallery.style.transition = `transform ${easing}, opacity ${easing}`;
-			oldGallery.style.transform  = `translateX(${-direction * 100}%)`;
-			oldGallery.style.opacity    = "0";
-			gallery.style.transition = `transform ${easing}`;
-			gallery.style.transform  = "translateX(0)";
-			if (isNew) {
-				const tileEase = `transform ${easing}, opacity ${easing}`;
-				gallery.querySelectorAll(".image-container").forEach(el => {
-					el.style.transition = tileEase;
-					el.style.transform  = "translate(0,0) rotate(0deg)";
-					el.style.opacity    = "1";
-				});
-			}
-			setTimeout(() => {
-				finalize();
-				updateDots(Math.ceil(allPhotos.length / PAGE_SIZE));
-				if (isNew) {
-					const { thumbReady, upgrades } = sections[targetIdx];
-					allSettledOrTimeout(thumbReady).then(() => upgrades.forEach(fn => fn()));
-				}
-			}, ANIM_MS + 50);
-			updateDots(Math.ceil(allPhotos.length / PAGE_SIZE));
-			rebuildLightbox();
-		} else {
-			// snap back
-			oldGallery.style.transition = `transform ${easing}, opacity ${easing}`;
-			oldGallery.style.transform  = "translateX(0)";
-			oldGallery.style.opacity    = "1";
-			gallery.style.transition = `transform ${easing}`;
-			gallery.style.transform  = `translateX(${direction * 100}%)`;
-			if (isNew) {
-				gallery.querySelectorAll(".image-container").forEach(el => {
-					const ox  = parseFloat(el.dataset.ox)  || 0;
-					const oy  = parseFloat(el.dataset.oy)  || 0;
-					const rot = parseFloat(el.dataset.rot) || 0;
-					el.style.transition = `transform ${easing}, opacity ${easing}`;
-					el.style.transform  = `translate(${ox}px, ${oy}px) rotate(${rot}deg)`;
-					el.style.opacity    = "0";
-				});
-			}
-			setTimeout(() => {
-				if (gallery.parentElement === stage) stage.removeChild(gallery);
-				// restore old gallery back into strip
-				oldGallery.removeAttribute("style");
-				strip.innerHTML = "";
-				strip.appendChild(oldGallery);
-			}, ANIM_MS + 50);
-		}
-	};
 
 	const allSettledOrTimeout = (promises, ms = 4000) =>
 		Promise.race([
@@ -666,13 +506,25 @@
 			navigateTo(currentPage + 1);
 		});
 
-		stage.addEventListener("pointerdown", onDragStart);
+		// Touch swipe
+		let touchStartX = 0, touchStartY = 0;
+		stage.addEventListener("touchstart", (e) => {
+			touchStartX = e.touches[0].clientX;
+			touchStartY = e.touches[0].clientY;
+		}, { passive: true });
+		stage.addEventListener("touchend", (e) => {
+			const dx = e.changedTouches[0].clientX - touchStartX;
+			const dy = e.changedTouches[0].clientY - touchStartY;
+			if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+				navigateTo(currentPage + (dx < 0 ? 1 : -1));
+			}
+		}, { passive: true });
 
-		// Trackpad / wheel horizontal scroll — fire as soon as 60px accumulated
+		// Trackpad / wheel horizontal scroll
 		let wheelAccum = 0;
 		let wheelCooldown = false;
 		stage.addEventListener("wheel", (e) => {
-			if (transitioning || drag || wheelCooldown) return;
+			if (transitioning || wheelCooldown) return;
 			if (Math.abs(e.deltaY) > Math.abs(e.deltaX) * 1.5) return;
 			e.preventDefault();
 			wheelAccum += e.deltaX;
@@ -681,7 +533,7 @@
 				wheelAccum = 0;
 				wheelCooldown = true;
 				navigateTo(currentPage + dir);
-				setTimeout(() => { wheelCooldown = false; }, ANIM_MS + 100);
+				setTimeout(() => { wheelCooldown = false; wheelAccum = 0; }, ANIM_MS + 100);
 			}
 		}, { passive: false });
 
