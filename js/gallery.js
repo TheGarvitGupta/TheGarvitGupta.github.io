@@ -190,18 +190,25 @@
 
 	let scrollHandler = null;
 
-	const preloadAdjacentPages = () => {
+	const preloadRemainingPages = (after = Promise.resolve()) => {
 		const numPages = Math.ceil(allPhotos.length / PAGE_SIZE);
-		[currentPage - 1, currentPage + 1].forEach(idx => {
-			if (idx < 0 || idx >= numPages || sections[idx]) return;
+		let chain = after;
+		for (let idx = 0; idx < numPages; idx++) {
+			if (sections[idx]) continue;
 			const g = createGallerySection();
 			const [cols, rows] = applyLayout(g, true);
-			const { thumbReady, upgrades } = populateGallery(g, idx * PAGE_SIZE, cols, rows);
-			sections[idx] = { gallery: g, cols, rows, thumbReady, upgrades };
+			sections[idx] = { gallery: g, cols, rows, thumbReady: [], upgrades: [] };
 			g.style.display = "none";
 			strip.appendChild(g);
-			allSettledOrTimeout(thumbReady).then(() => upgrades.forEach(fn => fn()));
-		});
+			const capturedIdx = idx;
+			chain = chain.then(() => {
+				const populated = populateGallery(g, capturedIdx * PAGE_SIZE, cols, rows);
+				Object.assign(sections[capturedIdx], populated);
+				return allSettledOrTimeout(populated.thumbReady).then(
+					() => allSettledOrTimeout(populated.upgrades.map(fn => fn()))
+				);
+			});
+		}
 	};
 
 	const initScrollConverge = (gallery, upgrades) => {
@@ -227,8 +234,8 @@
 				hasConverged = true;
 				window.removeEventListener("scroll", scrollHandler);
 				scrollHandler = null;
-				upgrades.forEach(fn => fn());
-				preloadAdjacentPages();
+				const fullResReady = allSettledOrTimeout(upgrades.map(fn => fn()));
+				preloadRemainingPages(fullResReady);
 			}
 		};
 
@@ -326,8 +333,10 @@
 			gallery.removeAttribute("style");
 			strip.appendChild(gallery); // move from stage into strip
 			transitioning = false;
-			if (isNew) allSettledOrTimeout(thumbReady).then(() => upgrades.forEach(fn => fn()));
-			preloadAdjacentPages();
+			const fullResReady = isNew
+				? allSettledOrTimeout(thumbReady).then(() => allSettledOrTimeout(upgrades.map(fn => fn())))
+				: Promise.resolve();
+			preloadRemainingPages(fullResReady);
 		}, ANIM_MS + 50);
 	};
 
@@ -379,8 +388,9 @@
 
 			const idx      = start + i;
 			const name     = allPhotos[idx];
-			const thumbUrl = `images/photographs/thumbs/${name}`;
-			const fullUrl  = `images/photographs/${name}`;
+			const bust     = location.hostname === "localhost" ? `?b=${Math.random()}` : "";
+			const thumbUrl = `images/photographs/thumbs/${name}${bust}`;
+			const fullUrl  = `images/photographs/${name}${bust}`;
 			const anchor   = container.querySelector("a.gallery-link");
 			if (anchor) anchor.href = fullUrl;
 
@@ -394,30 +404,31 @@
 					thumb.addEventListener("error",   res, { once: true });
 					thumb.play().catch(() => {});
 				}));
-				upgrades.push(() => {
+				upgrades.push(() => new Promise(res => {
 					const full = makeVideo(fullUrl, cr);
 					full.style.cssText += "opacity:0;transition:opacity 0.4s ease;z-index:1;";
 					thumb.after(full);
 					full.addEventListener("canplaythrough", () => {
 						full.play().catch(() => {});
 						full.style.opacity = "1";
-						full.addEventListener("transitionend", () => thumb.remove(), { once: true });
+						full.addEventListener("transitionend", () => { thumb.remove(); res(); }, { once: true });
 					}, { once: true });
-				});
+					full.addEventListener("error", res, { once: true });
+				}));
 			} else {
 				const thumb = new Image();
 				thumb.alt = "";
 				if (cr) thumb.style.borderRadius = cr;
-				thumb.src = thumbUrl;
 				anchor ? anchor.prepend(thumb) : container.prepend(thumb);
 				thumbReady.push(new Promise(res => {
-					if (thumb.complete) res();
+					if (thumb.complete) requestAnimationFrame(res);
 					else {
-						thumb.addEventListener("load",  res, { once: true });
+						thumb.addEventListener("load",  () => requestAnimationFrame(res), { once: true });
 						thumb.addEventListener("error", res, { once: true });
 					}
 				}));
-				upgrades.push(() => {
+				thumb.src = thumbUrl;
+				upgrades.push(() => new Promise(res => {
 					const full = new Image();
 					full.alt = "";
 					full.style.cssText = "opacity:0;transition:opacity 0.4s ease;z-index:1;";
@@ -425,10 +436,11 @@
 					thumb.after(full);
 					full.onload = () => {
 						full.style.opacity = "1";
-						full.addEventListener("transitionend", () => thumb.remove(), { once: true });
+						full.addEventListener("transitionend", () => { thumb.remove(); res(); }, { once: true });
 					};
+					full.onerror = res;
 					full.src = fullUrl;
-				});
+				}));
 			}
 		});
 
