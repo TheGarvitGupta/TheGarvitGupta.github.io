@@ -59,6 +59,13 @@ html.dark-mode .nav-dot-selected {
     background-color: rgba(0, 0, 0, 0);
     border-color: #ffffff;
 }
+html.dark-mode .gallery-dot {
+    background-color: #ffffff;
+}
+html.dark-mode .gallery-dot.selected {
+    background-color: transparent;
+    border-color: #ffffff;
+}
 html.dark-mode .nav-text {
     color: #e0e0e0;
     text-shadow: 0 0 3px #000, 0 0 6px #000;
