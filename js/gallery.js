@@ -14,13 +14,16 @@
 		"photograph-16.jpg",  "photograph-18.jpg", "photograph-20.jpg",
 		"photograph-22.mp4",
 		"IMG_20210227_142846_Original.jpg",
-		"IMG_2072.jpg", "IMG_2083.mp4", "IMG_2406.jpg",
+		"IMG_1950.mp4",
+		"IMG_2072.jpg", "IMG_2083.mp4", "IMG_2308.jpg", "IMG_2406.jpg",
 		"IMG_2464.jpg", "IMG_2481.jpg", "IMG_3043.jpg",
 		"IMG_3194.jpg", "IMG_4700.jpg", "IMG_5660.jpg",
 		"IMG_5978.jpg", "IMG_8239.jpg", "IMG_8373.jpg",
 		"Photo_6553705_DJI_105_jpg_4887766_0_202196175122_photo_original.jpg",
 		"DJI_20251213104838_0010_D.mp4",
 		"ScreenRecording_03-03-2026 08-46-09_1.mp4",
+		"Weiter.mp4",
+		"69be7b6d-eaca-4a47-8529-5171c81d4c06.mp4",
 	];
 	const PAGE_SIZE = 12;
 	const CONVERGE_PX          = 40;
