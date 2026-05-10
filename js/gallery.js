@@ -37,6 +37,8 @@
 
 	let strip, stage;
 	let sections = []; // { gallery, cols, rows, thumbReady, upgrades } indexed by page
+	let animationTimer = null;
+	let inflightGallery = null; // gallery currently animating in
 
 	const shuffle = (arr) => {
 		for (let i = arr.length - 1; i > 0; i--) {
@@ -250,6 +252,23 @@
 		return g;
 	};
 
+	// Snap any in-flight animation to its end state immediately.
+	const abortAnimation = () => {
+		if (animationTimer) { clearTimeout(animationTimer); animationTimer = null; }
+		// Hide all strip children (the outgoing gallery)
+		Array.from(strip.children).forEach(el => {
+			el.removeAttribute("style");
+			el.style.display = "none";
+		});
+		// Settle the in-flight gallery into strip
+		if (inflightGallery) {
+			inflightGallery.removeAttribute("style");
+			strip.appendChild(inflightGallery);
+			inflightGallery = null;
+		}
+		transitioning = false;
+	};
+
 	// direction: 1 = right (next), -1 = left (prev)
 	// isNew: true = first time seeing this section (slide + tile convergence)
 	//        false = revisiting (clean slide only, tiles already settled)
@@ -263,6 +282,7 @@
 		}
 		gallery.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;display:grid;transform:translateX(${direction * 100}%);opacity:0`;
 		stage.appendChild(gallery);
+		inflightGallery = gallery;
 
 		if (isNew) {
 			const explosionEdge = direction > 0 ? 'left' : 'right';
@@ -291,7 +311,9 @@
 			});
 		}
 
-		setTimeout(() => {
+		animationTimer = setTimeout(() => {
+			animationTimer = null;
+			inflightGallery = null;
 			// Hide old gallery but keep it in DOM so images stay in memory
 			if (oldGallery && oldGallery !== gallery) {
 				oldGallery.removeAttribute("style");
@@ -423,7 +445,8 @@
 	};
 
 	const navigateTo = (targetIdx) => {
-		if (!allPhotos.length || transitioning) return;
+		if (!allPhotos.length) return;
+		if (transitioning) abortAnimation();
 		const numPages = Math.ceil(allPhotos.length / PAGE_SIZE);
 		targetIdx = Math.max(0, Math.min(numPages - 1, targetIdx));
 		if (targetIdx === currentPage) return;
