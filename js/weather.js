@@ -78,7 +78,7 @@
 		var $img = $(".weather-icon");
 		$img.addClass("weather-icon-slide-out");
 		setTimeout(function () {
-			$img.attr("src", newSrc);
+			$img.attr("data", newSrc);
 			$img.removeClass("weather-icon-slide-out").addClass("weather-icon-slide-in");
 			setTimeout(function () {
 				$img.removeClass("weather-icon-slide-in");
@@ -89,7 +89,7 @@
 
 	function startEasterEgg() {
 		if (easterEggInterval) return; // already running
-		var currentSrc = $(".weather-icon").attr("src") || "";
+		var currentSrc = $(".weather-icon").attr("data") || "";
 		var currentFile = currentSrc.split("/").pop();
 		easterEggIndex = ALL_ICONS.indexOf(currentFile);
 		if (easterEggIndex === -1) easterEggIndex = 0;
@@ -111,7 +111,7 @@
 	}
 
 	function buildDisplay(icon, temp, label) {
-		return '<img src="' + icon + '" class="weather-icon" alt="Weather icon by amCharts">' + temp + " &ndash; " + label;
+		return '<object data="' + icon + '" type="image/svg+xml" class="weather-icon" aria-label="Weather icon by amCharts"></object>' + temp + " &ndash; " + label;
 	}
 
 	function renderWeather(tempF, shortForecast, label, isDaytime) {
