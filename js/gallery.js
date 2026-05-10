@@ -23,15 +23,20 @@
 		"ScreenRecording_03-03-2026 08-46-09_1.mp4",
 	];
 	const PAGE_SIZE = 12;
-	const CONVERGE_PX = 40;
-	const CONVERGE_JITTER_ANGLE = 20 * (Math.PI / 180); // ±20° in radians
-	const CONVERGE_JITTER_DIST  = 10; // ±10px
-	const CONVERGE_ROTATION_MAX = 12; // ±12° rotation
+	const CONVERGE_PX          = 40;
+	const CONVERGE_JITTER_ANGLE = 20 * (Math.PI / 180);
+	const CONVERGE_JITTER_DIST  = 10;
+	const CONVERGE_ROTATION_MAX = 12;
+	const ANIM_MS = 700;
 
 	let allPhotos = [];
 	let currentPage = 0;
 	let lightbox = null;
 	let hasConverged = false;
+	let transitioning = false;
+
+	let strip, stage;
+	let sections = []; // { gallery, cols, rows, thumbReady, upgrades } indexed by page
 
 	const shuffle = (arr) => {
 		for (let i = arr.length - 1; i > 0; i--) {
@@ -43,8 +48,8 @@
 
 	let lastBp = null;
 	let featuredPos = null;
-	const applyLayout = () => {
-		const gallery = document.querySelector(".gallery");
+
+	const applyLayout = (gallery, forceRandomize = false) => {
 		const featured = gallery?.querySelector(".image-container.featured");
 		if (!featured) return;
 		const others = gallery.querySelectorAll(".image-container:not(.featured)");
@@ -52,7 +57,7 @@
 		const isMobile = matchMedia("(max-width: 1180px)").matches;
 		const [cols, rows] = isMobile ? [3, 5] : [5, 3];
 		const bp = isMobile ? "m" : "d";
-		if (bp !== lastBp) {
+		if (bp !== lastBp || forceRandomize) {
 			lastBp = bp;
 			featuredPos = {
 				fc: 1 + Math.floor(Math.random() * (cols - 1)),
@@ -61,7 +66,7 @@
 		}
 		const { fc, fr } = featuredPos;
 		featured.style.gridColumn = `${fc} / span 2`;
-		featured.style.gridRow = `${fr} / span 2`;
+		featured.style.gridRow    = `${fr} / span 2`;
 
 		const cells = [];
 		for (let r = 1; r <= rows; r++) {
@@ -77,62 +82,117 @@
 			}
 		});
 
-		// corner border-radius — applied to container + media so transform doesn't break clipping
-		gallery.querySelectorAll(".image-container").forEach(el => {
-			const rStart  = parseInt(el.style.gridRow)    || 1;
-			const cStart  = parseInt(el.style.gridColumn) || 1;
-			const rowSpan = el.classList.contains("featured") ? 2 : 1;
-			const colSpan = el.classList.contains("featured") ? 2 : 1;
-			const rEnd = rStart + rowSpan - 1;
-			const cEnd = cStart + colSpan - 1;
-			const tl = rStart === 1    && cStart === 1;
-			const tr = rStart === 1    && cEnd   === cols;
-			const bl = rEnd   === rows && cStart === 1;
-			const br = rEnd   === rows && cEnd   === cols;
-			const radius = `${tl ? 12 : 0}px ${tr ? 12 : 0}px ${br ? 12 : 0}px ${bl ? 12 : 0}px`;
-			if (tl || tr || bl || br) {
-				el.style.borderRadius = radius;
-				el.querySelectorAll("img, video").forEach(m => m.style.borderRadius = radius);
-			} else {
-				el.style.borderRadius = "";
-				el.querySelectorAll("img, video").forEach(m => m.style.borderRadius = "");
-			}
+		// For each of the 4 corners, find whichever cell occupies that corner position
+		// and set only that corner's radius on it. Clear all radii first.
+		const allContainers = Array.from(gallery.querySelectorAll(".image-container"));
+		allContainers.forEach(el => {
+			el.style.borderRadius = "";
+			el.querySelectorAll("img, video").forEach(m => m.style.borderRadius = "");
+		});
+
+		const R = 12;
+		const cornerDefs = [
+			{ r: 1,    c: 1,    idx: 0 }, // top-left     → border-radius index 0
+			{ r: 1,    c: cols, idx: 1 }, // top-right    → index 1
+			{ r: rows, c: cols, idx: 2 }, // bottom-right → index 2
+			{ r: rows, c: 1,    idx: 3 }, // bottom-left  → index 3
+		];
+
+		cornerDefs.forEach(({ r, c, idx }) => {
+			const occupant = allContainers.find(el => {
+				const rs = parseInt(el.style.gridRow)    || 1;
+				const cs = parseInt(el.style.gridColumn) || 1;
+				const re = rs + (el.classList.contains("featured") ? 1 : 0);
+				const ce = cs + (el.classList.contains("featured") ? 1 : 0);
+				return r >= rs && r <= re && c >= cs && c <= ce;
+			});
+			if (!occupant) return;
+			const parts = (occupant.style.borderRadius || "0px 0px 0px 0px")
+				.split(" ").map(s => parseFloat(s) || 0);
+			parts[idx] = R;
+			const radius = parts.map(p => `${p}px`).join(" ");
+			occupant.style.borderRadius = radius;
+			occupant.querySelectorAll("img, video").forEach(m => m.style.borderRadius = radius);
 		});
 
 		return [cols, rows];
 	};
 
-	const applyConvergeOffsets = (cols, rows) => {
+	// returns random offset data with organic jitter around a base direction angle (scroll converge)
+	const randomOffset = (baseAngle) => {
+		const angle = baseAngle + (Math.random() * 2 - 1) * CONVERGE_JITTER_ANGLE;
+		const dist  = CONVERGE_PX + (Math.random() * 2 - 1) * CONVERGE_JITTER_DIST;
+		return {
+			ox:  Math.cos(angle) * dist,
+			oy:  Math.sin(angle) * dist,
+			rot: (Math.random() * 2 - 1) * CONVERGE_ROTATION_MAX,
+		};
+	};
+
+	// Compute explosion-based offsets for a tile at (col, row) in a (cols x rows) grid.
+	// explosionEdge: 'right' = origin at (cols+1, midRow), 'left' = origin at (0, midRow).
+	// Returns {ox, oy, rot} — the displacement vector away from the explosion origin.
+	const explosionOffset = (col, row, cols, rows, explosionEdge) => {
+		const K = 90; // max displacement magnitude in px
+		const midRow = (rows + 1) / 2;
+		// explosion origin in 1-indexed grid space
+		const ex = explosionEdge === 'right' ? cols + 0.5 : 0.5;
+		const ey = midRow;
+		// vector from explosion to tile center
+		const vx = (col + 0.5) - ex;  // negative for 'right' (leftward), positive for 'left'
+		const vy = (row + 0.5) - ey;  // negative=up, 0=middle, positive=down
+		// normalize components separately by max possible distance so magnitudes are consistent
+		const oxNorm = vx / cols;
+		const oyNorm = vy / (rows / 2);
+		return {
+			ox:  oxNorm * K + (Math.random() * 2 - 1) * CONVERGE_JITTER_DIST,
+			oy:  oyNorm * K + (Math.random() * 2 - 1) * CONVERGE_JITTER_DIST,
+			rot: (Math.random() * 2 - 1) * CONVERGE_ROTATION_MAX,
+		};
+	};
+
+	// baseAngle: null = radial from center (scroll converge), otherwise fixed direction
+	const applyOffsets = (gallery, cols, rows, baseAngle = null) => {
 		const cx = (cols + 1) / 2;
 		const cy = (rows + 1) / 2;
-
-		document.querySelectorAll(".gallery .image-container").forEach(el => {
+		gallery.querySelectorAll(".image-container").forEach(el => {
 			const col = parseFloat(el.style.gridColumn) || cx;
 			const row = parseFloat(el.style.gridRow)    || cy;
-			const dx = col - cx;
-			const dy = row - cy;
-			const baseAngle = Math.atan2(dy, dx);
-			const jitteredAngle = baseAngle + (Math.random() * 2 - 1) * CONVERGE_JITTER_ANGLE;
-			const dist = CONVERGE_PX + (Math.random() * 2 - 1) * CONVERGE_JITTER_DIST;
-			el.dataset.ox  = Math.cos(jitteredAngle) * dist;
-			el.dataset.oy  = Math.sin(jitteredAngle) * dist;
-			el.dataset.rot = (Math.random() * 2 - 1) * CONVERGE_ROTATION_MAX;
+			const angle = baseAngle !== null ? baseAngle : Math.atan2(row - cy, col - cx);
+			const { ox, oy, rot } = randomOffset(angle);
+			el.dataset.ox  = ox;
+			el.dataset.oy  = oy;
+			el.dataset.rot = rot;
 			el.style.transition = "none";
-			el.style.transform  = `translate(${el.dataset.ox}px, ${el.dataset.oy}px) rotate(${el.dataset.rot}deg)`;
+			el.style.transform  = `translate(${ox}px, ${oy}px) rotate(${rot}deg)`;
+		});
+	};
+
+	// Like applyOffsets but uses explosion model for page transitions.
+	// explosionEdge: 'right' tiles fly away from right (outgoing for next), 'left' = prev outgoing.
+	const applyExplosionOffsets = (gallery, cols, rows, explosionEdge) => {
+		gallery.querySelectorAll(".image-container").forEach(el => {
+			const col = parseFloat(el.style.gridColumn) || 1;
+			const row = parseFloat(el.style.gridRow)    || 1;
+			const { ox, oy, rot } = explosionOffset(col, row, cols, rows, explosionEdge);
+			el.dataset.ox  = ox;
+			el.dataset.oy  = oy;
+			el.dataset.rot = rot;
+			el.style.transition = "none";
+			el.style.transform  = `translate(${ox}px, ${oy}px) rotate(${rot}deg)`;
 		});
 	};
 
 	let scrollHandler = null;
 
-	const initScrollConverge = (upgrades) => {
+	const initScrollConverge = (gallery, upgrades) => {
 		if (scrollHandler) window.removeEventListener("scroll", scrollHandler);
-		const gallery = document.querySelector(".gallery");
-		if (!gallery) return;
 
 		scrollHandler = () => {
-			const { top, height } = gallery.getBoundingClientRect();
+			const stage = document.querySelector(".gallery-stage");
+			if (!stage) return;
+			const { top, height } = stage.getBoundingClientRect();
 			const vh = window.innerHeight;
-			// 0 when gallery top hits bottom of screen, 1 when gallery bottom hits bottom of screen
 			const progress = Math.max(0, Math.min(1, (vh - top) / height));
 
 			gallery.querySelectorAll(".image-container").forEach(el => {
@@ -153,18 +213,104 @@
 		};
 
 		window.addEventListener("scroll", scrollHandler, { passive: true });
-		scrollHandler(); // apply immediately in case gallery is already (partially) visible
+		scrollHandler();
 	};
 
-	// resolves after all promises settle OR after a timeout, so the animation
-	// always fires even if a thumbnail hangs (e.g. network stall)
+	const createGallerySection = () => {
+		const g = document.createElement("div");
+		g.className = "gallery";
+		const featured = document.createElement("div");
+		featured.className = "image-container featured";
+		const a0 = document.createElement("a");
+		a0.className = "gallery-link";
+		featured.appendChild(a0);
+		g.appendChild(featured);
+		for (let i = 0; i < 11; i++) {
+			const c = document.createElement("div");
+			c.className = "image-container";
+			const a = document.createElement("a");
+			a.className = "gallery-link";
+			c.appendChild(a);
+			g.appendChild(c);
+		}
+		return g;
+	};
+
+	// direction: 1 = right (next), -1 = left (prev)
+	// isNew: true = first time seeing this section (slide + tile convergence)
+	//        false = revisiting (clean slide only, tiles already settled)
+	const animateFlyIn = (gallery, cols, rows, direction, isNew, thumbReady, upgrades) => {
+		const easing = `${ANIM_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+
+		// Slide old gallery out (no clipping — stage has no overflow)
+		const oldGallery = strip.firstElementChild;
+		if (oldGallery) {
+			oldGallery.style.transition = `transform ${easing}, opacity ${easing}`;
+			oldGallery.style.transform  = `translateX(${-direction * 100}%)`;
+			oldGallery.style.opacity    = "0";
+		}
+
+		// Full-viewport fixed overlay so tiles can paint freely outside stage bounds
+		const stageRect = stage.getBoundingClientRect();
+		const overlay = document.createElement("div");
+		overlay.style.cssText = [
+			"position:fixed", "top:0", "left:0",
+			"width:100%", "height:100%",
+			"z-index:9999", "overflow:visible", "pointer-events:none",
+		].join(";");
+
+		// Position gallery at the stage location, starting off to the incoming side
+		gallery.style.cssText = [
+			"position:absolute",
+			`top:${stageRect.top}px`, `left:${stageRect.left}px`,
+			`width:${stageRect.width}px`, `min-width:${stageRect.width}px`,
+			`height:${stageRect.height}px`, `min-height:${stageRect.height}px`,
+			"overflow:visible", "display:grid", "pointer-events:auto",
+			`transform:translateX(${direction * 100}%)`,
+		].join(";");
+
+		if (isNew) {
+			// Tiles start scattered (explosion from the incoming edge) + hidden
+			const explosionEdge = direction > 0 ? 'left' : 'right';
+			applyExplosionOffsets(gallery, cols, rows, explosionEdge);
+			gallery.querySelectorAll(".image-container").forEach(el => { el.style.opacity = "0"; });
+		}
+
+		overlay.appendChild(gallery);
+		document.body.appendChild(overlay);
+		gallery.offsetWidth; // force reflow so initial state is painted
+
+		// Slide gallery in
+		gallery.style.transition = `transform ${easing}`;
+		gallery.style.transform  = "translateX(0)";
+
+		if (isNew) {
+			// Simultaneously converge tiles to their grid positions
+			const tileTransition = `transform ${easing}, opacity ${easing}`;
+			gallery.querySelectorAll(".image-container").forEach(el => {
+				el.style.transition = tileTransition;
+				el.style.transform  = "translate(0,0) rotate(0deg)";
+				el.style.opacity    = "1";
+			});
+		}
+
+		setTimeout(() => {
+			overlay.remove();
+			gallery.removeAttribute("style");
+			strip.innerHTML = "";
+			strip.appendChild(gallery);
+			transitioning = false;
+			if (isNew) {
+				allSettledOrTimeout(thumbReady).then(() => upgrades.forEach(fn => fn()));
+			}
+		}, ANIM_MS + 50);
+	};
+
 	const allSettledOrTimeout = (promises, ms = 4000) =>
 		Promise.race([
 			Promise.allSettled(promises),
 			new Promise(res => setTimeout(res, ms))
 		]);
-
-	addEventListener("resize", applyLayout);
 
 	const makeVideo = (src, cr) => {
 		const v = document.createElement("video");
@@ -177,32 +323,8 @@
 		return v;
 	};
 
-	const updateDots = (numPages) => {
-		const container = document.querySelector(".gallery-dots");
-		if (!container) return;
-		container.innerHTML = "";
-		for (let i = 0; i < numPages; i++) {
-			const dot = document.createElement("div");
-			dot.className = "gallery-dot" + (i === currentPage ? " selected" : "");
-			dot.addEventListener("click", () => showPage(i));
-			container.appendChild(dot);
-		}
-		document.querySelector(".gallery-prev")?.classList.toggle("disabled", currentPage === 0);
-		document.querySelector(".gallery-next")?.classList.toggle("disabled", currentPage === numPages - 1);
-	};
-
-	const showPage = (page) => {
-		if (!allPhotos.length) return;
-		const numPages = Math.ceil(allPhotos.length / PAGE_SIZE);
-		page = Math.max(0, Math.min(numPages - 1, page)); // no wrapping
-		currentPage = page;
-		const start  = currentPage * PAGE_SIZE;
-
-		const [cols, rows] = applyLayout();
-
-		// assign photos in visual reading order (row → col) so the featured
-		// cell gets whichever photo falls at its grid position, not always #1
-		const containers = Array.from(document.querySelectorAll(".gallery .image-container"));
+	const populateGallery = (gallery, start, cols, rows) => {
+		const containers = Array.from(gallery.querySelectorAll(".image-container"));
 		containers.sort((a, b) => {
 			const aRow = parseInt(a.style.gridRow)    || 1;
 			const aCol = parseInt(a.style.gridColumn) || 1;
@@ -215,7 +337,6 @@
 		const thumbReady = [];
 
 		containers.forEach((container, i) => {
-			// start fresh — avoids re-fetching thumbs on stale survivor elements
 			container.querySelectorAll("video, img").forEach(el => el.remove());
 
 			if (start + i >= allPhotos.length) {
@@ -284,15 +405,68 @@
 			}
 		});
 
-		if (!hasConverged) {
-			applyConvergeOffsets(cols, rows);
-			allSettledOrTimeout(thumbReady).then(() => initScrollConverge(upgrades));
-		} else {
-			allSettledOrTimeout(thumbReady).then(() => upgrades.forEach(fn => fn()));
-		}
+		return { thumbReady, upgrades };
+	};
 
+	const updateDots = (numPages) => {
+		const container = document.querySelector(".gallery-dots");
+		if (!container) return;
+		container.innerHTML = "";
+		for (let i = 0; i < numPages; i++) {
+			const dot = document.createElement("div");
+			dot.className = "gallery-dot" + (i === currentPage ? " selected" : "");
+			dot.addEventListener("click", () => navigateTo(i));
+			container.appendChild(dot);
+		}
+		document.querySelector(".gallery-prev")?.classList.toggle("hidden", currentPage === 0);
+		document.querySelector(".gallery-next")?.classList.toggle("hidden", currentPage >= numPages - 1);
+	};
+
+	const navigateTo = (targetIdx) => {
+		if (!allPhotos.length || transitioning) return;
+		const numPages = Math.ceil(allPhotos.length / PAGE_SIZE);
+		targetIdx = Math.max(0, Math.min(numPages - 1, targetIdx));
+		if (targetIdx === currentPage) return;
+
+		const direction = targetIdx > currentPage ? 1 : -1;
+		const isNew = !sections[targetIdx];
+		currentPage = targetIdx;
+		transitioning = true;
+
+		if (isNew) {
+			const g = createGallerySection();
+			const [cols, rows] = applyLayout(g, true);
+			const { thumbReady, upgrades } = populateGallery(g, targetIdx * PAGE_SIZE, cols, rows);
+			sections[targetIdx] = { gallery: g, cols, rows, thumbReady, upgrades };
+		}
+		const { gallery, cols, rows, thumbReady, upgrades } = sections[targetIdx];
+
+		animateFlyIn(gallery, cols, rows, direction, isNew, thumbReady, upgrades);
 		updateDots(numPages);
 		rebuildLightbox();
+	};
+
+	const showPage = (page) => {
+		if (!allPhotos.length || transitioning) return;
+		const numPages = Math.ceil(allPhotos.length / PAGE_SIZE);
+		page = Math.max(0, Math.min(numPages - 1, page));
+		if (page === currentPage && hasConverged) return;
+		currentPage = page;
+		updateDots(numPages);
+
+		if (!hasConverged) {
+			// first-load: populate first section with scroll-driven radial converge
+			const firstGallery = strip.querySelector(".gallery");
+			const [cols, rows] = applyLayout(firstGallery);
+			const { thumbReady, upgrades } = populateGallery(firstGallery, 0, cols, rows);
+			sections[0] = { gallery: firstGallery, cols, rows, thumbReady, upgrades };
+			applyOffsets(firstGallery, cols, rows);
+			allSettledOrTimeout(thumbReady).then(() => initScrollConverge(firstGallery, upgrades));
+			rebuildLightbox();
+			return;
+		}
+
+		navigateTo(page);
 	};
 
 	const setArrowsHidden = (hidden) => {
@@ -319,22 +493,22 @@
 			onClose: () => setArrowsHidden(false),
 		});
 
-		// delegated listener attached once to the gallery element
-		if (!document.querySelector(".gallery")?._galleryClickBound) {
-			const gallery = document.querySelector(".gallery");
-			if (gallery) {
-				gallery._galleryClickBound = true;
-				gallery.addEventListener("click", e => {
-					const link = e.target.closest("a.gallery-link");
-					if (!link) return;
-					e.preventDefault();
-					const href = link.getAttribute("href");
-					const idx  = elements.findIndex(el => el.href === href);
-					lightbox?.openAt(idx >= 0 ? idx : 0);
-				});
-			}
+		if (stage && !stage._galleryClickBound) {
+			stage._galleryClickBound = true;
+			stage.addEventListener("click", e => {
+				const link = e.target.closest("a.gallery-link");
+				if (!link || !link.href) return;
+				e.preventDefault();
+				const href = link.getAttribute("href");
+				const idx  = elements.findIndex(el => el.href === href);
+				lightbox?.openAt(idx >= 0 ? idx : 0);
+			});
 		}
 	};
+
+	addEventListener("resize", () => {
+		sections.forEach(g => g && applyLayout(g));
+	});
 
 	const onReady = (cb) => document.readyState === "loading"
 		? document.addEventListener("DOMContentLoaded", cb)
@@ -342,8 +516,16 @@
 
 	const init = (photos) => {
 		allPhotos = shuffle(photos.slice());
-		document.querySelector(".gallery-prev")?.addEventListener("click", (e) => { if (!e.currentTarget.classList.contains("disabled")) showPage(currentPage - 1); });
-		document.querySelector(".gallery-next")?.addEventListener("click", (e) => { if (!e.currentTarget.classList.contains("disabled")) showPage(currentPage + 1); });
+		stage = document.querySelector(".gallery-stage");
+		strip = document.querySelector(".gallery-strip");
+
+		document.querySelector(".gallery-prev")?.addEventListener("click", () => {
+			navigateTo(currentPage - 1);
+		});
+		document.querySelector(".gallery-next")?.addEventListener("click", () => {
+			navigateTo(currentPage + 1);
+		});
+
 		showPage(0);
 	};
 
