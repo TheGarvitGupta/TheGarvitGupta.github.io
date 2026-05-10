@@ -144,6 +144,9 @@ input {
 #aboutMe::before {
     content: "Hey there!";
 }
+#life {
+    overflow: hidden;
+}
 #life::before {
     content: 'Photographs';
 }
