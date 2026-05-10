@@ -514,7 +514,7 @@
 			loop: true,
 			selector: ".__glightbox_disabled__",
 			onOpen:  () => setArrowsHidden(true),
-			onClose: () => setArrowsHidden(false),
+			onClose: () => updateDots(Math.ceil(allPhotos.length / PAGE_SIZE)),
 		});
 
 		if (stage && !stage._galleryClickBound) {
