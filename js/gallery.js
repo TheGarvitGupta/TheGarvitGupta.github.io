@@ -246,7 +246,7 @@
 		if (oldGallery) {
 			oldGallery.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;display:grid;transform:translateX(0)";
 		}
-		gallery.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;display:grid;transform:translateX(${direction * 100}%)`;
+		gallery.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;display:grid;transform:translateX(${direction * 100}%);opacity:0`;
 		stage.appendChild(gallery);
 
 		if (isNew) {
@@ -263,8 +263,9 @@
 			oldGallery.style.transform  = `translateX(${-direction * 100}%)`;
 			oldGallery.style.opacity    = "0";
 		}
-		gallery.style.transition = `transform ${easing}`;
+		gallery.style.transition = `transform ${easing}, opacity ${easing}`;
 		gallery.style.transform  = "translateX(0)";
+		gallery.style.opacity    = "1";
 
 		if (isNew) {
 			const tileEase = `transform ${easing}, opacity ${easing}`;
