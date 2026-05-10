@@ -211,7 +211,7 @@
 		}
 	};
 
-	const initScrollConverge = (gallery, upgrades) => {
+	const initScrollConverge = (gallery) => {
 		if (scrollHandler) window.removeEventListener("scroll", scrollHandler);
 
 		scrollHandler = () => {
@@ -234,8 +234,6 @@
 				hasConverged = true;
 				window.removeEventListener("scroll", scrollHandler);
 				scrollHandler = null;
-				const fullResReady = allSettledOrTimeout(upgrades.map(fn => fn()));
-				preloadRemainingPages(fullResReady);
 			}
 		};
 
@@ -502,7 +500,11 @@
 			const { thumbReady, upgrades } = populateGallery(firstGallery, 0, cols, rows);
 			sections[0] = { gallery: firstGallery, cols, rows, thumbReady, upgrades, visited: true };
 			applyOffsets(firstGallery, cols, rows);
-			allSettledOrTimeout(thumbReady).then(() => initScrollConverge(firstGallery, upgrades));
+			const fullResReady = allSettledOrTimeout(thumbReady).then(() => {
+				initScrollConverge(firstGallery);
+				return allSettledOrTimeout(upgrades.map(fn => fn()));
+			});
+			preloadRemainingPages(fullResReady);
 			rebuildLightbox();
 			return;
 		}
