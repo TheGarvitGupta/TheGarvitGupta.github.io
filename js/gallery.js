@@ -302,41 +302,57 @@
 		sections[idx] = { gallery: g, cols, rows, thumbReady, upgrades };
 	};
 
+	const commitDrag = (direction, e) => {
+		const numPages  = Math.ceil(allPhotos.length / PAGE_SIZE);
+		const targetIdx = currentPage + direction;
+		if (targetIdx < 0 || targetIdx >= numPages) { drag = null; return; }
+		const isNew = !sections[targetIdx];
+		ensureSection(targetIdx);
+		const { gallery, cols, rows } = sections[targetIdx];
+		const currentGallery = strip.firstElementChild;
+		if (!currentGallery) { drag = null; return; }
+		// move current gallery out of strip onto stage so both siblings animate freely
+		stage.insertBefore(currentGallery, strip);
+		mountOnStage(currentGallery, 0);
+		mountOnStage(gallery, direction * 100);
+		stage.appendChild(gallery);
+		if (isNew) {
+			const explosionEdge = direction > 0 ? 'left' : 'right';
+			applyExplosionOffsets(gallery, cols, rows, explosionEdge);
+			gallery.querySelectorAll(".image-container").forEach(el => { el.style.opacity = "0"; });
+		}
+		Object.assign(drag, { direction, targetIdx, isNew, oldGallery: currentGallery, gallery, cols, rows, progress: 0 });
+		drag.committed = true;
+	};
+
 	const onDragStart = (e) => {
 		if (e.button !== undefined && e.button !== 0) return;
 		if (transitioning || drag) return;
 		ensureSection(currentPage - 1);
 		ensureSection(currentPage + 1);
-		drag = { startX: e.clientX, startY: e.clientY, lastX: e.clientX, lastT: Date.now(), vel: 0, committed: false };
-		stage.setPointerCapture(e.pointerId);
+		drag = { startX: e.clientX, startY: e.clientY, lastX: e.clientX, lastT: Date.now(), vel: 0, committed: false, pointerId: e.pointerId };
+		document.addEventListener("pointermove",   onDragMove);
+		document.addEventListener("pointerup",     onDragEnd);
+		document.addEventListener("pointercancel", onDragEnd);
 	};
 
 	const onDragMove = (e) => {
-		if (!drag) return;
+		if (!drag || e.pointerId !== drag.pointerId) return;
 		const dx = e.clientX - drag.startX;
 		const dy = e.clientY - drag.startY;
 		if (!drag.committed) {
-			if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-			if (Math.abs(dy) > Math.abs(dx)) { drag = null; return; }
-			const direction = dx < 0 ? 1 : -1;
-			const numPages  = Math.ceil(allPhotos.length / PAGE_SIZE);
-			const targetIdx = currentPage + direction;
-			if (targetIdx < 0 || targetIdx >= numPages) { drag = null; return; }
-			const isNew = !sections[targetIdx];
-			ensureSection(targetIdx);
-			const { gallery, cols, rows } = sections[targetIdx];
-			const oldGallery = strip.firstElementChild;
-			mountOnStage(oldGallery, 0);
-			mountOnStage(gallery, direction * 100);
-			stage.appendChild(gallery);
-			if (isNew) {
-				const explosionEdge = direction > 0 ? 'left' : 'right';
-				applyExplosionOffsets(gallery, cols, rows, explosionEdge);
-				gallery.querySelectorAll(".image-container").forEach(el => { el.style.opacity = "0"; });
+			if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+			if (Math.abs(dy) >= Math.abs(dx)) {
+				drag = null;
+				document.removeEventListener("pointermove",   onDragMove);
+				document.removeEventListener("pointerup",     onDragEnd);
+				document.removeEventListener("pointercancel", onDragEnd);
+				return;
 			}
-			Object.assign(drag, { direction, targetIdx, isNew, oldGallery, gallery, cols, rows, progress: 0 });
-			drag.committed = true;
+			commitDrag(dx < 0 ? 1 : -1, e);
+			if (!drag) return;
 		}
+		e.preventDefault();
 		const now = Date.now(); const dt = now - drag.lastT;
 		if (dt > 0) drag.vel = (e.clientX - drag.lastX) / dt;
 		drag.lastX = e.clientX; drag.lastT = now;
@@ -361,11 +377,22 @@
 	};
 
 	const onDragEnd = (e) => {
-		if (!drag?.committed) { drag = null; return; }
+		if (!drag || e.pointerId !== drag.pointerId) return;
+		document.removeEventListener("pointermove",   onDragMove);
+		document.removeEventListener("pointerup",     onDragEnd);
+		document.removeEventListener("pointercancel", onDragEnd);
+		if (!drag.committed) { drag = null; return; }
 		const { direction, targetIdx, isNew, oldGallery, gallery, progress, vel } = drag;
 		drag = null;
 		const snapForward = progress > 0.35 || (-direction * vel > 0.25);
 		const easing = `${ANIM_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+		const finalize = () => {
+			oldGallery.remove();
+			gallery.removeAttribute("style");
+			strip.innerHTML = "";
+			strip.appendChild(gallery);
+			transitioning = false;
+		};
 		if (snapForward) {
 			transitioning = true;
 			currentPage = targetIdx;
@@ -383,13 +410,8 @@
 				});
 			}
 			setTimeout(() => {
-				oldGallery.removeAttribute("style");
-				gallery.removeAttribute("style");
-				strip.innerHTML = "";
-				strip.appendChild(gallery);
-				transitioning = false;
-				const numPages = Math.ceil(allPhotos.length / PAGE_SIZE);
-				updateDots(numPages);
+				finalize();
+				updateDots(Math.ceil(allPhotos.length / PAGE_SIZE));
 				if (isNew) {
 					const { thumbReady, upgrades } = sections[targetIdx];
 					allSettledOrTimeout(thumbReady).then(() => upgrades.forEach(fn => fn()));
@@ -398,6 +420,7 @@
 			updateDots(Math.ceil(allPhotos.length / PAGE_SIZE));
 			rebuildLightbox();
 		} else {
+			// snap back
 			oldGallery.style.transition = `transform ${easing}, opacity ${easing}`;
 			oldGallery.style.transform  = "translateX(0)";
 			oldGallery.style.opacity    = "1";
@@ -415,7 +438,10 @@
 			}
 			setTimeout(() => {
 				if (gallery.parentElement === stage) stage.removeChild(gallery);
+				// restore old gallery back into strip
 				oldGallery.removeAttribute("style");
+				strip.innerHTML = "";
+				strip.appendChild(oldGallery);
 			}, ANIM_MS + 50);
 		}
 	};
@@ -640,29 +666,23 @@
 			navigateTo(currentPage + 1);
 		});
 
-		stage.addEventListener("pointerdown",   onDragStart);
-		stage.addEventListener("pointermove",   onDragMove);
-		stage.addEventListener("pointerup",     onDragEnd);
-		stage.addEventListener("pointercancel", onDragEnd);
+		stage.addEventListener("pointerdown", onDragStart);
 
-		// Trackpad / wheel horizontal scroll
+		// Trackpad / wheel horizontal scroll — fire as soon as 60px accumulated
 		let wheelAccum = 0;
-		let wheelTimer = null;
+		let wheelCooldown = false;
 		stage.addEventListener("wheel", (e) => {
-			if (transitioning || drag) return;
-			// Only handle predominantly horizontal scrolls
-			if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) return;
+			if (transitioning || drag || wheelCooldown) return;
+			if (Math.abs(e.deltaY) > Math.abs(e.deltaX) * 1.5) return;
 			e.preventDefault();
 			wheelAccum += e.deltaX;
-			if (wheelTimer) clearTimeout(wheelTimer);
-			wheelTimer = setTimeout(() => {
-				const threshold = stage.offsetWidth * 0.25;
-				if (Math.abs(wheelAccum) > threshold) {
-					navigateTo(currentPage + (wheelAccum > 0 ? 1 : -1));
-				}
+			if (Math.abs(wheelAccum) >= 60) {
+				const dir = wheelAccum > 0 ? 1 : -1;
 				wheelAccum = 0;
-				wheelTimer = null;
-			}, 150);
+				wheelCooldown = true;
+				navigateTo(currentPage + dir);
+				setTimeout(() => { wheelCooldown = false; }, ANIM_MS + 100);
+			}
 		}, { passive: false });
 
 		showPage(0);
