@@ -200,6 +200,7 @@
 			sections[idx] = { gallery: g, cols, rows, thumbReady, upgrades };
 			g.style.display = "none";
 			strip.appendChild(g);
+			allSettledOrTimeout(thumbReady).then(() => upgrades.forEach(fn => fn()));
 		});
 	};
 
@@ -341,6 +342,8 @@
 		const v = document.createElement("video");
 		v.muted = true;
 		v.loop  = true;
+		v.autoplay = true;
+		v.setAttribute("autoplay", "");
 		v.playsInline = true;
 		v.setAttribute("playsinline", "");
 		if (cr) v.style.borderRadius = cr;
@@ -385,7 +388,6 @@
 
 			if (VIDEO_RE.test(name)) {
 				const thumb = makeVideo(thumbUrl, cr);
-				thumb.autoplay = true;
 				anchor ? anchor.prepend(thumb) : container.prepend(thumb);
 				thumbReady.push(new Promise(res => {
 					thumb.addEventListener("canplay", res, { once: true });
