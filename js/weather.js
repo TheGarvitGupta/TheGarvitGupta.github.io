@@ -31,13 +31,16 @@
 
 	var CONDITION_ICONS = [
 		[/thunder|storm/i,                  "thunder.svg",       "thunder.svg"],
-		[/snow|blizzard/i,                  "snowy-3.svg",       "snowy-3.svg"],
-		[/sleet|freezing/i,                 "snowy-6.svg",       "snowy-6.svg"],
-		[/rain|shower|drizzle/i,            "rainy-3.svg",       "rainy-3.svg"],
-		[/fog|mist|haze/i,                  "cloudy.svg",        "cloudy-night-3.svg"],
-		[/overcast|mostly cloudy/i,         "cloudy-day-3.svg",  "cloudy-night-3.svg"],
+		[/blizzard/i,                       "snowy-3.svg",       "rainy-7.svg"],
+		[/snow/i,                           "snowy-3.svg",       "snowy-5.svg"],
+		[/sleet|freezing/i,                 "rainy-6.svg",       "rainy-6.svg"],
+		[/drizzle/i,                        "rainy-2.svg",       "rainy-4.svg"],
+		[/shower/i,                         "rainy-3.svg",       "rainy-5.svg"],
+		[/rain/i,                           "rainy-6.svg",       "rainy-6.svg"],
+		[/fog|mist|haze|overcast/i,         "cloudy.svg",        "cloudy-night-3.svg"],
+		[/mostly cloudy/i,                  "cloudy-day-3.svg",  "cloudy-night-3.svg"],
 		[/partly cloudy|partly sunny/i,     "cloudy-day-2.svg",  "cloudy-night-2.svg"],
-		[/mostly sunny|mostly clear/i,      "cloudy-day-1.svg",  "cloudy-night-1.svg"],
+		[/mostly sunny|mostly clear/i,      "day.svg",           "night.svg"],
 		[/sunny|clear/i,                    "day.svg",           "night.svg"],
 		[/wind/i,                           "cloudy-day-1.svg",  "cloudy-night-1.svg"],
 	];
