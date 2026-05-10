@@ -564,6 +564,16 @@
 			}
 		}, { passive: true });
 
+		// Keyboard left/right arrows
+		document.addEventListener("keydown", (e) => {
+			if (!stage.closest("body")) return;
+			const rect = stage.getBoundingClientRect();
+			const inView = rect.top < window.innerHeight && rect.bottom > 0;
+			if (!inView) return;
+			if (e.key === "ArrowLeft")  navigateTo(currentPage - 1);
+			if (e.key === "ArrowRight") navigateTo(currentPage + 1);
+		});
+
 		// Trackpad / wheel horizontal scroll
 		let wheelAccum = 0;
 		let wheelCooldown = false;
