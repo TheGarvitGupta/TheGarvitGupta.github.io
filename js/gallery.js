@@ -452,16 +452,17 @@
 		if (targetIdx === currentPage) return;
 
 		const direction = targetIdx > currentPage ? 1 : -1;
-		const isNew = !sections[targetIdx];
+		const isNew = !sections[targetIdx] || !sections[targetIdx].visited;
 		currentPage = targetIdx;
 		transitioning = true;
 
-		if (isNew) {
+		if (!sections[targetIdx]) {
 			const g = createGallerySection();
 			const [cols, rows] = applyLayout(g, true);
 			const { thumbReady, upgrades } = populateGallery(g, targetIdx * PAGE_SIZE, cols, rows);
 			sections[targetIdx] = { gallery: g, cols, rows, thumbReady, upgrades };
 		}
+		sections[targetIdx].visited = true;
 		const { gallery, cols, rows, thumbReady, upgrades } = sections[targetIdx];
 
 		animateFlyIn(gallery, cols, rows, direction, isNew, thumbReady, upgrades);
@@ -482,7 +483,7 @@
 			const firstGallery = strip.querySelector(".gallery");
 			const [cols, rows] = applyLayout(firstGallery);
 			const { thumbReady, upgrades } = populateGallery(firstGallery, 0, cols, rows);
-			sections[0] = { gallery: firstGallery, cols, rows, thumbReady, upgrades };
+			sections[0] = { gallery: firstGallery, cols, rows, thumbReady, upgrades, visited: true };
 			applyOffsets(firstGallery, cols, rows);
 			allSettledOrTimeout(thumbReady).then(() => initScrollConverge(firstGallery, upgrades));
 			rebuildLightbox();
