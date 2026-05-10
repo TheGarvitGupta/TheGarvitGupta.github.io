@@ -185,6 +185,19 @@
 
 	let scrollHandler = null;
 
+	const preloadAdjacentPages = () => {
+		const numPages = Math.ceil(allPhotos.length / PAGE_SIZE);
+		[currentPage - 1, currentPage + 1].forEach(idx => {
+			if (idx < 0 || idx >= numPages || sections[idx]) return;
+			const g = createGallerySection();
+			const [cols, rows] = applyLayout(g, true);
+			const { thumbReady, upgrades } = populateGallery(g, idx * PAGE_SIZE, cols, rows);
+			sections[idx] = { gallery: g, cols, rows, thumbReady, upgrades };
+			g.style.display = "none";
+			strip.appendChild(g);
+		});
+	};
+
 	const initScrollConverge = (gallery, upgrades) => {
 		if (scrollHandler) window.removeEventListener("scroll", scrollHandler);
 
@@ -209,6 +222,7 @@
 				window.removeEventListener("scroll", scrollHandler);
 				scrollHandler = null;
 				upgrades.forEach(fn => fn());
+				preloadAdjacentPages();
 			}
 		};
 
@@ -242,7 +256,8 @@
 	const animateFlyIn = (gallery, cols, rows, direction, isNew, thumbReady, upgrades) => {
 		const easing = `${ANIM_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`;
 
-		const oldGallery = strip.firstElementChild;
+		// Find the currently visible gallery (not hidden)
+		const oldGallery = Array.from(strip.children).find(el => el.style.display !== "none") || strip.firstElementChild;
 		if (oldGallery) {
 			oldGallery.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;display:grid;transform:translateX(0)";
 		}
@@ -277,12 +292,16 @@
 		}
 
 		setTimeout(() => {
-			if (oldGallery) oldGallery.removeAttribute("style");
+			// Hide old gallery but keep it in DOM so images stay in memory
+			if (oldGallery && oldGallery !== gallery) {
+				oldGallery.removeAttribute("style");
+				oldGallery.style.display = "none";
+			}
 			gallery.removeAttribute("style");
-			strip.innerHTML = "";
-			strip.appendChild(gallery);
+			strip.appendChild(gallery); // move from stage into strip
 			transitioning = false;
 			if (isNew) allSettledOrTimeout(thumbReady).then(() => upgrades.forEach(fn => fn()));
+			preloadAdjacentPages();
 		}, ANIM_MS + 50);
 	};
 
