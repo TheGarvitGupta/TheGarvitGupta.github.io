@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather Icons Test</title>
+<style>
+  body { font-family: monospace; font-size: 13px; padding: 24px; background: #fff; }
+  table { border-collapse: collapse; width: 100%; }
+  th { text-align: left; padding: 6px 12px; border-bottom: 2px solid #ccc; }
+  td { padding: 8px 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
+  td.condition { color: #555; max-width: 360px; }
+  td.dark-cell { background: #1a1a1a; }
+  .icon-wrap { display: flex; align-items: center; gap: 8px; }
+  .icon-wrap img { width: 48px; height: 48px; display: block; flex-shrink: 0; }
+  .icon-label { color: #888; }
+  td.dark-cell .icon-label { color: #666; }
+  tr.unmapped td { color: #bbb; }
+  tr.unmapped .icon-label { color: #bbb; }
+  .sep td { background: #f5f5f5; font-weight: bold; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #999; padding: 4px 12px; }
+</style>
+</head>
+<body>
+<table>
+  <thead>
+    <tr>
+      <th>Condition (regex)</th>
+      <th>Day (light)</th>
+      <th>Day (dark)</th>
+      <th>Night (light)</th>
+      <th>Night (dark)</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+<script>
+const ICON_BASE = "images/weather/";
+
+const CONDITION_ICONS = [
+  ["thunder|storm",              "thunder.svg",      "thunder.svg"],
+  ["snow|blizzard",              "snowy-3.svg",      "snowy-3.svg"],
+  ["sleet|freezing",             "snowy-6.svg",      "snowy-6.svg"],
+  ["rain|shower|drizzle",        "rainy-3.svg",      "rainy-3.svg"],
+  ["fog|mist|haze",              "cloudy.svg",       "cloudy-night-3.svg"],
+  ["overcast|mostly cloudy",     "cloudy-day-3.svg", "cloudy-night-3.svg"],
+  ["partly cloudy|partly sunny", "cloudy-day-2.svg", "cloudy-night-2.svg"],
+  ["mostly sunny|mostly clear",  "cloudy-day-1.svg", "cloudy-night-1.svg"],
+  ["sunny|clear",                "day.svg",          "night.svg"],
+  ["wind",                       "cloudy-day-1.svg", "cloudy-night-1.svg"],
+  ["(fallback)",                 "day.svg",          "night.svg"],
+];
+
+const ALL_ICONS = [
+  "day.svg","night.svg",
+  "cloudy-day-1.svg","cloudy-day-2.svg","cloudy-day-3.svg",
+  "cloudy-night-1.svg","cloudy-night-2.svg","cloudy-night-3.svg",
+  "cloudy.svg",
+  "rainy-1.svg","rainy-2.svg","rainy-3.svg","rainy-4.svg","rainy-5.svg","rainy-6.svg","rainy-7.svg",
+  "snowy-1.svg","snowy-2.svg","snowy-3.svg","snowy-4.svg","snowy-5.svg","snowy-6.svg",
+  "thunder.svg",
+];
+
+const tbody = document.getElementById("tbody");
+
+function iconCell(file, dark) {
+  const td = document.createElement("td");
+  if (dark) td.className = "dark-cell";
+  const wrap = document.createElement("div");
+  wrap.className = "icon-wrap";
+  const o = document.createElement("img");
+  o.src = ICON_BASE + file;
+  o.alt = file;
+  const label = document.createElement("span");
+  label.className = "icon-label";
+  label.textContent = file;
+  wrap.appendChild(o);
+  wrap.appendChild(label);
+  td.appendChild(wrap);
+  return td;
+}
+
+function row(condition, dayFile, nightFile, cls) {
+  const tr = document.createElement("tr");
+  if (cls) tr.className = cls;
+  const td1 = document.createElement("td");
+  td1.className = "condition";
+  td1.textContent = condition;
+  tr.append(td1, iconCell(dayFile, false), iconCell(dayFile, true), iconCell(nightFile, false), iconCell(nightFile, true));
+  tbody.appendChild(tr);
+}
+
+function sep(label) {
+  const tr = document.createElement("tr");
+  tr.className = "sep";
+  const td = document.createElement("td");
+  td.colSpan = 5;
+  td.textContent = label;
+  tr.appendChild(td);
+  tbody.appendChild(tr);
+}
+
+sep("Mapped conditions");
+CONDITION_ICONS.forEach(([cond, day, night]) => row(cond, day, night));
+
+const used = new Set(CONDITION_ICONS.flatMap(([,d,n]) => [d,n]));
+const unused = ALL_ICONS.filter(f => !used.has(f));
+if (unused.length) {
+  sep("Unused icons");
+  unused.forEach(f => row("—", f, f, "unmapped"));
+}
+</script>
+</body>
+</html>
