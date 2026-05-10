@@ -128,12 +128,19 @@
 		updateWeatherDisplay();
 	}
 
+	function darkIcon(icon) {
+		var file = icon.split("/").pop();
+		return ICON_BASE + "dark-" + file;
+	}
+
 	function updateWeatherDisplay() {
 		var $el = $(".designation");
 		if (!$el.data("weather-f")) return;
 		var tempF  = $el.data("weather-f");
 		var label  = $el.data("weather-label");
 		var icon   = $el.data("weather-icon");
+		var isDark = document.documentElement.classList.contains("dark-mode");
+		if (isDark) icon = darkIcon(icon);
 		var useMetric = window.GG && window.GG.units === "metric";
 		var temp = useMetric ? ftToC(tempF) + "°C" : Math.round(tempF) + "°F";
 		$el.html(buildDisplay(icon, temp, label));

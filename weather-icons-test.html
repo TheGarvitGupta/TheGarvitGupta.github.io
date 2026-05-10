@@ -71,7 +71,7 @@ function iconCell(file, dark) {
   const wrap = document.createElement("div");
   wrap.className = "icon-wrap";
   const o = document.createElement("img");
-  o.src = ICON_BASE + file;
+  o.src = ICON_BASE + (dark ? "dark-" : "") + file;
   o.alt = file;
   const label = document.createElement("span");
   label.className = "icon-label";

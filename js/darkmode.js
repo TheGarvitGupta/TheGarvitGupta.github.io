@@ -31,6 +31,9 @@
             if (typeof window.reinitParticles === 'function') {
                 window.reinitParticles();
             }
+            if (window.GG && typeof window.GG.refreshWeather === 'function') {
+                window.GG.refreshWeather();
+            }
         }
     }
     if (mq.addEventListener) {
@@ -57,6 +60,9 @@
             syncLabels();
             if (typeof window.reinitParticles === 'function') {
                 window.reinitParticles();
+            }
+            if (window.GG && typeof window.GG.refreshWeather === 'function') {
+                window.GG.refreshWeather();
             }
         }
 
