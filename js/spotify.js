@@ -93,6 +93,7 @@
 	function startVisualizer() {
 		if (vizRunning) return;
 		vizRunning = true;
+		document.querySelectorAll('.spotify-pill').forEach(function(p) { p.classList.remove('spin-paused'); });
 		scheduleEntropyChange();
 		vizJitterTimer = setInterval(function () {
 			if (state && state.playing && state.durationMs) {
@@ -101,10 +102,9 @@
 				if (progress >= 0.98) {
 					vizTargetEntropy = 1;
 					vizEntropy = 1;
-					for (var j = 0; j < vizPillHeights.length; j++) {
-						if (Math.random() > 0.05) vizPillHeights[j] = VIZ_MIN_HEIGHT + Math.random() * 1.5;
-					}
+					vizPillHeights = [VIZ_MIN_HEIGHT, VIZ_MIN_HEIGHT, VIZ_MIN_HEIGHT, VIZ_MIN_HEIGHT, VIZ_MIN_HEIGHT];
 					applyPillHeights();
+					document.querySelectorAll('.spotify-pill').forEach(function(p) { p.classList.add('spin-paused'); });
 					return;
 				}
 				if (progress >= 0.95) vizTargetEntropy = 1;

@@ -370,6 +370,9 @@ input {
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
+.spotify-pill.spin-paused::before {
+    animation-play-state: paused;
+}
 .spotify-device.ago {
     color: #888;
 }
