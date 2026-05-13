@@ -85,6 +85,11 @@
 		vizRunning = true;
 		scheduleEntropyChange();
 		vizJitterTimer = setInterval(function () {
+			if (state && state.playing && state.durationMs) {
+				var elapsed = Date.now() - fetchedAt;
+				var progress = ((state.progressMs || 0) + elapsed) / state.durationMs;
+				if (progress >= 0.95) vizTargetEntropy = 1;
+			}
 			tickEntropy();
 			samplePillHeights();
 			applyPillHeights();
