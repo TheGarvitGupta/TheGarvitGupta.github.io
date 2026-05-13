@@ -98,6 +98,15 @@
 			if (state && state.playing && state.durationMs) {
 				var elapsed = Date.now() - fetchedAt;
 				var progress = ((state.progressMs || 0) + elapsed) / state.durationMs;
+				if (progress >= 0.98) {
+					vizTargetEntropy = 1;
+					vizEntropy = 1;
+					for (var j = 0; j < vizPillHeights.length; j++) {
+						if (Math.random() > 0.05) vizPillHeights[j] = VIZ_MIN_HEIGHT + Math.random() * 1.5;
+					}
+					applyPillHeights();
+					return;
+				}
 				if (progress >= 0.95) vizTargetEntropy = 1;
 			}
 			tickEntropy();
