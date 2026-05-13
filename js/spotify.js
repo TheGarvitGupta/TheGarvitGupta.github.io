@@ -33,6 +33,7 @@
 		$(".spotify-music-artist").html(state.artist || "");
 		if (state.albumArt) {
 			$(".spotify-album-art").css({ "background-image": "url(" + state.albumArt + ")" });
+			document.querySelector(".spotify-progress-thumb").style.setProperty("--thumb-art", "url(" + state.albumArt + ")");
 		}
 		if (state.url) {
 			$(".spotify-link").attr("href", state.url);
@@ -42,9 +43,11 @@
 			$(".spotify-device")
 				.removeClass("ago")
 				.text(state.deviceName ? "Listening on " + state.deviceName : "");
+			$(".spotify-progress-thumb").addClass("visible");
 		} else {
 			$(".spotify-device").addClass("ago");
 			$(".spotify-progress").css({ "width": "0%" });
+			$(".spotify-progress-thumb").removeClass("visible");
 		}
 
 		$(".spotify").css({ "display": "block" });

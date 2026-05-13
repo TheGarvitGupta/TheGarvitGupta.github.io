@@ -322,6 +322,40 @@ input {
     transition: 0.2s ease-in-out;
     border-radius: 2px;
 }
+.spotify-progress-thumb {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    overflow: hidden;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 16'%3E%3Crect x='0' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='4' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='8' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='12' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='16' y='1' width='2' height='14' rx='1' fill='black'/%3E%3C/svg%3E");
+    -webkit-mask-size: 100% 100%;
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 16'%3E%3Crect x='0' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='4' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='8' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='12' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='16' y='1' width='2' height='14' rx='1' fill='black'/%3E%3C/svg%3E");
+    mask-size: 100% 100%;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+.spotify-progress-thumb::before {
+    content: '';
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    top: -25%;
+    left: -25%;
+    background-image: var(--thumb-art);
+    background-size: cover;
+    background-position: center;
+    filter: blur(2px);
+    animation: thumb-spin 8s linear infinite;
+}
+.spotify-progress-thumb.visible {
+    opacity: 1;
+}
+@keyframes thumb-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
 .spotify-device.ago {
     color: #888;
 }
