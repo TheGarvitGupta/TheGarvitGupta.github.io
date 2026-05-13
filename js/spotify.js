@@ -13,8 +13,10 @@
 	// --- Visualizer config ---
 	var VIZ_MIN_HEIGHT        = 4;
 	var VIZ_MAX_HEIGHT        = 14;
-	var VIZ_PILL_BIAS         = [0.2, 0.7, 1.0, 0.7, 0.4]; // bell curve weights
-	var VIZ_NEIGHBOR_INFLUENCE = 0.3;  // how much adjacent pills pull each other
+	var VIZ_PILL_BIAS         = [0.05, 0.6, 1.0, 0.85, 0.35]; // bell curve weights
+	var VIZ_PILL_SPIKE_CHANCE = [0.01, 0.10, 0.28, 0.22, 0.06]; // per-tick chance of hitting full height
+	var VIZ_PILL_MIN_CHANCE   = [0.35, 0.05, 0.02, 0.03, 0.08]; // per-tick chance of snapping near min height
+	var VIZ_NEIGHBOR_INFLUENCE = 0.15; // how much adjacent pills pull each other
 	var VIZ_JITTER_PERIOD     = 100;   // ms between height resamples
 	var VIZ_ENTROPY_MIN_PERIOD = 3000; // ms min between entropy target changes
 	var VIZ_ENTROPY_MAX_PERIOD = 7000; // ms max between entropy target changes
@@ -50,8 +52,16 @@
 		var normalizedEntropy = (vizEntropy - 1) / 9;
 		var raw = [];
 		for (var i = 0; i < 5; i++) {
+			if (Math.random() < VIZ_PILL_SPIKE_CHANCE[i] * normalizedEntropy) {
+				raw.push(VIZ_MAX_HEIGHT);
+				continue;
+			}
+			if (Math.random() < VIZ_PILL_MIN_CHANCE[i]) {
+				raw.push(VIZ_MIN_HEIGHT + randBetween(0, 2));
+				continue;
+			}
 			var mean  = VIZ_MIN_HEIGHT + VIZ_PILL_BIAS[i] * normalizedEntropy * (VIZ_MAX_HEIGHT - VIZ_MIN_HEIGHT);
-			var range = (VIZ_MAX_HEIGHT - VIZ_MIN_HEIGHT) * 0.4;
+			var range = (VIZ_MAX_HEIGHT - VIZ_MIN_HEIGHT) * (0.55 + Math.random() * 0.35);
 			raw.push(clamp(mean + randBetween(-range, range), VIZ_MIN_HEIGHT, VIZ_MAX_HEIGHT));
 		}
 
