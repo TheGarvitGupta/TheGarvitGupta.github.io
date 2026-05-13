@@ -104,15 +104,18 @@
 		if (animating) return;
 		animating = true;
 		var $icon = $(".weather-icon");
-		$icon.addClass("weather-icon-slide-out");
-		setTimeout(function () {
-			setIconSVG(newSrc);
-			$icon.removeClass("weather-icon-slide-out").addClass("weather-icon-slide-in");
+		// Pre-fetch so swap is instant when slide-out finishes
+		fetchSVG(newSrc, function (svg) {
+			$icon.addClass("weather-icon-slide-out");
 			setTimeout(function () {
-				$icon.removeClass("weather-icon-slide-in");
-				animating = false;
-			}, 300);
-		}, 150);
+				$icon.html(svg);
+				$icon.removeClass("weather-icon-slide-out").addClass("weather-icon-slide-in");
+				setTimeout(function () {
+					$icon.removeClass("weather-icon-slide-in");
+					animating = false;
+				}, 80);
+			}, 60);
+		});
 	}
 
 	function startEasterEgg() {
@@ -125,9 +128,11 @@
 
 		easterEggInterval = setInterval(function () {
 			easterEggIndex = (easterEggIndex + 1) % ALL_ICONS.length;
-			slideToIcon(ICON_BASE + ALL_ICONS[easterEggIndex]);
+			var isDark = document.documentElement.classList.contains("dark-mode");
+			var src = ICON_BASE + (isDark ? "dark-" : "") + ALL_ICONS[easterEggIndex];
+			slideToIcon(src);
 			if (easterEggIndex === startIndex) stopEasterEgg();
-		}, 1000);
+		}, 400);
 	}
 
 	function onIconTap() {

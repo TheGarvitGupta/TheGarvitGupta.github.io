@@ -400,12 +400,12 @@ input {
     display: block;
 }
 .weather-icon-slide-out {
-    -webkit-animation: weather-slide-out 0.15s ease-in forwards;
-    animation: weather-slide-out 0.15s ease-in forwards;
+    -webkit-animation: weather-slide-out 0.06s ease-in forwards;
+    animation: weather-slide-out 0.06s ease-in forwards;
 }
 .weather-icon-slide-in {
-    -webkit-animation: weather-slide-in 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
-    animation: weather-slide-in 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+    -webkit-animation: weather-slide-in 0.08s ease-out forwards;
+    animation: weather-slide-in 0.08s ease-out forwards;
 }
 @-webkit-keyframes weather-slide-out {
     from { opacity: 1; -webkit-transform: translateX(0);    transform: translateX(0); }
