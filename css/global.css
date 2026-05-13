@@ -326,29 +326,48 @@ input {
     position: absolute;
     top: 0;
     right: 0;
-    width: 16px;
+    width: 18px;
     height: 16px;
-    overflow: hidden;
-    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 16'%3E%3Crect x='0' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='4' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='8' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='12' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='16' y='1' width='2' height='14' rx='1' fill='black'/%3E%3C/svg%3E");
-    -webkit-mask-size: 100% 100%;
-    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 16'%3E%3Crect x='0' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='4' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='8' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='12' y='1' width='2' height='14' rx='1' fill='black'/%3E%3Crect x='16' y='1' width='2' height='14' rx='1' fill='black'/%3E%3C/svg%3E");
-    mask-size: 100% 100%;
     opacity: 0;
     transition: opacity 0.2s ease-in-out;
 }
-.spotify-progress-thumb::before {
+.spotify-pill {
+    position: absolute;
+    width: 2px;
+    height: 14px;
+    top: 1px;
+    overflow: hidden;
+    border-radius: 1px;
+    animation: pill-bounce 1s linear infinite;
+}
+@keyframes pill-bounce {
+    0%   { height: 14px; top: 1px; }
+    50%  { height: 4px;  top: 6px; }
+    100% { height: 14px; top: 1px; }
+}
+.spotify-pill:nth-child(1) { left: 0px; }
+.spotify-pill:nth-child(2) { left: 4px; }
+.spotify-pill:nth-child(3) { left: 8px; }
+.spotify-pill:nth-child(4) { left: 12px; }
+.spotify-pill:nth-child(5) { left: 16px; }
+.spotify-pill::before {
     content: '';
     position: absolute;
-    width: 150%;
-    height: 150%;
-    top: -25%;
-    left: -25%;
+    width: 18px;
+    height: 16px;
+    top: -1px;
     background-image: var(--thumb-art);
     background-size: cover;
     background-position: center;
     filter: blur(2px);
-    animation: thumb-spin 8s linear infinite;
+    animation: thumb-spin 4s linear infinite;
+    transform-origin: 9px 8px;
 }
+.spotify-pill:nth-child(1)::before { left: 0px; }
+.spotify-pill:nth-child(2)::before { left: -4px; }
+.spotify-pill:nth-child(3)::before { left: -8px; }
+.spotify-pill:nth-child(4)::before { left: -12px; }
+.spotify-pill:nth-child(5)::before { left: -16px; }
 .spotify-progress-thumb.visible {
     opacity: 1;
 }
