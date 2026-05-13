@@ -354,7 +354,7 @@ input {
     background-image: var(--thumb-art);
     background-size: cover;
     background-position: center;
-    filter: blur(2px);
+    filter: blur(5px);
     animation: thumb-spin 4s linear infinite;
     transform-origin: 9px 8px;
 }
