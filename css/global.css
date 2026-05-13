@@ -399,30 +399,6 @@ input {
     height: 100%;
     display: block;
 }
-.weather-icon-slide-out {
-    -webkit-animation: weather-fade-out 0.06s ease-in forwards;
-    animation: weather-fade-out 0.06s ease-in forwards;
-}
-.weather-icon-slide-in {
-    -webkit-animation: weather-fade-in 0.08s ease-out forwards;
-    animation: weather-fade-in 0.08s ease-out forwards;
-}
-@-webkit-keyframes weather-fade-out {
-    from { opacity: 1; }
-    to   { opacity: 0; }
-}
-@keyframes weather-fade-out {
-    from { opacity: 1; }
-    to   { opacity: 0; }
-}
-@-webkit-keyframes weather-fade-in {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
-@keyframes weather-fade-in {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
 .downButton {
     position: absolute;
     width: 100px;

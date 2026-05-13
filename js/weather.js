@@ -103,18 +103,9 @@
 	function slideToIcon(newSrc) {
 		if (animating) return;
 		animating = true;
-		var $icon = $(".weather-icon");
-		// Pre-fetch so swap is instant when slide-out finishes
 		fetchSVG(newSrc, function (svg) {
-			$icon.addClass("weather-icon-slide-out");
-			setTimeout(function () {
-				$icon.html(svg);
-				$icon.removeClass("weather-icon-slide-out").addClass("weather-icon-slide-in");
-				setTimeout(function () {
-					$icon.removeClass("weather-icon-slide-in");
-					animating = false;
-				}, 80);
-			}, 60);
+			$(".weather-icon").html(svg);
+			animating = false;
 		});
 	}
 
