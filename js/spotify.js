@@ -11,7 +11,7 @@
 	var fetchedAt = 0;
 
 	// --- Visualizer config ---
-	var VIZ_MIN_HEIGHT        = 4;
+	var VIZ_MIN_HEIGHT        = 2;
 	var VIZ_MAX_HEIGHT        = 14;
 	var VIZ_PILL_BIAS         = [0.05, 0.6, 1.0, 0.85, 0.35]; // bell curve weights
 	var VIZ_PILL_SPIKE_CHANCE = [0.01, 0.10, 0.28, 0.22, 0.06]; // per-tick chance of hitting full height
