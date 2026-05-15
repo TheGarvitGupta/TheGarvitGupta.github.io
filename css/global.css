@@ -388,6 +388,9 @@ input {
     transition: all 1.5s ease-in-out;
     text-transform: none;
     opacity: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
 }
 .weather-icon {
     height: 2.2em;
