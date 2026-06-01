@@ -585,7 +585,10 @@
 
 		// Keyboard left/right arrows
 		document.addEventListener("keydown", (e) => {
-			if (lightbox?.isOpen()) return;
+			if (lightbox?.isOpen()) {
+				if (e.key === "ArrowLeft" || e.key === "ArrowRight") e.preventDefault();
+				return;
+			}
 			if (!stage.closest("body")) return;
 			const rect = stage.getBoundingClientRect();
 			const inView = rect.top < window.innerHeight && rect.bottom > 0;
