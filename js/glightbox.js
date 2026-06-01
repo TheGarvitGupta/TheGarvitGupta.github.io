@@ -968,7 +968,7 @@
       videoWrapper.appendChild(placeholder);
       videoWrapper.setAttribute('data-id', videoID);
       videoWrapper.setAttribute('data-index', index);
-      var playerConfig = has(_this.settings.plyr, 'config') ? _this.settings.plyr.config : {};
+      var playerConfig = Object.assign({ keyboard: { focused: false, global: false } }, has(_this.settings.plyr, 'config') ? _this.settings.plyr.config : {});
       var player = new Plyr('#' + videoID, playerConfig);
       player.on('ready', function (event) {
         videoPlayers[videoID] = event.detail.plyr;
