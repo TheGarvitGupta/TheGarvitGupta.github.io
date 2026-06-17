@@ -190,9 +190,13 @@
 
 	let scrollHandler = null;
 
-	const preloadRemainingPages = (after = Promise.resolve()) => {
+	// Two-phase load: first walk every page loading only thumbnails, then once
+	// all thumbnails are in, run every page's full-res upgrades. `firstUpgrades`
+	// are the already-populated first page's upgrade fns, deferred into phase 2.
+	const preloadRemainingPages = (after = Promise.resolve(), firstUpgrades = []) => {
 		const numPages = Math.ceil(allPhotos.length / PAGE_SIZE);
-		let chain = after;
+		let thumbChain = after;
+		const upgradeFns = [...firstUpgrades];
 		for (let idx = 0; idx < numPages; idx++) {
 			if (sections[idx]) continue;
 			const g = createGallerySection();
@@ -201,14 +205,15 @@
 			g.style.display = "none";
 			strip.appendChild(g);
 			const capturedIdx = idx;
-			chain = chain.then(() => {
+			thumbChain = thumbChain.then(() => {
 				const populated = populateGallery(g, capturedIdx * PAGE_SIZE, cols, rows);
 				Object.assign(sections[capturedIdx], populated);
-				return allSettledOrTimeout(populated.thumbReady).then(
-					() => allSettledOrTimeout(populated.upgrades.map(fn => fn()))
-				);
+				upgradeFns.push(...populated.upgrades);
+				return allSettledOrTimeout(populated.thumbReady);
 			});
 		}
+		// Phase 2: every thumbnail is loaded — now upgrade to full-res everywhere.
+		return thumbChain.then(() => allSettledOrTimeout(upgradeFns.map(fn => fn())));
 	};
 
 	const initScrollConverge = (gallery) => {
@@ -500,11 +505,13 @@
 			const { thumbReady, upgrades } = populateGallery(firstGallery, 0, cols, rows);
 			sections[0] = { gallery: firstGallery, cols, rows, thumbReady, upgrades, visited: true };
 			applyOffsets(firstGallery, cols, rows);
-			const fullResReady = allSettledOrTimeout(thumbReady).then(() => {
+			// Phase 1 begins with the first page's thumbnails; once they're in we
+			// kick off the scroll converge, then let preloadRemainingPages load the
+			// rest of the thumbnails before any full-res (incl. this page's) loads.
+			const firstThumbsReady = allSettledOrTimeout(thumbReady).then(() => {
 				initScrollConverge(firstGallery);
-				return allSettledOrTimeout(upgrades.map(fn => fn()));
 			});
-			preloadRemainingPages(fullResReady);
+			preloadRemainingPages(firstThumbsReady, upgrades);
 			rebuildLightbox();
 			return;
 		}
