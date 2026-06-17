@@ -720,10 +720,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
         if self.path == "/api/commit":
             try:
-                date = "Thu May 8 08:45:00 2026 -0700"
-                env = {**os.environ,
-                       "GIT_AUTHOR_DATE": date,
-                       "GIT_COMMITTER_DATE": date}
+                # Use the current date/time for the commit (git's default).
+                env = {**os.environ}
                 subprocess.run(
                     ["git", "add", "images/photographs/"],
                     cwd=str(REPO_ROOT), check=True, capture_output=True)
