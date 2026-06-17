@@ -25,15 +25,16 @@ THUMB_DIR   = PHOTO_DIR / "thumbs"
 PORT        = 8765
 
 # ── Processing settings ──────────────────────────────────────────────────────
-IMG_THUMB_W  = 800
+IMG_THUMB_W  = 500
 IMG_FULL_W   = 2560
-IMG_THUMB_Q  = 72
+IMG_THUMB_Q  = 70
 IMG_FULL_Q   = 88
 
-VID_THUMB_W  = 640
+VID_THUMB_W  = 400
 VID_FULL_W   = 1280
-VID_THUMB_CRF = 32
+VID_THUMB_CRF = 34
 VID_FULL_CRF  = 24
+VID_THUMB_SECS = 4   # thumbnails loop only the first few seconds, not the whole clip
 
 MEDIA_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".mov"}
 
@@ -156,8 +157,8 @@ def process_video(src: Path, dest_full: Path, dest_thumb: Path, thumb_only: bool
              "-c:v", "libx264", "-crf", str(VID_FULL_CRF), "-preset", "fast",
              "-an", "-movflags", "+faststart", str(dest_full)])
 
-    # Thumb — center-crop to square then resize
-    run(["ffmpeg", "-y", "-i", str(src),
+    # Thumb — first few seconds only, center-crop to square then resize
+    run(["ffmpeg", "-y", "-t", str(VID_THUMB_SECS), "-i", str(src),
          "-vf", f"crop=min(iw\\,ih):min(iw\\,ih),scale={VID_THUMB_W}:{VID_THUMB_W}",
          "-c:v", "libx264", "-crf", str(VID_THUMB_CRF), "-preset", "fast",
          "-an", "-movflags", "+faststart", str(dest_thumb)])
