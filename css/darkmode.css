@@ -122,6 +122,21 @@ html.dark-mode .bar-min,
 html.dark-mode .bar-max {
     color: #555555;
 }
+html.dark-mode .run-activity .route path {
+    stroke: #ffffff;
+}
+html.dark-mode .run-activity .route .start {
+    fill: #ffffff;
+}
+html.dark-mode .run-activity .route .end {
+    fill: #141414; stroke: #ffffff;
+}
+html.dark-mode .run-activity .run-place {
+    color: #e0e0e0;
+}
+html.dark-mode .run-activity .hr-grid {
+    stroke: #3a3d42;
+}
 html.dark-mode .social-icon {
     background-color: #0f0f0f;
     -webkit-filter: invert(1);

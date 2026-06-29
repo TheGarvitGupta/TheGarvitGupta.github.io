@@ -1,5 +1,6 @@
-// Cloudflare Worker — returns year-to-date running stats for the
-// running-bar widget on garvitgupta.com.
+// Cloudflare Worker — returns year-to-date running stats + the most recent
+// activity (run/ride route, or workout heart-rate trace) for the widget on
+// garvitgupta.com.
 //
 // Required Strava scope on the refresh token: activity:read_all
 //
@@ -17,6 +18,54 @@
 
 const CACHE_KEY = "strava:stats";
 const CACHE_TTL = 90; // seconds — re-fetch from Strava at most once every 90s
+
+// Activity types that have a GPS route we draw as a trace. Anything else
+// (WeightTraining, Workout, Yoga, …) is treated as a "workout" and we draw the
+// heart-rate trace instead.
+const ROUTE_TYPES = new Set([
+	"Run", "TrailRun", "VirtualRun",
+	"Ride", "VirtualRide", "GravelRide", "MountainBikeRide",
+	"Walk", "Hike",
+]);
+
+// Reverse-geocode a start point to a short place name (free, OpenStreetMap).
+async function geocode(lat, lng) {
+	try {
+		const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=jsonv2&zoom=16&addressdetails=1`;
+		const r = await fetch(url, {
+			headers: { "User-Agent": "garvitgupta.com running widget (contact garvitgupta@icloud.com)" },
+		});
+		if (!r.ok) return null;
+		const j = await r.json();
+		const a = j.address || {};
+		return (
+			a.leisure || a.park || a.neighbourhood || a.suburb || a.quarter ||
+			a.hamlet || a.village || a.town || a.city_district || a.road ||
+			a.city || (j.display_name || "").split(",")[0] || null
+		);
+	} catch (e) {
+		return null;
+	}
+}
+
+// Fetch the heart-rate stream for a workout and downsample to ~60 points.
+async function hrStream(id, token) {
+	try {
+		const r = await fetch(
+			`https://www.strava.com/api/v3/activities/${id}/streams?keys=heartrate&key_by_type=true`,
+			{ headers: { "Authorization": `Bearer ${token}` } }
+		);
+		if (!r.ok) return null;
+		const j = await r.json();
+		const hr = j.heartrate && j.heartrate.data;
+		if (!hr || !hr.length) return null;
+		const N = 60, step = Math.max(1, Math.floor(hr.length / N)), out = [];
+		for (let i = 0; i < hr.length; i += step) out.push(hr[i]);
+		return out;
+	} catch (e) {
+		return null;
+	}
+}
 
 export default {
 	async fetch(request, env) {
@@ -67,7 +116,7 @@ export default {
 			}
 			const { access_token } = await tokenRes.json();
 
-			// 2. Fetch athlete stats (has ytd_run_totals).
+			// 2. Fetch athlete stats (has ytd_run_totals) for the 1000 km goal bar.
 			const statsRes = await fetch(
 				`https://www.strava.com/api/v3/athletes/${env.STRAVA_ATHLETE_ID}/stats`,
 				{ headers: { "Authorization": `Bearer ${access_token}` } }
@@ -79,19 +128,37 @@ export default {
 			const ytd = stats.ytd_run_totals || {};
 			const all = stats.all_run_totals || {};
 
-			// 3. Fetch latest run activity to check if one happened today.
+			// 3. Fetch the most recent activity of ANY type.
 			const actRes = await fetch(
-				"https://www.strava.com/api/v3/athlete/activities?per_page=1&type=Run",
+				"https://www.strava.com/api/v3/athlete/activities?per_page=1",
 				{ headers: { "Authorization": `Bearer ${access_token}` } }
 			);
-			let latestRunDate = null;
-			let latestRunMiles = null;
+			let latest = null;
 			if (actRes.ok) {
 				const acts = await actRes.json();
-				if (acts.length > 0) {
-					// start_date_local is "2026-05-07T08:30:00Z" — take the date part
-					latestRunDate = (acts[0].start_date_local || "").slice(0, 10);
-					latestRunMiles = (acts[0].distance || 0) / 1609.344;
+				const act = acts[0];
+				if (act) {
+					const sportType = act.sport_type || act.type || "Workout";
+					const hasRoute = ROUTE_TYPES.has(sportType) &&
+						act.map && act.map.summary_polyline && (act.distance || 0) > 0;
+					latest = {
+						sportType,
+						date: (act.start_date_local || "").slice(0, 10),
+						distanceMeters: Math.round(act.distance || 0),
+						movingSeconds: act.moving_time || 0,
+						kind: hasRoute ? "route" : "workout",
+					};
+					const ll = Array.isArray(act.start_latlng) && act.start_latlng.length === 2
+						? act.start_latlng : null;
+					if (ll) latest.place = await geocode(ll[0], ll[1]);
+
+					if (hasRoute) {
+						latest.polyline = act.map.summary_polyline;
+					} else {
+						latest.avgHr = act.average_heartrate ? Math.round(act.average_heartrate) : null;
+						latest.maxHr = act.max_heartrate ? Math.round(act.max_heartrate) : null;
+						if (act.has_heartrate) latest.hr = await hrStream(act.id, access_token);
+					}
 				}
 			}
 
@@ -101,15 +168,16 @@ export default {
 				ytdRunCount: ytd.count || 0,
 				lifetimeRunCount: all.count || 0,
 				profileUrl: `https://www.strava.com/athletes/${env.STRAVA_ATHLETE_ID}`,
-				latestRunDate,
-				latestRunMiles,
+				latest,
 			};
 
-			// Only write to KV if data changed (saves KV write quota)
+			// Only write to KV if something changed (saves KV write quota)
+			const sig = latest ? `${latest.date}|${latest.sportType}|${latest.distanceMeters}` : "";
 			if (env.KV) {
 				const existing = await env.KV.get(CACHE_KEY);
-				const existingData = existing ? JSON.parse(existing) : null;
-				if (!existingData || existingData.ytdMeters !== result.ytdMeters || existingData.latestRunDate !== result.latestRunDate) {
+				const ex = existing ? JSON.parse(existing) : null;
+				const exSig = ex && ex.latest ? `${ex.latest.date}|${ex.latest.sportType}|${ex.latest.distanceMeters}` : "";
+				if (!ex || ex.ytdMeters !== result.ytdMeters || exSig !== sig) {
 					await env.KV.put(CACHE_KEY, JSON.stringify(result), { expirationTtl: CACHE_TTL });
 				}
 			}

@@ -295,7 +295,8 @@
         margin-right: auto;
         width: 200px;
     }
-    .run-stats {
+    .run-stats,
+    .run-activity {
         text-align: center;
     }
     .about-text {
