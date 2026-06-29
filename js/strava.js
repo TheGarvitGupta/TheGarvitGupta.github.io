@@ -24,7 +24,7 @@
 	function fmtDist(meters) {
 		var val = isMetric() ? meters / 1000 : meters / M_PER_MILE;
 		var unit = isMetric() ? "km" : "mi";
-		var str = val >= 10 ? Math.round(val).toString() : val.toFixed(1);
+		var str = val >= 10 ? Math.round(val).toLocaleString("en-US") : val.toFixed(1);
 		return str + " " + unit;
 	}
 
@@ -35,8 +35,8 @@
 		var d = new Date(+p[0], +p[1] - 1, +p[2]);
 		var today = new Date(); today.setHours(0, 0, 0, 0);
 		var diff = Math.round((today - d) / 86400000);
-		if (diff <= 0) return "today";
-		if (diff === 1) return "yesterday";
+		if (diff <= 0) return "Today";
+		if (diff === 1) return "Yesterday";
 		return diff + " days ago";
 	}
 
@@ -162,8 +162,14 @@
 		var $a = $(".run-activity");
 		var act = data.latest;
 		if (!act) { $a.empty(); return; }
-		var when = relWhen(act.date), whenStr = when ? " · " + when : "";
+		var when = relWhen(act.date), whenStr = when ? " " + when : "";
 		var html = "";
+		// Run totals (this year + lifetime) — only for running activities
+		var isRun = /^(Run|TrailRun|VirtualRun)$/.test(act.sportType || "");
+		var totals = isRun
+			? '<div class="run-totals">' + fmtDist(data.ytdMeters || 0) + " this year · " +
+				fmtDist(data.lifetimeMeters || 0) + " lifetime</div>"
+			: "";
 
 		if (act.kind === "route" && act.polyline) {
 			var rp = buildRoute(decodePolyline(act.polyline));
@@ -173,15 +179,15 @@
 					'<path d="' + rp.d + '"></path>' +
 					'<circle class="end" cx="' + rp.end[0].toFixed(1) + '" cy="' + rp.end[1].toFixed(1) + '" r="4.5"></circle>' +
 					'<circle class="start" cx="' + rp.start[0].toFixed(1) + '" cy="' + rp.start[1].toFixed(1) + '" r="4.5"></circle></svg></div>' +
-				'<div class="run-kicker">' + verb + " " + fmtDist(act.distanceMeters) + whenStr + "</div>" +
-				(act.place ? '<div class="run-place">' + act.place + "</div>" : "");
+				'<div class="run-kicker">' + verb + " " + fmtDist(act.distanceMeters) + whenStr +
+					(act.place ? " · " + act.place : "") + "</div>" + totals;
 		} else {
 			var mins = Math.round((act.movingSeconds || 0) / 60);
 			html =
 				(act.hr && act.hr.length > 1 ? hrChartHtml(act.hr) : "") +
 				'<div class="run-kicker w">' + mins + " min" + whenStr + "</div>" +
 				'<div class="run-place">' + prettyType(act.sportType) + "</div>" +
-				(act.place ? '<div class="run-sub">' + act.place + "</div>" : "");
+				(act.place ? '<div class="run-sub">' + act.place + "</div>" : "") + totals;
 		}
 		$a.html(html);
 	}

@@ -131,7 +131,8 @@ html.dark-mode .run-activity .route .start {
 html.dark-mode .run-activity .route .end {
     fill: #141414; stroke: #ffffff;
 }
-html.dark-mode .run-activity .run-place {
+html.dark-mode .run-activity .run-place,
+html.dark-mode .run-activity .run-totals {
     color: #e0e0e0;
 }
 html.dark-mode .run-activity .hr-grid {

@@ -873,10 +873,13 @@ input {
     stroke-width: 1.8px; vector-effect: non-scaling-stroke;
 }
 .run-activity .run-kicker {
-    font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    font-size: 12px; font-weight: 400; letter-spacing: 0;
     color: #2380F0; padding-top: 12px;
 }
 .run-activity .run-kicker.w { color: #E23B3B; }
+.run-activity .run-totals {
+    font-size: 12px; color: #333; padding-top: 4px;
+}
 .run-activity .run-place {
     font-size: 17px; font-weight: 700; letter-spacing: -.01em;
     color: #333; line-height: 1.1; padding-top: 3px;
