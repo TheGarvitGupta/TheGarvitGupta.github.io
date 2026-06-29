@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Route trace tuner</title>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Open Sans',sans-serif;color:#222;background:#fafafa;margin:0;padding:32px;}
+  .wrap{max-width:720px;margin:0 auto;}
+  h1{font-size:22px;margin:0 0 4px;}
+  .sub{color:#888;font-size:13px;margin:0 0 24px;}
+  .stage{background:#fff;border:1px solid #e6e6e6;border-radius:14px;padding:28px;min-height:140px;
+    display:flex;align-items:center;justify-content:flex-start;}
+  .route svg{display:block;height:auto;overflow:visible;}
+  .route path{fill:none;stroke:#000;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;}
+  .route .start{fill:#000;}
+  .meta{margin-top:14px;}
+  .kicker{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#2380F0;}
+  .place{font-size:17px;font-weight:700;color:#333;margin-top:3px;}
+  .controls{margin-top:28px;display:grid;gap:18px;}
+  .row{display:grid;grid-template-columns:180px 1fr 52px;align-items:center;gap:14px;}
+  .row label{font-size:13px;font-weight:600;}
+  .row .hint{display:block;font-size:11px;color:#999;font-weight:400;}
+  .row input[type=range]{width:100%;}
+  .row .val{font-variant-numeric:tabular-nums;font-size:13px;font-weight:700;text-align:right;color:#2380F0;}
+  .out{margin-top:24px;background:#0d1117;color:#d7e0ea;border-radius:10px;padding:14px 16px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:1.6;white-space:pre-wrap;}
+  .out b{color:#7ee787;}
+  button{font-family:inherit;font-size:12px;font-weight:600;border:1px solid #ccc;background:#fff;border-radius:8px;padding:8px 14px;cursor:pointer;margin-top:12px;}
+  .err{color:#c0392b;font-size:13px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Route trace tuner</h1>
+  <p class="sub">Live, on your actual most-recent Strava route. Drag the sliders, then tell me the values (or hit “copy settings”).</p>
+
+  <div class="stage">
+    <div>
+      <div class="route" id="route"></div>
+      <div class="meta"><div class="kicker" id="kicker"></div><div class="place" id="place"></div></div>
+    </div>
+  </div>
+
+  <div class="controls" id="controls"></div>
+
+  <button id="copy">Copy settings</button>
+  <div class="out" id="out"></div>
+</div>
+
+<script>
+var WORKER_URL = "https://www.garvitgupta.com/api/strava";
+
+/* --- geometry (mirrors strava.js) --- */
+function decodePolyline(str){
+  var idx=0,lat=0,lng=0,c=[];
+  while(idx<str.length){
+    var b,sh=0,r=0;
+    do{b=str.charCodeAt(idx++)-63;r|=(b&0x1f)<<sh;sh+=5;}while(b>=0x20);
+    lat+=(r&1)?~(r>>1):(r>>1);
+    sh=0;r=0;
+    do{b=str.charCodeAt(idx++)-63;r|=(b&0x1f)<<sh;sh+=5;}while(b>=0x20);
+    lng+=(r&1)?~(r>>1):(r>>1);
+    c.push([lat/1e5,lng/1e5]);
+  }
+  return c;
+}
+function movingAvg(p,r){
+  if(r<=0||p.length<2*r+1)return p;
+  var out=[];
+  for(var i=0;i<p.length;i++){
+    var a=Math.max(0,i-r),b=Math.min(p.length-1,i+r),sx=0,sy=0,n=0;
+    for(var j=a;j<=b;j++){sx+=p[j][0];sy+=p[j][1];n++;}
+    out.push([sx/n,sy/n]);
+  }
+  out[0]=p[0];out[p.length-1]=p[p.length-1];
+  return out;
+}
+function downsample(p,step){
+  if(step<=1||p.length<3)return p;
+  var out=[];
+  for(var i=0;i<p.length;i+=step)out.push(p[i]);
+  if(out[out.length-1]!==p[p.length-1])out.push(p[p.length-1]);
+  return out;
+}
+function smoothPath(p,t){
+  if(p.length<3)return "M"+p.map(function(q){return q[0].toFixed(1)+","+q[1].toFixed(1);}).join("L");
+  var d="M"+p[0][0].toFixed(1)+","+p[0][1].toFixed(1);
+  for(var i=0;i<p.length-1;i++){
+    var p0=p[i-1]||p[i],p1=p[i],p2=p[i+1],p3=p[i+2]||p2;
+    var c1x=p1[0]+(p2[0]-p0[0])*t,c1y=p1[1]+(p2[1]-p0[1])*t;
+    var c2x=p2[0]-(p3[0]-p1[0])*t,c2y=p2[1]-(p3[1]-p1[1])*t;
+    d+="C"+c1x.toFixed(1)+","+c1y.toFixed(1)+" "+c2x.toFixed(1)+","+c2y.toFixed(1)+" "+p2[0].toFixed(1)+","+p2[1].toFixed(1);
+  }
+  return d;
+}
+function buildRoute(coords,o){
+  var TARGET=300,pad=6;
+  var kx=Math.cos(coords[0][0]*Math.PI/180);
+  var xs=coords.map(function(c){return c[1]*kx;}),ys=coords.map(function(c){return c[0];});
+  var minX=Math.min.apply(0,xs),maxX=Math.max.apply(0,xs),minY=Math.min.apply(0,ys),maxY=Math.max.apply(0,ys);
+  var spanX=maxX-minX||1e-9,spanY=maxY-minY||1e-9,scale=TARGET/Math.max(spanX,spanY);
+  var pts=coords.map(function(c,i){return [pad+(xs[i]-minX)*scale,pad+(maxY-ys[i])*scale];});
+  pts=movingAvg(downsample(movingAvg(pts,o.avg1),o.step),o.avg2);
+  return {d:smoothPath(pts,o.tension),start:pts[0],vbW:spanX*scale+2*pad,vbH:spanY*scale+2*pad};
+}
+
+/* --- sliders --- */
+var PARAMS=[
+  {key:"avg1",   label:"Smooth pass 1",   hint:"averaging window radius", min:0,max:8,step:1,def:2},
+  {key:"step",   label:"Thin (downsample)",hint:"keep every Nth point",   min:1,max:6,step:1,def:2},
+  {key:"avg2",   label:"Smooth pass 2",   hint:"second averaging radius", min:0,max:6,step:1,def:1},
+  {key:"tension",label:"Curve roundness", hint:"spline control distance", min:0,max:0.4,step:0.01,def:0.17},
+  {key:"stroke", label:"Line thickness",  hint:"px",                      min:0.5,max:3,step:0.1,def:1.4},
+  {key:"width",  label:"Canvas width",    hint:"px",                      min:150,max:500,step:10,def:300}
+];
+var state={};PARAMS.forEach(function(p){state[p.key]=p.def;});
+var coords=null,place="",kicker="";
+
+function buildControls(){
+  var html="";
+  PARAMS.forEach(function(p){
+    html+='<div class="row"><label>'+p.label+'<span class="hint">'+p.hint+'</span></label>'+
+      '<input type="range" id="s_'+p.key+'" min="'+p.min+'" max="'+p.max+'" step="'+p.step+'" value="'+p.def+'">'+
+      '<span class="val" id="v_'+p.key+'">'+p.def+'</span></div>';
+  });
+  document.getElementById("controls").innerHTML=html;
+  PARAMS.forEach(function(p){
+    document.getElementById("s_"+p.key).addEventListener("input",function(){
+      state[p.key]=parseFloat(this.value);
+      document.getElementById("v_"+p.key).textContent=this.value;
+      render();
+    });
+  });
+}
+
+function render(){
+  if(!coords)return;
+  var r=buildRoute(coords,state);
+  document.getElementById("route").innerHTML=
+    '<svg viewBox="0 0 '+r.vbW.toFixed(1)+' '+r.vbH.toFixed(1)+'" preserveAspectRatio="xMidYMid meet" style="width:'+state.width+'px">'+
+      '<path style="stroke-width:'+state.stroke+'px" d="'+r.d+'"></path>'+
+      '<circle class="start" cx="'+r.start[0].toFixed(1)+'" cy="'+r.start[1].toFixed(1)+'" r="4"></circle>'+
+    '</svg>';
+  document.getElementById("kicker").textContent=kicker;
+  document.getElementById("place").textContent=place;
+  document.getElementById("out").innerHTML=
+    'movingAvg(downsample(movingAvg(pts, <b>'+state.avg1+'</b>), <b>'+state.step+'</b>), <b>'+state.avg2+'</b>)\n'+
+    'smoothPath tension = <b>'+state.tension+'</b>   stroke-width = <b>'+state.stroke+'px</b>   width = <b>'+state.width+'px</b>';
+}
+
+document.getElementById("copy").addEventListener("click",function(){
+  var t="avg1="+state.avg1+", step="+state.step+", avg2="+state.avg2+", tension="+state.tension+", stroke="+state.stroke+"px, width="+state.width+"px";
+  navigator.clipboard && navigator.clipboard.writeText(t);
+  this.textContent="Copied ✓";var b=this;setTimeout(function(){b.textContent="Copy settings";},1200);
+});
+
+buildControls();
+fetch(WORKER_URL,{cache:"no-store"})
+  .then(function(r){return r.json();})
+  .then(function(d){
+    var L=d.latest;
+    if(!L||!L.polyline){document.getElementById("route").innerHTML='<span class="err">Most recent activity has no route (workout/treadmill). Go for an outdoor run and reload.</span>';return;}
+    coords=decodePolyline(L.polyline);
+    place=L.place||"";
+    var km=(L.distanceMeters/1000),mi=(L.distanceMeters/1609.344);
+    kicker="Ran "+(mi>=10?Math.round(mi):mi.toFixed(1))+" mi";
+    render();
+  })
+  .catch(function(e){document.getElementById("route").innerHTML='<span class="err">Could not load /api/strava: '+e+'</span>';});
+</script>
+</body>
+</html>

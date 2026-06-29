@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Route on a real map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Open Sans',sans-serif;color:#222;background:#fafafa;margin:0;padding:32px;}
+  .wrap{max-width:640px;margin:0 auto;}
+  h1{font-size:22px;margin:0 0 4px;}
+  .sub{color:#888;font-size:13px;margin:0 0 20px;}
+  .styles{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .styles button{font-family:inherit;font-size:12px;font-weight:600;border:1px solid #ccc;background:#fff;border-radius:999px;padding:6px 13px;cursor:pointer;}
+  .styles button.on{background:#2380F0;border-color:#2380F0;color:#fff;}
+  #map{height:380px;border-radius:14px;overflow:hidden;border:1px solid #e6e6e6;background:#eee;}
+  .leaflet-container{font-family:inherit;}
+  .meta{margin-top:14px;}
+  .kicker{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#2380F0;}
+  .place{font-size:17px;font-weight:700;color:#333;margin-top:3px;}
+  .err{color:#c0392b;font-size:13px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Your run, on a real map</h1>
+  <p class="sub">OpenStreetMap via Leaflet — free, no API key. Same decoded Strava polyline, overlaid on actual map tiles. Try the basemap styles.</p>
+
+  <div class="styles" id="styles"></div>
+  <div id="map"></div>
+  <div class="meta"><div class="kicker" id="kicker"></div><div class="place" id="place"></div></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+var WORKER_URL="https://www.garvitgupta.com/api/strava";
+
+function decodePolyline(str){
+  var idx=0,lat=0,lng=0,c=[];
+  while(idx<str.length){
+    var b,sh=0,r=0;
+    do{b=str.charCodeAt(idx++)-63;r|=(b&0x1f)<<sh;sh+=5;}while(b>=0x20);
+    lat+=(r&1)?~(r>>1):(r>>1);
+    sh=0;r=0;
+    do{b=str.charCodeAt(idx++)-63;r|=(b&0x1f)<<sh;sh+=5;}while(b>=0x20);
+    lng+=(r&1)?~(r>>1):(r>>1);
+    c.push([lat/1e5,lng/1e5]);
+  }
+  return c;
+}
+
+var BASEMAPS={
+  "Carto Positron (minimal)":"https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+  "Carto Dark":"https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+  "OSM standard":"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+};
+var map=L.map("map",{zoomControl:true,attributionControl:true});
+var tileLayer=null;
+function setBasemap(url){
+  if(tileLayer)map.removeLayer(tileLayer);
+  tileLayer=L.tileLayer(url,{maxZoom:19,attribution:"&copy; OpenStreetMap, &copy; CARTO"}).addTo(map);
+}
+
+var styleNames=Object.keys(BASEMAPS);
+var sc=document.getElementById("styles");
+styleNames.forEach(function(name,i){
+  var b=document.createElement("button");
+  b.textContent=name;if(i===0)b.className="on";
+  b.onclick=function(){
+    [].forEach.call(sc.children,function(x){x.classList.remove("on");});
+    b.classList.add("on");setBasemap(BASEMAPS[name]);
+  };
+  sc.appendChild(b);
+});
+setBasemap(BASEMAPS[styleNames[0]]);
+
+fetch(WORKER_URL,{cache:"no-store"})
+  .then(function(r){return r.json();})
+  .then(function(d){
+    var L0=d.latest;
+    if(!L0||!L0.polyline){document.getElementById("map").innerHTML='<p class="err" style="padding:16px">Latest activity has no GPS route (workout/treadmill).</p>';return;}
+    var pts=decodePolyline(L0.polyline);
+    var line=L.polyline(pts,{color:"#2380F0",weight:4,opacity:.95,lineJoin:"round",lineCap:"round"}).addTo(map);
+    L.circleMarker(pts[0],{radius:5,color:"#fff",weight:2,fillColor:"#2380F0",fillOpacity:1}).addTo(map);
+    map.fitBounds(line.getBounds(),{padding:[30,30]});
+    document.getElementById("place").textContent=L0.place||"";
+    var mi=L0.distanceMeters/1609.344;
+    document.getElementById("kicker").textContent="Ran "+(mi>=10?Math.round(mi):mi.toFixed(1))+" mi";
+  })
+  .catch(function(e){document.getElementById("map").innerHTML='<p class="err" style="padding:16px">Could not load /api/strava: '+e+'</p>';});
+</script>
+</body>
+</html>

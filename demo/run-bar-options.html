@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run-bar UI options</title>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:#2380F0;
+    --ink:#1a1a1a;
+    --track:#E0E0E0;
+    --fill:#000;
+    --muted:#9aa0a6;
+    --workout:#7C4DFF;     /* distinct hue for workouts */
+    --hr:#E23B3B;          /* heart-rate red */
+    --bar-w:260px;
+  }
+  *{box-sizing:border-box}
+  body{
+    font-family:'Open Sans',Roboto,sans-serif;
+    color:var(--ink);
+    background:#fafafa;
+    margin:0;padding:40px 24px 120px;
+    -webkit-font-smoothing:antialiased;
+  }
+  body.dark{background:#15171a;color:#e9eaec;}
+  body.dark{--track:#3a3d42;--fill:#fff;--muted:#7d8288;--ink:#e9eaec;}
+  .wrap{max-width:960px;margin:0 auto;}
+  h1{font-weight:700;font-size:26px;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 28px;line-height:1.5;}
+  .controls{
+    position:sticky;top:0;z-index:20;
+    display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+    background:rgba(250,250,250,.92);backdrop-filter:blur(6px);
+    padding:14px 0;margin-bottom:8px;border-bottom:1px solid var(--track);
+  }
+  body.dark .controls{background:rgba(21,23,26,.92);}
+  .controls .lbl{font-size:12px;color:var(--muted);margin-right:2px;}
+  button.seg{
+    font-family:inherit;font-size:12px;font-weight:600;
+    border:1px solid var(--track);background:transparent;color:var(--ink);
+    padding:6px 12px;border-radius:999px;cursor:pointer;transition:.15s;
+  }
+  button.seg.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .spacer{flex:1}
+
+  .legend{
+    background:#fff;border:1px solid var(--track);border-radius:12px;
+    padding:16px 18px;margin:18px 0 30px;font-size:13px;line-height:1.6;
+  }
+  body.dark .legend{background:#1e2125;}
+  .legend b{font-weight:700}
+  .legend code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-size:12px;}
+  .legend .chips{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{font-size:11px;padding:3px 9px;border-radius:999px;background:rgba(35,128,240,.1);color:var(--accent);font-weight:600;}
+  .chip.w{background:rgba(124,77,255,.12);color:var(--workout);}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:22px;}
+  .card{
+    background:#fff;border:1px solid var(--track);border-radius:14px;
+    padding:22px 24px 26px;position:relative;overflow:hidden;
+  }
+  body.dark .card{background:#1e2125;}
+  .card .tag{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);}
+  .card h3{font-size:16px;font-weight:700;margin:6px 0 4px;}
+  .card .note{font-size:12px;color:var(--muted);line-height:1.5;margin:0 0 30px;min-height:34px;}
+  .stage{min-height:96px;display:flex;align-items:flex-start;}
+
+  /* ---------- shared widget primitives ---------- */
+  .bar{position:relative;height:4px;width:var(--bar-w);background:var(--track);border-radius:2px;}
+  .fill{position:absolute;left:0;top:0;height:4px;background:var(--fill);border-radius:2px;transition:width 1s cubic-bezier(.22,1,.36,1);}
+  .stat{font-size:11px;color:var(--accent);padding-top:9px;line-height:1.5;}
+  .stat .w{color:var(--workout);font-weight:600;}
+  .stat .g{color:var(--muted);}
+  .runner{position:absolute;top:-34px;width:50px;margin-left:-25px;text-align:center;font-size:26px;transform:scaleX(-1);transition:left 1s cubic-bezier(.22,1,.36,1);}
+
+  /* opt1 tick */
+  .tick{position:absolute;top:-4px;width:2px;height:12px;background:var(--fill);border-radius:2px;transition:left 1s cubic-bezier(.22,1,.36,1);}
+  .tick-val{position:absolute;top:-26px;transform:translateX(-50%);font-size:11px;font-weight:700;white-space:nowrap;transition:left 1s cubic-bezier(.22,1,.36,1);}
+  .end-goal{position:absolute;right:0;top:9px;font-size:10px;color:var(--muted);transform:translateX(50%);}
+  .end-zero{position:absolute;left:0;top:9px;font-size:10px;color:var(--muted);transform:translateX(-50%);}
+
+  /* opt2 flag */
+  .flag{position:absolute;right:-6px;top:-22px;font-size:16px;}
+  .bubble{position:absolute;top:8px;transform:translateX(-50%);font-size:10px;font-weight:700;color:var(--accent);white-space:nowrap;transition:left 1s cubic-bezier(.22,1,.36,1);}
+
+  /* opt3 milestones */
+  .ms{position:absolute;top:-3px;width:1px;height:10px;background:var(--track);}
+  .ms-lbl{position:absolute;top:9px;transform:translateX(-50%);font-size:9px;color:var(--muted);}
+  .dot{position:absolute;top:-3px;width:10px;height:10px;border-radius:50%;background:var(--fill);margin-left:-5px;transition:left 1s cubic-bezier(.22,1,.36,1);box-shadow:0 0 0 0 rgba(35,128,240,.5);animation:pulse 2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(35,128,240,.45)}70%{box-shadow:0 0 0 7px rgba(35,128,240,0)}100%{box-shadow:0 0 0 0 rgba(35,128,240,0)}}
+
+  /* opt4 pills */
+  .row{display:flex;align-items:center;gap:10px;}
+  .pct-pill{font-size:11px;font-weight:700;color:var(--accent);background:rgba(35,128,240,.1);padding:2px 9px;border-radius:999px;}
+  .badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;margin-top:11px;}
+  .badge.run{background:rgba(35,128,240,.1);color:var(--accent);}
+  .badge.work{background:rgba(124,77,255,.12);color:var(--workout);}
+  .badge.rest{background:rgba(127,127,127,.12);color:var(--muted);}
+
+  /* opt5 header row */
+  .hdr{display:flex;justify-content:space-between;align-items:baseline;width:var(--bar-w);font-size:11px;margin-bottom:7px;}
+  .hdr .l{font-weight:600;}
+  .hdr .r{color:var(--muted);}
+  .hdr .r b{color:var(--ink);font-weight:700;}
+
+  /* opt6 ring */
+  .ringwrap{display:flex;align-items:center;gap:16px;}
+  .ring{position:relative;width:64px;height:64px;flex:0 0 64px;}
+  .ring svg{transform:rotate(-90deg);}
+  .ring .rt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ring .rt b{font-size:15px;font-weight:700;line-height:1;}
+  .ring .rt span{font-size:8px;color:var(--muted);}
+  .ringtext{font-size:12px;line-height:1.55;}
+  .ringtext .big{font-size:13px;font-weight:700;}
+  .ringtext .w{color:var(--workout);font-weight:600;}
+  .ringtext .g{color:var(--muted);}
+
+  /* opt7 route trace — minimal, matches the site */
+  .route{display:inline-block;}
+  .route svg{display:block;width:84px;height:84px;overflow:visible;}
+  .route path{fill:none;stroke:var(--fill);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+    stroke-dasharray:700;stroke-dashoffset:700;animation:draw 1.8s ease forwards;}
+  .route .start{fill:var(--fill);}
+  @keyframes draw{to{stroke-dashoffset:0;}}
+  .route-kicker{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);padding-top:14px;}
+  .route-kicker.w{color:var(--workout);}
+  .route-place{font-size:17px;font-weight:700;letter-spacing:-.01em;color:var(--ink);line-height:1.1;padding-top:3px;
+    position:relative;display:inline-block;}
+  .route-place::after{content:"";position:absolute;left:0;bottom:-5px;width:18px;height:2px;border-radius:2px;
+    background:var(--accent);opacity:.85;}
+  .route-rest{font-size:12px;color:var(--muted);}
+  /* workout HR trace — red, with HR-zone gridlines */
+  .hrchart svg{display:block;width:220px;max-width:100%;height:80px;overflow:visible;}
+  .hrchart .hr-line{fill:none;stroke:var(--hr);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+    stroke-dasharray:560;stroke-dashoffset:560;animation:draw 2s ease forwards;}
+  .hrchart .hr-area{fill:var(--hr);opacity:.10;}
+  .hrchart .hr-dot{fill:var(--hr);}
+  .hrchart .hr-grid{stroke:var(--track);stroke-width:1;stroke-dasharray:2 3;}
+  .hrchart .hr-zlabel{fill:var(--muted);font-size:7.5px;font-weight:600;}
+  .route-kicker.w{color:var(--hr);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Run-bar UI options</h1>
+  <p class="sub">The chosen treatment, in every state. Flip the toggle to see a run, a ride, a <b>workout</b> (HR trace, no fake 0-mile route), and a rest day (falls back to your most recent activity).</p>
+
+  <div class="controls">
+    <span class="lbl">State:</span>
+    <button class="seg on" data-state="run">🏃 Run day</button>
+    <button class="seg" data-state="ride">🚴 Ride day</button>
+    <button class="seg" data-state="workout">💪 Workout day</button>
+    <button class="seg" data-state="rest">😴 Rest day</button>
+    <span class="spacer"></span>
+    <button class="seg" id="darkToggle">🌙 Dark</button>
+  </div>
+
+  <div class="legend">
+    <b>The problem:</b> on a workout day Strava still publishes an activity, but with <code>distance = 0</code>, so the current widget says “Ran 0 miles.” <br>
+    <b>The fix:</b> detect <code>type !== "Run"</code> (or distance 0) and show a workout line instead — the running goal bar is unaffected because workouts don't count toward the 1000&nbsp;km run goal.
+    <div class="chips">
+      <span class="lbl" style="font-size:12px;color:var(--muted);align-self:center;">Data we can pull from Strava:</span>
+      <span class="chip">YTD km</span>
+      <span class="chip">% of 1000 km goal</span>
+      <span class="chip">lifetime km</span>
+      <span class="chip">latest run + date</span>
+      <span class="chip">run count</span>
+      <span class="chip w">workout type</span>
+      <span class="chip w">duration</span>
+      <span class="chip w">date</span>
+      <span class="chip w">calories / HR*</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;">* calories &amp; heart rate need an extra per-activity API call; type, duration &amp; date come free with the activity list.</div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+/* ---- sample data for the three states ---- */
+var DATA = {
+  ytdKm: 142,        // run distance this year
+  goalKm: 1000,
+  lifetimeKm: 3120,
+  runCount: 28,
+  states: {
+    run:     { kind:"run",     dist:7.4,  when:"today",      place:"Margaret Park",   wType:null,               wMin:null },
+    ride:    { kind:"ride",    dist:24.3, when:"today",      place:"Marin Headlands", wType:null,               wMin:null },
+    workout: { kind:"workout", dist:0,    when:"today",      place:"Equinox, SoMa",   wType:"Strength training", wMin:45, cal:412 },
+    rest:    { kind:"run",     dist:5.1,  when:"3 days ago", place:"Golden Gate Park", wType:null,              wMin:null }
+  }
+};
+var state = "run";
+
+function pct(){ return Math.min(DATA.ytdKm/DATA.goalKm*100,100); }
+
+/* ---- polyline: this is exactly the Strava map.summary_polyline pipeline ----
+   Strava sends an encoded string; we decode to [lat,lng] points, then draw an
+   SVG path. Below: a real Strava-format encoded polyline (a looped park run). */
+var SAMPLE_POLYLINE = "}j~jHnflMITWXMNg@b@i@`@WLi@PcAJq@AeAQ}@_@m@e@]g@Yo@Iq@@o@Le@Tg@b@a@d@O`@AZJ\\Tb@`@^d@T`@Fb@?`@Kf@_@h@i@^q@Pq@Bq@Mg@[g@e@Wg@Mi@AcAHo@";
+function decodePolyline(str){
+  var idx=0,lat=0,lng=0,coords=[];
+  while(idx<str.length){
+    var b,shift=0,res=0;
+    do{b=str.charCodeAt(idx++)-63;res|=(b&0x1f)<<shift;shift+=5;}while(b>=0x20);
+    lat+=((res&1)?~(res>>1):(res>>1));
+    shift=0;res=0;
+    do{b=str.charCodeAt(idx++)-63;res|=(b&0x1f)<<shift;shift+=5;}while(b>=0x20);
+    lng+=((res&1)?~(res>>1):(res>>1));
+    coords.push([lat/1e5,lng/1e5]);
+  }
+  return coords;
+}
+/* ---- workout HR-over-time: from Strava /activities/{id}/streams (heartrate) ----
+   per-second BPM samples; here a believable strength session (warmup + 4 sets). */
+var HR = [96,99,103,108,112,118,124,131,138,144,149,152,150,144,136,129,124,128,136,145,
+         153,159,162,160,153,144,136,131,135,143,151,158,163,166,164,156,147,139,134,138,
+         146,154,160,164,167,165,158,150,142,135,128,120];
+function hrStats(v){ return { avg:Math.round(v.reduce(function(a,b){return a+b},0)/v.length), max:Math.max.apply(0,v) }; }
+/* fraction of samples in each HR zone, split by `bounds` (length n -> n+1 zones) */
+function hrZones(v,bounds){
+  var c=new Array(bounds.length+1).fill(0);
+  v.forEach(function(b){ var z=0; while(z<bounds.length && b>=bounds[z]) z++; c[z]++; });
+  return c.map(function(x){return x/v.length;});
+}
+/* build a smooth-ish line + area path for a sparkline in a w x h box */
+function hrSpark(v,w,h,pad){
+  var lo=Math.min.apply(0,v), hi=Math.max.apply(0,v), span=hi-lo||1;
+  var n=v.length, iw=w-2*pad, ih=h-2*pad;
+  var pts=v.map(function(b,i){
+    return [ pad + (i/(n-1))*iw, pad + (1-(b-lo)/span)*ih ];
+  });
+  var line="M"+pts.map(function(p){return p[0].toFixed(1)+","+p[1].toFixed(1)}).join("L");
+  var area=line+"L"+pts[n-1][0].toFixed(1)+","+(h-pad).toFixed(1)+"L"+pad.toFixed(1)+","+(h-pad).toFixed(1)+"Z";
+  return { line:line, area:area, last:pts[n-1] };
+}
+
+/* points -> SVG path 'd', normalized into a `size`x`size` box (lat flipped for screen) */
+function routePath(coords,size,pad){
+  var lats=coords.map(function(c){return c[0]}), lngs=coords.map(function(c){return c[1]});
+  var minLa=Math.min.apply(0,lats),maxLa=Math.max.apply(0,lats);
+  var minLn=Math.min.apply(0,lngs),maxLn=Math.max.apply(0,lngs);
+  var w=maxLn-minLn||1e-6, h=maxLa-minLa||1e-6, s=Math.max(w,h);
+  var box=size-2*pad;
+  var pts=coords.map(function(c){
+    var x=pad+((c[1]-minLn)/s)*box + (box-(w/s)*box)/2;
+    var y=pad+((maxLa-c[0])/s)*box + (box-(h/s)*box)/2; // flip lat
+    return [x,y];
+  });
+  var d="M"+pts.map(function(p){return p[0].toFixed(1)+","+p[1].toFixed(1)}).join("L");
+  return {d:d,start:pts[0]};
+}
+
+/* line about the latest workout/run, line about the goal — used by several options */
+function workoutLine(s){
+  if(s.kind==="run")     return '<span style="color:var(--accent);font-weight:600;">Ran '+s.dist+' km '+s.when+'</span>';
+  if(s.kind==="workout") return '<span class="w">💪 '+s.wType+' · '+s.wMin+' min · '+s.when+'</span>';
+  return '<span class="g">No run yet today — last out 3 days ago</span>';
+}
+function goalLine(){
+  return '<span class="g">'+DATA.ytdKm+' / '+DATA.goalKm+' km this year · '+Math.round(pct())+'% of goal</span>';
+}
+
+/* ---------- option renderers ---------- */
+var OPTIONS = [
+  {
+    tag:"Option 7 · what you want",
+    name:"Route trace + location + line",
+    note:"GPS squiggle decoded from Strava's summary_polyline, a location reverse-geocoded from the run's start point, then the Strava-driven line — “Ran 7.4 km today / yesterday / this year.” No background.",
+    render:function(s){
+      var coords=decodePolyline(SAMPLE_POLYLINE);
+      var rp=routePath(coords,90,8);
+      if(s.kind==="run" || s.kind==="ride"){
+        var verb = s.kind==="ride" ? "Rode" : "Ran";
+        var when = s.when ? " · "+s.when : "";
+        return '<div>'+
+          '<div class="route"><svg viewBox="0 0 90 90"><path d="'+rp.d+'"></path>'+
+            '<circle class="start" cx="'+rp.start[0].toFixed(1)+'" cy="'+rp.start[1].toFixed(1)+'" r="3.2"></circle></svg></div>'+
+          '<div class="route-kicker">'+verb+' '+s.dist+' km'+when+'</div>'+
+          '<div class="route-place">'+s.place+'</div>'+
+        '</div>';
+      }
+      if(s.kind==="workout"){
+        var W=220,H=80,pad=8;
+        var sp=hrSpark(HR,W,H,pad);
+        var bounds=[114,133,152,171], zn=['Z1','Z2','Z3','Z4','Z5'];
+        var lo=Math.min.apply(0,HR),hi=Math.max.apply(0,HR),span=hi-lo||1;
+        var grid=bounds.map(function(b,i){
+          if(b<=lo||b>=hi) return '';
+          var y=(pad+(1-(b-lo)/span)*(H-2*pad)).toFixed(1);
+          return '<line class="hr-grid" x1="'+pad+'" y1="'+y+'" x2="'+(W-pad)+'" y2="'+y+'"></line>'+
+                 '<text class="hr-zlabel" x="'+(W-pad+3)+'" y="'+(parseFloat(y)+2.5)+'">'+zn[i+1]+'</text>';
+        }).join('');
+        return '<div>'+
+          '<div class="hrchart"><svg viewBox="0 0 236 80">'+grid+
+            '<path class="hr-area" d="'+sp.area+'"></path>'+
+            '<path class="hr-line" d="'+sp.line+'"></path>'+
+            '<circle class="hr-dot" cx="'+sp.last[0].toFixed(1)+'" cy="'+sp.last[1].toFixed(1)+'" r="3"></circle>'+
+          '</svg></div>'+
+          '<div class="route-kicker w">'+s.wMin+' min · '+s.when+'</div>'+
+          '<div class="route-place">'+s.wType+'</div>'+
+          '<div class="route-rest" style="padding-top:6px">'+s.place+'</div>'+
+        '</div>';
+      }
+      return '<div class="route-rest">No run today — last out 3 days ago</div>';
+    }
+  }
+];
+
+/* ---------- build + wire ---------- */
+function build(){
+  var grid=document.getElementById('grid');
+  grid.innerHTML='';
+  var s=DATA.states[state];
+  OPTIONS.forEach(function(o){
+    var card=document.createElement('div');
+    card.className='card';
+    card.innerHTML='<div class="tag">'+o.tag+'</div><h3>'+o.name+'</h3><p class="note">'+o.note+'</p><div class="stage">'+o.render(s)+'</div>';
+    grid.appendChild(card);
+  });
+}
+document.querySelectorAll('.seg[data-state]').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.seg[data-state]').forEach(function(x){x.classList.remove('on')});
+    b.classList.add('on');
+    state=b.dataset.state;
+    build();
+  });
+});
+document.getElementById('darkToggle').addEventListener('click',function(){
+  document.body.classList.toggle('dark');
+  this.classList.toggle('on');
+});
+build();
+</script>
+</body>
+</html>
