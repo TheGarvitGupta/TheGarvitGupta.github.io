@@ -37,8 +37,7 @@
 		var diff = Math.round((today - d) / 86400000);
 		if (diff <= 0) return "today";
 		if (diff === 1) return "yesterday";
-		if (diff < 7) return diff + " days ago";
-		return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+		return diff + " days ago";
 	}
 
 	function prettyType(t) {
