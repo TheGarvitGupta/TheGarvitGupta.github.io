@@ -122,6 +122,9 @@ html.dark-mode .bar-min,
 html.dark-mode .bar-max {
     color: #555555;
 }
+html.dark-mode .run-activity .route svg {
+    filter: drop-shadow(0 0 2px rgba(255,255,255,.26)) drop-shadow(0 0 8px rgba(255,255,255,.13));
+}
 html.dark-mode .run-activity .route path {
     stroke: #ffffff;
 }
@@ -129,7 +132,7 @@ html.dark-mode .run-activity .route .start {
     fill: #ffffff;
 }
 html.dark-mode .run-activity .route .end {
-    fill: #141414; stroke: #ffffff;
+    fill: #ffffff;
 }
 html.dark-mode .run-activity .run-place,
 html.dark-mode .run-activity .run-totals {

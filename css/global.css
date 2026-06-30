@@ -859,6 +859,7 @@ input {
 .run-activity .route svg {
     display: block; width: 290px; max-width: 100%; height: auto;
     max-height: 220px; overflow: visible;
+    filter: drop-shadow(0 0 2px rgba(0,0,0,.4)) drop-shadow(0 0 7px rgba(0,0,0,.22));
 }
 .run-activity .route path {
     fill: none; stroke: #000;
@@ -869,8 +870,7 @@ input {
     fill: #000;
 }
 .run-activity .route .end {
-    fill: #fff; stroke: #000;
-    stroke-width: 1.8px; vector-effect: non-scaling-stroke;
+    fill: #000;
 }
 .run-activity .run-kicker {
     font-size: 12px; font-weight: 400; letter-spacing: 0;
