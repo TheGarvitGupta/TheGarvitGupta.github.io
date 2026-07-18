@@ -886,15 +886,31 @@ input {
 }
 .run-activity .run-sub { font-size: 12px; color: #9aa0a6; padding-top: 5px; }
 /* Workout HR trace */
-.run-activity .hrchart svg { display: block; width: 220px; max-width: 100%; height: 80px; overflow: visible; }
+.run-activity .hrchart svg { display: block; width: 290px; max-width: 100%; height: 80px; overflow: visible; }
 .run-activity .hr-line {
     fill: none; stroke: #E23B3B;
     stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
 }
-.run-activity .hr-area { fill: #E23B3B; opacity: .10; }
-.run-activity .hr-dot { fill: #E23B3B; }
-.run-activity .hr-grid { stroke: #E0E0E0; stroke-width: 1; stroke-dasharray: 2 3; }
-.run-activity .hr-zlabel { fill: #9aa0a6; font-size: 7.5px; font-weight: 600; }
+.run-activity .hr-area { fill: url(#hrGrad); }
+.run-activity .hr-grid { stroke: #E8E8E8; stroke-width: 1; }
+.run-activity .hr-zlabel { fill: #b0b4b9; font-size: 7px; font-weight: 600; letter-spacing: .04em; }
+.run-activity .hr-heart {
+    width: 9px; height: auto; vertical-align: middle; margin-right: 1px;
+    overflow: visible; /* let the pulse scale past the viewBox without clipping */
+}
+.run-activity .hr-heart path {
+    fill: #E23B3B;
+    stroke: #E23B3B; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round;
+    transform-box: fill-box; transform-origin: center;
+    animation: hr-beat 1.4s ease-in-out infinite;
+}
+@keyframes hr-beat {
+    0%   { transform: scale(1); }
+    12%  { transform: scale(1.22); }
+    24%  { transform: scale(1); }
+    36%  { transform: scale(1.12); }
+    50%, 100% { transform: scale(1); }
+}
 .run-bar .bar-max {
     display: none;
 }

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strava widget — live preview</title>
+
+<!-- ==== the exact same assets the real site loads ==== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://code.jquery.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat&family=Open+Sans&display=swap" rel="stylesheet">
+<link href="../css/global.css" rel="stylesheet" type="text/css">
+<link href="../css/darkmode.css" rel="stylesheet" type="text/css">
+
+<!-- demo chrome only — the widget itself is styled entirely by global.css / darkmode.css -->
+<style>
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Open Sans','Roboto',sans-serif;
+    background:#fafafa;color:#1a1a1a;
+    padding:40px 24px 120px;-webkit-font-smoothing:antialiased;
+    transition:background .25s,color .25s;
+  }
+  html.dark-mode body{background:#15171a;color:#e9eaec;}
+  .wrap{max-width:640px;margin:0 auto;}
+  h1{font-family:'Montserrat',sans-serif;font-weight:400;font-size:26px;margin:0 0 6px;}
+  .sub{color:#9aa0a6;font-size:14px;margin:0 0 26px;line-height:1.55;}
+  .sub code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-size:12px;}
+
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:26px;}
+  button.seg{
+    font-family:inherit;font-size:13px;font-weight:600;
+    border:1px solid rgba(127,127,127,.3);background:transparent;color:inherit;
+    padding:7px 14px;border-radius:999px;cursor:pointer;transition:.15s;
+  }
+  button.seg.on{background:#2380F0;border-color:#2380F0;color:#fff;}
+  .spacer{flex:1}
+
+  .surface{
+    display:flow-root;               /* contain .strava-link's float:left so the card grows with it */
+    background:#fff;border:1px solid rgba(127,127,127,.18);border-radius:16px;
+    padding:34px 36px 40px;min-height:230px;
+    box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 30px rgba(0,0,0,.05);
+  }
+  html.dark-mode .surface{background:#1e2125;border-color:rgba(255,255,255,.08);box-shadow:none;}
+
+  .foot{margin-top:20px;font-size:12px;color:#9aa0a6;line-height:1.6;}
+  .foot b{color:inherit;font-weight:600;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Strava widget — live preview</h1>
+  <p class="sub">
+    The real <code>.run-activity</code> block from the homepage, driven by <code>js/strava.js</code>
+    and styled by <code>css/global.css</code> + <code>css/darkmode.css</code> — nothing is re-implemented here.
+    Each tab feeds the widget a mock worker response and re-runs the actual render pipeline, so this always
+    matches what ships.
+  </p>
+
+  <div class="controls">
+    <button class="seg on" data-state="run">🏃 Run</button>
+    <button class="seg" data-state="ride">🚴 Ride</button>
+    <button class="seg" data-state="workout">💪 Workout</button>
+    <span class="spacer"></span>
+    <button class="seg" data-state="__units">mi / km</button>
+    <button class="seg" id="darkToggle">🌙 Dark</button>
+  </div>
+
+  <div class="surface">
+    <!-- identical markup to index.html -->
+    <a class="strava-link" target="_blank" rel="noopener noreferrer">
+      <div class="run-activity"></div>
+    </a>
+  </div>
+
+  <p class="foot">
+    <b>Run / Ride</b> → GPS route trace decoded from <code>summary_polyline</code>, distance, place &amp; YTD totals.
+    <b>Workout</b> → heart-rate trace with HR-zone gridlines (no fake 0-mile route).
+    Toggle units and dark mode to see every state.
+  </p>
+</div>
+
+<!-- ==== same jQuery the real site uses ==== -->
+<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+
+<script>
+/* Mock worker responses in the exact shape cloudflare-worker/strava-ytd.js returns.
+   These are the only things this page adds — the rendering is 100% the real strava.js. */
+var RUN_POLYLINE  = "}j~jHnflMITWXMNg@b@i@`@WLi@PcAJq@AeAQ}@_@m@e@]g@Yo@Iq@@o@Le@Tg@b@a@d@O`@AZJ\\Tb@`@^d@T`@Fb@?`@Kf@_@h@i@^q@Pq@Bq@Mg@[g@e@Wg@Mi@AcAHo@";
+var RIDE_POLYLINE = "_pafF~hojVqSuSiT_AmRvLiOtVoLhZ}JnYsJbWsJzUkIdW{EnZY~]tEj_@pLf]nPxWvOfQ~IrLn@|L}GjSaP|^eS`l@aPbv@iGtx@rBjq@rNt`@rW`Jx[aK~Zg]pVof@vPue@zKy\\lI{OpIwCjKxAfMfC|MH|LmEvJ{KxHyOjH{PjJePhN}OpReR~ToWhSq^rLwd@hAwf@kJib@iWkWi`@iHic@tD_`@tNyWdPwM`H}DsE]kXWoh@uCcq@{Iwo@yO{d@";
+/* Real values pulled from https://www.garvitgupta.com/api/strava and hardcoded below.
+   PROFILE + run totals are live; the HR array is the real stream from the most recent
+   workout (2026-07-17). Run/Ride route, distance & place are illustrative — the live
+   endpoint only returns the single most-recent activity (a workout), so it carries no
+   route to read; ride totals will read once the updated worker is deployed. */
+var PROFILE = "https://www.strava.com/athletes/42935773";
+var RUN_YTD = 353994, RUN_LIFETIME = 5483064; // meters, live
+
+/* real HR stream from the 2026-07-17 WeightTraining activity */
+var HR = [80,102,99,101,94,90,79,90,94,96,83,85,80,117,88,74,86,102,92,82,102,89,101,78,87,
+          84,84,76,76,84,103,106,113,100,106,94,109,101,85,84,85,94,79,107,103,105,96,115,
+          112,102,106,97,139,143,134,114,104,105,126,152,124,117,143,148,122,153,157,127,
+          134,158,139,131,155,141,134,130,158];
+
+var SAMPLES = {
+  run: {
+    profileUrl:PROFILE,
+    ytdMeters:RUN_YTD, lifetimeMeters:RUN_LIFETIME,
+    latest:{ sportType:"Run", kind:"route", date:"2026-07-18",
+             distanceMeters:7400, movingSeconds:2460, place:"Margaret Park",
+             polyline:RUN_POLYLINE }
+  },
+  ride: {
+    profileUrl:PROFILE,
+    ytdMeters:RUN_YTD, lifetimeMeters:RUN_LIFETIME,
+    rideYtdMeters:998000, rideLifetimeMeters:13520000, // not in live payload yet
+    latest:{ sportType:"Ride", kind:"route", date:"2026-07-17",
+             distanceMeters:24300, movingSeconds:4020, place:"Marin Headlands",
+             polyline:RIDE_POLYLINE }
+  },
+  workout: {
+    profileUrl:PROFILE,
+    ytdMeters:RUN_YTD, lifetimeMeters:RUN_LIFETIME,
+    latest:{ sportType:"WeightTraining", kind:"workout", date:"2026-07-17",
+             distanceMeters:0, movingSeconds:3133,
+             avgHr:107, maxHr:158, place:"Fillmore", hr:HR }
+  }
+};
+
+/* remember the last-selected tab across refreshes */
+var currentState = localStorage.getItem("stravaDemoState") || "run";
+
+/* Intercept only the worker call; everything else passes through. strava.js hits
+   ".../api/strava" — return the currently selected sample as a real fetch would. */
+var realFetch = window.fetch;
+window.fetch = function (url, opts) {
+  if (typeof url === "string" && url.indexOf("/api/strava") !== -1) {
+    return Promise.resolve({ ok:true, json:function(){ return Promise.resolve(SAMPLES[currentState]); } });
+  }
+  return realFetch.apply(this, arguments);
+};
+
+/* Re-inject the real strava.js so its IIFE re-runs and re-renders with the new sample.
+   (Appending a fresh <script> element with the same source re-executes it.) */
+function loadWidget() {
+  var s = document.createElement("script");
+  s.src = "../js/strava.js?_=" + Date.now(); // fresh execution each switch
+  document.body.appendChild(s);
+}
+
+/* ---- controls ---- */
+document.querySelectorAll('.seg[data-state]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var st = b.dataset.state;
+    if (st === "__units") {
+      window.GG = window.GG || {};
+      window.GG.units = (window.GG.units === "metric") ? "imperial" : "metric";
+      if (window.GG.refreshStrava) window.GG.refreshStrava(); // real units-toggle path
+      return;
+    }
+    document.querySelectorAll('.seg[data-state]:not([data-state="__units"])')
+      .forEach(function (x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    currentState = st;
+    localStorage.setItem("stravaDemoState", st);
+    document.querySelector('.run-activity').innerHTML = "";
+    loadWidget();
+  });
+});
+
+/* reflect the remembered tab in the button highlight on load */
+document.querySelectorAll('.seg[data-state]:not([data-state="__units"])').forEach(function (b) {
+  b.classList.toggle('on', b.dataset.state === currentState);
+});
+
+document.getElementById('darkToggle').addEventListener('click', function () {
+  document.documentElement.classList.toggle('dark-mode');
+  this.classList.toggle('on');
+});
+
+loadWidget();
+</script>
+</body>
+</html>

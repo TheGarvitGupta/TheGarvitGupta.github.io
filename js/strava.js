@@ -129,9 +129,10 @@
 	// HR samples -> {line, area, last} sparkline path in a w×h box
 	function hrSpark(v, w, h, pad) {
 		var lo = Math.min.apply(0, v), hi = Math.max.apply(0, v), span = hi - lo || 1;
-		var n = v.length, iw = w - 2 * pad, ih = h - 2 * pad;
+		var lpad = 1; // half the line stroke, so its rounded left cap sits flush at x=0
+		var n = v.length, iw = w - pad - lpad, ih = h - 2 * pad; // pad only on the right (label gutter)
 		var pts = v.map(function (b, i) {
-			return [pad + (i / (n - 1)) * iw, pad + (1 - (b - lo) / span) * ih];
+			return [lpad + (i / (n - 1)) * iw, pad + (1 - (b - lo) / span) * ih];
 		});
 		var line = "M" + pts.map(function (p) { return p[0].toFixed(1) + "," + p[1].toFixed(1); }).join("L");
 		var area = line + "L" + pts[n - 1][0].toFixed(1) + "," + (h - pad).toFixed(1) +
@@ -140,7 +141,7 @@
 	}
 
 	function hrChartHtml(hr) {
-		var W = 220, H = 80, pad = 8;
+		var W = 260, H = 80, pad = 8;
 		var sp = hrSpark(hr, W, H, pad);
 		var zn = ["Z1", "Z2", "Z3", "Z4", "Z5"];
 		var bounds = [0.6, 0.7, 0.8, 0.9].map(function (f) { return Math.round(f * MAX_HR); });
@@ -148,13 +149,16 @@
 		var grid = bounds.map(function (b, i) {
 			if (b <= lo || b >= hi) return "";
 			var y = (pad + (1 - (b - lo) / span) * (H - 2 * pad)).toFixed(1);
-			return '<line class="hr-grid" x1="' + pad + '" y1="' + y + '" x2="' + (W - pad) + '" y2="' + y + '"></line>' +
-				'<text class="hr-zlabel" x="' + (W - pad + 3) + '" y="' + (parseFloat(y) + 2.5) + '">' + zn[i + 1] + "</text>";
+			return '<line class="hr-grid" x1="0" y1="' + y + '" x2="' + (W - pad) + '" y2="' + y + '"></line>' +
+				'<text class="hr-zlabel" x="' + (W - pad + 9) + '" y="' + (parseFloat(y) + 2.5) + '">' + zn[i + 1] + "</text>";
 		}).join("");
-		return '<div class="hrchart"><svg viewBox="0 0 236 80">' + grid +
+		return '<div class="hrchart"><svg viewBox="0 0 290 80">' +
+			'<defs><linearGradient id="hrGrad" x1="0" y1="0" x2="0" y2="1">' +
+				'<stop offset="0" stop-color="#E23B3B" stop-opacity="0.22"></stop>' +
+				'<stop offset="1" stop-color="#E23B3B" stop-opacity="0"></stop>' +
+			"</linearGradient></defs>" + grid +
 			'<path class="hr-area" d="' + sp.area + '"></path>' +
 			'<path class="hr-line" d="' + sp.line + '"></path>' +
-			'<circle class="hr-dot" cx="' + sp.last[0].toFixed(1) + '" cy="' + sp.last[1].toFixed(1) + '" r="3"></circle>' +
 			"</svg></div>";
 	}
 
@@ -164,12 +168,17 @@
 		if (!act) { $a.empty(); return; }
 		var when = relWhen(act.date), whenStr = when ? " " + when : "";
 		var html = "";
-		// Run totals (this year + lifetime) — only for running activities
+		// Totals (this year + lifetime) — runs use run totals, rides use ride totals
 		var isRun = /^(Run|TrailRun|VirtualRun)$/.test(act.sportType || "");
-		var totals = isRun
-			? '<div class="run-totals">' + fmtDist(data.ytdMeters || 0) + " this year · " +
-				fmtDist(data.lifetimeMeters || 0) + " lifetime</div>"
-			: "";
+		var isRide = /^(Ride|VirtualRide|GravelRide|MountainBikeRide)$/.test(act.sportType || "");
+		var totals = "";
+		if (isRun) {
+			totals = '<div class="run-totals">' + fmtDist(data.ytdMeters || 0) + " this year · " +
+				fmtDist(data.lifetimeMeters || 0) + " lifetime</div>";
+		} else if (isRide && data.rideLifetimeMeters) {
+			totals = '<div class="run-totals">' + fmtDist(data.rideYtdMeters || 0) + " this year · " +
+				fmtDist(data.rideLifetimeMeters || 0) + " lifetime</div>";
+		}
 
 		if (act.kind === "route" && act.polyline) {
 			var rp = buildRoute(decodePolyline(act.polyline));
@@ -182,12 +191,21 @@
 				'<div class="run-kicker">' + verb + " " + fmtDist(act.distanceMeters) + whenStr +
 					(act.place ? " · " + act.place : "") + "</div>" + totals;
 		} else {
+			// Mirror the run/ride layout: HR trace, then a coloured top line and a
+			// dark second line. Top (red): pulsing heart + average BPM. Bottom (dark):
+			// workout type + duration + place. (Strava has no weight-training totals.)
 			var mins = Math.round((act.movingSeconds || 0) / 60);
-			html =
-				(act.hr && act.hr.length > 1 ? hrChartHtml(act.hr) : "") +
-				'<div class="run-kicker w">' + mins + " min" + whenStr + "</div>" +
-				'<div class="run-place">' + prettyType(act.sportType) + "</div>" +
-				(act.place ? '<div class="run-sub">' + act.place + "</div>" : "") + totals;
+			var chart = act.hr && act.hr.length > 1 ? hrChartHtml(act.hr) : "";
+			var titleLine = prettyType(act.sportType) + " " + mins + " min" + whenStr +
+				(act.place ? " · " + act.place : "");
+			// one lub-dub per animation cycle, timed to the actual BPM (60 / bpm seconds)
+			var beat = (60 / act.avgHr).toFixed(3);
+			var heart = '<svg class="hr-heart" viewBox="2 3 20 18.4"><path style="animation-duration:' + beat + 's" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>';
+			html = act.avgHr
+				? chart +
+					'<div class="run-kicker w">' + heart + " avg " + act.avgHr + " bpm</div>" +
+					'<div class="run-totals">' + titleLine + "</div>"
+				: chart + '<div class="run-kicker w">' + titleLine + "</div>";
 		}
 		$a.html(html);
 	}
