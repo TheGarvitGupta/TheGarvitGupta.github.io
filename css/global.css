@@ -876,6 +876,13 @@ input {
     color: #2380F0; padding-top: 12px;
 }
 .run-activity .run-kicker.w { color: #E23B3B; }
+/* Activity glyph (run / ride / weight training) — sized off the line it sits on
+   and inheriting its colour, so it always matches the text next to it. */
+.run-activity .act-icon {
+    width: 1.05em; height: 1.05em;
+    vertical-align: -.18em; margin-right: .4em;
+    fill: currentColor;
+}
 .run-activity .run-totals {
     font-size: 12px; color: #333; padding-top: 4px;
 }
