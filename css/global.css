@@ -876,6 +876,29 @@ input {
     color: #2380F0; padding-top: 12px;
 }
 .run-activity .run-kicker.w { color: #E23B3B; }
+/* Gradient sweep across the kicker text (background-clip:text, the trick Apple
+   uses for its headline gradients). `color` stays the solid fallback for any
+   browser without background-clip:text -- and it is also what the activity
+   glyph paints itself with, so the icon matches the gradient's first stop and
+   the line reads as one continuous run of colour.
+   inline-block shrinks the background box to the text, so the full gradient
+   range lands across the words instead of across the whole column. */
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    .run-activity .run-kicker {
+        display: inline-block;
+        background-image: linear-gradient(95deg, #2380F0 0%, #5B6BF6 45%, #8B5CF6 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .run-activity .run-kicker.w {
+        background-image: linear-gradient(95deg, #E23B3B 0%, #F2416B 55%, #F55600 100%);
+    }
+    /* the glyph is a real SVG, not text -- keep it painted so the clip
+       doesn't blank it out */
+    .run-activity .run-kicker .act-icon,
+    .run-activity .run-kicker .hr-heart { -webkit-text-fill-color: initial; }
+}
 /* Activity glyph (run / ride / weight training) — sized off the line it sits on
    and inheriting its colour, so it always matches the text next to it. */
 .run-activity .act-icon {
