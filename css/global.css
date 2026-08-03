@@ -610,7 +610,7 @@ input {
     left: 0px;
     -webkit-transition: all 0.2s ease-in-out;
     transition: all 0.2s ease-in-out;
-    width: 156px;
+    width: 146px;
 }
 .social-icon {
     height: 42px;
@@ -857,8 +857,7 @@ input {
 }
 .run-activity .route { display: block; }
 .run-activity .route svg {
-    display: block; width: 290px; max-width: 100%; height: auto;
-    max-height: 220px; overflow: visible;
+    display: block; max-width: 100%; height: auto; overflow: visible;
     filter: drop-shadow(0 0 2px rgba(0,0,0,.4)) drop-shadow(0 0 7px rgba(0,0,0,.22));
 }
 .run-activity .route path {
@@ -1113,6 +1112,7 @@ input {
 #contactMe { min-height: 575px; overflow: hidden; }
 .inline-p { display: inline; }
 .social-icon-link { float: left; width: 42px; margin-right: 10px; }
+.social-icon-link:last-child { margin-right: 0; }
 .social-linkedin { background-image: url('../images/icons/social/linkedin-svg.svg'); background-size: 23px; }
 .social-twitter { background-image: url('../images/icons/social/twitter-svg.svg'); background-size: 25px; }
 .social-github { background-image: url('../images/icons/social/github-svg.svg'); background-size: 25px; }

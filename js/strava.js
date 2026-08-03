@@ -183,8 +183,12 @@
 		if (act.kind === "route" && act.polyline) {
 			var rp = buildRoute(decodePolyline(act.polyline));
 			var verb = VERB[act.sportType] || "Did";
+			// Size the element box to the route's real aspect ratio (capped to
+			// 290x220) so the box matches the content -- no letterbox gutters.
+			var fit = Math.min(290 / rp.vbW, 220 / rp.vbH);
+			var dispW = (rp.vbW * fit).toFixed(1), dispH = (rp.vbH * fit).toFixed(1);
 			html =
-				'<div class="route"><svg viewBox="0 0 ' + rp.vbW.toFixed(1) + ' ' + rp.vbH.toFixed(1) + '" preserveAspectRatio="xMidYMid meet">' +
+				'<div class="route"><svg width="' + dispW + '" height="' + dispH + '" viewBox="0 0 ' + rp.vbW.toFixed(1) + ' ' + rp.vbH.toFixed(1) + '" preserveAspectRatio="xMidYMid meet">' +
 					'<path d="' + rp.d + '"></path>' +
 					'<circle class="end" cx="' + rp.end[0].toFixed(1) + '" cy="' + rp.end[1].toFixed(1) + '" r="4.5"></circle>' +
 					'<circle class="start" cx="' + rp.start[0].toFixed(1) + '" cy="' + rp.start[1].toFixed(1) + '" r="4.5"></circle></svg></div>' +
