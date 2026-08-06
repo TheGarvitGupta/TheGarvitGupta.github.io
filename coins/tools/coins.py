@@ -42,6 +42,10 @@ PORT        = 8766         # 8765 belongs to tools/gallery.py
 # The only path git is ever asked to touch on behalf of the UI.
 COLLECTION_REL = "coins/collection/"
 
+# The branch GitHub Pages actually serves. Work can happen on any branch, but
+# only this one goes live, and the UI says so rather than promising otherwise.
+PUBLISH_BRANCH = "master"
+
 # ── Processing settings ──────────────────────────────────────────────────────
 # WebP with alpha rather than JPEG: the coin is cut out of its backdrop, so
 # scalloped and square coins aren't clipped by a circular mask, and the coins
@@ -284,8 +288,12 @@ def pending_changes():
             modified += 1
         elif status == "D":
             deleted += 1
+    branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
     return {"added": added, "modified": modified, "deleted": deleted,
-            "total": added + modified + deleted}
+            "total": added + modified + deleted,
+            "branch": branch,
+            "isLive": branch == PUBLISH_BRANCH,
+            "publishBranch": PUBLISH_BRANCH}
 
 
 # ── HTTP ─────────────────────────────────────────────────────────────────────
@@ -509,9 +517,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_json({"ok": False, "error": result.stderr.strip()})
 
     def push(self):
-        result = git("push")
+        branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+        # -u so a branch that has never been pushed still works from the button.
+        result = git("push", "-u", "origin", branch)
         if result.returncode == 0:
-            return self.send_json({"ok": True})
+            return self.send_json({"ok": True, "branch": branch,
+                                   "isLive": branch == PUBLISH_BRANCH,
+                                   "publishBranch": PUBLISH_BRANCH})
         self.send_json({"ok": False, "error": result.stderr.strip()})
 
     def discard(self):

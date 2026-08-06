@@ -46,10 +46,24 @@
       pending = p;
       if (!bar) return;
       var n = p.total || 0;
-      bar.count.textContent = n === 0 ? "No unpublished changes"
-        : n + (n === 1 ? " unpublished change" : " unpublished changes");
+      var live = p.isLive !== false;
+
+      bar.count.textContent = n === 0
+        ? (live ? "No unpublished changes" : "No unsaved changes")
+        : n + (n === 1 ? " unsaved change" : " unsaved changes");
       bar.publish.disabled = n === 0;
       bar.discard.hidden = n === 0;
+
+      // Only the branch Pages serves actually goes live. Anywhere else the
+      // button says what it really does rather than promising publication.
+      bar.publish.textContent = live ? "Publish" : "Save to " + p.branch;
+      bar.publish.title = live
+        ? "Commit and push to " + p.publishBranch + " — live in about a minute"
+        : "Commit and push to " + p.branch + ". Merge into " + p.publishBranch + " to go live.";
+
+      bar.branch.textContent = p.branch || "";
+      bar.branch.hidden = !p.branch || live;
+      bar.root.classList.toggle("is-offstage", !live);
     });
   }
 
@@ -689,6 +703,7 @@
     root.innerHTML =
       '<span class="editbar-dot" aria-hidden="true"></span>' +
       '<span class="editbar-mode">Editing locally</span>' +
+      '<span class="editbar-branch" hidden></span>' +
       '<span class="editbar-count"></span>' +
       '<span class="editbar-progress" hidden></span>' +
       '<button type="button" class="editbar-discard">Discard</button>' +
@@ -698,6 +713,7 @@
     bar = {
       root: root,
       count: root.querySelector(".editbar-count"),
+      branch: root.querySelector(".editbar-branch"),
       progress: root.querySelector(".editbar-progress"),
       publish: root.querySelector(".editbar-publish"),
       discard: root.querySelector(".editbar-discard")
@@ -711,13 +727,12 @@
         return api("POST", "/api/push");
       }).then(function (res) {
         if (!res.ok) throw new Error(res.error);
-        toast("Published — live in about a minute");
+        toast(res.isLive === false
+          ? "Saved to " + res.branch + " — merge into " + res.publishBranch + " to go live"
+          : "Published — live in about a minute");
       }).catch(function (err) {
         toast(err.message || "Publish failed", true);
-      }).then(function () {
-        bar.publish.textContent = "Publish";
-        refreshPending();
-      });
+      }).then(refreshPending);
     });
 
     bar.discard.addEventListener("click", function () {

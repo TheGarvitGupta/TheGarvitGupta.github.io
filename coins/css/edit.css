@@ -417,3 +417,19 @@
 }
 .face-lead:hover:not([disabled]) { border-color: var(--gold); color: var(--gold-soft); }
 .face-lead.is-on { border-color: transparent; color: var(--gold); cursor: default; }
+
+/* ── Working off the live branch ──────────────────────────────────────────── */
+
+.editbar-branch {
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-dim);
+}
+
+/* Amber rather than green: edits here are real, but they are not public. */
+.editbar.is-offstage .editbar-dot { background: #fbbf24; animation: none; }
+.editbar.is-offstage .editbar-publish { background: var(--ink-dim); color: var(--bg); }
+.editbar.is-offstage .editbar-publish:hover:not([disabled]) { background: var(--ink); }
