@@ -1,0 +1,22 @@
+#!/bin/sh
+# Open the coin collection with editing switched on.
+#
+# This serves the real site at http://localhost:8766/coins/ — the same page
+# that gets published, plus the ability to add coins, edit their details and
+# drop in photographs. Nothing goes live until you press Publish.
+#
+# Run it with:   ./coins/start
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+if ! python3 -c "import PIL" 2>/dev/null; then
+  echo "Pillow is needed to process the photographs. Installing it now…"
+  python3 -m pip install --quiet Pillow || {
+    echo
+    echo "That didn't work. Try running this by hand, then start again:"
+    echo "    python3 -m pip install Pillow"
+    exit 1
+  }
+fi
+
+python3 "$ROOT/tools/coins.py" "$@"

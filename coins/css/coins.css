@@ -1,0 +1,749 @@
+/* ============================================================================
+   The Coin Collection — garvitgupta.com/coins
+   Self-contained, and themed in two modes.
+
+   Dark is a lit vitrine; light is a gallery wall. They are not inversions of
+   each other. The coins are cut out of their backdrops and sit on the page
+   with real shadows, so each mode needs its own shadow weight, its own wash of
+   light, and its own metallic gradient for the wordmark — a highlight that
+   reads as metal on black turns invisible on white.
+
+   Theme is set on <html data-theme> by an inline script in index.html before
+   first paint. Dark is the fallback when JavaScript is unavailable.
+   ========================================================================= */
+
+:root {
+  color-scheme: dark;
+
+  --bg:          #0b0b0d;
+  --bg-raise:    #131316;
+  --bg-sunk:     #08080a;
+
+  --ink:         #f2f0ec;
+  --ink-dim:     #918e88;
+  --ink-faint:   #7c7975;
+
+  --line:        rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.16);
+
+  --gold:        #c9a227;
+  --gold-soft:   #e0c264;
+
+  /* Mode-specific treatments, not just colours. */
+  --wash:        radial-gradient(120% 70% at 50% -10%, rgba(255, 246, 224, 0.07), transparent 60%);
+  --coin-shadow:       drop-shadow(0 10px 18px rgba(0, 0, 0, 0.55));
+  --coin-shadow-hover: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.65)) brightness(1.06);
+  --coin-shadow-big:   drop-shadow(0 24px 50px rgba(0, 0, 0, 0.7));
+  --coin-pool:   radial-gradient(circle at 50% 42%, rgba(255, 250, 235, 0.09), transparent 62%);
+  --sheen:       linear-gradient(100deg,
+                   #cfcbc2 0%, #f7f2e6 22%, var(--gold-soft) 38%,
+                   #f7f2e6 54%, #cfcbc2 74%, #cfcbc2 100%);
+  --bar-bg:      rgba(11, 11, 13, 0.86);
+  --viewer-bg:   rgba(6, 6, 8, 0.96);
+  --panel-bg:    rgba(22, 22, 26, 0.94);
+  --hover-tint:  rgba(255, 255, 255, 0.05);
+  --active-tint: rgba(255, 255, 255, 0.08);
+  --shadow-pop:  0 20px 50px rgba(0, 0, 0, 0.6);
+  --on-gold:     #17130a;   /* text sitting on a --gold fill */
+
+  --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --sans:  "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --shell:   min(1440px, 100% - 3rem);
+  --ease:    cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0.05, 0.36, 1);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Warm off-white rather than pure white — a gallery wall, not a spreadsheet.
+     Pure white also blows out the highlights on silver and nickel coins. */
+  --bg:          #f5f3ef;
+  --bg-raise:    #ffffff;
+  --bg-sunk:     #eae7e0;
+
+  --ink:         #1b1a17;
+  --ink-dim:     #605b53;
+  --ink-faint:   #746e65;
+
+  --line:        rgba(0, 0, 0, 0.10);
+  --line-strong: rgba(0, 0, 0, 0.20);
+
+  /* Darkened so it still passes contrast against a pale ground. */
+  --gold:        #876a0c;
+  --gold-soft:   #6f570b;
+
+  --wash:        radial-gradient(120% 70% at 50% -10%, rgba(120, 100, 60, 0.06), transparent 60%);
+  /* Tighter and weaker: on a pale ground a heavy shadow reads as grime. */
+  --coin-shadow:       drop-shadow(0 6px 12px rgba(40, 34, 22, 0.24));
+  --coin-shadow-hover: drop-shadow(0 12px 20px rgba(40, 34, 22, 0.30)) brightness(1.02);
+  --coin-shadow-big:   drop-shadow(0 18px 38px rgba(40, 34, 22, 0.30));
+  /* The pool becomes a soft cast shadow rather than a pool of light. */
+  --coin-pool:   radial-gradient(circle at 50% 58%, rgba(60, 50, 30, 0.10), transparent 64%);
+  --sheen:       linear-gradient(100deg,
+                   #4a463d 0%, #23211c 22%, #8a6d0f 38%,
+                   #23211c 54%, #4a463d 74%, #4a463d 100%);
+  --bar-bg:      rgba(245, 243, 239, 0.88);
+  --viewer-bg:   rgba(243, 241, 236, 0.97);
+  --panel-bg:    rgba(255, 255, 255, 0.96);
+  --hover-tint:  rgba(0, 0, 0, 0.05);
+  --active-tint: rgba(0, 0, 0, 0.08);
+  --shadow-pop:  0 18px 44px rgba(40, 34, 22, 0.18);
+  /* Light mode's gold is dark, so text on it has to flip too. */
+  --on-gold:     #fdfbf5;
+}
+
+/* ── Theme toggle ─────────────────────────────────────────────────────────── */
+
+.theme-toggle {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 55;               /* above the viewer, opposite its close button */
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  background: var(--bar-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--ink-dim);
+  transition: color 0.2s, border-color 0.2s, transform 0.25s var(--ease);
+}
+.theme-toggle:hover { color: var(--ink); border-color: var(--line-strong); transform: rotate(-15deg); }
+.theme-toggle svg { width: 1.05rem; height: 1.05rem; }
+
+/* Show the mode you'd switch *to*, not the one you're in. */
+:root[data-theme="dark"]  .icon-moon { display: none; }
+:root[data-theme="light"] .icon-sun  { display: none; }
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* A single wash of light from above, so the page reads as a lit case rather
+   than a flat dark rectangle. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: var(--wash);
+  z-index: 0;
+}
+
+body > * { position: relative; z-index: 1; }
+
+img { max-width: 100%; display: block; }
+
+button { font: inherit; color: inherit; cursor: pointer; }
+
+a { color: inherit; }
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-raise);
+  border: 1px solid var(--line-strong);
+  z-index: 100;
+}
+.skip-link:focus { left: 1rem; top: 1rem; }
+
+:focus-visible {
+  outline: 2px solid var(--gold-soft);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ── Masthead ─────────────────────────────────────────────────────────────── */
+
+.masthead {
+  width: var(--shell);
+  margin: 0 auto;
+  padding: clamp(4rem, 12vh, 8rem) 0 clamp(2.5rem, 6vh, 4rem);
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0 0 1.25rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.masthead-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(3.5rem, 11vw, 7rem);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  /* A slow metallic sheen across the wordmark, echoing the gradient sweep
+     used on the Strava widget on the main site. */
+  background: var(--sheen);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: sheen 14s var(--ease-in-out) infinite;
+}
+
+@keyframes sheen {
+  0%, 12%   { background-position: 130% 0; }
+  55%, 100% { background-position: -30% 0; }
+}
+
+.masthead-blurb {
+  max-width: 34rem;
+  margin: 1.75rem auto 0;
+  color: var(--ink-dim);
+  font-size: 0.9375rem;
+  line-height: 1.75;
+}
+
+.masthead-count {
+  margin: 1.5rem 0 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ── Filter bar ───────────────────────────────────────────────────────────── */
+
+.filterbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bar-bg);
+  backdrop-filter: saturate(140%) blur(14px);
+  -webkit-backdrop-filter: saturate(140%) blur(14px);
+  border-block: 1px solid var(--line);
+}
+
+.filterbar-inner {
+  width: var(--shell);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.75rem 0;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.filterbar-tail {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.facet { position: relative; }
+
+.facet-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.facet-btn:hover { border-color: var(--line-strong); color: var(--ink); }
+.facet-btn[aria-expanded="true"] { border-color: var(--line-strong); color: var(--ink); background: var(--bg-raise); }
+.facet-btn.has-value { border-color: rgba(201, 162, 39, 0.5); color: var(--gold-soft); }
+
+.facet-btn .chev { font-size: 0.6rem; opacity: 0.6; }
+
+.facet-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  min-width: 13rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 0.4rem;
+  background: var(--bg-raise);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-pop);
+  z-index: 30;
+}
+
+.facet-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  text-align: left;
+  font-size: 0.8125rem;
+  color: var(--ink-dim);
+}
+.facet-option:hover { background: var(--hover-tint); color: var(--ink); }
+.facet-option[aria-pressed="true"] { color: var(--gold-soft); }
+.facet-option .n { font-size: 0.6875rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+.sort { display: flex; align-items: center; gap: 0.5rem; }
+.sort-label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.sort select {
+  padding: 0.35rem 0.5rem;
+  background: transparent;
+  color: var(--ink-dim);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.75rem;
+}
+.sort select option { background: var(--bg-raise); }
+
+.clear-filters {
+  padding: 0.35rem 0.7rem;
+  background: none;
+  border: 0;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.clear-filters:hover { color: var(--ink); }
+
+/* ── The grid ─────────────────────────────────────────────────────────────── */
+
+.grid {
+  width: var(--shell);
+  margin: clamp(2.5rem, 6vw, 4.5rem) auto;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: clamp(1.5rem, 3.5vw, 3.25rem) clamp(1rem, 2.5vw, 2rem);
+}
+
+.coin {
+  position: relative;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+}
+.coin.is-in { opacity: 1; transform: none; }
+
+.coin-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: 0;
+  text-align: center;
+}
+
+/* The disc: coins are cut out of their backdrop by the image pipeline, so
+   they sit directly on the page with a real shadow rather than inside a
+   cropping mask that would clip scalloped and square coins. */
+.coin-disc {
+  position: relative;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+
+/* Pool of light the coin rests in. */
+.coin-disc::before {
+  content: "";
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  background: var(--coin-pool);
+  opacity: 0;
+  transition: opacity 0.4s var(--ease);
+  z-index: -1;
+}
+.coin-btn:hover .coin-disc::before,
+.coin-btn:focus-visible .coin-disc::before { opacity: 1; }
+
+.coin-disc img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: var(--coin-shadow);
+  transition: transform 0.45s var(--ease), filter 0.45s var(--ease);
+}
+.coin-btn:hover .coin-disc img,
+.coin-btn:focus-visible .coin-disc img {
+  transform: scale(1.06) translateY(-2px);
+  filter: var(--coin-shadow-hover);
+}
+
+.coin-disc img:not(.is-loaded) { opacity: 0; }
+.coin-disc img.is-loaded { animation: fade-in 0.5s var(--ease) both; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.coin-caption {
+  margin-top: 0.9rem;
+  transition: color 0.3s var(--ease);
+}
+
+.coin-name {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.0625rem;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.coin-meta {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s var(--ease);
+}
+.coin-btn:hover .coin-meta { color: var(--ink-dim); }
+
+/* Coins nobody has identified yet. Marked quietly — a gap in the record is
+   part of the record, not something to hide. */
+.coin.is-unidentified .coin-name { color: var(--ink-dim); font-style: italic; }
+.coin.is-unidentified .coin-disc img { filter: var(--coin-shadow) saturate(0.85); }
+
+.coin-missing {
+  display: grid;
+  place-items: center;
+  width: 72%;
+  aspect-ratio: 1;
+  border: 1px dashed var(--line-strong);
+  border-radius: 50%;
+  color: var(--ink-faint);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.empty {
+  width: var(--shell);
+  margin: 6rem auto;
+  text-align: center;
+  color: var(--ink-faint);
+  font-family: var(--serif);
+  font-size: 1.375rem;
+}
+
+/* ── Colophon ─────────────────────────────────────────────────────────────── */
+
+.colophon {
+  width: var(--shell);
+  margin: 0 auto;
+  padding: 4rem 0 3rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+.colophon p { margin: 0; }
+.colophon a { text-decoration: none; }
+.colophon a:hover { color: var(--ink); }
+
+/* ── Viewer ───────────────────────────────────────────────────────────────── */
+
+.viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--viewer-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: viewer-in 0.32s var(--ease) both;
+}
+.viewer[hidden] { display: none; }
+
+@keyframes viewer-in { from { opacity: 0; } to { opacity: 1; } }
+
+.viewer-body {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 27rem);
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* The zoom/pan surface. Transform lives on .flipper; this frame is the
+   viewport that clips it. */
+.stage-frame {
+  position: relative;
+  width: min(70vh, 100%);
+  aspect-ratio: 1;
+  perspective: 1600px;
+  touch-action: none;
+  cursor: grab;
+}
+.stage-frame.is-panning { cursor: grabbing; }
+.stage-frame.is-zoomed  { cursor: grab; }
+
+.flipper {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.75s var(--ease-in-out);
+  will-change: transform;
+}
+/* Set while wheeling, panning or pinching so those track the input directly;
+   the flip keeps the transition and stays a deliberate motion. */
+.flipper.no-transition { transition: none; }
+
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: grid;
+  place-items: center;
+}
+.face-rev { transform: rotateY(180deg); }
+
+.face img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: var(--coin-shadow-big);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Blurred thumb standing in until the full-resolution file has decoded. */
+.face img.is-placeholder { filter: var(--coin-shadow-big) blur(6px); }
+
+.stage-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.face-toggle {
+  display: inline-flex;
+  padding: 0.25rem;
+  background: var(--bg-raise);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.face-toggle button {
+  padding: 0.4rem 1.1rem;
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color 0.25s, background 0.25s;
+}
+.face-toggle button.is-active {
+  background: var(--active-tint);
+  color: var(--ink);
+}
+.face-toggle button[disabled] { opacity: 0.35; cursor: default; }
+
+.stage-hint {
+  margin: 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+  transition: opacity 0.3s;
+}
+
+.viewer-close,
+.viewer-nav {
+  position: absolute;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  background: none;
+  border: 0;
+  color: var(--ink-faint);
+  transition: color 0.2s, transform 0.2s;
+}
+.viewer-close:hover, .viewer-nav:hover { color: var(--ink); }
+
+.viewer-close { top: 1rem; right: 1rem; font-size: 2rem; line-height: 1; }
+.viewer-nav   { top: 50%; margin-top: -1.5rem; font-size: 2.5rem; line-height: 1; }
+.viewer-prev  { left: 0.5rem; }
+.viewer-next  { left: auto; right: calc(27rem + 0.5rem); }
+.viewer-nav:hover { transform: scale(1.15); }
+.viewer-nav[disabled] { opacity: 0.2; pointer-events: none; }
+
+/* ── Detail panel ─────────────────────────────────────────────────────────── */
+
+.detail {
+  overflow-y: auto;
+  padding: clamp(2rem, 4vw, 3.5rem) clamp(1.5rem, 3vw, 2.75rem);
+  border-left: 1px solid var(--line);
+  background: var(--bg-sunk);
+}
+
+.detail-era {
+  margin: 0 0 0.75rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.detail-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(2rem, 3.4vw, 2.75rem);
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.detail-notes {
+  margin: 1.5rem 0 0;
+  color: var(--ink-dim);
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+.detail-notes:empty { display: none; }
+
+.detail-specs { margin-top: 2.5rem; }
+
+.spec-group + .spec-group { margin-top: 2rem; }
+
+.spec-group-label {
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.625rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.spec {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+  align-items: baseline;
+}
+.spec dt { color: var(--ink-faint); }
+.spec dd { margin: 0; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.mintmark-glyph {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-right: 0.5rem;
+  vertical-align: -0.35rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  color: var(--gold-soft);
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  :root { --shell: min(1440px, 100% - 2rem); }
+
+  .viewer-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+    overflow-y: auto;
+  }
+  .stage { padding: 3.5rem 1rem 1rem; }
+  .stage-frame { width: min(62vw, 22rem); }
+  .detail {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    max-height: 55vh;
+  }
+  .viewer-next { right: 0.5rem; }
+  .viewer-nav { top: auto; bottom: 1rem; margin-top: 0; }
+}
+
+@media (max-width: 560px) {
+  .grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  .filterbar-inner { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+  .filters { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 0.25rem; }
+  .facet-btn { white-space: nowrap; }
+  .spec { grid-template-columns: 7rem minmax(0, 1fr); gap: 0.75rem; }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  /* The flip becomes a cross-fade. Rotation is what causes trouble, so only
+     that is dropped (viewer.js stops emitting rotateY) — the flipper's
+     transform is left alone so pan and zoom still work. */
+  .flipper { transition: none; }
+  .face { transition: opacity 0.2s linear; backface-visibility: visible; }
+  .face-rev { transform: none; opacity: 0; }
+  .flipper.is-flipped .face-obv { opacity: 0; }
+  .flipper.is-flipped .face-rev { opacity: 1; }
+  .coin { opacity: 1; transform: none; }
+}

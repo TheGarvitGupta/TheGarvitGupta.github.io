@@ -1,0 +1,164 @@
+{
+  "_comment": "Vocabularies for the coin catalogue. This is data, not code — add a row when a coin turns up that doesn't fit. Every id here is what gets written into coins.json; every label is what the site displays.",
+
+  "eras": [
+    { "id": "east-india-company", "label": "East India Company", "years": "1835–1858" },
+    { "id": "british-india", "label": "British India", "years": "1858–1947" },
+    { "id": "princely-state", "label": "Princely State", "years": "pre-1948" },
+    { "id": "republic-india", "label": "Republic India", "years": "1950–present" }
+  ],
+
+  "rulers": [
+    { "id": "eic", "label": "East India Company", "era": "east-india-company", "from": 1835, "to": 1858 },
+    { "id": "victoria-queen", "label": "Victoria, Queen", "era": "british-india", "from": 1862, "to": 1876 },
+    { "id": "victoria-empress", "label": "Victoria, Empress", "era": "british-india", "from": 1877, "to": 1901,
+      "note": "Victoria took the title Empress of India in 1877 — the legend changes from QUEEN to EMPRESS, which dates the coin precisely." },
+    { "id": "edward-vii", "label": "Edward VII", "era": "british-india", "from": 1902, "to": 1910 },
+    { "id": "george-v", "label": "George V", "era": "british-india", "from": 1911, "to": 1936 },
+    { "id": "george-vi", "label": "George VI", "era": "british-india", "from": 1938, "to": 1947 }
+  ],
+
+  "mints": [
+    { "id": "calcutta", "label": "Calcutta", "era": ["east-india-company", "british-india"], "note": "The oldest mint — carries no mint mark." },
+    { "id": "bombay", "label": "Bombay", "era": ["east-india-company", "british-india"] },
+    { "id": "madras", "label": "Madras", "era": ["east-india-company", "british-india"], "note": "Established 1640, closed 1869." },
+    { "id": "lahore", "label": "Lahore", "era": ["british-india"], "note": "Opened to add wartime capacity; first coins 1943." },
+    { "id": "pretoria", "label": "Pretoria", "era": ["british-india"], "note": "South African mint, struck Indian coins during the Second World War." },
+    { "id": "birmingham", "label": "Birmingham (Heaton)", "era": ["british-india", "republic-india"] },
+    { "id": "kings-norton", "label": "King's Norton", "era": ["british-india"] },
+    { "id": "kolkata", "label": "Kolkata", "era": ["republic-india"], "note": "Successor to the Calcutta mint — still carries no mint mark." },
+    { "id": "mumbai", "label": "Mumbai", "era": ["republic-india"] },
+    { "id": "hyderabad", "label": "Hyderabad", "era": ["republic-india"] },
+    { "id": "noida", "label": "Noida", "era": ["republic-india"], "note": "Established 1984." }
+  ],
+
+  "_mintMarksComment": "The picker shows these glyphs so a coin can be identified by looking at it rather than by knowing which city a star means. Order matters — this is the display order.",
+  "mintMarks": [
+    { "id": "none", "glyph": "—", "label": "No mark", "mints": ["calcutta", "kolkata"] },
+    { "id": "diamond", "glyph": "◆", "label": "Diamond", "mints": ["bombay", "mumbai"] },
+    { "id": "star", "glyph": "★", "label": "Star", "mints": ["hyderabad", "madras"],
+      "note": "Hyderabad on Republic coins; Madras on pre-1869 issues — the date tells them apart." },
+    { "id": "dot", "glyph": "•", "label": "Dot", "mints": ["noida", "pretoria"],
+      "note": "Noida on Republic coins; Pretoria on wartime British India issues." },
+    { "id": "dot-in-diamond", "glyph": "◈", "label": "Dot in diamond", "mints": ["hyderabad"] },
+    { "id": "split-diamond", "glyph": "◇", "label": "Split diamond", "mints": ["hyderabad"] },
+    { "id": "B", "glyph": "B", "label": "Letter B", "mints": ["bombay"], "note": "B for Bombay." },
+    { "id": "M", "glyph": "M", "label": "Letter M", "mints": ["mumbai"], "note": "M for Mumbai, used from 1996." },
+    { "id": "L", "glyph": "L", "label": "Letter L", "mints": ["lahore"] },
+    { "id": "H", "glyph": "H", "label": "Letter H", "mints": ["birmingham"] },
+    { "id": "KN", "glyph": "KN", "label": "Letters KN", "mints": ["kings-norton"] }
+  ],
+
+  "_denominationsComment": "Pre-decimal ran until 1957: 12 pies = 1 anna, 16 annas = 1 rupee. Decimal from 1957: 100 paise = 1 rupee. 'values' are the usual issues, offered as suggestions rather than a restriction.",
+  "denominations": {
+    "pre-decimal": [
+      { "unit": "pie", "label": "Pie", "values": [1, 2, 3] },
+      { "unit": "pice", "label": "Pice", "values": [1, 2] },
+      { "unit": "anna", "label": "Anna", "values": [0.25, 0.5, 1, 2, 4, 8] },
+      { "unit": "rupee", "label": "Rupee", "values": [0.25, 0.5, 1] }
+    ],
+    "decimal": [
+      { "unit": "naya-paisa", "label": "Naya Paisa", "values": [1, 2, 3, 5, 10, 20, 25, 50], "note": "Used 1957–1964, before the name shortened to 'paise'." },
+      { "unit": "paise", "label": "Paise", "values": [1, 2, 3, 5, 10, 20, 25, 50] },
+      { "unit": "rupee", "label": "Rupee", "values": [1, 2, 5, 10, 20] }
+    ]
+  },
+
+  "metals": [
+    { "id": "copper", "label": "Copper", "tone": "#b87333" },
+    { "id": "bronze", "label": "Bronze", "tone": "#a97142" },
+    { "id": "brass", "label": "Brass", "tone": "#c9a227" },
+    { "id": "nickel", "label": "Nickel", "tone": "#b8b8b8" },
+    { "id": "cupro-nickel", "label": "Cupro-nickel", "tone": "#c0bfbb" },
+    { "id": "silver", "label": "Silver", "tone": "#cfcfcf" },
+    { "id": "gold", "label": "Gold", "tone": "#d4af37" },
+    { "id": "aluminium", "label": "Aluminium", "tone": "#d6d9dc" },
+    { "id": "aluminium-bronze", "label": "Aluminium-bronze", "tone": "#c8a951" },
+    { "id": "stainless-steel", "label": "Ferritic stainless steel", "tone": "#c4c8cb" },
+    { "id": "lead", "label": "Lead", "tone": "#8f8f94" }
+  ],
+
+  "edges": [
+    { "id": "plain", "label": "Plain" },
+    { "id": "reeded", "label": "Reeded" },
+    { "id": "security", "label": "Security" },
+    { "id": "lettered", "label": "Lettered" },
+    { "id": "scalloped", "label": "Scalloped" }
+  ],
+
+  "shapes": [
+    { "id": "round", "label": "Round" },
+    { "id": "scalloped", "label": "Scalloped" },
+    { "id": "square", "label": "Square" },
+    { "id": "square-round", "label": "Square with rounded corners" },
+    { "id": "hexagonal", "label": "Hexagonal" },
+    { "id": "octagonal", "label": "Octagonal" },
+    { "id": "hendecagonal", "label": "Hendecagonal (11-sided)" },
+    { "id": "decagonal", "label": "Decagonal (10-sided)" },
+    { "id": "wavy", "label": "Wavy" },
+    { "id": "holed", "label": "Holed" }
+  ],
+
+  "_gradesComment": "Adjectival grades rather than the numeric Sheldon 1–70 scale — these are what a collector actually says out loud, and they don't imply a precision nobody has measured.",
+  "grades": [
+    { "id": "poor", "label": "Poor", "short": "P" },
+    { "id": "fair", "label": "Fair", "short": "Fr" },
+    { "id": "good", "label": "Good", "short": "G" },
+    { "id": "very-good", "label": "Very Good", "short": "VG" },
+    { "id": "fine", "label": "Fine", "short": "F" },
+    { "id": "very-fine", "label": "Very Fine", "short": "VF" },
+    { "id": "extremely-fine", "label": "Extremely Fine", "short": "XF" },
+    { "id": "about-uncirculated", "label": "About Uncirculated", "short": "AU" },
+    { "id": "uncirculated", "label": "Uncirculated", "short": "UNC" },
+    { "id": "proof", "label": "Proof", "short": "PF" }
+  ],
+
+  "types": [
+    { "id": "circulation", "label": "Circulation" },
+    { "id": "commemorative", "label": "Commemorative" },
+    { "id": "proof", "label": "Proof" },
+    { "id": "pattern", "label": "Pattern" },
+    { "id": "token", "label": "Token" },
+    { "id": "bullion", "label": "Bullion" }
+  ],
+
+  "dieAxes": [
+    { "id": "medallic", "label": "Medallic (↑↑)", "note": "Flip the coin top-to-bottom and the reverse is upright." },
+    { "id": "coin", "label": "Coin (↑↓)", "note": "Flip the coin left-to-right and the reverse is upright." }
+  ],
+
+  "_fieldsComment": "Drives the read-only spec table order and the '+ Add detail' menu in edit mode. 'group' clusters rows under a heading; 'vocab' names the list above that supplies options; 'type' tells edit mode which control to render.",
+  "fields": [
+    { "key": "era",          "label": "Era",          "group": "identity", "type": "select", "vocab": "eras" },
+    { "key": "ruler",        "label": "Ruler",        "group": "identity", "type": "select", "vocab": "rulers", "onlyEra": ["east-india-company", "british-india"] },
+    { "key": "denomination", "label": "Denomination", "group": "identity", "type": "denomination" },
+    { "key": "yearOnCoin",   "label": "Year on coin", "group": "identity", "type": "year" },
+    { "key": "yearIssued",   "label": "Year issued",  "group": "identity", "type": "year" },
+    { "key": "type",         "label": "Type",         "group": "identity", "type": "select", "vocab": "types" },
+    { "key": "series",       "label": "Series",       "group": "identity", "type": "text" },
+
+    { "key": "mint",         "label": "Mint",         "group": "minting", "type": "select", "vocab": "mints" },
+    { "key": "mintMark",     "label": "Mint mark",    "group": "minting", "type": "mintmark" },
+    { "key": "mintage",      "label": "Mintage",      "group": "minting", "type": "number", "format": "integer" },
+    { "key": "dieAxis",      "label": "Die axis",     "group": "minting", "type": "select", "vocab": "dieAxes" },
+
+    { "key": "metal",        "label": "Metal",        "group": "physical", "type": "select", "vocab": "metals" },
+    { "key": "fineness",     "label": "Fineness",     "group": "physical", "type": "number", "format": "fineness" },
+    { "key": "weight_g",     "label": "Weight",       "group": "physical", "type": "number", "unit": "g" },
+    { "key": "diameter_mm",  "label": "Diameter",     "group": "physical", "type": "number", "unit": "mm" },
+    { "key": "thickness_mm", "label": "Thickness",    "group": "physical", "type": "number", "unit": "mm" },
+    { "key": "shape",        "label": "Shape",        "group": "physical", "type": "select", "vocab": "shapes" },
+    { "key": "edge",         "label": "Edge",         "group": "physical", "type": "select", "vocab": "edges" },
+
+    { "key": "grade",        "label": "Grade",        "group": "catalogue", "type": "select", "vocab": "grades" },
+    { "key": "km",           "label": "Catalogue ref", "group": "catalogue", "type": "text", "placeholder": "KM# 557" },
+    { "key": "acquired",     "label": "Acquired",     "group": "catalogue", "type": "text" }
+  ],
+
+  "groups": [
+    { "id": "identity",  "label": "Identity" },
+    { "id": "minting",   "label": "Minting" },
+    { "id": "physical",  "label": "Physical" },
+    { "id": "catalogue", "label": "Catalogue" }
+  ]
+}

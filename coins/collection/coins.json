@@ -1,0 +1,190 @@
+[
+  {
+    "id": "0001",
+    "status": "published",
+    "images": {
+      "obv": "0001-obv.webp",
+      "rev": "0001-rev.webp"
+    },
+    "updated": "2026-08-05",
+    "metal": "nickel",
+    "type": "circulation",
+    "notes": "The first rupee of the Republic. Struck in only two years — 1950 and 1954 — before decimalisation swept away annas and pies in 1957, making this the last rupee of the old sixteen-anna system.\n\nThe obverse carries the Lion Capital of Ashoka above the legend GOVERNMENT OF INDIA, the emblem adopted in 1950 to replace the profile of George VI. The reverse gives the denomination in Hindi and English, flanked by ears of wheat — a deliberate nod to the agricultural priorities of the first Five-Year Plan.\n\nThe star beneath the Lion Capital is the mark of the Hyderabad mint.",
+    "mintMark": "star",
+    "yearIssued": 1954,
+    "denomination": {
+      "value": 1,
+      "unit": "rupee"
+    },
+    "shape": "round",
+    "era": "republic-india",
+    "yearOnCoin": 1954,
+    "mint": "hyderabad",
+    "weight_g": 11.7,
+    "diameter_mm": 27.9,
+    "thickness_mm": 2.65,
+    "edge": "security",
+    "km": "KM# 7",
+    "series": "Government of India (1950–1954)",
+    "leadFace": "rev"
+  },
+  {
+    "id": "0002",
+    "status": "published",
+    "images": {
+      "obv": "0002-obv.webp",
+      "rev": "0002-rev.webp"
+    },
+    "updated": "2026-08-05",
+    "era": "republic-india",
+    "denomination": {
+      "value": 10,
+      "unit": "paise"
+    },
+    "yearOnCoin": 1988,
+    "yearIssued": 1988,
+    "metal": "stainless-steel",
+    "weight_g": 2.0,
+    "diameter_mm": 16,
+    "shape": "round",
+    "edge": "plain",
+    "type": "circulation",
+    "km": "KM# 40",
+    "series": "Stainless steel series (1988–1998)",
+    "notes": "The smallest coin of the 1988 stainless-steel series, and the last ten paise India struck — the denomination was discontinued in 1998 and demonetised in 2011.\n\nStainless steel replaced aluminium across the minor denominations that year: cheaper to strike, far more durable, and no longer worth more as scrap than as money.",
+    "leadFace": "rev"
+  },
+  {
+    "id": "0003",
+    "status": "published",
+    "images": {
+      "obv": "0003-obv.webp",
+      "rev": "0003-rev.webp"
+    },
+    "updated": "2026-08-05",
+    "era": "republic-india",
+    "denomination": {
+      "value": 25,
+      "unit": "paise"
+    },
+    "yearOnCoin": 1988,
+    "yearIssued": 1988,
+    "metal": "stainless-steel",
+    "weight_g": 2.83,
+    "diameter_mm": 19,
+    "thickness_mm": 1.55,
+    "shape": "round",
+    "edge": "plain",
+    "type": "circulation",
+    "km": "KM# 54",
+    "series": "Stainless steel series (1988–2002)",
+    "notes": "The reverse carries an Indian one-horned rhinoceros — part of a run of wildlife designs that broke from the emblems and portraits of earlier coinage.\n\nThe rhino was a conservation emblem: hunted to a few hundred animals by the early twentieth century, it had recovered in Kaziranga and Assam by the time this coin was struck.",
+    "leadFace": "obv"
+  },
+  {
+    "id": "0004",
+    "status": "published",
+    "images": {
+      "obv": "0004-obv.webp",
+      "rev": "0004-rev.webp"
+    },
+    "updated": "2026-08-05",
+    "era": "republic-india",
+    "denomination": {
+      "value": 50,
+      "unit": "paise"
+    },
+    "yearOnCoin": 1989,
+    "yearIssued": 1989,
+    "metal": "stainless-steel",
+    "weight_g": 3.79,
+    "diameter_mm": 22,
+    "thickness_mm": 1.45,
+    "shape": "round",
+    "edge": "plain",
+    "type": "circulation",
+    "km": "KM# 69",
+    "series": "Stainless steel series (1988–2007)",
+    "notes": "The reverse shows Sansad Bhavan, the circular Parliament House in New Delhi, set against an outline map of India.\n\nCompleted in 1927 to a Lutyens and Baker design, its colonnaded drum was chosen here as shorthand for the Republic itself.",
+    "leadFace": "obv"
+  },
+  {
+    "id": "0005",
+    "status": "published",
+    "images": {
+      "obv": "0005-obv.webp",
+      "rev": "0005-rev.webp"
+    },
+    "updated": "2026-08-05",
+    "era": "republic-india",
+    "denomination": {
+      "value": 1,
+      "unit": "rupee"
+    },
+    "yearOnCoin": 1998,
+    "yearIssued": 1998,
+    "metal": "stainless-steel",
+    "weight_g": 4.85,
+    "diameter_mm": 25,
+    "thickness_mm": 1.4,
+    "shape": "round",
+    "edge": "plain",
+    "type": "circulation",
+    "km": "KM# 92",
+    "series": "Stainless steel series (1992–2004)",
+    "notes": "Two ears of grain flank the denomination — the same agricultural motif carried by the very first rupee of the Republic in 1950, redrawn for a stainless-steel coin more than forty years later.\n\nStainless steel arrived for the rupee in 1992, replacing copper-nickel.",
+    "leadFace": "rev"
+  },
+  {
+    "id": "0006",
+    "status": "published",
+    "images": {
+      "obv": "0006-obv.webp",
+      "rev": "0006-rev.webp"
+    },
+    "updated": "2026-08-05",
+    "era": "republic-india",
+    "denomination": {
+      "value": 2,
+      "unit": "rupee"
+    },
+    "yearOnCoin": 1998,
+    "yearIssued": 1998,
+    "metal": "cupro-nickel",
+    "diameter_mm": 26,
+    "thickness_mm": 1.71,
+    "shape": "hendecagonal",
+    "edge": "plain",
+    "type": "circulation",
+    "km": "KM# 121",
+    "series": "National Integration (1992–2004)",
+    "notes": "The National Integration type: a map of India overlaid with four hands, struck on an eleven-sided flan.\n\nThe hendecagonal shape was deliberate — it let people tell two rupees from one by touch alone, a considerable practical advantage in a country with many languages and scripts.",
+    "leadFace": "obv"
+  },
+  {
+    "id": "0007",
+    "status": "published",
+    "images": {
+      "obv": "0007-obv.webp",
+      "rev": "0007-rev.webp"
+    },
+    "updated": "2026-08-05",
+    "era": "republic-india",
+    "denomination": {
+      "value": 5,
+      "unit": "rupee"
+    },
+    "yearOnCoin": 1999,
+    "yearIssued": 1999,
+    "metal": "cupro-nickel",
+    "weight_g": 9.0,
+    "diameter_mm": 23,
+    "shape": "round",
+    "edge": "reeded",
+    "type": "circulation",
+    "km": "KM# 154",
+    "series": "Cupro-nickel five rupees (1992–2004)",
+    "notes": "Heavy for its size at nine grams — noticeably weightier than the stainless-steel rupee beside it, and the densest coin in ordinary circulation at the time.\n\nThe denomination is flanked by stylised floral sprays. The edge is reeded with a groove.",
+    "leadFace": "rev"
+  }
+]

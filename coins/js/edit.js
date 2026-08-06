@@ -1,0 +1,768 @@
+/* ============================================================================
+   The Coin Collection — edit mode.
+
+   This file is loaded by the public site too, but it does nothing there. It
+   probes /api/ping first; only the local server (tools/coins.py) answers, so
+   on GitHub Pages every branch below is skipped and the page stays read-only.
+
+   Everything here decorates the exhibit that's already on screen rather than
+   building a second interface: click a value to change it, drop a photo onto
+   a coin to set that face, "+ Add detail" for the fields a coin doesn't have
+   yet. What you edit is what visitors will see.
+   ========================================================================= */
+
+(function () {
+  "use strict";
+
+  var pending = { total: 0 };
+  var bar = null;
+
+  /* ── Server ─────────────────────────────────────────────────────────────── */
+
+  function api(method, path, body, headers) {
+    var opts = { method: method, headers: headers || {} };
+    if (body !== undefined && body !== null) {
+      if (body instanceof Blob || body instanceof ArrayBuffer) {
+        opts.body = body;
+      } else {
+        opts.headers["Content-Type"] = "application/json";
+        opts.body = JSON.stringify(body);
+      }
+    }
+    return fetch(path, opts).then(function (r) { return r.json(); });
+  }
+
+  function toast(msg, isError) {
+    var t = document.createElement("div");
+    t.className = "toast" + (isError ? " is-error" : "");
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { t.classList.add("is-out"); }, isError ? 4200 : 1800);
+    setTimeout(function () { t.remove(); }, isError ? 4600 : 2200);
+  }
+
+  function refreshPending() {
+    return api("GET", "/api/pending").then(function (p) {
+      pending = p;
+      if (!bar) return;
+      var n = p.total || 0;
+      bar.count.textContent = n === 0 ? "No unpublished changes"
+        : n + (n === 1 ? " unpublished change" : " unpublished changes");
+      bar.publish.disabled = n === 0;
+      bar.discard.hidden = n === 0;
+    });
+  }
+
+  /** Save a patch, then pull the catalogue back so every view agrees. */
+  function patch(coinId, fields) {
+    return api("PATCH", "/api/coin/" + encodeURIComponent(coinId), fields)
+      .then(function (res) {
+        if (!res.ok) { toast(res.error || "Could not save", true); return null; }
+        return window.Coins.reload().then(function () {
+          if (window.Viewer.currentId() === coinId) window.Viewer.rerender();
+          refreshPending();
+          return res.coin;
+        });
+      });
+  }
+
+  /* ── Uploading photos ───────────────────────────────────────────────────── */
+
+  function uploadFace(coinId, faceKey, file) {
+    return api("POST", "/api/image", file, {
+      "X-Coin-Id": coinId,
+      "X-Face": faceKey,
+      "X-Filename": file.name,
+      "Content-Type": "application/octet-stream"
+    }).then(function (res) {
+      if (!res.ok) { toast(res.error || "Could not process that photo", true); return null; }
+      return window.Coins.reload().then(function () {
+        if (window.Viewer.currentId() === coinId) {
+          window.Viewer.reloadFaces();
+          window.Viewer.rerender();
+        }
+        refreshPending();
+        return res.filename;
+      });
+    });
+  }
+
+  /**
+   * Work out which side each dropped file is. Matches the naming convention in
+   * PHOTOGRAPHY.md; failing that, falls back to pairing files two at a time in
+   * sorted order, which is what a camera produces shooting front-then-back.
+   */
+  function pairFiles(files) {
+    var list = Array.prototype.slice.call(files).filter(function (f) {
+      return /^image\//.test(f.type) || /\.(jpe?g|png|webp|tiff?|heic|bmp)$/i.test(f.name);
+    });
+    list.sort(function (a, b) { return a.name.localeCompare(b.name, undefined, { numeric: true }); });
+
+    var OBV = /(^|[-_ ])(obv|obverse|front|head|heads)([-_ .]|$)/i;
+    var REV = /(^|[-_ ])(rev|reverse|back|tail|tails)([-_ .]|$)/i;
+
+    var labelled = list.length > 0 && list.every(function (f) {
+      var stem = f.name.replace(/\.[^.]+$/, "");
+      return OBV.test(stem) || REV.test(stem);
+    });
+
+    var pairs = [];
+    if (labelled) {
+      var byKey = {};
+      list.forEach(function (f) {
+        var stem = f.name.replace(/\.[^.]+$/, "");
+        var side = OBV.test(stem) ? "obv" : "rev";
+        var key = stem.replace(OBV, "").replace(REV, "").replace(/[-_ ]+$/, "");
+        byKey[key] = byKey[key] || {};
+        byKey[key][side] = f;
+      });
+      Object.keys(byKey).sort().forEach(function (k) { pairs.push(byKey[k]); });
+    } else {
+      for (var i = 0; i < list.length; i += 2) {
+        pairs.push({ obv: list[i], rev: list[i + 1] || null });
+      }
+    }
+    return pairs;
+  }
+
+  /** Create a coin per pair and upload both faces. Carries the last coin's
+      context forward, since collections cluster and consecutive coins are
+      usually near-identical. */
+  function ingest(files) {
+    var pairs = pairFiles(files);
+    if (!pairs.length) { toast("No images in that drop", true); return; }
+
+    var seed = carryForward();
+    var done = 0;
+    bar.progress.hidden = false;
+    bar.progress.textContent = "Adding 0 of " + pairs.length + "…";
+
+    var chain = Promise.resolve();
+    pairs.forEach(function (pair) {
+      chain = chain.then(function () {
+        return api("POST", "/api/coin", seed).then(function (res) {
+          if (!res.ok) return;
+          var id = res.coin.id;
+          var p = Promise.resolve();
+          if (pair.obv) p = p.then(function () { return uploadFace(id, "obv", pair.obv); });
+          if (pair.rev) p = p.then(function () { return uploadFace(id, "rev", pair.rev); });
+          return p.then(function () {
+            done++;
+            bar.progress.textContent = "Adding " + done + " of " + pairs.length + "…";
+          });
+        });
+      });
+    });
+
+    chain.then(function () {
+      bar.progress.hidden = true;
+      return window.Coins.reload();
+    }).then(function () {
+      refreshPending();
+      toast(pairs.length === 1 ? "Coin added" : pairs.length + " coins added");
+    });
+  }
+
+  /* ── Carry-forward ──────────────────────────────────────────────────────── */
+
+  var CARRY_KEYS = ["era", "ruler", "mint", "mintMark", "metal", "type", "shape", "edge"];
+
+  function rememberCarry(coin) {
+    var seed = {};
+    CARRY_KEYS.forEach(function (k) { if (coin[k]) seed[k] = coin[k]; });
+    try { localStorage.setItem("coins:carry", JSON.stringify(seed)); } catch (e) {}
+  }
+
+  function carryForward() {
+    try {
+      var raw = localStorage.getItem("coins:carry");
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+
+  /* ── Field controls ─────────────────────────────────────────────────────── */
+
+  function V() { return window.Coins.state.vocab; }
+  function look(list, id) { return window.Coins.look(list, id); }
+
+  function optionsFor(field, coin) {
+    var vocab = V()[field.vocab] || [];
+    if (field.vocab === "rulers" && coin.era) {
+      var byEra = vocab.filter(function (r) { return r.era === coin.era; });
+      if (byEra.length) vocab = byEra;
+    }
+    if (field.vocab === "mints" && coin.era) {
+      var m = vocab.filter(function (x) { return (x.era || []).indexOf(coin.era) !== -1; });
+      if (m.length) vocab = m;
+    }
+    return vocab;
+  }
+
+  /** Build the control for one field. onDone(value) fires when it's settled;
+      onDone(undefined) means the edit was cancelled. */
+  function control(coin, field, onDone) {
+    var wrap = document.createElement("div");
+    wrap.className = "edit-control";
+
+    if (field.type === "select") {
+      var sel = document.createElement("select");
+      sel.innerHTML = '<option value="">—</option>';
+      optionsFor(field, coin).forEach(function (o) {
+        var opt = document.createElement("option");
+        opt.value = o.id;
+        opt.textContent = o.label;
+        if (String(coin[field.key]) === String(o.id)) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      sel.addEventListener("change", function () { onDone(sel.value || null); });
+      sel.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") { e.preventDefault(); onDone(undefined); }
+      });
+      wrap.appendChild(sel);
+      setTimeout(function () { sel.focus(); }, 0);
+
+      var hint = look(field.vocab, coin[field.key]);
+      if (hint && hint.note) {
+        var n = document.createElement("p");
+        n.className = "edit-note";
+        n.textContent = hint.note;
+        wrap.appendChild(n);
+      }
+      return wrap;
+    }
+
+    if (field.type === "mintmark") return mintMarkPicker(coin, onDone);
+
+    if (field.type === "denomination") {
+      var d = coin.denomination || {};
+      var val = document.createElement("input");
+      val.type = "number";
+      val.step = "any";
+      val.placeholder = "1";
+      val.className = "denom-value";
+      val.value = d.value != null ? d.value : "";
+
+      var unit = document.createElement("select");
+      unit.innerHTML = '<option value="">unit</option>';
+      // Offer the era's own scale first, then the other, so a mis-set era
+      // never hides the unit someone actually needs.
+      var both = V().denominations;
+      var primary = (coin.era === "republic-india") ? "decimal" : "pre-decimal";
+      var other = primary === "decimal" ? "pre-decimal" : "decimal";
+      var seen = {};
+      (both[primary] || []).concat(both[other] || []).forEach(function (u) {
+        if (seen[u.unit]) return;
+        seen[u.unit] = 1;
+        var opt = document.createElement("option");
+        opt.value = u.unit;
+        opt.textContent = u.label;
+        if (d.unit === u.unit) opt.selected = true;
+        unit.appendChild(opt);
+      });
+
+      function push() {
+        if (!unit.value) return onDone(null);
+        onDone({ value: val.value === "" ? null : Number(val.value), unit: unit.value });
+      }
+      val.addEventListener("change", push);
+      unit.addEventListener("change", push);
+      wrap.appendChild(val);
+      wrap.appendChild(unit);
+      setTimeout(function () { val.focus(); val.select(); }, 0);
+      return wrap;
+    }
+
+    var input = document.createElement("input");
+    input.type = (field.type === "number" || field.type === "year") ? "number" : "text";
+    if (field.type === "number" && field.format !== "integer") input.step = "any";
+    if (field.placeholder) input.placeholder = field.placeholder;
+    if (field.unit) input.setAttribute("aria-label", field.label + " in " + field.unit);
+    input.value = coin[field.key] != null ? coin[field.key] : "";
+
+    var cancelled = false;
+    input.addEventListener("blur", function () {
+      if (cancelled) return;
+      var v = input.value.trim();
+      onDone(v === "" ? null : (input.type === "number" ? Number(v) : v));
+    });
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); input.blur(); }
+      if (e.key === "Escape") { e.preventDefault(); cancelled = true; onDone(undefined); }
+    });
+    wrap.appendChild(input);
+    if (field.unit) {
+      var u = document.createElement("span");
+      u.className = "edit-unit";
+      u.textContent = field.unit;
+      wrap.appendChild(u);
+    }
+    setTimeout(function () { input.focus(); input.select(); }, 0);
+    return wrap;
+  }
+
+  /**
+   * The mint-mark picker: shows the symbols as they appear on the coin, so a
+   * mark can be chosen by looking at it rather than by knowing which city a
+   * star means. Naming the mint is then the tool's job, not the collector's.
+   */
+  function mintMarkPicker(coin, onDone) {
+    var wrap = document.createElement("div");
+    wrap.className = "mintmark-picker";
+
+    V().mintMarks.forEach(function (mark) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "mintmark-choice" + (coin.mintMark === mark.id ? " is-active" : "");
+
+      // Only suggest mints that make sense for the era already recorded.
+      var eraMints = (mark.mints || []).filter(function (id) {
+        var m = look("mints", id);
+        return !coin.era || !m || (m.era || []).indexOf(coin.era) !== -1;
+      });
+      var shown = (eraMints.length ? eraMints : (mark.mints || [])).map(function (id) {
+        var m = look("mints", id);
+        return m ? m.label : id;
+      });
+
+      b.innerHTML =
+        '<span class="glyph">' + window.Coins.escapeHtml(mark.glyph) + "</span>" +
+        '<span class="mark-label">' + window.Coins.escapeHtml(mark.label) + "</span>" +
+        '<span class="mark-mint">' + window.Coins.escapeHtml(shown.join(" / ")) + "</span>";
+
+      b.addEventListener("click", function () {
+        var out = { mintMark: mark.id };
+        // One unambiguous mint for this era? Fill it in too — that's the whole
+        // point of being able to pick by symbol.
+        if (eraMints.length === 1) out.mint = eraMints[0];
+        onDone(out);
+      });
+      wrap.appendChild(b);
+    });
+
+    var clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "mintmark-choice is-clear";
+    clear.textContent = "Clear";
+    clear.addEventListener("click", function () { onDone({ mintMark: null }); });
+    wrap.appendChild(clear);
+
+    return wrap;
+  }
+
+  /* ── Decorating the detail panel ────────────────────────────────────────── */
+
+  function fieldByKey(key) {
+    var f = V().fields.filter(function (x) { return x.key === key; });
+    return f[0] || null;
+  }
+
+  function beginEdit(coin, field, host) {
+    if (host.dataset.editing === "1") return;
+    host.dataset.editing = "1";
+    var previous = host.innerHTML;
+
+    var ctrl = control(coin, field, function (value) {
+      if (value === undefined) {            // cancelled
+        host.innerHTML = previous;
+        delete host.dataset.editing;
+        return;
+      }
+      var body = {};
+      if (field.type === "mintmark") body = value;         // may set mint too
+      else body[field.key] = value;
+      var merged = {};
+      Object.keys(coin).forEach(function (k) { merged[k] = coin[k]; });
+      Object.keys(body).forEach(function (k) { merged[k] = body[k]; });
+      rememberCarry(merged);
+      patch(coin.id, body).then(function () { delete host.dataset.editing; });
+    });
+
+    host.textContent = "";
+    host.appendChild(ctrl);
+  }
+
+  function decorateDetail(coin) {
+    var panel = document.getElementById("detail");
+    if (!panel) return;
+
+    // Existing rows become click-to-edit.
+    Array.prototype.forEach.call(panel.querySelectorAll(".spec"), function (row) {
+      var field = fieldByKey(row.dataset.key);
+      if (!field) return;
+      var dd = row.querySelector("dd");
+      row.classList.add("is-editable");
+      dd.tabIndex = 0;
+      dd.setAttribute("role", "button");
+      dd.title = "Click to edit";
+      dd.addEventListener("click", function () { beginEdit(coin, field, dd); });
+      dd.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); beginEdit(coin, field, dd); }
+      });
+      // Removing a detail entirely, as distinct from blanking it.
+      var del = document.createElement("button");
+      del.type = "button";
+      del.className = "spec-remove";
+      del.title = "Remove this detail";
+      del.setAttribute("aria-label", "Remove " + field.label);
+      del.textContent = "×";
+      del.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var body = {};
+        body[field.key] = null;
+        patch(coin.id, body);
+      });
+      row.appendChild(del);
+    });
+
+    // Notes: the prose that carries the coin's story.
+    var notes = document.getElementById("detail-notes");
+    notes.hidden = false;
+    notes.classList.add("is-editable");
+    notes.classList.toggle("is-empty", !coin.notes);
+    if (!coin.notes) notes.textContent = "Add a note about this coin…";
+    notes.tabIndex = 0;
+    notes.addEventListener("click", function () { editNotes(coin, notes); });
+
+    var tools = document.createElement("div");
+    tools.className = "edit-tools";
+
+    // "+ Add detail" — everything this coin doesn't record yet.
+    var missing = window.Coins.missingFields(coin);
+    if (missing.length) {
+      var addWrap = document.createElement("div");
+      addWrap.className = "add-detail";
+
+      var addBtn = document.createElement("button");
+      addBtn.type = "button";
+      addBtn.className = "add-detail-btn";
+      addBtn.textContent = "+ Add detail";
+
+      var menu = document.createElement("div");
+      menu.className = "add-detail-menu";
+      menu.hidden = true;
+
+      missing.forEach(function (field) {
+        var item = document.createElement("button");
+        item.type = "button";
+        item.className = "add-detail-item";
+        item.textContent = field.label;
+        item.addEventListener("click", function () {
+          menu.hidden = true;
+          openAdHocEditor(coin, field);
+        });
+        menu.appendChild(item);
+      });
+
+      addBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        menu.hidden = !menu.hidden;
+      });
+      menu.addEventListener("click", function (e) { e.stopPropagation(); });
+      document.addEventListener("click", function () { menu.hidden = true; });
+
+      addWrap.appendChild(addBtn);
+      addWrap.appendChild(menu);
+      tools.appendChild(addWrap);
+    }
+
+    var idBtn = document.createElement("button");
+    idBtn.type = "button";
+    idBtn.className = "edit-flag" + (coin.status === "unidentified" ? " is-on" : "");
+    idBtn.textContent = coin.status === "unidentified"
+      ? "Marked: not yet identified" : "Mark as not identified";
+    idBtn.addEventListener("click", function () {
+      patch(coin.id, { status: coin.status === "unidentified" ? "published" : "unidentified" });
+    });
+    tools.appendChild(idBtn);
+
+    var del = document.createElement("button");
+    del.type = "button";
+    del.className = "edit-delete";
+    del.textContent = "Delete this coin";
+    del.addEventListener("click", function () {
+      if (!confirm("Delete this coin and both its photos? This cannot be undone from the page.")) return;
+      api("DELETE", "/api/coin/" + encodeURIComponent(coin.id)).then(function (res) {
+        if (!res.ok) { toast(res.error || "Could not delete", true); return; }
+        window.Viewer.close();
+        window.Coins.reload().then(refreshPending);
+        toast("Coin deleted");
+      });
+    });
+    tools.appendChild(del);
+
+    document.getElementById("detail-specs").appendChild(tools);
+  }
+
+  /** Add a field the coin doesn't have yet: render a temporary row and edit it. */
+  function openAdHocEditor(coin, field) {
+    var specs = document.getElementById("detail-specs");
+    var host = document.createElement("div");
+    host.className = "spec is-editable is-new";
+    var dt = document.createElement("dt");
+    dt.textContent = field.label;
+    var dd = document.createElement("dd");
+    host.appendChild(dt);
+    host.appendChild(dd);
+
+    specs.insertBefore(host, specs.querySelector(".edit-tools"));
+    beginEdit(coin, field, dd);
+    host.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  function editNotes(coin, host) {
+    if (host.dataset.editing === "1") return;
+    host.dataset.editing = "1";
+    var ta = document.createElement("textarea");
+    ta.className = "notes-input";
+    ta.value = coin.notes || "";
+    ta.rows = 6;
+    ta.placeholder = "Where it came from, what's on it, why it matters…";
+    host.textContent = "";
+    host.classList.remove("is-empty");
+    host.appendChild(ta);
+    ta.focus();
+
+    ta.addEventListener("blur", function () {
+      patch(coin.id, { notes: ta.value.trim() || null })
+        .then(function () { delete host.dataset.editing; });
+    });
+    ta.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" || (e.key === "Enter" && (e.metaKey || e.ctrlKey))) {
+        e.preventDefault();
+        ta.blur();
+      }
+    });
+  }
+
+  /* ── Photo drop targets ─────────────────────────────────────────────────── */
+
+  /** Keep the lead-face button in step with whichever side is showing. */
+  function refreshLead() {
+    var btn = document.querySelector(".face-lead");
+    if (!btn) return;
+    var coin = window.Viewer.current();
+    if (!coin) return;
+    var showing = document.getElementById("btn-rev").classList.contains("is-active") ? "rev" : "obv";
+    var isLead = window.Coins.primaryFace(coin) === showing;
+    btn.classList.toggle("is-on", isLead);
+    btn.disabled = isLead;
+    btn.textContent = isLead ? "★ Leads in the grid" : "☆ Lead with this side";
+  }
+
+  function decorateStage() {
+    var frame = document.getElementById("stage-frame");
+    var stage = document.getElementById("stage");
+    if (!frame || frame.dataset.editReady === "1") return;
+    frame.dataset.editReady = "1";
+
+    // The face toggle doesn't re-render the panel, so hook it directly.
+    ["btn-obv", "btn-rev"].forEach(function (id) {
+      document.getElementById(id).addEventListener("click", function () {
+        setTimeout(refreshLead, 0);
+      });
+    });
+
+    ["dragenter", "dragover"].forEach(function (ev) {
+      frame.addEventListener(ev, function (e) { e.preventDefault(); frame.classList.add("is-drop"); });
+    });
+    ["dragleave", "drop"].forEach(function (ev) {
+      frame.addEventListener(ev, function () { frame.classList.remove("is-drop"); });
+    });
+    frame.addEventListener("drop", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var coin = window.Viewer.current();
+      if (!coin || !e.dataTransfer.files.length) return;
+      var showing = document.getElementById("btn-rev").classList.contains("is-active") ? "rev" : "obv";
+      uploadFace(coin.id, showing, e.dataTransfer.files[0]).then(function (f) {
+        if (f) toast("Photo replaced");
+      });
+    });
+
+    // Which side leads in the grid. The denomination isn't always on the same
+    // face, so this is a judgement made by looking at the coin.
+    var lead = document.createElement("button");
+    lead.type = "button";
+    lead.className = "face-lead";
+    lead.addEventListener("click", function () {
+      var coin = window.Viewer.current();
+      if (!coin) return;
+      var showing = document.getElementById("btn-rev").classList.contains("is-active") ? "rev" : "obv";
+      patch(coin.id, { leadFace: showing }).then(function () {
+        toast("This side now leads in the grid");
+      });
+    });
+    stage.querySelector(".stage-controls").appendChild(lead);
+    refreshLead();
+
+    // Explicit buttons, for anyone who'd rather not drag.
+    var row = document.createElement("div");
+    row.className = "face-upload";
+    [["obv", "Obverse"], ["rev", "Reverse"]].forEach(function (pair) {
+      var label = document.createElement("label");
+      label.className = "face-upload-btn";
+      label.appendChild(document.createTextNode("Set " + pair[1].toLowerCase()));
+      var input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.addEventListener("change", function () {
+        var coin = window.Viewer.current();
+        if (!coin || !input.files.length) return;
+        uploadFace(coin.id, pair[0], input.files[0]).then(function (f) {
+          if (f) toast(pair[1] + " updated");
+          input.value = "";
+        });
+      });
+      label.appendChild(input);
+      row.appendChild(label);
+    });
+    stage.querySelector(".stage-controls").appendChild(row);
+  }
+
+  /* ── Grid affordances ───────────────────────────────────────────────────── */
+
+  function decorateGrid() {
+    var grid = document.getElementById("grid");
+    if (!grid || grid.querySelector(".coin-add")) return;
+
+    var li = document.createElement("li");
+    li.className = "coin coin-add is-in";
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "coin-add-btn";
+    btn.innerHTML = '<span class="coin-add-disc" aria-hidden="true">+</span>' +
+                    '<span class="coin-add-label">Add a coin</span>' +
+                    '<span class="coin-add-hint">or drop photos anywhere</span>';
+
+    var picker = document.createElement("input");
+    picker.type = "file";
+    picker.accept = "image/*";
+    picker.multiple = true;
+    picker.hidden = true;
+    picker.addEventListener("change", function () {
+      if (picker.files.length) ingest(picker.files);
+      picker.value = "";
+    });
+
+    btn.addEventListener("click", function () { picker.click(); });
+    li.appendChild(btn);
+    li.appendChild(picker);
+    grid.insertBefore(li, grid.firstChild);
+  }
+
+  function bindPageDrop() {
+    var overlay = document.createElement("div");
+    overlay.className = "drop-overlay";
+    overlay.innerHTML = "<p>Drop photos to add coins</p>" +
+      '<p class="sub">Files named …-obv and …-rev are paired automatically</p>';
+    document.body.appendChild(overlay);
+
+    function viewerOpen() { return !document.getElementById("viewer").hidden; }
+
+    var depth = 0;
+    window.addEventListener("dragenter", function (e) {
+      if (!e.dataTransfer || Array.prototype.indexOf.call(e.dataTransfer.types, "Files") === -1) return;
+      if (viewerOpen()) return;   // a drop there is aimed at one coin's face
+      depth++;
+      overlay.classList.add("is-on");
+    });
+    window.addEventListener("dragleave", function () {
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) overlay.classList.remove("is-on");
+    });
+    window.addEventListener("dragover", function (e) { e.preventDefault(); });
+    window.addEventListener("drop", function (e) {
+      e.preventDefault();
+      depth = 0;
+      overlay.classList.remove("is-on");
+      if (viewerOpen()) return;
+      if (e.dataTransfer.files.length) ingest(e.dataTransfer.files);
+    });
+  }
+
+  /* ── Publish bar ────────────────────────────────────────────────────────── */
+
+  function buildBar() {
+    var root = document.createElement("div");
+    root.className = "editbar";
+    root.innerHTML =
+      '<span class="editbar-dot" aria-hidden="true"></span>' +
+      '<span class="editbar-mode">Editing locally</span>' +
+      '<span class="editbar-count"></span>' +
+      '<span class="editbar-progress" hidden></span>' +
+      '<button type="button" class="editbar-discard">Discard</button>' +
+      '<button type="button" class="editbar-publish">Publish</button>';
+    document.body.appendChild(root);
+
+    bar = {
+      root: root,
+      count: root.querySelector(".editbar-count"),
+      progress: root.querySelector(".editbar-progress"),
+      publish: root.querySelector(".editbar-publish"),
+      discard: root.querySelector(".editbar-discard")
+    };
+
+    bar.publish.addEventListener("click", function () {
+      bar.publish.disabled = true;
+      bar.publish.textContent = "Publishing…";
+      api("POST", "/api/commit").then(function (res) {
+        if (!res.ok) throw new Error(res.error);
+        return api("POST", "/api/push");
+      }).then(function (res) {
+        if (!res.ok) throw new Error(res.error);
+        toast("Published — live in about a minute");
+      }).catch(function (err) {
+        toast(err.message || "Publish failed", true);
+      }).then(function () {
+        bar.publish.textContent = "Publish";
+        refreshPending();
+      });
+    });
+
+    bar.discard.addEventListener("click", function () {
+      if (!confirm("Throw away every unpublished change?\n\nPhotos added since the last publish will be deleted, and edits since then will be undone.")) return;
+      api("POST", "/api/discard").then(function (res) {
+        if (!res.ok) { toast(res.error || "Could not discard", true); return null; }
+        return window.Coins.reload().then(function () {
+          refreshPending();
+          toast("Changes discarded");
+        });
+      });
+    });
+  }
+
+  /* ── Boot ───────────────────────────────────────────────────────────────── */
+
+  function start() {
+    document.body.classList.add("is-editing");
+
+    var link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "css/edit.css";
+    document.head.appendChild(link);
+
+    buildBar();
+    bindPageDrop();
+    decorateGrid();
+    refreshPending();
+
+    window.Coins.onChange(decorateGrid);
+    document.addEventListener("viewer:rendered", function (e) {
+      decorateStage();
+      decorateDetail(e.detail.coin);
+      refreshLead();
+    });
+
+    console.log("[coins] edit mode on — served by tools/coins.py");
+  }
+
+  document.addEventListener("coins:ready", function () {
+    // The only thing distinguishing local from published. On GitHub Pages this
+    // 404s and edit mode never wakes up.
+    fetch("/api/ping", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (res) { if (res && res.ok) start(); })
+      .catch(function () { /* published site — stay read-only */ });
+  });
+})();

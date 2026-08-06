@@ -1,0 +1,419 @@
+/* ============================================================================
+   Edit mode — loaded by js/edit.js only when tools/coins.py is serving.
+   The published site never requests this file.
+
+   Design rule: editing affordances stay invisible until you reach for them.
+   The page should look like the exhibit, not like a form, so that what's being
+   edited is unmistakably what visitors will see.
+   ========================================================================= */
+
+.is-editing { padding-bottom: 4rem; }
+
+/* ── Publish bar ──────────────────────────────────────────────────────────── */
+
+.editbar {
+  position: fixed;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.55rem 0.6rem 0.55rem 1rem;
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  box-shadow: var(--shadow-pop);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.editbar-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: pulse 2.6s ease-out infinite;
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.45); }
+  70%  { box-shadow: 0 0 0 7px rgba(74, 222, 128, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+}
+
+.editbar-mode { color: var(--ink); letter-spacing: 0.04em; }
+.editbar-count,
+.editbar-progress { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.editbar-count::before { content: "·"; margin-right: 0.75rem; }
+
+.editbar-publish,
+.editbar-discard {
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.editbar-publish {
+  background: var(--gold);
+  color: var(--on-gold);
+  font-weight: 600;
+}
+.editbar-publish:hover:not([disabled]) { background: var(--gold-soft); }
+.editbar-publish[disabled] { background: var(--hover-tint); color: var(--ink-faint); cursor: default; }
+
+.editbar-discard {
+  background: none;
+  border-color: var(--line);
+  color: var(--ink-faint);
+}
+.editbar-discard:hover { border-color: rgba(248, 113, 113, 0.5); color: #f87171; }
+
+@media (max-width: 560px) {
+  .editbar { left: 0.75rem; right: 0.75rem; transform: none; justify-content: center; flex-wrap: wrap; border-radius: 14px; }
+  .editbar-mode { display: none; }
+}
+
+/* ── Toasts ───────────────────────────────────────────────────────────────── */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 5rem;
+  transform: translateX(-50%);
+  z-index: 70;
+  padding: 0.6rem 1.1rem;
+  background: var(--panel-bg);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  box-shadow: var(--shadow-pop);
+  animation: toast-in 0.24s var(--ease) both;
+}
+.toast.is-error { border-color: rgba(248, 113, 113, 0.45); color: #fca5a5; }
+.toast.is-out { animation: toast-out 0.35s var(--ease) both; }
+
+@keyframes toast-in  { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes toast-out { to { opacity: 0; transform: translate(-50%, 8px); } }
+
+/* ── Whole-page drop target ───────────────────────────────────────────────── */
+
+.drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  display: grid;
+  place-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  background: var(--viewer-bg);
+  border: 2px dashed var(--gold);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s var(--ease);
+}
+.drop-overlay.is-on { opacity: 1; }
+.drop-overlay p { margin: 0; font-family: var(--serif); font-size: 2rem; color: var(--ink); }
+.drop-overlay .sub { font-family: var(--sans); font-size: 0.8125rem; color: var(--ink-faint); }
+
+/* ── "Add a coin" tile ────────────────────────────────────────────────────── */
+
+.coin-add-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: 0;
+  text-align: center;
+  color: var(--ink-faint);
+  transition: color 0.25s var(--ease);
+}
+.coin-add-btn:hover { color: var(--gold-soft); }
+
+.coin-add-disc {
+  display: grid;
+  place-items: center;
+  width: 72%;
+  margin: 0 auto;
+  aspect-ratio: 1;
+  border: 1px dashed var(--line-strong);
+  border-radius: 50%;
+  font-size: 1.75rem;
+  font-weight: 300;
+  transition: border-color 0.25s var(--ease), transform 0.35s var(--ease);
+}
+.coin-add-btn:hover .coin-add-disc {
+  border-color: rgba(201, 162, 39, 0.6);
+  transform: scale(1.05);
+}
+
+.coin-add-label {
+  display: block;
+  margin-top: 0.9rem;
+  font-family: var(--serif);
+  font-size: 1.0625rem;
+  color: inherit;
+}
+.coin-add-hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ── Editable spec rows ───────────────────────────────────────────────────── */
+
+.spec.is-editable { position: relative; padding-right: 1.5rem; }
+
+.spec.is-editable dd {
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  margin: -0.1rem -0.35rem;
+  cursor: text;
+  transition: background 0.18s, box-shadow 0.18s;
+}
+.spec.is-editable dd:hover {
+  background: var(--hover-tint);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.spec.is-new { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: 1rem; padding: 0.5rem 0; }
+.spec.is-new dt { color: var(--gold); font-size: 0.875rem; }
+.spec.is-new dd { margin: 0; }
+
+.spec-remove {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.25rem;
+  height: 1.25rem;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  line-height: 1;
+  color: var(--ink-faint);
+  opacity: 0;
+  transition: opacity 0.18s, color 0.18s, background 0.18s;
+}
+.spec.is-editable:hover .spec-remove,
+.spec-remove:focus-visible { opacity: 1; }
+.spec-remove:hover { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+
+/* ── Inline controls ──────────────────────────────────────────────────────── */
+
+.edit-control { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+
+.edit-control input,
+.edit-control select,
+.notes-input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.35rem 0.5rem;
+  background: var(--bg-raise);
+  color: var(--ink);
+  border: 1px solid var(--gold);
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+.edit-control select option { background: var(--bg-raise); }
+.edit-control input[type="number"] { font-variant-numeric: tabular-nums; }
+
+.edit-control .denom-value { width: 5rem; flex: 0 0 auto; }
+.edit-control .denom-value + select { width: auto; flex: 1 1 6rem; }
+
+.edit-unit { font-size: 0.75rem; color: var(--ink-faint); }
+
+.edit-note {
+  flex: 1 0 100%;
+  margin: 0.4rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+/* ── Mint-mark picker ─────────────────────────────────────────────────────── */
+
+.mintmark-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: 0.4rem;
+  padding: 0.5rem;
+  background: var(--bg-raise);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+}
+
+.mintmark-choice {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.5rem 0.35rem;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  text-align: center;
+  transition: border-color 0.18s, background 0.18s;
+}
+.mintmark-choice:hover { border-color: var(--line-strong); background: var(--hover-tint); }
+.mintmark-choice.is-active { border-color: var(--gold); background: rgba(201, 162, 39, 0.12); }
+
+.mintmark-choice .glyph {
+  font-size: 1.375rem;
+  line-height: 1.1;
+  color: var(--gold-soft);
+}
+.mintmark-choice .mark-label { font-size: 0.6875rem; color: var(--ink); }
+.mintmark-choice .mark-mint  { font-size: 0.625rem; color: var(--ink-faint); line-height: 1.3; }
+
+.mintmark-choice.is-clear {
+  grid-column: 1 / -1;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+  padding: 0.35rem;
+}
+
+/* ── Notes ────────────────────────────────────────────────────────────────── */
+
+.detail-notes.is-editable {
+  border-radius: 5px;
+  padding: 0.35rem 0.5rem;
+  margin-inline: -0.5rem;
+  cursor: text;
+  transition: background 0.18s, box-shadow 0.18s;
+}
+.detail-notes.is-editable:hover {
+  background: var(--hover-tint);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.detail-notes.is-empty { color: var(--ink-faint); font-style: italic; }
+
+.notes-input { line-height: 1.7; resize: vertical; }
+
+/* ── Panel tools ──────────────────────────────────────────────────────────── */
+
+.edit-tools {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.add-detail { position: relative; }
+
+.add-detail-btn {
+  padding: 0.45rem 0.9rem;
+  background: none;
+  border: 1px dashed var(--line-strong);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+  transition: border-color 0.2s, color 0.2s;
+}
+.add-detail-btn:hover { border-color: var(--gold); color: var(--gold-soft); }
+
+.add-detail-menu {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 10;
+  min-width: 12rem;
+  max-height: 18rem;
+  overflow-y: auto;
+  padding: 0.35rem;
+  background: var(--bg-raise);
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  box-shadow: var(--shadow-pop);
+}
+
+.add-detail-item {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  background: none;
+  border: 0;
+  border-radius: 5px;
+  text-align: left;
+  font-size: 0.8125rem;
+  color: var(--ink-dim);
+}
+.add-detail-item:hover { background: var(--hover-tint); color: var(--ink); }
+
+.edit-flag,
+.edit-delete {
+  padding: 0.35rem 0;
+  background: none;
+  border: 0;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.edit-flag:hover { color: var(--ink); }
+.edit-flag.is-on { color: var(--gold-soft); }
+.edit-delete:hover { color: #f87171; }
+
+/* ── Photo drop on the coin itself ────────────────────────────────────────── */
+
+.stage-frame.is-drop::after {
+  content: "Drop to replace this side";
+  position: absolute;
+  inset: -6%;
+  display: grid;
+  place-content: center;
+  border: 2px dashed rgba(201, 162, 39, 0.7);
+  border-radius: 50%;
+  background: var(--viewer-bg);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--gold-soft);
+  z-index: 3;
+}
+
+.face-upload { display: flex; gap: 0.5rem; }
+
+.face-upload-btn {
+  position: relative;
+  overflow: hidden;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.face-upload-btn:hover { border-color: var(--gold); color: var(--gold-soft); }
+.face-upload-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+/* ── Which side leads in the grid ─────────────────────────────────────────── */
+
+.face-lead {
+  padding: 0.3rem 0.85rem;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  transition: border-color 0.2s, color 0.2s, opacity 0.2s;
+}
+.face-lead:hover:not([disabled]) { border-color: var(--gold); color: var(--gold-soft); }
+.face-lead.is-on { border-color: transparent; color: var(--gold); cursor: default; }
