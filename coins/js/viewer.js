@@ -399,6 +399,8 @@ window.Viewer = (function () {
     },
     reloadFaces: function () {
       if (!current) return;
+      var fresh = window.Coins.byId(current.id);
+      if (fresh) current = fresh;
       loadFace(el.imgObv, current, "obv");
       loadFace(el.imgRev, current, "rev");
       el.btnObv.disabled = !window.Coins.hasImage(current, "obv");

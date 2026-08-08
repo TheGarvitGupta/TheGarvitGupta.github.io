@@ -108,9 +108,20 @@ window.Coins = (function () {
   // Publish and Discard can only ever touch data.
   var DB = "collection/";
 
+  // A replaced photograph keeps its filename — 0005-obv.webp is always
+  // 0005-obv.webp — so nothing about the URL tells the browser the picture
+  // changed, and assigning an identical src does not even reload it. Edit mode
+  // stamps a token here when it uploads, which is the only thing that makes a
+  // new photograph appear without a manual refresh. The published site never
+  // sets one, so its URLs stay clean and cacheable.
+  var busts = {};
+
   function imgSrc(coin, face, size) {
     var file = coin.images && coin.images[face];
-    return file ? DB + "images/" + size + "/" + file : null;
+    if (!file) return null;
+    var url = DB + "images/" + size + "/" + file;
+    var v = busts[String(coin.id)];
+    return v ? url + "?v=" + v : url;
   }
 
   function hasImage(coin, face) { return !!(coin.images && coin.images[face]); }
@@ -613,6 +624,7 @@ window.Coins = (function () {
         .then(function (data) { state.all = Array.isArray(data) ? data : []; apply(); });
     },
     onChange: function (fn) { listeners.push(fn); },
+    bust: function (id) { busts[String(id)] = Date.now(); },
     byId: byId,
     indexOfInView: indexOfInView,
     title: title,

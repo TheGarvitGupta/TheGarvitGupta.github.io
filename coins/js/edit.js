@@ -90,6 +90,9 @@
       "Content-Type": "application/octet-stream"
     }).then(function (res) {
       if (!res.ok) { toast(res.error || "Could not process that photo", true); return null; }
+      // The filename is unchanged, so mark this coin's images as new before
+      // anything re-reads them.
+      window.Coins.bust(coinId);
       return window.Coins.reload().then(function () {
         if (window.Viewer.currentId() === coinId) {
           window.Viewer.reloadFaces();
