@@ -27,7 +27,6 @@ window.CoinHistory = (function () {
   var el = {};
   var steps = [];
   var sel = [];        // one or two shas, newest-first order preserved
-  var live = null;     // what taking the site live would publish
   var open = false;
 
   /* ── Formatting ─────────────────────────────────────────────────────────── */
@@ -74,7 +73,10 @@ window.CoinHistory = (function () {
       return C().denomLabel({ denomination: value }) || "—";
     }
     if (key === "leadFace") return value === "rev" ? "Reverse" : "Obverse";
-    if (key === "status")   return value === "unidentified" ? "Not yet identified" : "Published";
+    // A coin's status is about whether it has been identified, not about
+    // whether it is on the web — "Published" now means the latter everywhere
+    // else, so this must not borrow the word.
+    if (key === "status")   return value === "unidentified" ? "Not yet identified" : "Identified";
     if (key === "notes")    return String(value);
 
     if (f && f.type === "select") return C().labelOf(f.vocab, value);
@@ -177,8 +179,8 @@ window.CoinHistory = (function () {
       // point of a working branch — so it is said outright on every step.
       var badge = document.createElement("span");
       badge.className = "hbadge is-" + (s.state || "saved");
-      badge.textContent = s.state === "live" ? "Live"
-                        : s.state === "unsaved" ? "Not saved" : "Saved · not live";
+      badge.textContent = s.state === "live" ? "Published"
+                        : s.state === "unsaved" ? "Not saved" : "Saved";
       time.appendChild(badge);
 
       if (s.unsaved) li.classList.add("is-unsaved");
@@ -267,9 +269,7 @@ window.CoinHistory = (function () {
         return { title: summarise(s),
                  sub: "Edited since the last save, and not published anywhere yet" };
       }
-      var where = s.state === "live"
-        ? "This is on the live site"
-        : "Saved, but not on the live site yet";
+      var where = s.state === "live" ? "Published" : "Saved, not published yet";
       return { title: summarise(s),
                sub: t.day + ", " + t.year + " at " + t.time + "  ·  " + where };
     }
@@ -316,18 +316,9 @@ window.CoinHistory = (function () {
 
     var here = steps[idx(sel[0])];
 
-    // Unsaved work can be saved from here. The publish bar carries the same
-    // action, but this panel covers it — so the one place showing you what you
-    // have changed could not commit it.
-    if (sel.length === 1 && here && here.unsaved) {
-      var save = document.createElement("button");
-      save.type = "button";
-      save.className = "hsave-btn";
-      save.textContent = "Save these changes";
-      save.addEventListener("click", function () { saveChanges(save); });
-      hd.appendChild(save);
-    }
-
+    // Saving and publishing live on the bar, which floats above this panel —
+    // one set of controls for the whole of editing rather than a second set
+    // that has to be kept in step with it.
     // Restoring is only meaningful for a single point in time, not a range.
     if (sel.length === 1 && idx(sel[0]) > 0 && !(here && here.unsaved)) {
       var back = document.createElement("button");
@@ -489,110 +480,6 @@ window.CoinHistory = (function () {
     });
   }
 
-  /** Commit the working tree, then show the step it became. */
-  function saveChanges(btn) {
-    btn.disabled = true;
-    btn.textContent = "Saving…";
-    fetch("/api/commit", { method: "POST", headers: { "Content-Type": "application/json" },
-                           body: "{}" })
-      .then(function (r) { return r.json(); })
-      .then(function (res) {
-        if (!res.ok) {
-          toast(res.error || "Could not save", true);
-          btn.disabled = false;
-          btn.textContent = "Save these changes";
-          return;
-        }
-        toast("Saved");
-        document.dispatchEvent(new CustomEvent("coins:restored"));  // refresh the bar
-        show();   // re-read the timeline; the newest step is now the save
-      });
-  }
-
-  /* ── Taking it live ─────────────────────────────────────────────────────── */
-
-  /**
-   * Work happens on a branch; the published site is a different one. This is
-   * the step that closes that gap, and it says what it is about to make public
-   * before doing it — in coins and steps, not branch names.
-   */
-  function renderLive() {
-    if (!el.live) return;
-    el.live.textContent = "";
-
-    fetch("/api/golive/preview").then(function (r) { return r.json(); }).then(function (p) {
-      live = p;
-      if (p.upToDate) {
-        var ok = document.createElement("span");
-        ok.className = "hlive-ok";
-        ok.textContent = "✓ The live site is up to date";
-        el.live.appendChild(ok);
-        return;
-      }
-
-      var wrap = document.createElement("div");
-      wrap.className = "hlive";
-
-      var note = document.createElement("span");
-      note.className = "hlive-note";
-      note.textContent = liveNote(p);
-      wrap.appendChild(note);
-
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "hlive-btn";
-      btn.textContent = "Take the site live";
-      btn.addEventListener("click", function () { goLive(p, btn); });
-      wrap.appendChild(btn);
-
-      if (p.hasUnsaved) {
-        btn.disabled = true;
-        note.textContent = "Save your changes first, then this can go live.";
-        wrap.classList.add("is-blocked");
-      }
-
-      el.live.appendChild(wrap);
-    });
-  }
-
-  /** What the coins on this branch differ by, compared with what is public. */
-  function coinBits(p) {
-    var u = p.summary || {}, bits = [];
-    if (u.added)   bits.push(u.added + (u.added === 1 ? " coin" : " coins") + " added");
-    if (u.changed) bits.push(u.changed + (u.changed === 1 ? " coin" : " coins") + " updated");
-    if (u.removed) bits.push(u.removed + (u.removed === 1 ? " coin" : " coins") + " removed");
-    return bits;
-  }
-
-  function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
-
-  /**
-   * The count is simply the steps not yet live — the ones badged
-   * "Saved · not live" in the rail beside it. Anyone can check it by counting,
-   * which is worth more here than a cleverer number: net differences and
-   * commit totals both produced figures that matched nothing on screen.
-   */
-  function liveNote(p) {
-    if (p.collectionSteps) {
-      return "Not yet public: " + plural(p.collectionSteps, "change", "changes");
-    }
-    if (p.siteChanges) {
-      return "The coins are up to date. " +
-             plural(p.siteChanges, "update", "updates") + " to the site would go live.";
-    }
-    return "Nothing new to publish.";
-  }
-
-  function goLive(p, btn) {
-    // One implementation, in edit.js, which owns the bar that also offers it.
-    btn.disabled = true;
-    btn.textContent = "Publishing…";
-    window.CoinsEdit.goLive(p, function (ok) {
-      btn.textContent = "Take the site live";
-      if (ok) renderLive(); else btn.disabled = false;
-    });
-  }
-
   /* ── Open / close ───────────────────────────────────────────────────────── */
 
   function build() {
@@ -607,7 +494,6 @@ window.CoinHistory = (function () {
         '<header class="history-top">' +
           '<h1>History</h1>' +
           '<p class="history-hint">Pick a step to see what changed. Shift-click a second to span a range.</p>' +
-          '<div class="history-live"></div>' +
           '<button type="button" class="history-close" aria-label="Close">&times;</button>' +
         '</header>' +
         '<div class="history-cols">' +
@@ -620,7 +506,6 @@ window.CoinHistory = (function () {
     el.root = root;
     el.rail = root.querySelector(".history-rail");
     el.body = root.querySelector(".history-body");
-    el.live = root.querySelector(".history-live");
     root.querySelector(".history-close").addEventListener("click", close);
     root.addEventListener("click", function (e) { if (e.target === root) close(); });
     document.addEventListener("keydown", function (e) {
@@ -648,7 +533,6 @@ window.CoinHistory = (function () {
       sel = [steps[0].sha];
       renderRail();
       loadDiff();
-      renderLive();
     });
   }
 

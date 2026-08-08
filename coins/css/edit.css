@@ -395,7 +395,9 @@
   left: 50%;
   bottom: 1.25rem;
   transform: translateX(-50%);
-  z-index: 60;
+  /* Above the history panel: one set of controls for the whole of editing,
+     reachable wherever you are, rather than a second set inside the panel. */
+  z-index: 85;
   display: flex;
   align-items: center;
   gap: 0.75rem;
