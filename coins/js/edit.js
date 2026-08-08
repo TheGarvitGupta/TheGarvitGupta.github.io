@@ -706,6 +706,7 @@
       '<span class="editbar-branch" hidden></span>' +
       '<span class="editbar-count"></span>' +
       '<span class="editbar-progress" hidden></span>' +
+      '<button type="button" class="editbar-history">History</button>' +
       '<button type="button" class="editbar-discard">Discard</button>' +
       '<button type="button" class="editbar-publish">Publish</button>';
     document.body.appendChild(root);
@@ -716,8 +717,13 @@
       branch: root.querySelector(".editbar-branch"),
       progress: root.querySelector(".editbar-progress"),
       publish: root.querySelector(".editbar-publish"),
-      discard: root.querySelector(".editbar-discard")
+      discard: root.querySelector(".editbar-discard"),
+      history: root.querySelector(".editbar-history")
     };
+
+    bar.history.addEventListener("click", function () {
+      if (window.CoinHistory) window.CoinHistory.show();
+    });
 
     bar.publish.addEventListener("click", function () {
       bar.publish.disabled = true;
@@ -752,10 +758,16 @@
   function start() {
     document.body.classList.add("is-editing");
 
-    var link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "css/edit.css";
-    document.head.appendChild(link);
+    ["css/edit.css", "css/history.css"].forEach(function (href) {
+      var link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      document.head.appendChild(link);
+    });
+
+    var hist = document.createElement("script");
+    hist.src = "js/history.js";
+    document.head.appendChild(hist);
 
     buildBar();
     bindPageDrop();

@@ -433,3 +433,15 @@
 .editbar.is-offstage .editbar-dot { background: #fbbf24; animation: none; }
 .editbar.is-offstage .editbar-publish { background: var(--ink-dim); color: var(--bg); }
 .editbar.is-offstage .editbar-publish:hover:not([disabled]) { background: var(--ink); }
+
+.editbar-history {
+  padding: 0.4rem 0.9rem;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-dim);
+  transition: border-color 0.2s, color 0.2s;
+}
+.editbar-history:hover { border-color: var(--line-strong); color: var(--ink); }

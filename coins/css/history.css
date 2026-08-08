@@ -1,0 +1,360 @@
+/* ============================================================================
+   History — loaded only in edit mode, alongside edit.css.
+
+   The design carries one idea: a change to a coin collection should be shown
+   as coins. The left rail is a thread through time with the coins involved
+   strung along it; the right panel is what actually moved, with a replaced
+   photograph shown beside the one it replaced. Nothing here shows a filename,
+   a field key, or a commit hash.
+   ========================================================================= */
+
+.history {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: var(--viewer-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: hist-in 0.28s var(--ease) both;
+  overflow: hidden;
+}
+.history[hidden] { display: none; }
+@keyframes hist-in { from { opacity: 0; } to { opacity: 1; } }
+
+.history-panel {
+  height: 100%;
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  padding: 0 clamp(1rem, 3vw, 2rem);
+}
+
+/* ── Top ──────────────────────────────────────────────────────────────────── */
+
+.history-top {
+  position: relative;
+  padding: clamp(1.75rem, 4vh, 3rem) 0 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+.history-top h1 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 400;
+  line-height: 1;
+}
+.history-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+.history-close {
+  position: absolute;
+  top: clamp(1.5rem, 3.5vh, 2.5rem);
+  right: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--ink-faint);
+  transition: color 0.2s;
+}
+.history-close:hover { color: var(--ink); }
+
+.history-cols {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(230px, 19rem) minmax(0, 1fr);
+  gap: clamp(1.5rem, 3vw, 3rem);
+}
+
+/* ── The rail ─────────────────────────────────────────────────────────────── */
+
+.history-rail-wrap {
+  overflow-y: auto;
+  padding: 1.25rem 0 3rem;
+  scrollbar-width: thin;
+}
+
+.history-rail {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0 1.1rem;
+  list-style: none;
+}
+/* The thread itself. */
+.history-rail::before {
+  content: "";
+  position: absolute;
+  left: 0.28rem;
+  top: 0.6rem;
+  bottom: 0.6rem;
+  width: 1px;
+  background: linear-gradient(var(--line-strong), var(--line));
+}
+
+.hday {
+  margin: 1.5rem 0 0.6rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.hday:first-child { margin-top: 0; }
+
+.hstep { position: relative; }
+
+/* The node on the thread. */
+.hstep::before {
+  content: "";
+  position: absolute;
+  left: -1.1rem;
+  top: 0.95rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-left: 0.005rem;
+  border-radius: 50%;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1.5px var(--ink-faint);
+  transition: box-shadow 0.2s, background 0.2s, transform 0.2s;
+  z-index: 1;
+}
+.hstep.is-selected::before {
+  background: var(--gold);
+  box-shadow: inset 0 0 0 1.5px var(--gold), 0 0 0 4px rgba(201, 162, 39, 0.18);
+  transform: scale(1.12);
+}
+.hstep.is-in-span::before { box-shadow: inset 0 0 0 1.5px var(--gold); }
+
+.hstep-btn {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  text-align: left;
+  transition: background 0.18s;
+}
+.hstep-btn:hover { background: var(--hover-tint); }
+.hstep.is-selected .hstep-btn { background: var(--hover-tint); }
+.hstep.is-in-span .hstep-btn { background: rgba(201, 162, 39, 0.06); }
+
+.hstep-time {
+  display: block;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.hstep-sum {
+  display: block;
+  margin-top: 0.15rem;
+  font-family: var(--serif);
+  font-size: 1.0625rem;
+  line-height: 1.25;
+  color: var(--ink);
+}
+.hstep.is-selected .hstep-sum { color: var(--gold-soft); }
+
+/* Coins involved, strung along the thread. */
+.hstep-strip {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+.hstep-dot {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  overflow: hidden;
+  opacity: 0.75;
+  transition: opacity 0.2s;
+}
+.hstep-btn:hover .hstep-dot,
+.hstep.is-selected .hstep-dot { opacity: 1; }
+.hstep-dot img { width: 100%; height: 100%; object-fit: contain; }
+
+/* ── The change panel ─────────────────────────────────────────────────────── */
+
+.history-body {
+  overflow-y: auto;
+  padding: 1.25rem 0.25rem 4rem;
+  scrollbar-width: thin;
+}
+.history-body.is-loading { opacity: 0.35; }
+
+.hhead { margin-bottom: 2rem; }
+.hhead h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  font-weight: 400;
+  line-height: 1.15;
+}
+.hhead p {
+  margin: 0.4rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--ink-faint);
+}
+
+.hempty {
+  margin: 3rem 0;
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  color: var(--ink-faint);
+}
+
+.hsec + .hsec { margin-top: 2.5rem; }
+
+.hsec-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.625rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-family: var(--sans);
+  font-weight: 500;
+}
+.hsec-mark {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.hsec.is-added   .hsec-mark { background: #4ade80; }
+.hsec.is-changed .hsec-mark { background: var(--gold); }
+.hsec.is-removed .hsec-mark { background: #f87171; }
+
+.hrow {
+  display: grid;
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+  gap: 1.25rem 2rem;
+  padding: 0.85rem 0;
+  align-items: start;
+}
+.hrow + .hrow { border-top: 1px solid var(--line); }
+
+/* ── A coin, as a coin ────────────────────────────────────────────────────── */
+
+.hchip {
+  display: grid;
+  grid-template-columns: 2.9rem minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 0.75rem;
+  align-items: center;
+}
+.hchip-disc {
+  grid-row: 1 / 3;
+  width: 2.9rem;
+  height: 2.9rem;
+}
+.hchip-disc img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: var(--coin-shadow);
+}
+.hchip-name {
+  font-family: var(--serif);
+  font-size: 1.0625rem;
+  line-height: 1.2;
+  color: var(--ink);
+  align-self: end;
+}
+.hchip-sub {
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  align-self: start;
+}
+.hchip.is-removed .hchip-disc img { filter: var(--coin-shadow) grayscale(1); opacity: 0.5; }
+.hchip.is-removed .hchip-name { color: var(--ink-faint); text-decoration: line-through; }
+
+/* ── What moved ───────────────────────────────────────────────────────────── */
+
+.hdetail { display: grid; gap: 0.55rem; min-width: 0; }
+
+.hfield, .hphoto {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: baseline;
+  font-size: 0.8125rem;
+}
+.hphoto { align-items: center; }
+
+.hfield-key { color: var(--ink-faint); }
+.hfield-val { min-width: 0; color: var(--ink); }
+
+.hold, .hnew, .hgone {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.hold  { color: var(--ink-faint); background: var(--hover-tint); text-decoration: line-through;
+         text-decoration-color: var(--ink-faint); }
+.hnew  { color: var(--ink); background: rgba(74, 222, 128, 0.14); }
+.hgone { color: #f87171; background: rgba(248, 113, 113, 0.12); }
+
+.harrow { margin: 0 0.5rem; color: var(--ink-faint); }
+
+.hfield-val.is-prose { color: var(--ink-dim); font-style: italic; }
+
+/* Before and after, side by side — the clearest way to show a new photograph. */
+.hpair { display: flex; align-items: center; gap: 0.35rem; }
+.hpair-side {
+  width: 3.25rem;
+  height: 3.25rem;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  padding: 0.2rem;
+}
+.hpair-side img { width: 100%; height: 100%; object-fit: contain; }
+.hpair-side.is-before { opacity: 0.55; }
+.hpair-side.is-after  { box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.35); }
+.hphoto-note {
+  margin-left: 0.4rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+}
+
+/* ── Narrow ───────────────────────────────────────────────────────────────── */
+
+@media (max-width: 860px) {
+  .history-cols {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 0;
+  }
+  .history-rail-wrap {
+    max-height: 34vh;
+    border-bottom: 1px solid var(--line);
+  }
+  .hrow { grid-template-columns: 1fr; gap: 0.75rem; }
+  .hfield, .hphoto { grid-template-columns: 6.5rem minmax(0, 1fr); }
+}
+
+/* A coin with no photograph at that point in time. */
+.hno-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1px dashed var(--line-strong);
+}

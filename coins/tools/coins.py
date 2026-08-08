@@ -330,6 +330,131 @@ def pending_changes():
             "publishBranch": PUBLISH_BRANCH}
 
 
+# ── History ──────────────────────────────────────────────────────────────────
+# Every commit that touched the collection is one step in the collection's life.
+# Nothing extra is recorded to make this work: git already holds a snapshot of
+# the catalogue and every photograph at every point, so the whole feature is a
+# matter of reading what is there and translating it into something legible.
+#
+# Paths are listed oldest-last because the collection moved partway through the
+# project; a step from before the move still has to resolve.
+
+CATALOGUE_PATHS = ["coins/collection/coins.json", "coins/data/coins.json"]
+THUMB_DIRS      = ["coins/collection/images/thumbs", "coins/images/thumbs"]
+
+# Fields that say nothing about the coin itself and would only add noise.
+IGNORED_FIELDS = {"updated"}
+
+_cat_cache, _tree_cache = {}, {}
+
+
+def catalogue_at(sha):
+    """The whole catalogue as it stood at one commit."""
+    if sha in _cat_cache:
+        return _cat_cache[sha]
+    out = []
+    for p in CATALOGUE_PATHS:
+        r = git("show", f"{sha}:{p}")
+        if r.returncode == 0:
+            try:
+                out = json.loads(r.stdout or "[]")
+            except json.JSONDecodeError:
+                out = []
+            break
+    _cat_cache[sha] = out
+    return out
+
+
+def thumbs_at(sha):
+    """{ '0003-obv': blob_id } for every thumbnail present at one commit."""
+    if sha in _tree_cache:
+        return _tree_cache[sha]
+    found = {}
+    r = git("ls-tree", "-r", sha, "--", *THUMB_DIRS)
+    for line in r.stdout.splitlines():
+        try:
+            meta, path = line.split("\t", 1)
+            blob = meta.split()[2]
+        except (ValueError, IndexError):
+            continue
+        found[Path(path).stem] = blob
+    _tree_cache[sha] = found
+    return found
+
+
+def _same(a, b):
+    return json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
+
+
+def diff_versions(old_sha, new_sha):
+    """
+    What changed between two points, described in terms of coins rather than
+    files: which coins arrived, which left, and for the rest, which fields moved
+    and which photographs were replaced.
+    """
+    old_list, new_list = catalogue_at(old_sha), catalogue_at(new_sha)
+    old = {str(c.get("id")): c for c in old_list}
+    new = {str(c.get("id")): c for c in new_list}
+    old_thumbs, new_thumbs = thumbs_at(old_sha), thumbs_at(new_sha)
+
+    def shot(cid, coin, thumbs):
+        return {face: thumbs.get(f"{cid}-{face}") for face in ("obv", "rev")}
+
+    added, removed, changed = [], [], []
+
+    for cid in new:
+        if cid not in old:
+            added.append({"id": cid, "coin": new[cid], "thumbs": shot(cid, new[cid], new_thumbs)})
+
+    for cid in old:
+        if cid not in new:
+            removed.append({"id": cid, "coin": old[cid], "thumbs": shot(cid, old[cid], old_thumbs)})
+
+    for cid in set(old) & set(new):
+        fields = []
+        for key in sorted(set(old[cid]) | set(new[cid])):
+            if key in IGNORED_FIELDS or key == "images":
+                continue
+            a, b = old[cid].get(key), new[cid].get(key)
+            if not _same(a, b):
+                fields.append({"key": key, "from": a, "to": b})
+
+        photos = []
+        for face in ("obv", "rev"):
+            a = old_thumbs.get(f"{cid}-{face}")
+            b = new_thumbs.get(f"{cid}-{face}")
+            if a != b:
+                photos.append({"face": face, "from": a, "to": b})
+
+        if fields or photos:
+            changed.append({"id": cid, "coin": new[cid], "fields": fields, "photos": photos,
+                            "thumbs": shot(cid, new[cid], new_thumbs)})
+
+    key = lambda x: int(x["id"]) if x["id"].isdigit() else 0
+    return {"added": sorted(added, key=key),
+            "removed": sorted(removed, key=key),
+            "changed": sorted(changed, key=key)}
+
+
+def history_steps():
+    """Every commit that touched the collection, newest first."""
+    fmt = "%H%x1f%aI%x1f%an%x1f%s"
+    r = git("log", f"--format={fmt}", "--", *CATALOGUE_PATHS,
+            "coins/collection/images", "coins/images")
+    steps = []
+    for line in r.stdout.splitlines():
+        parts = line.split("\x1f")
+        if len(parts) < 4:
+            continue
+        steps.append({"sha": parts[0], "date": parts[1], "author": parts[2], "subject": parts[3]})
+    return steps
+
+
+def step_parent(sha):
+    r = git("rev-parse", f"{sha}^")
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
 # ── HTTP ─────────────────────────────────────────────────────────────────────
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -372,6 +497,58 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return self.send_json({"ok": True, "root": str(REPO_ROOT)})
         if path == "/api/pending":
             return self.send_json(pending_changes())
+
+        if path == "/api/history":
+            steps = history_steps()
+            # Summarise each step against the one before it, so the rail can
+            # say "six coins added" without the panel being opened.
+            for i, s in enumerate(steps):
+                older = steps[i + 1]["sha"] if i + 1 < len(steps) else step_parent(s["sha"])
+                if older:
+                    d = diff_versions(older, s["sha"])
+                    s["summary"] = {"added": len(d["added"]), "removed": len(d["removed"]),
+                                    "changed": len(d["changed"])}
+                    s["thumbs"] = [x["thumbs"] for x in
+                                   (d["added"] + d["changed"] + d["removed"])[:8]]
+                else:
+                    cat = catalogue_at(s["sha"])
+                    s["summary"] = {"added": len(cat), "removed": 0, "changed": 0}
+                    s["thumbs"] = []
+                s["parent"] = older
+            return self.send_json({"steps": steps, "pending": pending_changes()})
+
+        if path == "/api/history/diff":
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            to = (q.get("to") or [""])[0]
+            frm = (q.get("from") or [""])[0] or step_parent(to)
+            if not to:
+                return self.send_json({"error": "missing to"}, 400)
+            if not frm:      # the very first step has nothing before it
+                cat = catalogue_at(to)
+                thumbs = thumbs_at(to)
+                return self.send_json({"from": None, "to": to, "added": [
+                    {"id": str(c.get("id")), "coin": c,
+                     "thumbs": {f: thumbs.get(f"{c.get('id')}-{f}") for f in ("obv", "rev")}}
+                    for c in cat], "removed": [], "changed": []})
+            d = diff_versions(frm, to)
+            d.update({"from": frm, "to": to})
+            return self.send_json(d)
+
+        m = re.match(r"^/api/history/blob/([0-9a-f]{7,40})$", path)
+        if m:
+            # Blob ids are content addresses, so this can be cached forever.
+            r = subprocess.run(["git", "cat-file", "blob", m.group(1)],
+                               cwd=str(REPO_ROOT), capture_output=True)
+            if r.returncode != 0:
+                self.send_response(404); self.end_headers(); return
+            self.send_response(200)
+            self.send_header("Content-Type", "image/webp")
+            self.send_header("Content-Length", str(len(r.stdout)))
+            self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+            self.end_headers()
+            self.wfile.write(r.stdout)
+            return
+
         return super().do_GET()
 
     def do_POST(self):
