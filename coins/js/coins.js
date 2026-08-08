@@ -579,9 +579,9 @@ window.Coins = (function () {
   }
 
   /**
-   * Home steps back rather than dismissing: out of the history, out of a coin,
-   * and from the collection itself out to the wider site. One button, one
-   * direction, so there is nothing to learn about which control closes what.
+   * Home is the collection. It steps back out of the history or a coin, and
+   * from the collection itself clears any filtering and returns to the top —
+   * so it always lands on the whole thing, and never leaves for the wider site.
    */
   function initHome() {
     var btn = document.getElementById("btn-home");
@@ -589,7 +589,11 @@ window.Coins = (function () {
     btn.addEventListener("click", function () {
       if (window.CoinHistory && window.CoinHistory.isOpen()) { window.CoinHistory.close(); return; }
       if (window.Viewer && window.Viewer.currentId()) { window.Viewer.close(); return; }
-      window.location.href = "/";
+      state.filters = {};
+      state.sort = "year-desc";
+      if (el.sort) el.sort.value = state.sort;
+      apply();
+      window.scrollTo({ top: 0, behavior: "smooth" });
     });
   }
 
