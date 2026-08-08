@@ -80,17 +80,51 @@ def save_coins(coins):
     DATA_FILE.write_text(json.dumps(coins, indent=2, ensure_ascii=False) + "\n")
 
 
+_high_water = None   # highest id ever issued; scanned once per run, then held
+
+
+def _ids_in(text):
+    return {int(m) for m in re.findall(r'"id"\s*:\s*"(\d+)"', text)} | \
+           {int(m) for m in re.findall(r'/(\d+)-(?:obv|rev)\.\w+', text)}
+
+
+def _scan_high_water():
+    """
+    The highest coin id that has ever existed, including ones since deleted.
+
+    Reads the whole recorded history rather than just the current catalogue.
+    Ids must never be reused: an id is the identity a coin is known by, it names
+    that coin's photographs, and — once there is a history view — it is the
+    thread tying a coin's past to its present. Handing 0003 to a new coin after
+    the old 0003 was deleted would splice two unrelated coins into one story.
+
+    Restoring an earlier version makes this essential rather than merely tidy:
+    after going back, the current catalogue no longer knows about the ids that
+    came later, but git still does, and those ids must stay retired.
+    """
+    ids = set()
+    try:
+        ids |= _ids_in(git("log", "--all", "-p", "--", COLLECTION_REL + "coins.json").stdout)
+        ids |= _ids_in(git("log", "--all", "--diff-filter=A", "--name-only",
+                           "--format=", "--", COLLECTION_REL + "images").stdout)
+    except Exception:
+        pass  # not a git repo, or no history yet — current catalogue is enough
+    return max(ids) if ids else 0
+
+
 def next_id(coins):
-    used = set()
+    global _high_water
+    if _high_water is None:
+        _high_water = _scan_high_water()
+
     for c in coins:
         try:
-            used.add(int(str(c.get("id", "0"))))
+            _high_water = max(_high_water, int(str(c.get("id", "0"))))
         except ValueError:
             pass
-    n = 1
-    while n in used:
-        n += 1
-    return f"{n:04d}"
+
+    _high_water += 1
+    return f"{_high_water:04d}"
 
 
 def today():
