@@ -315,24 +315,6 @@
   z-index: 3;
 }
 
-.face-upload { display: flex; gap: 0.5rem; }
-
-.face-upload-btn {
-  position: relative;
-  overflow: hidden;
-  padding: 0.35rem 0.85rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-size: 0.6875rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
-}
-.face-upload-btn:hover { border-color: var(--gold); color: var(--gold-soft); }
-.face-upload-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-
 /* ── Which side leads in the grid ─────────────────────────────────────────── */
 
 .face-lead {
@@ -347,17 +329,6 @@
 }
 .face-lead:hover:not([disabled]) { border-color: var(--gold); color: var(--gold-soft); }
 .face-lead.is-on { border-color: transparent; color: var(--gold); cursor: default; }
-
-/* Replacing a photograph is a main action in the viewer, not a footnote. */
-.face-upload-btn {
-  border-color: var(--line-strong);
-  color: var(--ink-dim);
-}
-.face-upload-btn::before {
-  content: "↑";
-  margin-right: 0.4rem;
-  opacity: 0.7;
-}
 
 /* ── Fields waiting to be filled ──────────────────────────────────────────── */
 /* Edit mode lists every field in its proper place rather than hiding the
@@ -617,4 +588,43 @@
   vertical-align: 0.08rem;
   border-radius: 50%;
   background: #f59e0b;
+}
+
+/* ── Replacing a photograph ───────────────────────────────────────────────── */
+/* On the photograph itself, so there is nothing to name: the side you clicked
+   is the side you meant. Visible at rest rather than on hover — a control that
+   only appears when you happen to pass over it may as well not exist. */
+
+.face-edit {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--panel-bg);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  color: var(--ink-dim);
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.18s, color 0.18s, border-color 0.18s, transform 0.18s;
+}
+.face-edit svg { width: 0.9rem; height: 0.9rem; }
+.face-edit:hover,
+.face-edit:focus-within {
+  opacity: 1;
+  color: var(--ink);
+  border-color: var(--line-strong);
+  transform: scale(1.06);
+}
+.face-edit input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }

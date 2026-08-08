@@ -533,11 +533,13 @@
     if (!coin) return;
 
     // "Replace" or "Add", depending on whether that side has a photograph yet.
-    Array.prototype.forEach.call(document.querySelectorAll(".face-upload-btn"), function (el) {
-      var face = el.dataset.face;
-      if (!face || !el.firstChild) return;
-      el.firstChild.nodeValue = (window.Coins.hasImage(coin, face) ? "Replace " : "Add ") +
-                                (face === "obv" ? "obverse" : "reverse") + " photo";
+    Array.prototype.forEach.call(document.querySelectorAll(".face-edit"), function (el) {
+      var f = el.dataset.face;
+      if (!f) return;
+      var verb = window.Coins.hasImage(coin, f) ? "Replace" : "Add";
+      var side = f === "obv" ? "obverse" : "reverse";
+      el.title = verb + " this photograph";
+      el.setAttribute("aria-label", verb + " the " + side + " photograph");
     });
 
     var btn = document.querySelector(".face-lead");
@@ -599,14 +601,23 @@
     stage.querySelector(".stage-controls").appendChild(lead);
     refreshLead();
 
-    // Explicit buttons, for anyone who'd rather not drag.
-    var row = document.createElement("div");
-    row.className = "face-upload";
+    // A control on each photograph, where the thing it replaces is. The pair
+    // of buttons underneath sat a long way from either face and had to name
+    // which side they meant; here that is simply where you clicked.
     [["obv", "Obverse"], ["rev", "Reverse"]].forEach(function (pair) {
+      var faceEl = frame.querySelector(".face-" + pair[0]);
+      if (!faceEl || faceEl.querySelector(".face-edit")) return;
+
       var label = document.createElement("label");
-      label.className = "face-upload-btn";
+      label.className = "face-edit";
       label.dataset.face = pair[0];
-      label.appendChild(document.createTextNode("Replace " + pair[1].toLowerCase() + " photo"));
+      label.setAttribute("aria-label", "Replace the " + pair[1].toLowerCase() + " photograph");
+      label.title = "Replace this photograph";
+      label.innerHTML =
+        '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" ' +
+        'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M14.5 6.5l3 3"/></svg>';
+
       var input = document.createElement("input");
       input.type = "file";
       input.accept = "image/*";
@@ -614,14 +625,15 @@
         var coin = window.Viewer.current();
         if (!coin || !input.files.length) return;
         uploadFace(coin.id, pair[0], input.files[0]).then(function (f) {
-          if (f) toast(pair[1] + " updated");
+          if (f) toast(pair[1] + " replaced");
           input.value = "";
         });
       });
       label.appendChild(input);
-      row.appendChild(label);
+      // The face beneath opens the photograph or turns the coin over.
+      label.addEventListener("click", function (e) { e.stopPropagation(); });
+      faceEl.appendChild(label);
     });
-    stage.querySelector(".stage-controls").appendChild(row);
   }
 
   /* ── Grid affordances ───────────────────────────────────────────────────── */
