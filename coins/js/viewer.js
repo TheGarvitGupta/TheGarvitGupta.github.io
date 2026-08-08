@@ -45,9 +45,11 @@ window.Viewer = (function () {
 
   function updateHint() {
     if (!el.hint) return;
-    el.hint.textContent = spread
-      ? "Click either side to open the full photograph"
-      : "Tap the coin to turn it over";
+    // Nothing to explain when both faces are on show — clicking a photograph
+    // to see it larger needs no caption. The narrow layout keeps its line,
+    // where turning the coin over is the only way to the other side.
+    el.hint.textContent = spread ? "" : "Tap the coin to turn it over";
+    el.hint.hidden = spread;
   }
 
   /* ── Flip ───────────────────────────────────────────────────────────────── */
