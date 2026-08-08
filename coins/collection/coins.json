@@ -115,10 +115,10 @@
       "obv": "0005-obv.webp",
       "rev": "0005-rev.webp"
     },
-    "updated": "2026-08-05",
+    "updated": "2026-08-08",
     "era": "republic-india",
     "denomination": {
-      "value": 1,
+      "value": 2.5,
       "unit": "rupee"
     },
     "yearOnCoin": 1998,
