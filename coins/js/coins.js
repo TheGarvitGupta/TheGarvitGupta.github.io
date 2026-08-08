@@ -23,6 +23,12 @@ window.Coins = (function () {
   var listeners = [];
   var el = {};
 
+  // Edit mode shows every field, including the ones this coin has no value
+  // for, so they can be filled where they belong instead of being hunted for
+  // in a menu. The published site never sets this, so a half-known coin still
+  // shows only what is known.
+  var showEmpty = false;
+
   /* ── Vocabulary lookup ──────────────────────────────────────────────────── */
 
   var vocabIndex = {};
@@ -193,27 +199,17 @@ window.Coins = (function () {
       // Ruler is meaningless on a Republic coin — don't offer or show it.
       if (field.onlyEra && coin.era && field.onlyEra.indexOf(coin.era) === -1) return;
       var html = formatField(coin, field);
-      if (html === null) return;
+      if (html === null && !showEmpty) return;
       (byGroup[field.group] = byGroup[field.group] || []).push({
-        key: field.key, label: field.label, html: html
+        key: field.key, label: field.label,
+        html: html === null ? "" : html,
+        empty: html === null
       });
     });
 
     return v.groups.map(function (g) {
       return { id: g.id, label: g.label, rows: byGroup[g.id] || [] };
     }).filter(function (g) { return g.rows.length > 0; });
-  }
-
-  /** Fields this coin has no value for — drives "+ Add detail" in edit mode. */
-  function missingFields(coin) {
-    var v = state.vocab;
-    if (!v) return [];
-    return v.fields.filter(function (field) {
-      if (field.onlyEra && coin.era && field.onlyEra.indexOf(coin.era) === -1) return false;
-      if (field.type === "denomination") return !denomLabel(coin);
-      var raw = coin[field.key];
-      return raw === null || raw === undefined || raw === "";
-    });
   }
 
   /* ── Facets ─────────────────────────────────────────────────────────────── */
@@ -632,6 +628,7 @@ window.Coins = (function () {
         .then(function (data) { state.all = Array.isArray(data) ? data : []; apply(); });
     },
     onChange: function (fn) { listeners.push(fn); },
+    showEmptyFields: function (on) { showEmpty = !!on; },
     open: openCoin,
     bust: function (id) { busts[String(id)] = Date.now(); },
     byId: byId,
@@ -641,7 +638,6 @@ window.Coins = (function () {
     denomLabel: denomLabel,
     year: year,
     specs: specs,
-    missingFields: missingFields,
     formatField: formatField,
     imgSrc: imgSrc,
     hasImage: hasImage,

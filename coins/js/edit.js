@@ -415,7 +415,9 @@
       dd.addEventListener("keydown", function (e) {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); beginEdit(coin, field, dd); }
       });
-      // Removing a detail entirely, as distinct from blanking it.
+      // Removing a detail entirely, as distinct from blanking it. Nothing to
+      // remove on a field that has no value yet.
+      if (row.classList.contains("is-empty")) return;
       var del = document.createElement("button");
       del.type = "button";
       del.className = "spec-remove";
@@ -443,45 +445,6 @@
     var tools = document.createElement("div");
     tools.className = "edit-tools";
 
-    // "+ Add detail" — everything this coin doesn't record yet.
-    var missing = window.Coins.missingFields(coin);
-    if (missing.length) {
-      var addWrap = document.createElement("div");
-      addWrap.className = "add-detail";
-
-      var addBtn = document.createElement("button");
-      addBtn.type = "button";
-      addBtn.className = "add-detail-btn";
-      addBtn.textContent = "+ Add detail";
-
-      var menu = document.createElement("div");
-      menu.className = "add-detail-menu";
-      menu.hidden = true;
-
-      missing.forEach(function (field) {
-        var item = document.createElement("button");
-        item.type = "button";
-        item.className = "add-detail-item";
-        item.textContent = field.label;
-        item.addEventListener("click", function () {
-          menu.hidden = true;
-          openAdHocEditor(coin, field);
-        });
-        menu.appendChild(item);
-      });
-
-      addBtn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        menu.hidden = !menu.hidden;
-      });
-      menu.addEventListener("click", function (e) { e.stopPropagation(); });
-      document.addEventListener("click", function () { menu.hidden = true; });
-
-      addWrap.appendChild(addBtn);
-      addWrap.appendChild(menu);
-      tools.appendChild(addWrap);
-    }
-
     var idBtn = document.createElement("button");
     idBtn.type = "button";
     idBtn.className = "edit-flag" + (coin.status === "unidentified" ? " is-on" : "");
@@ -508,22 +471,6 @@
     tools.appendChild(del);
 
     document.getElementById("detail-specs").appendChild(tools);
-  }
-
-  /** Add a field the coin doesn't have yet: render a temporary row and edit it. */
-  function openAdHocEditor(coin, field) {
-    var specs = document.getElementById("detail-specs");
-    var host = document.createElement("div");
-    host.className = "spec is-editable is-new";
-    var dt = document.createElement("dt");
-    dt.textContent = field.label;
-    var dd = document.createElement("dd");
-    host.appendChild(dt);
-    host.appendChild(dd);
-
-    specs.insertBefore(host, specs.querySelector(".edit-tools"));
-    beginEdit(coin, field, dd);
-    host.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
 
   function editNotes(coin, host) {
@@ -770,6 +717,8 @@
 
   function start() {
     document.body.classList.add("is-editing");
+    // Every field, filled or not, renders in its proper place while editing.
+    window.Coins.showEmptyFields(true);
 
     ["css/edit.css", "css/history.css"].forEach(function (href) {
       var link = document.createElement("link");

@@ -465,3 +465,19 @@
 @media (max-width: 900px) {
   .is-editing .stage { padding-bottom: 7.5rem; }
 }
+
+/* ── Fields waiting to be filled ──────────────────────────────────────────── */
+/* Edit mode lists every field in its proper place rather than hiding the
+   unfilled ones behind a menu. They read as quiet gaps in the table, not as
+   demands — the collection is half-documented and always will be. */
+
+.spec.is-empty dt { color: var(--ink-faint); opacity: 0.75; }
+
+.spec.is-empty dd:empty::before {
+  content: "Add";
+  color: var(--ink-faint);
+  opacity: 0.55;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+}
+.spec.is-empty dd:hover:empty::before { opacity: 0.9; }

@@ -166,7 +166,7 @@ window.Viewer = (function () {
       dl.style.margin = "0";
       g.rows.forEach(function (row) {
         var wrap = document.createElement("div");
-        wrap.className = "spec";
+        wrap.className = "spec" + (row.empty ? " is-empty" : "");
         wrap.dataset.key = row.key;
         var dt = document.createElement("dt");
         dt.textContent = row.label;
