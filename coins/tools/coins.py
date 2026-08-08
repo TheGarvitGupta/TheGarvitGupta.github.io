@@ -910,6 +910,57 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                         "changed": len(d["changed"])}
         })
 
+    def golive(self):
+        """
+        Take the site live: merge the working branch into the branch GitHub
+        Pages serves, and push.
+
+        Deliberately fast-forward only. The working branch is always ahead of
+        the live one in a straight line here, so a fast-forward is what should
+        happen; if it is not possible, something unexpected has gone on and the
+        right answer is to stop and say so rather than invent a merge commit
+        for someone else to understand.
+
+        The branch is switched back whatever happens, so a failure never
+        strands anyone somewhere they did not mean to be.
+        """
+        pre = golive_preview()
+        if pre["hasUnsaved"]:
+            return self.send_json({"ok": False, "error":
+                "There are unsaved changes. Save them first — only saved work can go live."})
+        if pre["workingTreeDirty"]:
+            return self.send_json({"ok": False, "error":
+                "Some files outside the collection have been edited. Commit or discard "
+                "them before publishing, so switching branches is safe."})
+        if pre["upToDate"]:
+            return self.send_json({"ok": False, "error": "The live site is already up to date."})
+
+        branch = pre["branch"]
+
+        if pre["isLive"]:
+            r = git("push", "-u", "origin", PUBLISH_BRANCH)
+            if r.returncode != 0:
+                return self.send_json({"ok": False, "error": r.stderr.strip()})
+            return self.send_json({"ok": True, "merged": False, "commits": pre["commits"]})
+
+        sw = git("switch", PUBLISH_BRANCH)
+        if sw.returncode != 0:
+            return self.send_json({"ok": False, "error": sw.stderr.strip()})
+        try:
+            m = git("merge", "--ff-only", branch)
+            if m.returncode != 0:
+                return self.send_json({"ok": False, "error":
+                    f"{PUBLISH_BRANCH} has moved on separately, so this could not be "
+                    f"fast-forwarded. Merge it by hand.\n\n" + m.stderr.strip()})
+            p = git("push", "-u", "origin", PUBLISH_BRANCH)
+            if p.returncode != 0:
+                return self.send_json({"ok": False, "error": p.stderr.strip()})
+        finally:
+            git("switch", branch)
+
+        self.send_json({"ok": True, "merged": True, "branch": branch,
+                        "commits": pre["commits"], "summary": pre["summary"]})
+
     def commit(self):
         add = git("add", *TRACKED)
         if add.returncode != 0:
