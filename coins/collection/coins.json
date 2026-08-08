@@ -142,11 +142,11 @@
       "obv": "0006-obv.webp",
       "rev": "0006-rev.webp"
     },
-    "updated": "2026-08-05",
+    "updated": "2026-08-08",
     "era": "republic-india",
     "denomination": {
       "value": 2,
-      "unit": "rupee"
+      "unit": "pie"
     },
     "yearOnCoin": 1998,
     "yearIssued": 1998,
