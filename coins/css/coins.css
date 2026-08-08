@@ -539,11 +539,8 @@ a { color: inherit; }
   flex-shrink: 0;
   aspect-ratio: 1;
   perspective: 1600px;
-  touch-action: none;
-  cursor: grab;
+  cursor: pointer;          /* stacked: the coin turns over */
 }
-.stage-frame.is-panning { cursor: grabbing; }
-.stage-frame.is-zoomed  { cursor: grab; }
 
 .flipper {
   position: absolute;
@@ -777,7 +774,8 @@ a { color: inherit; }
   perspective: none;
   cursor: default;
 }
-.viewer.is-spread .stage-frame.is-zoomed { cursor: grab; }
+/* Each face opens its own photograph. */
+.viewer.is-spread .face { cursor: zoom-in; }
 
 .viewer.is-spread .flipper {
   display: flex;

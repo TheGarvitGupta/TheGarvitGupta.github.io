@@ -1,29 +1,23 @@
 /* ============================================================================
    The Coin Collection — viewer.
 
-   Flip between obverse and reverse, and zoom into the surface. Full images are
-   ~2200px shown at roughly 550px, so there is genuine detail to explore; no
-   tiling is needed at that ratio, which keeps this dependency-free.
+   Both faces side by side on a wide screen; on a narrow one, the coin turns
+   over between them.
 
-   Zoom and flip share one transform, composed in a fixed order:
-       translate(x, y) scale(s) rotateY(r)
-   The CSS transition is suppressed while panning or wheeling so those feel
-   direct, and re-enabled for the flip, which wants to be a deliberate motion.
+   Looking closely opens the photograph in its own tab rather than
+   reimplementing zoom: the browser's is better, and the image can then be
+   saved, printed or sent on. What is left here is the turn between faces.
    ========================================================================= */
 
 window.Viewer = (function () {
   "use strict";
 
-  var MAX_SCALE = 5;
-  var MIN_SCALE = 1;
-
   var el = {};
   var current = null;   // the coin being shown
-  var face = "obv";     // which side is toward the viewer
-  var scale = 1, tx = 0, ty = 0;
+  var face = "obv";     // which side is toward the viewer, on narrow screens
   var lastFocus = null;
   var reduced = false;
-  // On a wide screen both faces are shown at once — a coin is two sides of one
+  // On a wide screen both faces show at once — a coin is two sides of one
   // object and comparing them is the point. Turning it over is for narrow
   // screens, where there is only room for one.
   var spread = false;
@@ -32,65 +26,28 @@ window.Viewer = (function () {
 
   function paint(animate) {
     el.flipper.classList.toggle("no-transition", !animate);
-    // Under reduced motion the faces cross-fade instead of rotating, so the
-    // rotation is dropped here rather than in CSS — that leaves the translate
-    // and scale intact, and zooming keeps working.
+    // Nothing to rotate under reduced motion, or when both faces are on show.
     var r = (!reduced && !spread && face === "rev") ? 180 : 0;
-    el.flipper.style.transform =
-      "translate(" + tx + "px, " + ty + "px) scale(" + scale + ") rotateY(" + r + "deg)";
+    el.flipper.style.transform = "rotateY(" + r + "deg)";
     el.flipper.classList.toggle("is-flipped", face === "rev");
-    el.frame.classList.toggle("is-zoomed", scale > 1.01);
   }
 
-  /** Keep the coin from being dragged out of its own frame. */
-  function clamp() {
-    var rect = el.frame.getBoundingClientRect();
-    var maxX = Math.max(0, (scale - 1) * rect.width / 2);
-    var maxY = Math.max(0, (scale - 1) * rect.height / 2);
-    tx = Math.min(maxX, Math.max(-maxX, tx));
-    ty = Math.min(maxY, Math.max(-maxY, ty));
-  }
-
-  /** Zoom toward a point, so the pixel under the cursor stays put. */
-  function zoomAt(nextScale, clientX, clientY, animate) {
-    var rect = el.frame.getBoundingClientRect();
-    var cx = rect.left + rect.width / 2;
-    var cy = rect.top + rect.height / 2;
-    var px = (clientX === undefined ? cx : clientX) - cx;
-    var py = (clientY === undefined ? cy : clientY) - cy;
-
-    var s = Math.min(MAX_SCALE, Math.max(MIN_SCALE, nextScale));
-    if (s === scale) return;
-
-    // translate() sits left of rotateY() in the transform list, so it resolves
-    // in the parent's un-rotated space — screen axes, on both faces. No
-    // mirroring correction is needed here or in the pan handler.
-    tx = px - (px - tx) * (s / scale);
-    ty = py - (py - ty) * (s / scale);
-
-    scale = s;
-    if (scale <= 1.001) { scale = 1; tx = 0; ty = 0; }
-    clamp();
-    paint(animate !== false);
-    updateHint();
-  }
-
-  function resetZoom(animate) {
-    scale = 1; tx = 0; ty = 0;
-    clamp();
-    paint(animate !== false);
-    updateHint();
+  /**
+   * Looking closely means opening the photograph itself, in its own tab. The
+   * browser's own zoom is better than anything reimplemented here, and the
+   * image can then be saved, printed or sent to someone.
+   */
+  function openFull(which) {
+    if (!current) return;
+    var url = window.Coins.imgSrc(current, which, "full");
+    if (url) window.open(url, "_blank", "noopener");
   }
 
   function updateHint() {
     if (!el.hint) return;
-    if (scale > 1.01) {
-      el.hint.textContent = Math.round(scale * 100) + "%  ·  double-click to fit";
-    } else {
-      el.hint.textContent = spread ? "Scroll to zoom  ·  drag to pan"
-                   : reduced ? "Use the buttons to turn the coin over"
-                             : "Scroll to zoom  ·  drag to pan  ·  F to turn over";
-    }
+    el.hint.textContent = spread
+      ? "Click either side to open the full photograph"
+      : "Tap the coin to turn it over";
   }
 
   /* ── Flip ───────────────────────────────────────────────────────────────── */
@@ -99,7 +56,6 @@ window.Viewer = (function () {
     if (!current) return;
     if (!window.Coins.hasImage(current, nextFace)) return;
     face = nextFace;
-    resetZoom(true);
     el.btnObv.classList.toggle("is-active", face === "obv");
     el.btnRev.classList.toggle("is-active", face === "rev");
     paint(true);
@@ -215,7 +171,7 @@ window.Viewer = (function () {
 
     el.root.hidden = false;
     document.body.style.overflow = "hidden";
-    resetZoom(false);
+    paint(false);
     el.close.focus();
     window.Coins.writeHash();
   }
@@ -247,84 +203,19 @@ window.Viewer = (function () {
 
   /* ── Input ──────────────────────────────────────────────────────────────── */
 
-  var pointers = {};
-  var panStart = null;
-  var pinchStart = null;
-  var downAt = null;
-
   function bindStage() {
-    el.frame.addEventListener("wheel", function (e) {
-      if (!current) return;
-      e.preventDefault();
-      // Trackpad pinch arrives as ctrlKey+wheel; both paths want the same feel.
-      var factor = Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0022));
-      zoomAt(scale * factor, e.clientX, e.clientY, false);
-    }, { passive: false });
-
-    el.frame.addEventListener("pointerdown", function (e) {
-      if (!current) return;
-      el.frame.setPointerCapture(e.pointerId);
-      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-      downAt = { x: e.clientX, y: e.clientY, t: Date.now() };
-      var ids = Object.keys(pointers);
-
-      if (ids.length === 1 && scale > 1.01) {
-        panStart = { x: e.clientX, y: e.clientY, tx: tx, ty: ty };
-        el.frame.classList.add("is-panning");
-      } else if (ids.length === 2) {
-        var a = pointers[ids[0]], b = pointers[ids[1]];
-        pinchStart = { dist: Math.hypot(a.x - b.x, a.y - b.y), scale: scale };
-        panStart = null;
-        downAt = null;   // a two-finger gesture is never a tap
-      }
-    });
-
-    el.frame.addEventListener("pointermove", function (e) {
-      if (!pointers[e.pointerId]) return;
-      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-      var ids = Object.keys(pointers);
-
-      if (pinchStart && ids.length === 2) {
-        var a = pointers[ids[0]], b = pointers[ids[1]];
-        var dist = Math.hypot(a.x - b.x, a.y - b.y);
-        zoomAt(pinchStart.scale * (dist / pinchStart.dist),
-               (a.x + b.x) / 2, (a.y + b.y) / 2, false);
-        return;
-      }
-
-      if (panStart) {
-        tx = panStart.tx + (e.clientX - panStart.x);
-        ty = panStart.ty + (e.clientY - panStart.y);
-        clamp();
-        paint(false);
-      }
-    });
-
-    function endPointer(e) {
-      // A quick, still tap with nothing zoomed turns the coin over.
-      if (downAt && Object.keys(pointers).length === 1) {
-        var moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
-        if (moved < 5 && Date.now() - downAt.t < 350 && scale <= 1.01) flip();
-      }
-      downAt = null;
-      delete pointers[e.pointerId];
-      if (Object.keys(pointers).length < 2) pinchStart = null;
-      if (Object.keys(pointers).length === 0) {
-        panStart = null;
-        el.frame.classList.remove("is-panning");
-      }
-    }
-    el.frame.addEventListener("pointerup", endPointer);
-    el.frame.addEventListener("pointercancel", function (e) {
-      downAt = null;
-      endPointer(e);
-    });
-
-    el.frame.addEventListener("dblclick", function (e) {
-      if (scale > 1.01) resetZoom(true);
-      else zoomAt(2.5, e.clientX, e.clientY, true);
+    // Side by side, a face opens its own photograph. Stacked, the coin turns
+    // over — which is the only way to see the other side on a narrow screen.
+    ["face-obv", "face-rev"].forEach(function (cls) {
+      var node = el.frame.querySelector("." + cls);
+      if (!node) return;
+      node.addEventListener("click", function () {
+        if (spread) openFull(cls === "face-rev" ? "rev" : "obv");
+        else flip();
+      });
     });
   }
+
 
   function onKey(e) {
     if (el.root.hidden) return;
@@ -339,9 +230,6 @@ window.Viewer = (function () {
       case "ArrowLeft": e.preventDefault(); step(-1); break;
       case "ArrowRight": e.preventDefault(); step(1); break;
       case "f": case "F": e.preventDefault(); flip(); break;
-      case "+": case "=": e.preventDefault(); zoomAt(scale * 1.4, undefined, undefined, true); break;
-      case "-": case "_": e.preventDefault(); zoomAt(scale / 1.4, undefined, undefined, true); break;
-      case "0": e.preventDefault(); resetZoom(true); break;
       case "Tab": trapFocus(e); break;
     }
   }
@@ -380,7 +268,7 @@ window.Viewer = (function () {
     function applyMode() {
       spread = wide.matches;
       el.root.classList.toggle("is-spread", spread);
-      resetZoom(false);
+      paint(false);
       updateHint();
     }
     applyMode();
