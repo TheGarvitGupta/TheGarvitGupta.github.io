@@ -403,12 +403,10 @@
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  background: transparent;   /* no colour until there is a state to show */
   transition: background 0.25s, box-shadow 0.25s;
 }
 .editbar-text { color: var(--ink); }
-
-/* Before the first status arrives: nothing claimed, nothing offered. */
-.editbar.is-loading .editbar-dot { background: var(--ink-faint); opacity: 0.5; }
 
 .editbar.is-unsaved .editbar-dot {
   background: #f59e0b;

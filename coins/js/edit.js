@@ -812,11 +812,11 @@
    */
   function buildBar() {
     var root = document.createElement("div");
-    // Starts in the unknown state, with nothing offered. The status arrives a
-    // moment later and turns on whatever applies. Rendering enabled first
-    // meant the bar briefly promised actions it had not checked, and the
-    // correction read as a glitch.
-    root.className = "editbar is-loading";
+    // Buttons start disabled and the state is left blank until the status
+    // arrives. Rendering enabled first meant the bar briefly promised actions
+    // it had not checked, and the correction read as a glitch. Going the other
+    // way needs no fourth state — there is simply nothing to say yet.
+    root.className = "editbar";
     root.innerHTML =
       '<div class="editbar-inner">' +
         '<div class="editbar-lead"></div>' +
