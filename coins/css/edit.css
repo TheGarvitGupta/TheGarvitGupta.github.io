@@ -98,14 +98,6 @@
   line-height: 1.25;
   color: inherit;
 }
-.coin-add-hint {
-  display: block;
-  margin-top: 0.25rem;
-  font-size: 0.6875rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
 
 /* ── Editable spec rows ───────────────────────────────────────────────────── */
 
