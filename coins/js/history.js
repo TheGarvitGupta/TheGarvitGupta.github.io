@@ -584,32 +584,13 @@ window.CoinHistory = (function () {
   }
 
   function goLive(p, btn) {
-    var msg;
-    if (p.collectionSteps) {
-      msg = "Publish " + plural(p.collectionSteps, "change", "changes") + " to the collection?";
-      var bits = coinBits(p);
-      if (bits.length) msg += "\n\nAgainst the live site: " + bits.join(", ") + ".";
-      msg += "\n\nThis makes them visible to anyone at garvitgupta.com/coins/.";
-    } else {
-      msg = "Publish " + plural(p.siteChanges, "update", "updates") + " to the site?" +
-            "\n\nThe coins themselves are already up to date.";
-    }
-    msg += "\n\nThe site updates about a minute afterwards.";
-
-    if (!confirm(msg)) return;
-
+    // One implementation, in edit.js, which owns the bar that also offers it.
     btn.disabled = true;
     btn.textContent = "Publishing…";
-    fetch("/api/golive", { method: "POST", headers: { "Content-Type": "application/json" },
-                           body: "{}" })
-      .then(function (r) { return r.json(); })
-      .then(function (res) {
-        if (!res.ok) { toast(res.error || "Could not publish", true); btn.disabled = false;
-                       btn.textContent = "Take the site live"; return; }
-        toast("Published — the site updates in about a minute");
-        renderLive();
-        document.dispatchEvent(new CustomEvent("coins:restored"));  // refresh the bar
-      });
+    window.CoinsEdit.goLive(p, function (ok) {
+      btn.textContent = "Take the site live";
+      if (ok) renderLive(); else btn.disabled = false;
+    });
   }
 
   /* ── Open / close ───────────────────────────────────────────────────────── */

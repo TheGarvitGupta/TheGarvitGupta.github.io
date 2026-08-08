@@ -9,76 +9,6 @@
 
 .is-editing { padding-bottom: 4rem; }
 
-/* ── Publish bar ──────────────────────────────────────────────────────────── */
-
-.editbar {
-  position: fixed;
-  left: 50%;
-  bottom: 1.25rem;
-  transform: translateX(-50%);
-  z-index: 60;
-  display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  padding: 0.55rem 0.6rem 0.55rem 1rem;
-  background: var(--panel-bg);
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  box-shadow: var(--shadow-pop);
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-.editbar-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #4ade80;
-  animation: pulse 2.6s ease-out infinite;
-}
-@keyframes pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.45); }
-  70%  { box-shadow: 0 0 0 7px rgba(74, 222, 128, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
-}
-
-.editbar-mode { color: var(--ink); letter-spacing: 0.04em; }
-.editbar-count,
-.editbar-progress { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
-.editbar-count::before { content: "·"; margin-right: 0.75rem; }
-
-.editbar-publish,
-.editbar-discard {
-  padding: 0.4rem 1rem;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  transition: background 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
-}
-
-.editbar-publish {
-  background: var(--gold);
-  color: var(--on-gold);
-  font-weight: 600;
-}
-.editbar-publish:hover:not([disabled]) { background: var(--gold-soft); }
-.editbar-publish[disabled] { background: var(--hover-tint); color: var(--ink-faint); cursor: default; }
-
-.editbar-discard {
-  background: none;
-  border-color: var(--line);
-  color: var(--ink-faint);
-}
-.editbar-discard:hover { border-color: rgba(248, 113, 113, 0.5); color: #f87171; }
-
-@media (max-width: 560px) {
-  .editbar { left: 0.75rem; right: 0.75rem; transform: none; justify-content: center; flex-wrap: wrap; border-radius: 14px; }
-  .editbar-mode { display: none; }
-}
-
 /* ── Toasts ───────────────────────────────────────────────────────────────── */
 
 .toast {
@@ -418,34 +348,6 @@
 .face-lead:hover:not([disabled]) { border-color: var(--gold); color: var(--gold-soft); }
 .face-lead.is-on { border-color: transparent; color: var(--gold); cursor: default; }
 
-/* ── Working off the live branch ──────────────────────────────────────────── */
-
-.editbar-branch {
-  padding: 0.15rem 0.5rem;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  font-size: 0.6875rem;
-  letter-spacing: 0.04em;
-  color: var(--ink-dim);
-}
-
-/* Amber rather than green: edits here are real, but they are not public. */
-.editbar.is-offstage .editbar-dot { background: #fbbf24; animation: none; }
-.editbar.is-offstage .editbar-publish { background: var(--ink-dim); color: var(--bg); }
-.editbar.is-offstage .editbar-publish:hover:not([disabled]) { background: var(--ink); }
-
-.editbar-history {
-  padding: 0.4rem 0.9rem;
-  background: none;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  color: var(--ink-dim);
-  transition: border-color 0.2s, color 0.2s;
-}
-.editbar-history:hover { border-color: var(--line-strong); color: var(--ink); }
-
 /* Replacing a photograph is a main action in the viewer, not a footnote. */
 .face-upload-btn {
   border-color: var(--line-strong);
@@ -457,9 +359,6 @@
   opacity: 0.7;
 }
 
-/* The publish bar is fixed to the bottom of the window and was sitting on top
-   of the viewer's controls, hiding the photo-replace buttons completely. Give
-   the stage room to clear it while editing. */
 .is-editing .stage { padding-bottom: 6rem; }
 
 @media (max-width: 900px) {
@@ -481,3 +380,144 @@
   letter-spacing: 0.02em;
 }
 .spec.is-empty dd:hover:empty::before { opacity: 0.9; }
+
+/* ── The bar ──────────────────────────────────────────────────────────────── */
+/*
+   One question, answered at a glance: what is there to do next? The same three
+   actions are always present, in the order work moves through them — throw
+   away, save, publish — and only the one that applies is live. The bar keeps
+   its shape, so the next step is found by colour and position rather than by
+   reading.
+*/
+
+.editbar {
+  position: fixed;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.45rem 0.4rem 0.5rem;
+  background: var(--panel-bg);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+:root[data-theme="dark"] .editbar {
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.62);
+  border-color: var(--line-strong);
+}
+
+.editbar-rule {
+  width: 1px;
+  height: 1.35rem;
+  background: var(--line-strong);
+  opacity: 0.6;
+}
+
+/* ── State ── */
+
+.editbar-state { display: flex; align-items: center; gap: 0.55rem; padding-right: 0.25rem; }
+
+.editbar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.25s, box-shadow 0.25s;
+}
+.editbar-text { color: var(--ink); letter-spacing: 0.005em; }
+
+.editbar.is-unsaved .editbar-dot {
+  background: #f59e0b;
+  animation: eb-breathe 2.4s ease-out infinite;
+}
+.editbar.is-waiting .editbar-dot { background: var(--gold); }
+.editbar.is-live    .editbar-dot { background: #22c55e; }
+.editbar.is-live    .editbar-text { color: var(--ink-dim); }
+
+@keyframes eb-breathe {
+  0%   { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45); }
+  70%  { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+/* ── Buttons ── */
+
+.editbar-actions { display: flex; align-items: center; gap: 0.25rem; }
+
+.eb {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.85rem;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.78125rem;
+  color: var(--ink-dim);
+  transition: background 0.18s, color 0.18s, border-color 0.18s, opacity 0.18s;
+}
+.eb svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.eb:hover:not([disabled]) { background: var(--hover-tint); color: var(--ink); }
+
+.eb[disabled] {
+  opacity: 0.32;
+  cursor: default;
+  color: var(--ink-faint);
+}
+
+.eb-quiet { color: var(--ink-dim); }
+
+/* Destructive, so it only looks it on approach. */
+.eb-danger:hover:not([disabled]) { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+:root[data-theme="dark"] .eb-danger:hover:not([disabled]) { color: #f87171; }
+
+/* Save is the ordinary next move; publish is the consequential one. */
+.eb-primary:not([disabled]) {
+  background: var(--ink);
+  color: var(--bg);
+  font-weight: 600;
+}
+.eb-primary:not([disabled]):hover { background: var(--ink); opacity: 0.85; }
+
+.eb-go:not([disabled]) {
+  background: var(--gold);
+  color: var(--on-gold);
+  font-weight: 600;
+}
+.eb-go:not([disabled]):hover { background: var(--gold-soft); }
+
+.editbar-progress { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 620px) {
+  .editbar {
+    left: 0.6rem;
+    right: 0.6rem;
+    transform: none;
+    justify-content: center;
+    flex-wrap: wrap;
+    border-radius: 16px;
+    gap: 0.5rem;
+  }
+  .editbar-rule { display: none; }
+  .eb span { display: none; }        /* icons alone once space is tight */
+  .eb { padding: 0.45rem 0.7rem; }
+  .editbar-state { width: 100%; justify-content: center; }
+}

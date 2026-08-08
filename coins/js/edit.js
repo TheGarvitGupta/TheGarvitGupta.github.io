@@ -42,28 +42,45 @@
   }
 
   function refreshPending() {
-    return api("GET", "/api/pending").then(function (p) {
+    return api("GET", "/api/golive/preview").then(function (p) {
       pending = p;
       if (!bar) return;
-      var n = p.total || 0;
-      var live = p.isLive !== false;
 
-      bar.count.textContent = n === 0
-        ? (live ? "No unpublished changes" : "No unsaved changes")
-        : n + (n === 1 ? " unsaved change" : " unsaved changes");
-      bar.publish.disabled = n === 0;
-      bar.discard.hidden = n === 0;
+      var unsaved = p.pending || 0;
+      var waiting = p.collectionSteps || 0;
+      var site = p.siteChanges || 0;
 
-      // Only the branch Pages serves actually goes live. Anywhere else the
-      // button says what it really does rather than promising publication.
-      bar.publish.textContent = live ? "Publish" : "Save to " + p.branch;
-      bar.publish.title = live
-        ? "Commit and push to " + p.publishBranch + " — live in about a minute"
-        : "Commit and push to " + p.branch + ". Merge into " + p.publishBranch + " to go live.";
+      // The same three actions are always present, in the order the work moves
+      // through them: throw away, save, publish. Only the one that applies is
+      // live, so the bar never changes shape and the next step is obvious
+      // without reading anything.
+      bar.discard.disabled = !unsaved;
+      bar.save.disabled = !unsaved;
+      bar.publish.disabled = !!unsaved || !(waiting || site);
 
-      bar.branch.textContent = p.branch || "";
-      bar.branch.hidden = !p.branch || live;
-      bar.root.classList.toggle("is-offstage", !live);
+      if (unsaved) {
+        bar.root.className = "editbar is-unsaved";
+        bar.text.textContent = unsaved === 1 ? "1 unsaved change" : unsaved + " unsaved changes";
+      } else if (waiting || site) {
+        bar.root.className = "editbar is-waiting";
+        bar.text.textContent = waiting
+          ? (waiting === 1 ? "1 change not published" : waiting + " changes not published")
+          : "Site updates not published";
+      } else {
+        bar.root.className = "editbar is-live";
+        bar.text.textContent = "Everything published";
+      }
+    });
+  }
+
+  function onDiscard() {
+    if (!confirm("Throw away every unsaved change?\n\nPhotos added since the last save will be deleted, and edits since then undone.")) return;
+    api("POST", "/api/discard", {}).then(function (res) {
+      if (!res.ok) { toast(res.error || "Could not discard", true); return null; }
+      return window.Coins.reload().then(function () {
+        refreshPending();
+        toast("Changes discarded");
+      });
     });
   }
 
@@ -657,61 +674,111 @@
 
   /* ── Publish bar ────────────────────────────────────────────────────────── */
 
+  var ICON = {
+    history: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>',
+    discard: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 11a7.5 7.5 0 1 1 2 5.3"/><path d="M4.5 6v5h5"/></svg>',
+    save:    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11"/></svg>',
+    publish: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19.5V5.5"/><path d="M5.5 12L12 5.5 18.5 12"/></svg>'
+  };
+
+  function barButton(kind, label, cls) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "eb " + (cls || "");
+    b.innerHTML = ICON[kind] + "<span>" + label + "</span>";
+    return b;
+  }
+
+  /**
+   * The bar answers one question: what is there to do next?
+   *
+   * It used to lead with "Editing locally" and the branch name, neither of
+   * which tells anyone anything — the bar only exists while editing, and the
+   * branch is an implementation detail. What is left is the state of the work
+   * and the action that follows from it, which changes as the work does:
+   * unsaved work offers Save, saved work offers Publish, and published work
+   * offers nothing but a way to look back.
+   */
   function buildBar() {
     var root = document.createElement("div");
     root.className = "editbar";
     root.innerHTML =
-      '<span class="editbar-dot" aria-hidden="true"></span>' +
-      '<span class="editbar-mode">Editing locally</span>' +
-      '<span class="editbar-branch" hidden></span>' +
-      '<span class="editbar-count"></span>' +
+      '<div class="editbar-lead"></div>' +
+      '<span class="editbar-rule" aria-hidden="true"></span>' +
+      '<span class="editbar-state">' +
+        '<span class="editbar-dot" aria-hidden="true"></span>' +
+        '<span class="editbar-text"></span>' +
+      '</span>' +
       '<span class="editbar-progress" hidden></span>' +
-      '<button type="button" class="editbar-history">History</button>' +
-      '<button type="button" class="editbar-discard">Discard</button>' +
-      '<button type="button" class="editbar-publish">Publish</button>';
+      '<div class="editbar-actions"></div>';
     document.body.appendChild(root);
+
+    var histBtn = barButton("history", "History", "eb-quiet");
+    histBtn.addEventListener("click", function () {
+      if (window.CoinHistory) window.CoinHistory.show();
+    });
+    root.querySelector(".editbar-lead").appendChild(histBtn);
+
+    var actions = root.querySelector(".editbar-actions");
+
+    var discard = barButton("discard", "Discard", "eb-danger");
+    discard.addEventListener("click", onDiscard);
+
+    var save = barButton("save", "Save", "eb-primary");
+    save.addEventListener("click", function () {
+      save.disabled = true;
+      api("POST", "/api/commit", {}).then(function (res) {
+        if (!res.ok) toast(res.error || "Could not save", true);
+        else toast("Saved");
+        refreshPending();
+      });
+    });
+
+    var publish = barButton("publish", "Publish", "eb-go");
+    publish.addEventListener("click", function () {
+      publish.disabled = true;
+      goLive(pending, function (ok) { if (!ok) refreshPending(); });
+    });
+
+    actions.appendChild(discard);
+    actions.appendChild(save);
+    actions.appendChild(publish);
 
     bar = {
       root: root,
-      count: root.querySelector(".editbar-count"),
-      branch: root.querySelector(".editbar-branch"),
+      dot: root.querySelector(".editbar-dot"),
+      text: root.querySelector(".editbar-text"),
       progress: root.querySelector(".editbar-progress"),
-      publish: root.querySelector(".editbar-publish"),
-      discard: root.querySelector(".editbar-discard"),
-      history: root.querySelector(".editbar-history")
+      actions: actions,
+      discard: discard, save: save, publish: publish
     };
+  }
 
-    bar.history.addEventListener("click", function () {
-      if (window.CoinHistory) window.CoinHistory.show();
-    });
+  /** Merge the collection into the published branch and push. */
+  function goLive(preview, done) {
+    var msg;
+    if (preview.collectionSteps) {
+      msg = "Publish " + preview.collectionSteps +
+            (preview.collectionSteps === 1 ? " change" : " changes") + " to the collection?" +
+            "\n\nThis makes them visible to anyone at garvitgupta.com/coins/.";
+    } else {
+      msg = "Publish " + preview.siteChanges +
+            (preview.siteChanges === 1 ? " update" : " updates") + " to the site?" +
+            "\n\nThe coins themselves are already up to date.";
+    }
+    msg += "\n\nThe site updates about a minute afterwards.";
+    if (!confirm(msg)) { if (done) done(false); return; }
 
-    bar.publish.addEventListener("click", function () {
-      bar.publish.disabled = true;
-      bar.publish.textContent = "Publishing…";
-      api("POST", "/api/commit").then(function (res) {
-        if (!res.ok) throw new Error(res.error);
-        return api("POST", "/api/push");
-      }).then(function (res) {
-        if (!res.ok) throw new Error(res.error);
-        toast(res.isLive === false
-          ? "Saved to " + res.branch + " — merge into " + res.publishBranch + " to go live"
-          : "Published — live in about a minute");
-      }).catch(function (err) {
-        toast(err.message || "Publish failed", true);
-      }).then(refreshPending);
-    });
-
-    bar.discard.addEventListener("click", function () {
-      if (!confirm("Throw away every unpublished change?\n\nPhotos added since the last publish will be deleted, and edits since then will be undone.")) return;
-      api("POST", "/api/discard").then(function (res) {
-        if (!res.ok) { toast(res.error || "Could not discard", true); return null; }
-        return window.Coins.reload().then(function () {
-          refreshPending();
-          toast("Changes discarded");
-        });
-      });
+    api("POST", "/api/golive", {}).then(function (res) {
+      if (!res.ok) { toast(res.error || "Could not publish", true); if (done) done(false); return; }
+      toast("Published — the site updates in about a minute");
+      refreshPending();
+      if (done) done(true);
     });
   }
+
+  // history.js drives the same action from its own button.
+  window.CoinsEdit = { goLive: goLive, refresh: function () { refreshPending(); } };
 
   /* ── Boot ───────────────────────────────────────────────────────────────── */
 

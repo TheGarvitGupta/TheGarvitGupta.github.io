@@ -579,6 +579,7 @@ def golive_preview():
 
     return {"branch": branch, "publishBranch": PUBLISH_BRANCH,
             "isLive": branch == PUBLISH_BRANCH,
+            "pending": pending_changes()["total"],
             "commits": ahead,
             "collectionSteps": collection_ahead,
             "siteChanges": site_ahead,
