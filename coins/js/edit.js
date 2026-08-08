@@ -536,10 +536,12 @@
     Array.prototype.forEach.call(document.querySelectorAll(".face-edit"), function (el) {
       var f = el.dataset.face;
       if (!f) return;
-      var verb = window.Coins.hasImage(coin, f) ? "Replace" : "Add";
+      var has = window.Coins.hasImage(coin, f);
       var side = f === "obv" ? "obverse" : "reverse";
-      el.title = verb + " this photograph";
-      el.setAttribute("aria-label", verb + " the " + side + " photograph");
+      var word = el.querySelector("span");
+      if (word) word.textContent = has ? "Edit" : "Add";
+      el.title = (has ? "Replace" : "Add") + " this photograph";
+      el.setAttribute("aria-label", (has ? "Replace" : "Add") + " the " + side + " photograph");
     });
 
     var btn = document.querySelector(".face-lead");
@@ -609,14 +611,16 @@
       if (!faceEl || faceEl.querySelector(".face-edit")) return;
 
       var label = document.createElement("label");
-      label.className = "face-edit";
+      // Shares the bar's button language, so a control is a control wherever
+      // it appears.
+      label.className = "face-edit eb";
       label.dataset.face = pair[0];
       label.setAttribute("aria-label", "Replace the " + pair[1].toLowerCase() + " photograph");
       label.title = "Replace this photograph";
       label.innerHTML =
-        '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" ' +
-        'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
-        '<path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M14.5 6.5l3 3"/></svg>';
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M14.5 6.5l3 3"/></svg>' +
+        '<span>Edit</span>';
 
       var input = document.createElement("input");
       input.type = "file";
