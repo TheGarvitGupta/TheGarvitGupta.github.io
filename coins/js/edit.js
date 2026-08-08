@@ -573,9 +573,13 @@
       e.stopPropagation();
       var coin = window.Viewer.current();
       if (!coin || !e.dataTransfer.files.length) return;
-      var showing = document.getElementById("btn-rev").classList.contains("is-active") ? "rev" : "obv";
+      // With both faces on show, the one you dropped on is the one you meant.
+      var onFace = e.target && e.target.closest ? e.target.closest(".face") : null;
+      var showing = onFace
+        ? (onFace.classList.contains("face-rev") ? "rev" : "obv")
+        : (document.getElementById("btn-rev").classList.contains("is-active") ? "rev" : "obv");
       uploadFace(coin.id, showing, e.dataTransfer.files[0]).then(function (f) {
-        if (f) toast("Photo replaced");
+        if (f) toast((showing === "obv" ? "Obverse" : "Reverse") + " replaced");
       });
     });
 

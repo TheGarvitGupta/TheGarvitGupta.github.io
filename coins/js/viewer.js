@@ -23,6 +23,10 @@ window.Viewer = (function () {
   var scale = 1, tx = 0, ty = 0;
   var lastFocus = null;
   var reduced = false;
+  // On a wide screen both faces are shown at once — a coin is two sides of one
+  // object and comparing them is the point. Turning it over is for narrow
+  // screens, where there is only room for one.
+  var spread = false;
 
   /* ── Transform ──────────────────────────────────────────────────────────── */
 
@@ -31,7 +35,7 @@ window.Viewer = (function () {
     // Under reduced motion the faces cross-fade instead of rotating, so the
     // rotation is dropped here rather than in CSS — that leaves the translate
     // and scale intact, and zooming keeps working.
-    var r = (!reduced && face === "rev") ? 180 : 0;
+    var r = (!reduced && !spread && face === "rev") ? 180 : 0;
     el.flipper.style.transform =
       "translate(" + tx + "px, " + ty + "px) scale(" + scale + ") rotateY(" + r + "deg)";
     el.flipper.classList.toggle("is-flipped", face === "rev");
@@ -83,8 +87,9 @@ window.Viewer = (function () {
     if (scale > 1.01) {
       el.hint.textContent = Math.round(scale * 100) + "%  ·  double-click to fit";
     } else {
-      el.hint.textContent = reduced ? "Use the buttons to turn the coin over"
-                                    : "Scroll to zoom  ·  drag to pan  ·  F to turn over";
+      el.hint.textContent = spread ? "Scroll to zoom  ·  drag to pan"
+                   : reduced ? "Use the buttons to turn the coin over"
+                             : "Scroll to zoom  ·  drag to pan  ·  F to turn over";
     }
   }
 
@@ -101,6 +106,7 @@ window.Viewer = (function () {
   }
 
   function flip() {
+    if (spread) return;               // both faces are already visible
     var other = face === "obv" ? "rev" : "obv";
     if (current && window.Coins.hasImage(current, other)) show(other);
   }
@@ -369,6 +375,17 @@ window.Viewer = (function () {
     el.hint = document.getElementById("stage-hint");
 
     reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    var wide = window.matchMedia("(min-width: 900px)");
+    function applyMode() {
+      spread = wide.matches;
+      el.root.classList.toggle("is-spread", spread);
+      resetZoom(false);
+      updateHint();
+    }
+    applyMode();
+    if (wide.addEventListener) wide.addEventListener("change", applyMode);
+    else if (wide.addListener) wide.addListener(applyMode);
 
     el.close.addEventListener("click", close);
     el.prev.addEventListener("click", function () { step(-1); });

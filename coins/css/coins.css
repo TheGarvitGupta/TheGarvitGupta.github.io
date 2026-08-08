@@ -758,3 +758,61 @@ a { color: inherit; }
   .flipper.is-flipped .face-rev { opacity: 1; }
   .coin { opacity: 1; transform: none; }
 }
+
+/* ── Both sides at once ───────────────────────────────────────────────────── */
+/*
+   A coin is two sides of one object, and on a wide screen there is room to see
+   them together — comparing the obverse with the reverse is most of what
+   looking at a coin is. Turning it over remains the behaviour on a narrow
+   screen, where only one will fit.
+*/
+
+/* A face with no photograph should take no space. The author rule below sets
+   display, which otherwise defeats the hidden attribute entirely. */
+.face[hidden] { display: none; }
+
+.viewer.is-spread .stage-frame {
+  width: min(115vh, 100%);
+  aspect-ratio: 2.1 / 1;
+  perspective: none;
+  cursor: default;
+}
+.viewer.is-spread .stage-frame.is-zoomed { cursor: grab; }
+
+.viewer.is-spread .flipper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1.25rem, 4vw, 3rem);
+  transform-style: flat;
+}
+
+.viewer.is-spread .face {
+  position: relative;
+  inset: auto;
+  flex: 0 1 auto;
+  width: 50%;
+  max-width: 50%;
+  height: 100%;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+}
+.viewer.is-spread .face-rev { transform: none; }
+
+.viewer.is-spread .face::after {
+  content: attr(data-label);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1.7rem;
+  text-align: center;
+  font-size: 0.625rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Nothing to turn over when both are on show. */
+.viewer.is-spread .face-toggle { display: none; }
+
+.viewer.is-spread .stage-controls { margin-top: 1.25rem; }
