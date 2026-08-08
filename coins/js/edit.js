@@ -498,7 +498,7 @@
     del.className = "edit-delete";
     del.textContent = "Delete this coin";
     del.addEventListener("click", function () {
-      if (!confirm("Delete this coin and both its photos? This cannot be undone from the page.")) return;
+      if (!confirm("Delete this coin and both its photographs?")) return;
       api("DELETE", "/api/coin/" + encodeURIComponent(coin.id)).then(function (res) {
         if (!res.ok) { toast(res.error || "Could not delete", true); return; }
         window.Viewer.close();
