@@ -598,7 +598,16 @@ window.Coins = (function () {
     return Promise.all([
       fetch("data/vocab.json" + bust).then(function (r) { return r.json(); }),
       fetch(DB + "coins.json" + bust).then(function (r) { return r.json(); })
-    ]).then(function (res) {
+    ]).catch(function (err) {
+      // Only a genuine loading failure belongs here. Wrapping the rendering in
+      // the same catch meant any bug while drawing the page was reported as
+      // "the catalogue could not be loaded" — under a fully drawn catalogue.
+      el.empty.hidden = false;
+      el.empty.textContent = "The catalogue could not be loaded.";
+      console.error("[coins] failed to load catalogue", err);
+      return null;
+    }).then(function (res) {
+      if (!res) return null;
       state.vocab = res[0];
       indexVocab(state.vocab);
       state.all = Array.isArray(res[1]) ? res[1] : [];
@@ -606,11 +615,10 @@ window.Coins = (function () {
       var openId = readHash();
       if (el.sort) el.sort.value = state.sort;
       apply();
-      if (openId) openCoin(openId);
-    }).catch(function (err) {
-      el.empty.hidden = false;
-      el.empty.textContent = "The catalogue could not be loaded.";
-      console.error("[coins] failed to load catalogue", err);
+      // Handed back rather than opened here: the viewer sets itself up on
+      // coins:ready, which has not been dispatched yet, so opening a coin from
+      // the address bar at this point would reach into an empty viewer.
+      return openId;
     });
   }
 
@@ -624,6 +632,7 @@ window.Coins = (function () {
         .then(function (data) { state.all = Array.isArray(data) ? data : []; apply(); });
     },
     onChange: function (fn) { listeners.push(fn); },
+    open: openCoin,
     bust: function (id) { busts[String(id)] = Date.now(); },
     byId: byId,
     indexOfInView: indexOfInView,
@@ -645,7 +654,9 @@ window.Coins = (function () {
 })();
 
 document.addEventListener("DOMContentLoaded", function () {
-  window.Coins.init().then(function () {
+  window.Coins.init().then(function (openId) {
     document.dispatchEvent(new CustomEvent("coins:ready"));
+    // Now that the viewer exists, a #coin= link can be honoured.
+    if (openId) window.Coins.open(openId);
   });
 });

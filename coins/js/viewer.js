@@ -187,6 +187,8 @@ window.Viewer = (function () {
   /* ── Open / close ───────────────────────────────────────────────────────── */
 
   function open(id) {
+    // Nothing here works before init() has found the elements.
+    if (!el.root) return;
     var coin = window.Coins.byId(id);
     if (!coin) return;
 
