@@ -378,26 +378,6 @@
   background: rgba(201, 162, 39, 0.08);
 }
 
-.hrestore-coin {
-  justify-self: start;
-  margin-bottom: 0.35rem;
-  padding: 0.2rem 0.6rem;
-  background: none;
-  border: 1px dashed var(--line-strong);
-  border-radius: 999px;
-  font-size: 0.6875rem;
-  letter-spacing: 0.03em;
-  color: var(--ink-faint);
-  transition: border-color 0.2s, color 0.2s;
-}
-.hrestore-coin:hover:not([disabled]) { border-color: var(--gold); color: var(--gold-soft); }
-.hrestore-coin.is-done {
-  border-style: solid;
-  border-color: rgba(74, 222, 128, 0.5);
-  color: #4ade80;
-  cursor: default;
-}
-
 /* ── Taking it live ───────────────────────────────────────────────────────── */
 
 .history-live {

@@ -687,8 +687,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 return self.golive()
             if path == "/api/restore":
                 return self.restore()
-            if path == "/api/restore/coin":
-                return self.restore_coin()
             if path == "/api/commit":
                 return self.commit()
             if path == "/api/push":
@@ -842,8 +840,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     # be undone by restoring the step you came from. There is no move here that
     # loses work.
     #
-    # Both operations are confined to coins/collection/, as everything driven
-    # from the page is.
+    # Restoring is deliberately all-or-nothing. Per-coin undo existed briefly
+    # and was removed: two ways to reverse the same thing made the panel harder
+    # to read than the problem it solved, and a step is already the unit people
+    # think in. Confined to coins/collection/, as everything driven from the
+    # page is.
 
     def restore(self):
         """Put the whole collection back as it stood at one step."""
@@ -878,103 +879,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             "summary": {"added": len(d["added"]), "removed": len(d["removed"]),
                         "changed": len(d["changed"])}
         })
-
-    def restore_coin(self):
-        """Put a single coin back — its record and its photographs — leaving
-        every other coin alone. Usually what someone actually wants."""
-        body = self.read_json() or {}
-        sha, cid = body.get("to", ""), str(body.get("id", ""))
-        if not re.fullmatch(r"[0-9a-f]{7,40}", sha or "") or not cid:
-            return self.send_json({"ok": False, "error": "bad request"}, 400)
-
-        was = {str(c.get("id")): c for c in catalogue_at(sha)}.get(cid)
-
-        with _lock:
-            coins = load_coins()
-            now = {str(c.get("id")): c for c in coins}.get(cid)
-
-            # Clear whichever photographs the coin has now, then lay down the
-            # ones it had then. Doing it in that order handles a face that
-            # existed at one point and not the other.
-            for src in (now, was):
-                if not src:
-                    continue
-                for fn in (src.get("images") or {}).values():
-                    for size in ("full", "thumbs"):
-                        p = COLLECTION / "images" / size / fn
-                        if src is now and p.exists():
-                            p.unlink()
-            if was:
-                for fn in (was.get("images") or {}).values():
-                    for size in ("full", "thumbs"):
-                        git("checkout", sha, "--", f"{COLLECTION_REL}images/{size}/{fn}")
-
-            if was is None:
-                # The coin did not exist at that point, so going back removes it.
-                coins = [c for c in coins if str(c.get("id")) != cid]
-                verb = "removed"
-            else:
-                restored = dict(was)
-                restored["updated"] = today()
-                coins = [restored if str(c.get("id")) == cid else c for c in coins]
-                if not any(str(c.get("id")) == cid for c in coins):
-                    coins.append(restored)     # it had been deleted since
-                verb = "restored"
-            save_coins(coins)
-
-        self.send_json({"ok": True, "id": cid, "action": verb,
-                        "coin": was, "existed": was is not None})
-
-    def golive(self):
-        """
-        Take the site live: merge the working branch into the branch GitHub
-        Pages serves, and push.
-
-        Deliberately fast-forward only. The working branch is always ahead of
-        the live one in a straight line here, so a fast-forward is what should
-        happen; if it isn't possible something unexpected has gone on and the
-        right answer is to stop and say so, not to invent a merge commit that
-        someone would then have to understand.
-
-        The branch is switched back at the end whatever happens, so a failure
-        never strands anyone somewhere they didn't mean to be.
-        """
-        pre = golive_preview()
-        if pre["hasUnsaved"]:
-            return self.send_json({"ok": False, "error":
-                "There are unsaved changes. Save them first — only saved work can go live."})
-        if pre["workingTreeDirty"]:
-            return self.send_json({"ok": False, "error":
-                "Some files outside the collection have been edited. Commit or discard "
-                "them before publishing, so switching branches is safe."})
-        if pre["upToDate"]:
-            return self.send_json({"ok": False, "error": "The live site is already up to date."})
-
-        branch = pre["branch"]
-
-        if pre["isLive"]:
-            r = git("push", "-u", "origin", PUBLISH_BRANCH)
-            if r.returncode != 0:
-                return self.send_json({"ok": False, "error": r.stderr.strip()})
-            return self.send_json({"ok": True, "merged": False, "commits": pre["commits"]})
-
-        sw = git("switch", PUBLISH_BRANCH)
-        if sw.returncode != 0:
-            return self.send_json({"ok": False, "error": sw.stderr.strip()})
-        try:
-            m = git("merge", "--ff-only", branch)
-            if m.returncode != 0:
-                return self.send_json({"ok": False, "error":
-                    f"{PUBLISH_BRANCH} has moved on separately, so this could not be "
-                    f"fast-forwarded. Merge it by hand.\n\n" + m.stderr.strip()})
-            p = git("push", "-u", "origin", PUBLISH_BRANCH)
-            if p.returncode != 0:
-                return self.send_json({"ok": False, "error": p.stderr.strip()})
-        finally:
-            git("switch", branch)
-
-        self.send_json({"ok": True, "merged": True, "branch": branch,
-                        "commits": pre["commits"], "summary": pre["summary"]})
 
     def commit(self):
         add = git("add", *TRACKED)

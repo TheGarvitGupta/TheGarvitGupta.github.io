@@ -353,7 +353,6 @@ window.CoinHistory = (function () {
 
         var detail = document.createElement("div");
         detail.className = "hdetail";
-        if (sel.length === 1) detail.appendChild(coinRestore(e));
 
         // Photographs first — they're the most visible kind of change.
         e.photos.forEach(function (ph) {
@@ -429,17 +428,6 @@ window.CoinHistory = (function () {
         var row = document.createElement("div");
         row.className = "hrow";
         row.appendChild(coinChip(e, "removed"));
-        if (sel.length === 1 && d.from) {
-          var wrap = document.createElement("div");
-          wrap.className = "hdetail";
-          var b = document.createElement("button");
-          b.type = "button";
-          b.className = "hrestore-coin";
-          b.textContent = "Bring this coin back";
-          b.addEventListener("click", function () { restoreCoin(d.from, e.id, b); });
-          wrap.appendChild(b);
-          row.appendChild(wrap);
-        }
         return row;
       });
     if (rmSec) el.body.appendChild(rmSec);
@@ -455,39 +443,6 @@ window.CoinHistory = (function () {
     document.body.appendChild(t);
     setTimeout(function () { t.classList.add("is-out"); }, bad ? 5000 : 2400);
     setTimeout(function () { t.remove(); }, bad ? 5400 : 2800);
-  }
-
-  /** Undo one coin, back to how it stood at the selected step. */
-  function coinRestore(entry) {
-    var step = steps[idx(sel[0])];
-    var unsaved = step && step.unsaved;
-    // On the working step there is nothing yet to go back *to* except the last
-    // save, so that is what "undo" means there.
-    var target = unsaved ? step.parent : sel[0];
-    var b = document.createElement("button");
-    b.type = "button";
-    b.className = "hrestore-coin";
-    b.textContent = unsaved ? "Undo this coin's unsaved changes"
-                            : "Undo these changes to this coin";
-    if (!target) return b;
-    b.addEventListener("click", function () { restoreCoin(target, entry.id, b); });
-    return b;
-  }
-
-  function restoreCoin(sha, id, btn) {
-    btn.disabled = true;
-    btn.textContent = "Restoring…";
-    fetch("/api/restore/coin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: sha, id: id })
-    }).then(function (r) { return r.json(); }).then(function (res) {
-      if (!res.ok) { toast(res.error || "Could not restore", true); btn.disabled = false; return; }
-      btn.textContent = res.existed ? "✓ Restored" : "✓ Removed";
-      btn.classList.add("is-done");
-      afterRestore(res.existed ? "Coin restored — save when you're happy with it"
-                               : "Coin removed — save when you're happy with it");
-    });
   }
 
   function restoreAll(sha, label) {
