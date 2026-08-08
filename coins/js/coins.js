@@ -28,6 +28,7 @@ window.Coins = (function () {
   // in a menu. The published site never sets this, so a half-known coin still
   // shows only what is known.
   var showEmpty = false;
+  var wantedView = null;   // "history", when the address bar asks for it
 
   /* ── Vocabulary lookup ──────────────────────────────────────────────────── */
 
@@ -495,6 +496,8 @@ window.Coins = (function () {
     if (state.sort !== "year-desc") parts.push("sort=" + state.sort);
     var open = window.Viewer && window.Viewer.currentId();
     if (open) parts.push("coin=" + encodeURIComponent(open));
+    // So that reloading leaves you where you were rather than back at the grid.
+    if (window.CoinHistory && window.CoinHistory.isOpen()) parts.push("view=history");
     var hash = parts.length ? "#" + parts.join("&") : "";
     if (hash !== window.location.hash) {
       history.replaceState(null, "", window.location.pathname + window.location.search + hash);
@@ -505,12 +508,14 @@ window.Coins = (function () {
     var hash = window.location.hash.replace(/^#/, "");
     state.filters = {};
     var openId = null;
+    wantedView = null;
     if (hash) {
       hash.split("&").forEach(function (pair) {
         var i = pair.indexOf("=");
         if (i < 0) return;
         var key = pair.slice(0, i), val = decodeURIComponent(pair.slice(i + 1));
         if (key === "coin") { openId = val; return; }
+        if (key === "view") { wantedView = val; return; }
         if (key === "sort") { state.sort = val; return; }
         if (FACETS.some(function (f) { return f.key === key; })) {
           state.filters[key] = new Set(val.split(",").map(decodeURIComponent));
@@ -573,8 +578,24 @@ window.Coins = (function () {
     else if (mq.addListener) mq.addListener(onChange);
   }
 
+  /**
+   * Home steps back rather than dismissing: out of the history, out of a coin,
+   * and from the collection itself out to the wider site. One button, one
+   * direction, so there is nothing to learn about which control closes what.
+   */
+  function initHome() {
+    var btn = document.getElementById("btn-home");
+    if (!btn) return;
+    btn.addEventListener("click", function () {
+      if (window.CoinHistory && window.CoinHistory.isOpen()) { window.CoinHistory.close(); return; }
+      if (window.Viewer && window.Viewer.currentId()) { window.Viewer.close(); return; }
+      window.location.href = "/";
+    });
+  }
+
   function init() {
     initTheme();
+    initHome();
     el.grid = document.getElementById("grid");
     el.empty = document.getElementById("empty");
     el.count = document.getElementById("count");
@@ -628,6 +649,7 @@ window.Coins = (function () {
         .then(function (data) { state.all = Array.isArray(data) ? data : []; apply(); });
     },
     onChange: function (fn) { listeners.push(fn); },
+    wantedView: function () { return wantedView; },
     showEmptyFields: function (on) { showEmpty = !!on; },
     open: openCoin,
     bust: function (id) { busts[String(id)] = Date.now(); },

@@ -49,6 +49,8 @@
   --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
   --sans:  "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
+  --topbar-h: 3.25rem;
+
   --shell:   min(1440px, 100% - 3rem);
   --ease:    cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0.05, 0.36, 1);
@@ -127,6 +129,7 @@ html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
+  padding-top: var(--topbar-h);
   background: var(--bg);
   color: var(--ink);
   font-family: var(--sans);
@@ -814,3 +817,86 @@ a { color: inherit; }
 .viewer.is-spread .face-toggle { display: none; }
 
 .viewer.is-spread .stage-controls { margin-top: 1.25rem; }
+
+/* ── The bar across the top ───────────────────────────────────────────────── */
+/*
+   Present on the published site as well as while editing, because it carries
+   navigation: Home leaves whatever you are looking at and returns to the
+   collection, and from the collection it goes to the wider site. Editing adds
+   its state and actions to the right; nothing moves when it does.
+*/
+
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--topbar-h);
+  z-index: 85;
+  background: var(--bar-bg);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-bottom: 1px solid var(--line);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.topbar-inner {
+  width: var(--shell);
+  height: 100%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.topbar-lead { display: flex; align-items: center; gap: 0.25rem; }
+.topbar-tail { margin-left: auto; display: flex; align-items: center; gap: 0.85rem; }
+
+/* The shared button. Lives here rather than in the editing stylesheet because
+   Home is on every page, and a control should look the same everywhere. */
+.eb {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  background: var(--hover-tint);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.78125rem;
+  color: var(--ink);
+  transition: background 0.16s, color 0.16s, border-color 0.16s,
+              box-shadow 0.16s, transform 0.08s;
+}
+.eb svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+.eb:hover:not([disabled]) { background: var(--active-tint); border-color: var(--line-strong); }
+.eb:active:not([disabled]) { transform: translateY(0.5px); }
+.eb[disabled] {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink-faint);
+  opacity: 0.5;
+  cursor: default;
+  box-shadow: none;
+}
+
+/* Everything that used to assume nothing was above it. */
+.filterbar    { top: var(--topbar-h); }
+.theme-toggle { top: calc(var(--topbar-h) + 0.75rem); }
+.viewer-body  { padding-top: var(--topbar-h); }
+.viewer-close { top: calc(var(--topbar-h) + 0.6rem); }
+
+@media (max-width: 620px) {
+  :root { --topbar-h: 3rem; }
+  .topbar-inner { gap: 0.5rem; }
+  .eb span { display: none; }        /* icons alone once space is tight */
+  .eb { padding: 0.4rem 0.6rem; }
+}

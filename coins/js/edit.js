@@ -67,17 +67,17 @@
 
       if (unsaved) {
         var n = p.pendingCoins || 0;
-        bar.root.className = "editbar is-unsaved";
+        bar.root.className = "topbar is-unsaved";
         bar.text.textContent = n
           ? (n === 1 ? "1 coin unsaved" : n + " coins unsaved")
           : "Unsaved changes";
       } else if (waiting || site) {
-        bar.root.className = "editbar is-waiting";
+        bar.root.className = "topbar is-waiting";
         bar.text.textContent = waiting
           ? (waiting === 1 ? "1 change not published" : waiting + " changes not published")
           : "Site updates not published";
       } else {
-        bar.root.className = "editbar is-live";
+        bar.root.className = "topbar is-live";
         bar.text.textContent = "Everything published";
       }
     });
@@ -814,35 +814,33 @@
    * unsaved work offers Save, saved work offers Publish, and published work
    * offers nothing but a way to look back.
    */
+  /**
+   * Editing hangs its controls on the bar the page already has, rather than
+   * bringing a second one. Navigation stays on the left where it always is;
+   * the state of the work and the actions that follow from it go to the right.
+   */
   function buildBar() {
-    var root = document.createElement("div");
-    // Buttons start disabled and the state is left blank until the status
-    // arrives. Rendering enabled first meant the bar briefly promised actions
-    // it had not checked, and the correction read as a glitch. Going the other
-    // way needs no fourth state — there is simply nothing to say yet.
-    root.className = "editbar";
-    root.innerHTML =
-      '<div class="editbar-inner">' +
-        '<div class="editbar-lead"></div>' +
-        // State sits with the buttons it describes, not at the far end of the
-        // bar from them: "1 coin unsaved" is the reason Save is lit.
-        '<span class="editbar-state">' +
-          '<span class="editbar-dot" aria-hidden="true"></span>' +
-          '<span class="editbar-text"></span>' +
-        '</span>' +
-        '<span class="editbar-progress" hidden></span>' +
-        '<span class="editbar-rule" aria-hidden="true"></span>' +
-        '<div class="editbar-actions"></div>' +
-      '</div>';
-    document.body.appendChild(root);
+    var root = document.getElementById("topbar");
+    var lead = root && root.querySelector(".topbar-lead");
+    var tail = document.getElementById("topbar-tail");
+    if (!root || !lead || !tail) return;
 
     var histBtn = barButton("history", "History", "eb-quiet");
     histBtn.addEventListener("click", function () {
       if (window.CoinHistory) window.CoinHistory.show();
     });
-    root.querySelector(".editbar-lead").appendChild(histBtn);
+    lead.appendChild(histBtn);
 
-    var actions = root.querySelector(".editbar-actions");
+    tail.innerHTML =
+      '<span class="editbar-state">' +
+        '<span class="editbar-dot" aria-hidden="true"></span>' +
+        '<span class="editbar-text"></span>' +
+      '</span>' +
+      '<span class="editbar-progress" hidden></span>' +
+      '<span class="editbar-rule" aria-hidden="true"></span>' +
+      '<div class="editbar-actions"></div>';
+
+    var actions = tail.querySelector(".editbar-actions");
 
     var discard = barButton("discard", "Discard", "eb-danger");
     discard.addEventListener("click", onDiscard);
@@ -864,6 +862,8 @@
       goLive(pending, function (ok) { if (!ok) refreshPending(); });
     });
 
+    // Disabled until the status says otherwise: the bar should not offer an
+    // action it has not checked.
     [discard, save, publish].forEach(function (b) {
       b.disabled = true;
       actions.appendChild(b);
@@ -871,9 +871,9 @@
 
     bar = {
       root: root,
-      dot: root.querySelector(".editbar-dot"),
-      text: root.querySelector(".editbar-text"),
-      progress: root.querySelector(".editbar-progress"),
+      dot: tail.querySelector(".editbar-dot"),
+      text: tail.querySelector(".editbar-text"),
+      progress: tail.querySelector(".editbar-progress"),
       actions: actions,
       discard: discard, save: save, publish: publish
     };
@@ -922,6 +922,11 @@
 
     var hist = document.createElement("script");
     hist.src = "js/history.js";
+    hist.onload = function () {
+      if (window.Coins.wantedView() === "history" && window.CoinHistory) {
+        window.CoinHistory.show();
+      }
+    };
     document.head.appendChild(hist);
 
     buildBar();

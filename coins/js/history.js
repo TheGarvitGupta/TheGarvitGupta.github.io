@@ -495,7 +495,7 @@ window.CoinHistory = (function () {
         '<header class="history-top">' +
           '<h1>History</h1>' +
           '<p class="history-hint">Pick a step to see what changed. Shift-click a second to span a range.</p>' +
-          '<button type="button" class="history-close" aria-label="Close">&times;</button>' +
+
         '</header>' +
         '<div class="history-cols">' +
           '<nav class="history-rail-wrap"><ol class="history-rail"></ol></nav>' +
@@ -507,7 +507,7 @@ window.CoinHistory = (function () {
     el.root = root;
     el.rail = root.querySelector(".history-rail");
     el.body = root.querySelector(".history-body");
-    root.querySelector(".history-close").addEventListener("click", close);
+
     root.addEventListener("click", function (e) { if (e.target === root) close(); });
     document.addEventListener("keydown", function (e) {
       if (!open) return;
@@ -521,6 +521,7 @@ window.CoinHistory = (function () {
     open = true;
     el.root.hidden = false;
     document.body.style.overflow = "hidden";
+    window.Coins.writeHash();
     el.rail.textContent = "";
     el.body.textContent = "";
     el.body.classList.add("is-loading");
@@ -566,6 +567,7 @@ window.CoinHistory = (function () {
     open = false;
     if (el.root) el.root.hidden = true;
     document.body.style.overflow = "";
+    window.Coins.writeHash();
   }
 
   return {

@@ -347,44 +347,14 @@
 }
 .spec.is-empty dd:hover:empty::before { opacity: 0.9; }
 
-/* ── The bar ──────────────────────────────────────────────────────────────── */
+/* ── What editing adds to the bar ─────────────────────────────────────────── */
 /*
-   One question, answered at a glance: what is there to do next? The same three
-   actions are always present, in the order work moves through them — throw
-   away, save, publish — and only the one that applies is live, so the bar keeps
-   its shape and the next step is found by colour and position.
-
-   It sits across the top, which is where a state-of-the-document bar belongs:
-   it is a property of the whole page, not something hovering over the middle
-   of it. Everything that assumed nothing was above it — the sticky filters,
-   the theme control, both overlays — is offset by the same variable below.
+   The bar itself belongs to the page and is styled in coins.css. Editing adds
+   the state of the work and the actions that follow from it: the same three,
+   always in the order work moves through them — throw away, save, publish —
+   with only the one that applies enabled, so the bar keeps its shape and the
+   next step is found by colour and position.
 */
-
-.is-editing { --editbar-h: 3.25rem; padding-top: var(--editbar-h); padding-bottom: 0; }
-
-.editbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--editbar-h);
-  z-index: 85;
-  background: var(--bar-bg);
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
-  border-bottom: 1px solid var(--line);
-  font-size: 0.8125rem;
-  white-space: nowrap;
-}
-
-.editbar-inner {
-  width: var(--shell);
-  height: 100%;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-}
 
 .editbar-rule {
   width: 1px;
@@ -409,13 +379,13 @@
 }
 .editbar-text { color: var(--ink); }
 
-.editbar.is-unsaved .editbar-dot {
+.topbar.is-unsaved .editbar-dot {
   background: #f59e0b;
   animation: eb-breathe 2.4s ease-out infinite;
 }
-.editbar.is-waiting .editbar-dot { background: var(--gold); }
-.editbar.is-live    .editbar-dot { background: #22c55e; }
-.editbar.is-live    .editbar-text { color: var(--ink-dim); }
+.topbar.is-waiting .editbar-dot { background: var(--gold); }
+.topbar.is-live    .editbar-dot { background: #22c55e; }
+.topbar.is-live    .editbar-text { color: var(--ink-dim); }
 
 @keyframes eb-breathe {
   0%   { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45); }
@@ -442,33 +412,6 @@
   color: var(--ink);
   transition: background 0.16s, color 0.16s, border-color 0.16s,
               box-shadow 0.16s, transform 0.08s;
-}
-.eb svg {
-  width: 0.95rem;
-  height: 0.95rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  flex-shrink: 0;
-}
-
-.eb:hover:not([disabled]) {
-  background: var(--active-tint);
-  border-color: var(--line-strong);
-}
-.eb:active:not([disabled]) { transform: translateY(0.5px); }
-
-/* Disabled is flat and hollow rather than merely faded, so the difference is
-   legible at a glance and not only by comparison. */
-.eb[disabled] {
-  background: transparent;
-  border-color: var(--line);
-  color: var(--ink-faint);
-  opacity: 0.5;
-  cursor: default;
-  box-shadow: none;
 }
 
 /* Destructive intent shows on approach, not at rest. */
@@ -508,21 +451,8 @@
 
 .editbar-progress { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 
-/* ── Everything the bar now sits above ── */
-
-.is-editing .filterbar     { top: var(--editbar-h); }
-.is-editing .theme-toggle  { top: calc(var(--editbar-h) + 0.75rem); }
-.is-editing .viewer-body   { padding-top: var(--editbar-h); }
-.is-editing .viewer-close  { top: calc(var(--editbar-h) + 0.6rem); }
-.is-editing .history-panel { padding-top: var(--editbar-h); }
-.is-editing .drop-overlay  { top: var(--editbar-h); }
-
 @media (max-width: 620px) {
-  .is-editing { --editbar-h: 3rem; }
-  .editbar-inner { gap: 0.5rem; }
   .editbar-rule { display: none; }
-  .eb span { display: none; }       /* icons alone once space is tight */
-  .eb { padding: 0.4rem 0.6rem; }
 }
 
 /* ── Coins with unsaved work ──────────────────────────────────────────────── */
