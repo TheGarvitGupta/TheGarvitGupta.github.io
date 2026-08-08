@@ -97,27 +97,18 @@
 }
 
 /* ── Theme toggle ─────────────────────────────────────────────────────────── */
+/* Lives in the bar with everything else. It used to float over the top-left
+   corner, which put it in the way of whatever was underneath and made it one
+   more thing to position around every overlay. */
 
-.theme-toggle {
-  position: fixed;
-  top: 1rem;
-  left: 1rem;
-  z-index: 55;               /* above the viewer, opposite its close button */
-  display: grid;
-  place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  padding: 0;
-  background: var(--bar-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--line);
-  border-radius: 50%;
+.eb-icon {
+  padding: 0.4rem;
+  width: 2rem;
+  justify-content: center;
   color: var(--ink-dim);
-  transition: color 0.2s, border-color 0.2s, transform 0.25s var(--ease);
 }
-.theme-toggle:hover { color: var(--ink); border-color: var(--line-strong); transform: rotate(-15deg); }
-.theme-toggle svg { width: 1.05rem; height: 1.05rem; }
+.eb-icon svg { width: 1rem; height: 1rem; }
+.eb-icon:hover { color: var(--ink); }
 
 /* Show the mode you'd switch *to*, not the one you're in. */
 :root[data-theme="dark"]  .icon-moon { display: none; }
@@ -151,11 +142,6 @@ body::before {
 }
 
 body > * { position: relative; z-index: 1; }
-
-/* Re-stated after the rule above so nothing can pull it back into the flow:
-   the theme control is pinned to the window, not to the page, and stays put
-   while the collection scrolls under it. */
-.theme-toggle { position: fixed; }
 
 img { max-width: 100%; display: block; }
 
@@ -890,7 +876,6 @@ a { color: inherit; }
 
 /* Everything that used to assume nothing was above it. */
 .filterbar    { top: var(--topbar-h); }
-.theme-toggle { top: calc(var(--topbar-h) + 0.75rem); }
 .viewer-body  { padding-top: var(--topbar-h); }
 .viewer-close { top: calc(var(--topbar-h) + 0.6rem); }
 
