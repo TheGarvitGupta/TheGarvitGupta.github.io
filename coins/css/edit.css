@@ -454,17 +454,21 @@
 
 .editbar-actions { display: flex; align-items: center; gap: 0.25rem; }
 
+/* Every button sits on a surface. A control with no background reads as text
+   until you happen to hover it, which is the wrong way round: the thing you can
+   press should look pressable before you reach for it. */
 .eb {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.85rem;
-  background: none;
-  border: 1px solid transparent;
+  background: var(--hover-tint);
+  border: 1px solid var(--line);
   border-radius: 999px;
   font-size: 0.78125rem;
-  color: var(--ink-dim);
-  transition: background 0.18s, color 0.18s, border-color 0.18s, opacity 0.18s;
+  color: var(--ink);
+  transition: background 0.16s, color 0.16s, border-color 0.16s,
+              box-shadow 0.16s, transform 0.08s;
 }
 .eb svg {
   width: 0.95rem;
@@ -477,17 +481,57 @@
   flex-shrink: 0;
 }
 
-.eb:hover:not([disabled]) { background: var(--hover-tint); color: var(--ink); }
-.eb[disabled] { opacity: 0.32; cursor: default; color: var(--ink-faint); }
+.eb:hover:not([disabled]) {
+  background: var(--active-tint);
+  border-color: var(--line-strong);
+}
+.eb:active:not([disabled]) { transform: translateY(0.5px); }
 
-.eb-danger:hover:not([disabled]) { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+/* Disabled is flat and hollow rather than merely faded, so the difference is
+   legible at a glance and not only by comparison. */
+.eb[disabled] {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink-faint);
+  opacity: 0.5;
+  cursor: default;
+  box-shadow: none;
+}
+
+/* Destructive intent shows on approach, not at rest. */
+.eb-danger:hover:not([disabled]) {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #dc2626;
+}
 :root[data-theme="dark"] .eb-danger:hover:not([disabled]) { color: #f87171; }
 
-.eb-primary:not([disabled]) { background: var(--ink); color: var(--bg); font-weight: 600; }
-.eb-primary:not([disabled]):hover { opacity: 0.85; }
+/* Save is the ordinary next move; Publish is the consequential one. Both are
+   filled, so the eye lands on whichever is currently available. */
+.eb-primary:not([disabled]) {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
+}
+.eb-primary:not([disabled]):hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  opacity: 0.86;
+}
 
-.eb-go:not([disabled]) { background: var(--gold); color: var(--on-gold); font-weight: 600; }
-.eb-go:not([disabled]):hover { background: var(--gold-soft); }
+.eb-go:not([disabled]) {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--on-gold);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(201, 162, 39, 0.32);
+}
+.eb-go:not([disabled]):hover {
+  background: var(--gold-soft);
+  border-color: var(--gold-soft);
+}
 
 .editbar-progress { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 
