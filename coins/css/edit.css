@@ -417,13 +417,15 @@
 .editbar-rule {
   width: 1px;
   height: 1.3rem;
+  margin: 0 0.15rem;
   background: var(--line-strong);
   opacity: 0.6;
 }
 
 /* ── State ── */
 
-.editbar-state { display: flex; align-items: center; gap: 0.55rem; }
+/* Pushed right so the state and the actions read as one group. */
+.editbar-state { display: flex; align-items: center; gap: 0.55rem; margin-left: auto; }
 
 .editbar-dot {
   width: 8px;
@@ -450,7 +452,7 @@
 
 /* ── Buttons ── */
 
-.editbar-actions { display: flex; align-items: center; gap: 0.25rem; margin-left: auto; }
+.editbar-actions { display: flex; align-items: center; gap: 0.25rem; }
 
 .eb {
   display: inline-flex;

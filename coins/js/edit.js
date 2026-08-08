@@ -708,12 +708,14 @@
     root.innerHTML =
       '<div class="editbar-inner">' +
         '<div class="editbar-lead"></div>' +
-        '<span class="editbar-rule" aria-hidden="true"></span>' +
+        // State sits with the buttons it describes, not at the far end of the
+        // bar from them: "1 coin unsaved" is the reason Save is lit.
         '<span class="editbar-state">' +
           '<span class="editbar-dot" aria-hidden="true"></span>' +
           '<span class="editbar-text"></span>' +
         '</span>' +
         '<span class="editbar-progress" hidden></span>' +
+        '<span class="editbar-rule" aria-hidden="true"></span>' +
         '<div class="editbar-actions"></div>' +
       '</div>';
     document.body.appendChild(root);
