@@ -83,12 +83,23 @@
     });
   }
 
+  /**
+   * The timeline is a view of the same state the bar acts on, so anything that
+   * changes that state has to tell it. Discarding from the bar while the panel
+   * is open otherwise leaves an unsaved step sitting there describing changes
+   * that no longer exist.
+   */
+  function refreshHistory() {
+    if (window.CoinHistory && window.CoinHistory.isOpen()) window.CoinHistory.show();
+  }
+
   function onDiscard() {
     if (!confirm("Throw away every unsaved change?\n\nPhotos added since the last save will be deleted, and edits since then undone.")) return;
     api("POST", "/api/discard", {}).then(function (res) {
       if (!res.ok) { toast(res.error || "Could not discard", true); return null; }
       return window.Coins.reload().then(function () {
         refreshPending();
+        refreshHistory();
         toast("Changes discarded");
       });
     });
@@ -835,6 +846,7 @@
         if (!res.ok) toast(res.error || "Could not save", true);
         else toast("Saved");
         refreshPending();
+        refreshHistory();
       });
     });
 
@@ -877,6 +889,7 @@
       if (!res.ok) { toast(res.error || "Could not publish", true); if (done) done(false); return; }
       toast("Published — the site updates in about a minute");
       refreshPending();
+      refreshHistory();
       if (done) done(true);
     });
   }

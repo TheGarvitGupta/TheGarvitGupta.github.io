@@ -467,7 +467,8 @@ window.CoinHistory = (function () {
       if (u.changed) bits.push(u.changed + " reverted");
       afterRestore("Collection restored" + (bits.length ? " — " + bits.join(", ") : "") +
                    ". Save when you're happy with it.");
-      close();
+      show();   // the restore is itself an unsaved step now
+
     });
   }
 
