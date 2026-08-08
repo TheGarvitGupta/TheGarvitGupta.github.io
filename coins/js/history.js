@@ -314,8 +314,21 @@ window.CoinHistory = (function () {
     hd.appendChild(h2);
     hd.appendChild(p);
 
-    // Restoring is only meaningful for a single point in time, not a range.
     var here = steps[idx(sel[0])];
+
+    // Unsaved work can be saved from here. The publish bar carries the same
+    // action, but this panel covers it — so the one place showing you what you
+    // have changed could not commit it.
+    if (sel.length === 1 && here && here.unsaved) {
+      var save = document.createElement("button");
+      save.type = "button";
+      save.className = "hsave-btn";
+      save.textContent = "Save these changes";
+      save.addEventListener("click", function () { saveChanges(save); });
+      hd.appendChild(save);
+    }
+
+    // Restoring is only meaningful for a single point in time, not a range.
     if (sel.length === 1 && idx(sel[0]) > 0 && !(here && here.unsaved)) {
       var back = document.createElement("button");
       back.type = "button";
@@ -474,6 +487,26 @@ window.CoinHistory = (function () {
       document.dispatchEvent(new CustomEvent("coins:restored"));
       toast(msg);
     });
+  }
+
+  /** Commit the working tree, then show the step it became. */
+  function saveChanges(btn) {
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+    fetch("/api/commit", { method: "POST", headers: { "Content-Type": "application/json" },
+                           body: "{}" })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (!res.ok) {
+          toast(res.error || "Could not save", true);
+          btn.disabled = false;
+          btn.textContent = "Save these changes";
+          return;
+        }
+        toast("Saved");
+        document.dispatchEvent(new CustomEvent("coins:restored"));  // refresh the bar
+        show();   // re-read the timeline; the newest step is now the save
+      });
   }
 
   /* ── Taking it live ─────────────────────────────────────────────────────── */
