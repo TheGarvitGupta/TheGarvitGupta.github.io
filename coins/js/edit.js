@@ -59,8 +59,11 @@
       bar.publish.disabled = !!unsaved || !(waiting || site);
 
       if (unsaved) {
+        var n = p.pendingCoins || 0;
         bar.root.className = "editbar is-unsaved";
-        bar.text.textContent = unsaved === 1 ? "1 unsaved change" : unsaved + " unsaved changes";
+        bar.text.textContent = n
+          ? (n === 1 ? "1 coin unsaved" : n + " coins unsaved")
+          : "Unsaved changes";
       } else if (waiting || site) {
         bar.root.className = "editbar is-waiting";
         bar.text.textContent = waiting
@@ -703,14 +706,16 @@
     var root = document.createElement("div");
     root.className = "editbar";
     root.innerHTML =
-      '<div class="editbar-lead"></div>' +
-      '<span class="editbar-rule" aria-hidden="true"></span>' +
-      '<span class="editbar-state">' +
-        '<span class="editbar-dot" aria-hidden="true"></span>' +
-        '<span class="editbar-text"></span>' +
-      '</span>' +
-      '<span class="editbar-progress" hidden></span>' +
-      '<div class="editbar-actions"></div>';
+      '<div class="editbar-inner">' +
+        '<div class="editbar-lead"></div>' +
+        '<span class="editbar-rule" aria-hidden="true"></span>' +
+        '<span class="editbar-state">' +
+          '<span class="editbar-dot" aria-hidden="true"></span>' +
+          '<span class="editbar-text"></span>' +
+        '</span>' +
+        '<span class="editbar-progress" hidden></span>' +
+        '<div class="editbar-actions"></div>' +
+      '</div>';
     document.body.appendChild(root);
 
     var histBtn = barButton("history", "History", "eb-quiet");
