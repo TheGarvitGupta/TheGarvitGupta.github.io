@@ -445,3 +445,23 @@
   transition: border-color 0.2s, color 0.2s;
 }
 .editbar-history:hover { border-color: var(--line-strong); color: var(--ink); }
+
+/* Replacing a photograph is a main action in the viewer, not a footnote. */
+.face-upload-btn {
+  border-color: var(--line-strong);
+  color: var(--ink-dim);
+}
+.face-upload-btn::before {
+  content: "↑";
+  margin-right: 0.4rem;
+  opacity: 0.7;
+}
+
+/* The publish bar is fixed to the bottom of the window and was sitting on top
+   of the viewer's controls, hiding the photo-replace buttons completely. Give
+   the stage room to clear it while editing. */
+.is-editing .stage { padding-bottom: 6rem; }
+
+@media (max-width: 900px) {
+  .is-editing .stage { padding-bottom: 7.5rem; }
+}

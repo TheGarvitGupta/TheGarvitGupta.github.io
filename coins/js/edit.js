@@ -552,10 +552,19 @@
 
   /** Keep the lead-face button in step with whichever side is showing. */
   function refreshLead() {
-    var btn = document.querySelector(".face-lead");
-    if (!btn) return;
     var coin = window.Viewer.current();
     if (!coin) return;
+
+    // "Replace" or "Add", depending on whether that side has a photograph yet.
+    Array.prototype.forEach.call(document.querySelectorAll(".face-upload-btn"), function (el) {
+      var face = el.dataset.face;
+      if (!face || !el.firstChild) return;
+      el.firstChild.nodeValue = (window.Coins.hasImage(coin, face) ? "Replace " : "Add ") +
+                                (face === "obv" ? "obverse" : "reverse") + " photo";
+    });
+
+    var btn = document.querySelector(".face-lead");
+    if (!btn) return;
     var showing = document.getElementById("btn-rev").classList.contains("is-active") ? "rev" : "obv";
     var isLead = window.Coins.primaryFace(coin) === showing;
     btn.classList.toggle("is-on", isLead);
@@ -615,7 +624,8 @@
     [["obv", "Obverse"], ["rev", "Reverse"]].forEach(function (pair) {
       var label = document.createElement("label");
       label.className = "face-upload-btn";
-      label.appendChild(document.createTextNode("Set " + pair[1].toLowerCase()));
+      label.dataset.face = pair[0];
+      label.appendChild(document.createTextNode("Replace " + pair[1].toLowerCase() + " photo"));
       var input = document.createElement("input");
       input.type = "file";
       input.accept = "image/*";

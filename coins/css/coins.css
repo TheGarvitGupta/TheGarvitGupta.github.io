@@ -518,14 +518,20 @@ a { color: inherit; }
   gap: 1.5rem;
   padding: clamp(1.5rem, 4vw, 3.5rem);
   min-width: 0;
-  overflow: hidden;
+  /* Scroll rather than clip. The controls sit under the coin, and with the
+     coin sized off the viewport height they were being cut off entirely on a
+     short window — which made replacing a photograph look impossible. */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* The zoom/pan surface. Transform lives on .flipper; this frame is the
    viewport that clips it. */
 .stage-frame {
   position: relative;
-  width: min(70vh, 100%);
+  /* Leaves room for the controls beneath at any window height. */
+  width: min(58vh, 100%);
+  flex-shrink: 0;
   aspect-ratio: 1;
   perspective: 1600px;
   touch-action: none;
