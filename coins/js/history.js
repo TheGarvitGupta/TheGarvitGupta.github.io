@@ -27,6 +27,7 @@ window.CoinHistory = (function () {
   var el = {};
   var steps = [];
   var sel = [];        // one or two shas, newest-first order preserved
+  var live = null;     // what taking the site live would publish
   var open = false;
 
   /* ── Formatting ─────────────────────────────────────────────────────────── */
@@ -91,8 +92,15 @@ window.CoinHistory = (function () {
 
   /* ── Building blocks ────────────────────────────────────────────────────── */
 
-  /** A thumbnail out of history, or a quiet placeholder when there is none. */
+  /** A thumbnail out of history — or, for unsaved work, straight off disk. */
   function blobImg(blob, alt) {
+    if (blob && blob.indexOf("live:") === 0) {
+      var cur = document.createElement("img");
+      cur.src = "collection/images/thumbs/" + blob.slice(5) + "?t=" + Date.now();
+      cur.alt = alt || "";
+      cur.loading = "lazy";
+      return cur;
+    }
     if (!blob) {
       var ph = document.createElement("span");
       ph.className = "hno-photo";
@@ -163,7 +171,18 @@ window.CoinHistory = (function () {
 
       var time = document.createElement("span");
       time.className = "hstep-time";
-      time.textContent = t.time;
+      time.textContent = s.unsaved ? "" : t.time;
+
+      // Saved and live are not the same thing, and the difference is the whole
+      // point of a working branch — so it is said outright on every step.
+      var badge = document.createElement("span");
+      badge.className = "hbadge is-" + (s.state || "saved");
+      badge.textContent = s.state === "live" ? "Live"
+                        : s.state === "unsaved" ? "Not saved" : "Saved · not live";
+      time.appendChild(badge);
+
+      if (s.unsaved) li.classList.add("is-unsaved");
+      if (s.state) li.classList.add("is-" + s.state);
 
       var sum = document.createElement("span");
       sum.className = "hstep-sum";
@@ -244,7 +263,15 @@ window.CoinHistory = (function () {
     if (!s) return { title: "", sub: "" };
     if (one) {
       var t = when(s.date);
-      return { title: summarise(s), sub: t.day + ", " + t.year + " at " + t.time };
+      if (s.unsaved) {
+        return { title: summarise(s),
+                 sub: "Edited since the last save, and not published anywhere yet" };
+      }
+      var where = s.state === "live"
+        ? "This is on the live site"
+        : "Saved, but not on the live site yet";
+      return { title: summarise(s),
+               sub: t.day + ", " + t.year + " at " + t.time + "  ·  " + where };
     }
     var i = idx(sel[0]), j = idx(sel[1]);
     var older = steps[Math.max(i, j)], newer = steps[Math.min(i, j)];
@@ -288,7 +315,8 @@ window.CoinHistory = (function () {
     hd.appendChild(p);
 
     // Restoring is only meaningful for a single point in time, not a range.
-    if (sel.length === 1 && idx(sel[0]) > 0) {
+    var here = steps[idx(sel[0])];
+    if (sel.length === 1 && idx(sel[0]) > 0 && !(here && here.unsaved)) {
       var back = document.createElement("button");
       back.type = "button";
       back.className = "hrestore-all";
@@ -431,11 +459,18 @@ window.CoinHistory = (function () {
 
   /** Undo one coin, back to how it stood at the selected step. */
   function coinRestore(entry) {
+    var step = steps[idx(sel[0])];
+    var unsaved = step && step.unsaved;
+    // On the working step there is nothing yet to go back *to* except the last
+    // save, so that is what "undo" means there.
+    var target = unsaved ? step.parent : sel[0];
     var b = document.createElement("button");
     b.type = "button";
     b.className = "hrestore-coin";
-    b.textContent = "Undo these changes to this coin";
-    b.addEventListener("click", function () { restoreCoin(sel[0], entry.id, b); });
+    b.textContent = unsaved ? "Undo this coin's unsaved changes"
+                            : "Undo these changes to this coin";
+    if (!target) return b;
+    b.addEventListener("click", function () { restoreCoin(target, entry.id, b); });
     return b;
   }
 
@@ -486,6 +521,86 @@ window.CoinHistory = (function () {
     });
   }
 
+  /* ── Taking it live ─────────────────────────────────────────────────────── */
+
+  /**
+   * Work happens on a branch; the published site is a different one. This is
+   * the step that closes that gap, and it says what it is about to make public
+   * before doing it — in coins and steps, not branch names.
+   */
+  function renderLive() {
+    if (!el.live) return;
+    el.live.textContent = "";
+
+    fetch("/api/golive/preview").then(function (r) { return r.json(); }).then(function (p) {
+      live = p;
+      if (p.upToDate) {
+        var ok = document.createElement("span");
+        ok.className = "hlive-ok";
+        ok.textContent = "✓ The live site is up to date";
+        el.live.appendChild(ok);
+        return;
+      }
+
+      var wrap = document.createElement("div");
+      wrap.className = "hlive";
+
+      var note = document.createElement("span");
+      note.className = "hlive-note";
+      var u = p.summary || {}, bits = [];
+      if (u.added)   bits.push(u.added + (u.added === 1 ? " coin" : " coins") + " added");
+      if (u.changed) bits.push(u.changed + (u.changed === 1 ? " coin" : " coins") + " updated");
+      if (u.removed) bits.push(u.removed + (u.removed === 1 ? " coin" : " coins") + " removed");
+      note.textContent = bits.length ? "Not yet public: " + bits.join(", ")
+                                     : "Not yet public: " + p.commits +
+                                       (p.commits === 1 ? " change" : " changes");
+      wrap.appendChild(note);
+
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "hlive-btn";
+      btn.textContent = "Take the site live";
+      btn.addEventListener("click", function () { goLive(p, btn); });
+      wrap.appendChild(btn);
+
+      if (p.hasUnsaved) {
+        btn.disabled = true;
+        note.textContent = "Save your changes first, then this can go live.";
+        wrap.classList.add("is-blocked");
+      }
+
+      el.live.appendChild(wrap);
+    });
+  }
+
+  function goLive(p, btn) {
+    var u = p.summary || {}, lines = [];
+    if (u.added)   lines.push("  · " + u.added + (u.added === 1 ? " coin" : " coins") + " added");
+    if (u.changed) lines.push("  · " + u.changed + (u.changed === 1 ? " coin" : " coins") + " updated");
+    if (u.removed) lines.push("  · " + u.removed + (u.removed === 1 ? " coin" : " coins") + " removed");
+
+    var msg = "Make the collection public?\n\n" +
+      (lines.length ? lines.join("\n") + "\n\n" : "") +
+      "This publishes " + p.commits + (p.commits === 1 ? " saved change" : " saved changes") +
+      " to garvitgupta.com/coins/, visible to anyone.\n\n" +
+      "The site updates about a minute afterwards.";
+
+    if (!confirm(msg)) return;
+
+    btn.disabled = true;
+    btn.textContent = "Publishing…";
+    fetch("/api/golive", { method: "POST", headers: { "Content-Type": "application/json" },
+                           body: "{}" })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (!res.ok) { toast(res.error || "Could not publish", true); btn.disabled = false;
+                       btn.textContent = "Take the site live"; return; }
+        toast("Published — the site updates in about a minute");
+        renderLive();
+        document.dispatchEvent(new CustomEvent("coins:restored"));  // refresh the bar
+      });
+  }
+
   /* ── Open / close ───────────────────────────────────────────────────────── */
 
   function build() {
@@ -500,6 +615,7 @@ window.CoinHistory = (function () {
         '<header class="history-top">' +
           '<h1>History</h1>' +
           '<p class="history-hint">Pick a step to see what changed. Shift-click a second to span a range.</p>' +
+          '<div class="history-live"></div>' +
           '<button type="button" class="history-close" aria-label="Close">&times;</button>' +
         '</header>' +
         '<div class="history-cols">' +
@@ -512,6 +628,7 @@ window.CoinHistory = (function () {
     el.root = root;
     el.rail = root.querySelector(".history-rail");
     el.body = root.querySelector(".history-body");
+    el.live = root.querySelector(".history-live");
     root.querySelector(".history-close").addEventListener("click", close);
     root.addEventListener("click", function (e) { if (e.target === root) close(); });
     document.addEventListener("keydown", function (e) {
@@ -539,6 +656,7 @@ window.CoinHistory = (function () {
       sel = [steps[0].sha];
       renderRail();
       loadDiff();
+      renderLive();
     });
   }
 

@@ -352,8 +352,16 @@ _cat_cache, _tree_cache = {}, {}
 _pending_restore = None
 
 
+# The uncommitted working tree, addressed like any other version so that the
+# same diff machinery describes work in progress. Everything that has not been
+# saved yet is simply the newest step.
+WORKING = "WORKING"
+
+
 def catalogue_at(sha):
-    """The whole catalogue as it stood at one commit."""
+    """The whole catalogue as it stood at one commit, or right now."""
+    if sha == WORKING:
+        return load_coins()
     if sha in _cat_cache:
         return _cat_cache[sha]
     out = []
@@ -370,7 +378,25 @@ def catalogue_at(sha):
 
 
 def thumbs_at(sha):
-    """{ '0003-obv': blob_id } for every thumbnail present at one commit."""
+    """
+    { '0003-obv': blob_id } for every thumbnail present at one commit.
+
+    For the working tree there are no blobs yet, so the files are referenced by
+    path with a "live:" marker and the page loads them the ordinary way. Hashing
+    them into the object store just to display them would leave litter behind.
+    """
+    if sha == WORKING:
+        # Real blob hashes, computed but not written, so they compare correctly
+        # against the ids in a commit. Marking these some other way would make
+        # every photograph look replaced on every unsaved step.
+        files = sorted(f for f in THUMB_DIR.iterdir()
+                       if f.suffix.lower() in (".webp", ".jpg", ".png")) \
+                if THUMB_DIR.exists() else []
+        if not files:
+            return {}
+        r = git("hash-object", *[str(f) for f in files])
+        hashes = r.stdout.split()
+        return {f.stem: h for f, h in zip(files, hashes)}
     if sha in _tree_cache:
         return _tree_cache[sha]
     found = {}
@@ -384,6 +410,15 @@ def thumbs_at(sha):
         found[Path(path).stem] = blob
     _tree_cache[sha] = found
     return found
+
+
+def working_thumb_name(stem):
+    """The thumbnail file on disk for a coin face, whatever its extension."""
+    if THUMB_DIR.exists():
+        for f in THUMB_DIR.iterdir():
+            if f.stem == stem:
+                return f.name
+    return stem + ".webp"
 
 
 def _same(a, b):
@@ -428,6 +463,10 @@ def diff_versions(old_sha, new_sha):
             a = old_thumbs.get(f"{cid}-{face}")
             b = new_thumbs.get(f"{cid}-{face}")
             if a != b:
+                # An uncommitted blob is not in the object store, so point the
+                # page at the file itself for the newer side.
+                if b and new_sha == WORKING:
+                    b = "live:" + working_thumb_name(f"{cid}-{face}")
                 photos.append({"face": face, "from": a, "to": b})
 
         if fields or photos:
@@ -441,7 +480,12 @@ def diff_versions(old_sha, new_sha):
 
 
 def history_steps():
-    """Every commit that touched the collection, newest first."""
+    """
+    Every commit that touched the collection, newest first — preceded by the
+    work in progress, if there is any. Unsaved edits are part of the story of
+    the collection; leaving them out makes the timeline stop short of the
+    present and quietly disagree with what is on screen.
+    """
     fmt = "%H%x1f%aI%x1f%an%x1f%s"
     r = git("log", f"--format={fmt}", "--", *CATALOGUE_PATHS,
             "coins/collection/images", "coins/images")
@@ -451,12 +495,80 @@ def history_steps():
         if len(parts) < 4:
             continue
         steps.append({"sha": parts[0], "date": parts[1], "author": parts[2], "subject": parts[3]})
+
+    # Three states, and the difference between the last two matters: saved work
+    # is safe but private, and only what has reached the published branch is
+    # actually on the web. Reachability from origin/PUBLISH_BRANCH is the real
+    # test — a local merge that has not been pushed is not live.
+    reachable = set()
+    if git("rev-parse", "--verify", "-q", f"origin/{PUBLISH_BRANCH}").stdout.strip():
+        reachable = set(git("rev-list", f"origin/{PUBLISH_BRANCH}").stdout.split())
+    for st in steps:
+        st["state"] = "live" if st["sha"] in reachable else "saved"
+
+    if pending_changes()["total"] > 0:
+        import datetime
+        steps.insert(0, {
+            "sha": WORKING,
+            "date": datetime.datetime.now().astimezone().isoformat(),
+            "author": "", "subject": "Unsaved changes",
+            "unsaved": True, "state": "unsaved",
+        })
     return steps
 
 
 def step_parent(sha):
+    if sha == WORKING:
+        return git("rev-parse", "HEAD").stdout.strip() or None
     r = git("rev-parse", f"{sha}^")
     return r.stdout.strip() if r.returncode == 0 else None
+
+
+def current_branch():
+    return git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+
+
+def golive_preview():
+    """
+    What taking the site live would actually publish.
+
+    Work happens on a branch; GitHub Pages serves PUBLISH_BRANCH. This reports
+    the gap between the two in the terms the rest of the interface uses — steps
+    and coins — so the confirmation can say what is about to become public
+    rather than asking someone to trust a branch name.
+    """
+    branch = current_branch()
+    live = git("rev-parse", "--verify", "-q", PUBLISH_BRANCH).stdout.strip()
+    here = git("rev-parse", "HEAD").stdout.strip()
+
+    dirty = pending_changes()["total"] > 0
+    unclean = bool(git("status", "--porcelain").stdout.strip())
+
+    if branch == PUBLISH_BRANCH:
+        remote = git("rev-parse", "--verify", "-q", f"origin/{PUBLISH_BRANCH}").stdout.strip()
+        rng = f"origin/{PUBLISH_BRANCH}..{PUBLISH_BRANCH}" if remote else PUBLISH_BRANCH
+        base = remote
+    else:
+        rng = f"{PUBLISH_BRANCH}..{branch}"
+        base = live
+
+    log = git("log", "--format=%H%x1f%aI%x1f%s", rng, "--", *TRACKED).stdout
+    steps = [dict(zip(("sha", "date", "subject"), l.split("\x1f")))
+             for l in log.splitlines() if l.count("\x1f") == 2]
+
+    summary = {"added": 0, "removed": 0, "changed": 0}
+    if base and base != here:
+        d = diff_versions(base, here)
+        summary = {"added": len(d["added"]), "removed": len(d["removed"]),
+                   "changed": len(d["changed"])}
+
+    ahead = git("rev-list", "--count", rng).stdout.strip() or "0"
+
+    return {"branch": branch, "publishBranch": PUBLISH_BRANCH,
+            "isLive": branch == PUBLISH_BRANCH,
+            "commits": int(ahead), "steps": steps, "summary": summary,
+            "hasUnsaved": dirty, "workingTreeDirty": unclean,
+            "upToDate": int(ahead) == 0}
 
 
 # ── HTTP ─────────────────────────────────────────────────────────────────────
@@ -506,6 +618,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/pending":
             return self.send_json(pending_changes())
 
+        if path == "/api/golive/preview":
+            return self.send_json(golive_preview())
+
         if path == "/api/history":
             steps = history_steps()
             # Summarise each step against the one before it, so the rail can
@@ -529,6 +644,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             to = (q.get("to") or [""])[0]
             frm = (q.get("from") or [""])[0] or step_parent(to)
+            if to == WORKING and not frm:
+                frm = git("rev-parse", "HEAD").stdout.strip()
             if not to:
                 return self.send_json({"error": "missing to"}, 400)
             if not frm:      # the very first step has nothing before it
@@ -566,6 +683,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 return self.create_coin()
             if path == "/api/image":
                 return self.upload_image()
+            if path == "/api/golive":
+                return self.golive()
             if path == "/api/restore":
                 return self.restore()
             if path == "/api/restore/coin":
@@ -629,18 +748,27 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             coins = load_coins()
             for coin in coins:
                 if str(coin.get("id")) == coin_id:
+                    # Only record a change if something actually changed.
+                    # Stamping the date on a save that altered nothing invents
+                    # an edit: the history then shows an unsaved step with no
+                    # content in it, and a save that publishes a timestamp.
+                    touched = False
                     for k, v in body.items():
                         if k == "id":
                             continue
                         # null clears a field entirely — that's how edit mode
                         # removes a detail rather than blanking it to "".
                         if v is None or v == "":
-                            coin.pop(k, None)
-                        else:
+                            if k in coin:
+                                coin.pop(k, None)
+                                touched = True
+                        elif coin.get(k) != v:
                             coin[k] = v
-                    coin["updated"] = today()
-                    save_coins(coins)
-                    return self.send_json({"ok": True, "coin": coin})
+                            touched = True
+                    if touched:
+                        coin["updated"] = today()
+                        save_coins(coins)
+                    return self.send_json({"ok": True, "coin": coin, "changed": touched})
         self.send_json({"ok": False, "error": "no such coin"}, 404)
 
     def delete_coin(self, coin_id):
@@ -796,6 +924,57 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
         self.send_json({"ok": True, "id": cid, "action": verb,
                         "coin": was, "existed": was is not None})
+
+    def golive(self):
+        """
+        Take the site live: merge the working branch into the branch GitHub
+        Pages serves, and push.
+
+        Deliberately fast-forward only. The working branch is always ahead of
+        the live one in a straight line here, so a fast-forward is what should
+        happen; if it isn't possible something unexpected has gone on and the
+        right answer is to stop and say so, not to invent a merge commit that
+        someone would then have to understand.
+
+        The branch is switched back at the end whatever happens, so a failure
+        never strands anyone somewhere they didn't mean to be.
+        """
+        pre = golive_preview()
+        if pre["hasUnsaved"]:
+            return self.send_json({"ok": False, "error":
+                "There are unsaved changes. Save them first — only saved work can go live."})
+        if pre["workingTreeDirty"]:
+            return self.send_json({"ok": False, "error":
+                "Some files outside the collection have been edited. Commit or discard "
+                "them before publishing, so switching branches is safe."})
+        if pre["upToDate"]:
+            return self.send_json({"ok": False, "error": "The live site is already up to date."})
+
+        branch = pre["branch"]
+
+        if pre["isLive"]:
+            r = git("push", "-u", "origin", PUBLISH_BRANCH)
+            if r.returncode != 0:
+                return self.send_json({"ok": False, "error": r.stderr.strip()})
+            return self.send_json({"ok": True, "merged": False, "commits": pre["commits"]})
+
+        sw = git("switch", PUBLISH_BRANCH)
+        if sw.returncode != 0:
+            return self.send_json({"ok": False, "error": sw.stderr.strip()})
+        try:
+            m = git("merge", "--ff-only", branch)
+            if m.returncode != 0:
+                return self.send_json({"ok": False, "error":
+                    f"{PUBLISH_BRANCH} has moved on separately, so this could not be "
+                    f"fast-forwarded. Merge it by hand.\n\n" + m.stderr.strip()})
+            p = git("push", "-u", "origin", PUBLISH_BRANCH)
+            if p.returncode != 0:
+                return self.send_json({"ok": False, "error": p.stderr.strip()})
+        finally:
+            git("switch", branch)
+
+        self.send_json({"ok": True, "merged": True, "branch": branch,
+                        "commits": pre["commits"], "summary": pre["summary"]})
 
     def commit(self):
         add = git("add", *TRACKED)
