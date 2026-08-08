@@ -149,6 +149,11 @@ body::before {
 
 body > * { position: relative; z-index: 1; }
 
+/* Re-stated after the rule above so nothing can pull it back into the flow:
+   the theme control is pinned to the window, not to the page, and stays put
+   while the collection scrolls under it. */
+.theme-toggle { position: fixed; }
+
 img { max-width: 100%; display: block; }
 
 button { font: inherit; color: inherit; cursor: pointer; }
