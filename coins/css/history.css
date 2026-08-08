@@ -85,14 +85,14 @@
 .history-rail {
   position: relative;
   margin: 0;
-  padding: 0 0 0 1.1rem;
+  padding: 0 0.25rem 0 1.35rem;
   list-style: none;
 }
 /* The thread itself. */
 .history-rail::before {
   content: "";
   position: absolute;
-  left: 0.28rem;
+  left: 0.53rem;
   top: 0.6rem;
   bottom: 0.6rem;
   width: 1px;
@@ -100,24 +100,25 @@
 }
 
 .hday {
-  margin: 1.5rem 0 0.6rem;
-  font-size: 0.625rem;
-  letter-spacing: 0.22em;
+  margin: 2.25rem 0 0.9rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink);
 }
-.hday:first-child { margin-top: 0; }
+.hday:first-child { margin-top: 0.25rem; }
 
 .hstep { position: relative; }
 /* Steps are separate events; touching cards read as one block. */
-.hstep + .hstep { margin-top: 0.35rem; }
+.hstep + .hstep { margin-top: 0.6rem; }
 
 /* The node on the thread. */
 .hstep::before {
   content: "";
   position: absolute;
   left: -1.1rem;
-  top: 1rem;
+  top: 1.2rem;
   width: 0.55rem;
   height: 0.55rem;
   margin-left: 0.005rem;
@@ -137,12 +138,12 @@
 .hstep-btn {
   display: block;
   width: 100%;
-  padding: 0.65rem 0.75rem;
+  padding: 0.85rem 0.95rem 0.9rem;
   background: none;
   border: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   text-align: left;
-  transition: background 0.18s;
+  transition: background 0.18s, filter 0.18s;
 }
 .hstep-btn:hover { filter: brightness(0.97); }
 :root[data-theme="dark"] .hstep-btn:hover { filter: brightness(1.35); }
@@ -156,7 +157,7 @@
 }
 .hstep-sum {
   display: block;
-  margin-top: 0.15rem;
+  margin-top: 0.4rem;
   font-family: var(--serif);
   font-size: 1.0625rem;
   line-height: 1.25;
@@ -167,8 +168,8 @@
 /* Coins involved, strung along the thread. */
 .hstep-strip {
   display: flex;
-  gap: 0.25rem;
-  margin-top: 0.5rem;
+  gap: 0.3rem;
+  margin-top: 0.7rem;
 }
 .hstep-dot {
   width: 1.35rem;
@@ -409,7 +410,16 @@
 
 /* ── Saved, and live, are different things ────────────────────────────────── */
 
-.hstep-time { display: flex; align-items: center; gap: 0.5rem; }
+/* Time on the left, state on the right — the badge is the thing you scan the
+   column for, so it sits on a predictable edge rather than trailing the time
+   at whatever width that happens to be. */
+.hstep-time {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+.hbadge { margin-left: auto; }
 
 .hbadge {
   padding: 0.05rem 0.4rem;
