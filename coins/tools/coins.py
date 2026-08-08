@@ -483,10 +483,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return json.loads(self.rfile.read(length))
 
     def end_headers(self):
-        # The catalogue is rewritten constantly while editing; never let the
-        # browser serve a stale copy back to us.
-        if self.path.startswith("/coins/collection/") or self.path.startswith("/coins/data/"):
-            self.send_header("Cache-Control", "no-store")
+        # Nothing this server hands out should ever be cached. The catalogue is
+        # rewritten constantly, and caching the scripts means an edit to the
+        # site is invisible until someone thinks to hard-reload — which is
+        # exactly the kind of puzzle nobody should have to solve. The /api/
+        # handlers set their own headers, including the blob endpoint, whose
+        # content is addressed by hash and so is safe to cache forever.
+        if not self.path.startswith("/api/"):
+            self.send_header("Cache-Control", "no-store, must-revalidate")
         super().end_headers()
 
     # ── routing ──
