@@ -50,7 +50,6 @@
 
       var unsaved = p.pending || 0;
       var waiting = p.collectionSteps || 0;
-      var site = p.siteChanges || 0;
 
       unsavedIds = {};
       (p.pendingIds || []).forEach(function (id) { unsavedIds[String(id)] = true; });
@@ -63,7 +62,7 @@
       // without reading anything.
       bar.discard.disabled = !unsaved;
       bar.save.disabled = !unsaved;
-      bar.publish.disabled = !!unsaved || !(waiting || site);
+      bar.publish.disabled = !!unsaved || !waiting;
 
       if (unsaved) {
         var n = p.pendingCoins || 0;
@@ -71,14 +70,17 @@
         bar.text.textContent = n
           ? (n === 1 ? "1 coin unsaved" : n + " coins unsaved")
           : "Unsaved changes";
-      } else if (waiting || site) {
+      } else if (waiting) {
         bar.root.className = "topbar is-waiting";
-        bar.text.textContent = waiting
-          ? (waiting === 1 ? "1 change not published" : waiting + " changes not published")
-          : "Site updates not published";
+        bar.text.textContent = waiting === 1
+          ? "1 change not published" : waiting + " changes not published";
       } else {
+        // "Collection", not "Everything": changes to the site's own code can be
+        // waiting too, and they are not this bar's business. Reporting them
+        // here produced "Site updates not published" in an interface about
+        // coins, which means nothing to the person using it.
         bar.root.className = "topbar is-live";
-        bar.text.textContent = "Everything published";
+        bar.text.textContent = "Collection published";
       }
     });
   }
