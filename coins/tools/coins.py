@@ -580,15 +580,18 @@ def golive_preview():
     # Coins, not files. Editing three coins' details touches one file, and
     # replacing one photograph touches two — neither number means anything to
     # someone cataloguing a collection.
-    unsaved_coins = 0
+    unsaved_ids = []
     if dirty and here:
         w = diff_versions(here, WORKING)
-        unsaved_coins = len(w["added"]) + len(w["changed"]) + len(w["removed"])
+        # Removed coins are not in the grid to mark, but they still count.
+        unsaved_ids = [x["id"] for x in (w["added"] + w["changed"] + w["removed"])]
+    unsaved_coins = len(unsaved_ids)
 
     return {"branch": branch, "publishBranch": PUBLISH_BRANCH,
             "isLive": branch == PUBLISH_BRANCH,
             "pending": pending_changes()["total"],
             "pendingCoins": unsaved_coins,
+            "pendingIds": unsaved_ids,
             "commits": ahead,
             "collectionSteps": collection_ahead,
             "siteChanges": site_ahead,

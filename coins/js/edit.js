@@ -16,6 +16,8 @@
 
   var pending = { total: 0 };
   var bar = null;
+  var unsavedIds = {};     // coin id -> true, for the marks in the grid
+  var unsavedDetail = {};  // coin id -> which fields and faces are unsaved
 
   /* ── Server ─────────────────────────────────────────────────────────────── */
 
@@ -49,6 +51,11 @@
       var unsaved = p.pending || 0;
       var waiting = p.collectionSteps || 0;
       var site = p.siteChanges || 0;
+
+      unsavedIds = {};
+      (p.pendingIds || []).forEach(function (id) { unsavedIds[String(id)] = true; });
+      markUnsaved();
+      loadUnsavedDetail();
 
       // The same three actions are always present, in the order the work moves
       // through them: throw away, save, publish. Only the one that applies is
@@ -615,6 +622,75 @@
 
   /* ── Grid affordances ───────────────────────────────────────────────────── */
 
+  /**
+   * Mark coins in the grid that have been edited since the last save, so work
+   * in progress is visible without opening anything — otherwise the only way
+   * to find what you had changed was to remember.
+   */
+  function markUnsaved() {
+    var grid = document.getElementById("grid");
+    if (!grid) return;
+    Array.prototype.forEach.call(grid.querySelectorAll(".coin[data-id]"), function (li) {
+      var on = !!unsavedIds[String(li.dataset.id)];
+      li.classList.toggle("has-unsaved", on);
+      var pill = li.querySelector(".coin-unsaved");
+      if (on && !pill) {
+        var cap = li.querySelector(".coin-caption");
+        if (!cap) return;
+        var tag = document.createElement("span");
+        tag.className = "coin-unsaved";
+        tag.textContent = "Unsaved";
+        cap.appendChild(tag);
+      } else if (!on && pill) {
+        pill.remove();
+      }
+    });
+  }
+
+  /**
+   * Which fields and which faces are unsaved, per coin — the same working diff
+   * the history panel reads, so the grid, the timeline and the detail panel all
+   * describe the change the same way.
+   */
+  function loadUnsavedDetail() {
+    if (!Object.keys(unsavedIds).length) {
+      unsavedDetail = {};
+      markUnsavedDetail();
+      return;
+    }
+    fetch("/api/history/diff?to=WORKING", { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        unsavedDetail = {};
+        (d.changed || []).forEach(function (c) {
+          var f = {}, ph = {};
+          (c.fields || []).forEach(function (x) { f[x.key] = true; });
+          (c.photos || []).forEach(function (x) { ph[x.face] = true; });
+          unsavedDetail[String(c.id)] = { fields: f, photos: ph, whole: false };
+        });
+        // A coin added since the last save is unsaved in its entirety.
+        (d.added || []).forEach(function (c) {
+          unsavedDetail[String(c.id)] = { fields: {}, photos: {}, whole: true };
+        });
+        markUnsavedDetail();
+      });
+  }
+
+  /** Mark the rows and faces of the coin currently open. */
+  function markUnsavedDetail() {
+    var coin = window.Viewer && window.Viewer.current();
+    if (!coin) return;
+    var u = unsavedDetail[String(coin.id)];
+
+    Array.prototype.forEach.call(document.querySelectorAll("#detail .spec"), function (row) {
+      row.classList.toggle("is-unsaved", !!(u && (u.whole || u.fields[row.dataset.key])));
+    });
+    [["obv", "btn-obv"], ["rev", "btn-rev"]].forEach(function (pair) {
+      var b = document.getElementById(pair[1]);
+      if (b) b.classList.toggle("is-unsaved", !!(u && (u.whole || u.photos[pair[0]])));
+    });
+  }
+
   function decorateGrid() {
     var grid = document.getElementById("grid");
     if (!grid || grid.querySelector(".coin-add")) return;
@@ -643,6 +719,7 @@
     li.appendChild(btn);
     li.appendChild(picker);
     grid.insertBefore(li, grid.firstChild);
+    markUnsaved();
   }
 
   function bindPageDrop() {
@@ -816,6 +893,7 @@
       decorateStage();
       decorateDetail(e.detail.coin);
       refreshLead();
+      markUnsavedDetail();
     });
 
     console.log("[coins] edit mode on — served by tools/coins.py");
