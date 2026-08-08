@@ -562,13 +562,30 @@ def golive_preview():
         summary = {"added": len(d["added"]), "removed": len(d["removed"]),
                    "changed": len(d["changed"])}
 
-    ahead = git("rev-list", "--count", rng).stdout.strip() or "0"
+    ahead = int(git("rev-list", "--count", rng).stdout.strip() or "0")
+    collection_ahead = len(steps)
+    site_ahead = max(0, ahead - collection_ahead)
+
+    # Two different things travel together and were being reported as one
+    # number. Changes to the collection are what the panel is about; changes to
+    # the site's own code ride along in the same merge. Counting them together
+    # produced "10 changes" for three coin edits that had since been undone.
+    #
+    # And a run of steps can net out to nothing: edit a coin, restore it, and
+    # the collection is where it started even though two steps happened. What
+    # matters here is the difference from what is live, not how it was reached.
+    coins_unchanged = (summary["added"] == 0 and summary["removed"] == 0
+                       and summary["changed"] == 0)
 
     return {"branch": branch, "publishBranch": PUBLISH_BRANCH,
             "isLive": branch == PUBLISH_BRANCH,
-            "commits": int(ahead), "steps": steps, "summary": summary,
+            "commits": ahead,
+            "collectionSteps": collection_ahead,
+            "siteChanges": site_ahead,
+            "coinsUnchanged": coins_unchanged,
+            "steps": steps, "summary": summary,
             "hasUnsaved": dirty, "workingTreeDirty": unclean,
-            "upToDate": int(ahead) == 0}
+            "upToDate": ahead == 0}
 
 
 # ── HTTP ─────────────────────────────────────────────────────────────────────

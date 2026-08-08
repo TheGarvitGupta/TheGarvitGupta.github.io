@@ -502,13 +502,7 @@ window.CoinHistory = (function () {
 
       var note = document.createElement("span");
       note.className = "hlive-note";
-      var u = p.summary || {}, bits = [];
-      if (u.added)   bits.push(u.added + (u.added === 1 ? " coin" : " coins") + " added");
-      if (u.changed) bits.push(u.changed + (u.changed === 1 ? " coin" : " coins") + " updated");
-      if (u.removed) bits.push(u.removed + (u.removed === 1 ? " coin" : " coins") + " removed");
-      note.textContent = bits.length ? "Not yet public: " + bits.join(", ")
-                                     : "Not yet public: " + p.commits +
-                                       (p.commits === 1 ? " change" : " changes");
+      note.textContent = liveNote(p);
       wrap.appendChild(note);
 
       var btn = document.createElement("button");
@@ -528,17 +522,46 @@ window.CoinHistory = (function () {
     });
   }
 
-  function goLive(p, btn) {
-    var u = p.summary || {}, lines = [];
-    if (u.added)   lines.push("  · " + u.added + (u.added === 1 ? " coin" : " coins") + " added");
-    if (u.changed) lines.push("  · " + u.changed + (u.changed === 1 ? " coin" : " coins") + " updated");
-    if (u.removed) lines.push("  · " + u.removed + (u.removed === 1 ? " coin" : " coins") + " removed");
+  /** What the coins on this branch differ by, compared with what is public. */
+  function coinBits(p) {
+    var u = p.summary || {}, bits = [];
+    if (u.added)   bits.push(u.added + (u.added === 1 ? " coin" : " coins") + " added");
+    if (u.changed) bits.push(u.changed + (u.changed === 1 ? " coin" : " coins") + " updated");
+    if (u.removed) bits.push(u.removed + (u.removed === 1 ? " coin" : " coins") + " removed");
+    return bits;
+  }
 
-    var msg = "Make the collection public?\n\n" +
-      (lines.length ? lines.join("\n") + "\n\n" : "") +
-      "This publishes " + p.commits + (p.commits === 1 ? " saved change" : " saved changes") +
-      " to garvitgupta.com/coins/, visible to anyone.\n\n" +
-      "The site updates about a minute afterwards.";
+  function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
+
+  /**
+   * The count is simply the steps not yet live — the ones badged
+   * "Saved · not live" in the rail beside it. Anyone can check it by counting,
+   * which is worth more here than a cleverer number: net differences and
+   * commit totals both produced figures that matched nothing on screen.
+   */
+  function liveNote(p) {
+    if (p.collectionSteps) {
+      return "Not yet public: " + plural(p.collectionSteps, "change", "changes");
+    }
+    if (p.siteChanges) {
+      return "The coins are up to date. " +
+             plural(p.siteChanges, "update", "updates") + " to the site would go live.";
+    }
+    return "Nothing new to publish.";
+  }
+
+  function goLive(p, btn) {
+    var msg;
+    if (p.collectionSteps) {
+      msg = "Publish " + plural(p.collectionSteps, "change", "changes") + " to the collection?";
+      var bits = coinBits(p);
+      if (bits.length) msg += "\n\nAgainst the live site: " + bits.join(", ") + ".";
+      msg += "\n\nThis makes them visible to anyone at garvitgupta.com/coins/.";
+    } else {
+      msg = "Publish " + plural(p.siteChanges, "update", "updates") + " to the site?" +
+            "\n\nThe coins themselves are already up to date.";
+    }
+    msg += "\n\nThe site updates about a minute afterwards.";
 
     if (!confirm(msg)) return;
 
