@@ -142,7 +142,7 @@ window.CoinHistory = (function () {
 
   /* ── The rail ───────────────────────────────────────────────────────────── */
 
-  function renderRail() {
+  function renderRail(arriving) {
     el.rail.textContent = "";
     var lastDay = null;
 
@@ -158,7 +158,7 @@ window.CoinHistory = (function () {
       }
 
       var li = document.createElement("li");
-      li.className = "hstep";
+      li.className = "hstep" + (i === 0 && arriving ? " hstep-enter" : "");
       li.dataset.sha = s.sha;
 
       var btn = document.createElement("button");
@@ -516,6 +516,7 @@ window.CoinHistory = (function () {
   }
 
   function show() {
+    var reopened = open;      // a re-read, rather than opening for the first time
     if (!el.root) build();
     open = true;
     el.root.hidden = false;
@@ -532,9 +533,33 @@ window.CoinHistory = (function () {
         return;
       }
       sel = [steps[0].sha];
-      renderRail();
+      renderRail(reopened);
       loadDiff();
     });
+  }
+
+  /**
+   * Re-read the timeline, letting the unsaved step leave first.
+   *
+   * Saving or discarding removes that step, and rebuilding the panel underneath
+   * made it disappear between frames — the one piece of the interface whose
+   * whole job is showing what just happened. It collapses out instead, and the
+   * step that replaces it arrives in its place.
+   */
+  function refresh() {
+    var li = el.rail && el.rail.querySelector(".hstep.is-unsaved");
+    if (!li || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      show();
+      return;
+    }
+    li.style.height = li.offsetHeight + "px";
+    li.style.overflow = "hidden";
+    requestAnimationFrame(function () {
+      li.classList.add("is-leaving");
+      li.style.height = "0px";
+      li.style.marginTop = "0px";
+    });
+    setTimeout(show, 320);
   }
 
   function close() {
@@ -543,5 +568,10 @@ window.CoinHistory = (function () {
     document.body.style.overflow = "";
   }
 
-  return { show: show, close: close, isOpen: function () { return open; } };
+  return {
+    show: show,
+    refresh: refresh,
+    close: close,
+    isOpen: function () { return open; }
+  };
 })();

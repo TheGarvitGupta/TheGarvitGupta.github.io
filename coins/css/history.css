@@ -502,3 +502,31 @@
 
 /* The bar floats above this panel now; keep content clear of it. */
 .history-body, .history-rail-wrap { padding-bottom: 3rem; }
+
+/* ── Leaving ──────────────────────────────────────────────────────────────── */
+/* The unsaved step is the one piece of the panel whose job is showing what has
+   just happened, so it should not blink out of existence when it stops being
+   true. It collapses, and whatever replaces it arrives in the gap. */
+
+.hstep {
+  transition: height 0.3s var(--ease), margin-top 0.3s var(--ease),
+              opacity 0.24s var(--ease), transform 0.3s var(--ease);
+}
+.hstep.is-leaving {
+  opacity: 0;
+  transform: translateX(-10px);
+  pointer-events: none;
+}
+.hstep.is-leaving::before { opacity: 0; transition: opacity 0.2s; }
+
+/* Steps arriving with the timeline settle in rather than appearing. */
+.hstep-enter { animation: step-in 0.34s var(--ease) both; }
+@keyframes step-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hstep, .hstep.is-leaving { transition: none; transform: none; }
+  .hstep-enter { animation: none; }
+}

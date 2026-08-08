@@ -90,7 +90,7 @@
    * that no longer exist.
    */
   function refreshHistory() {
-    if (window.CoinHistory && window.CoinHistory.isOpen()) window.CoinHistory.show();
+    if (window.CoinHistory && window.CoinHistory.isOpen()) window.CoinHistory.refresh();
   }
 
   function onDiscard() {
@@ -812,7 +812,11 @@
    */
   function buildBar() {
     var root = document.createElement("div");
-    root.className = "editbar";
+    // Starts in the unknown state, with nothing offered. The status arrives a
+    // moment later and turns on whatever applies. Rendering enabled first
+    // meant the bar briefly promised actions it had not checked, and the
+    // correction read as a glitch.
+    root.className = "editbar is-loading";
     root.innerHTML =
       '<div class="editbar-inner">' +
         '<div class="editbar-lead"></div>' +
@@ -856,9 +860,10 @@
       goLive(pending, function (ok) { if (!ok) refreshPending(); });
     });
 
-    actions.appendChild(discard);
-    actions.appendChild(save);
-    actions.appendChild(publish);
+    [discard, save, publish].forEach(function (b) {
+      b.disabled = true;
+      actions.appendChild(b);
+    });
 
     bar = {
       root: root,
