@@ -775,6 +775,7 @@
     refreshPending();
 
     window.Coins.onChange(decorateGrid);
+    document.addEventListener("coins:restored", refreshPending);
     document.addEventListener("viewer:rendered", function (e) {
       decorateStage();
       decorateDetail(e.detail.coin);

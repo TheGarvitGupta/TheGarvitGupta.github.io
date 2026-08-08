@@ -347,6 +347,10 @@ IGNORED_FIELDS = {"updated"}
 
 _cat_cache, _tree_cache = {}, {}
 
+# Set when a restore is staged, so the commit that saves it says so rather than
+# being described as a pile of additions and deletions.
+_pending_restore = None
+
 
 def catalogue_at(sha):
     """The whole catalogue as it stood at one commit."""
@@ -562,6 +566,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 return self.create_coin()
             if path == "/api/image":
                 return self.upload_image()
+            if path == "/api/restore":
+                return self.restore()
+            if path == "/api/restore/coin":
+                return self.restore_coin()
             if path == "/api/commit":
                 return self.commit()
             if path == "/api/push":
@@ -697,6 +705,98 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
         self.send_json({"ok": True, "filename": filename})
 
+    # ── Restoring ──
+    #
+    # Going back is additive. Nothing is rewound and no commit is ever removed:
+    # the collection folder is put back the way it was, and that becomes an
+    # ordinary unsaved change like any other. The steps that came after stay in
+    # the history, still selectable, still restorable — so a restore can itself
+    # be undone by restoring the step you came from. There is no move here that
+    # loses work.
+    #
+    # Both operations are confined to coins/collection/, as everything driven
+    # from the page is.
+
+    def restore(self):
+        """Put the whole collection back as it stood at one step."""
+        sha = (self.read_json() or {}).get("to", "")
+        if not re.fullmatch(r"[0-9a-f]{7,40}", sha or ""):
+            return self.send_json({"ok": False, "error": "bad version"}, 400)
+
+        # Unsaved work would be destroyed by the checkout below, silently.
+        if pending_changes()["total"] > 0:
+            return self.send_json({
+                "ok": False, "needsDecision": True,
+                "error": "There are unsaved changes. Save or discard them first, "
+                         "then restore — otherwise they would be lost."
+            })
+
+        before = git("rev-parse", "HEAD").stdout.strip()
+        # Remove first: checking out a snapshot restores what existed then, but
+        # leaves behind anything added since, which would silently survive.
+        git("rm", "-r", "-q", "--ignore-unmatch", "--", COLLECTION_REL)
+        r = git("checkout", sha, "--", COLLECTION_REL)
+        if r.returncode != 0:
+            git("checkout", before, "--", COLLECTION_REL)   # put it back
+            return self.send_json({"ok": False, "error": r.stderr.strip()}, 500)
+
+        global _pending_restore
+        when = git("show", "-s", "--format=%aI", sha).stdout.strip()
+        _pending_restore = {"sha": sha, "date": when}
+
+        d = diff_versions(before, sha)
+        return self.send_json({
+            "ok": True, "to": sha,
+            "summary": {"added": len(d["added"]), "removed": len(d["removed"]),
+                        "changed": len(d["changed"])}
+        })
+
+    def restore_coin(self):
+        """Put a single coin back — its record and its photographs — leaving
+        every other coin alone. Usually what someone actually wants."""
+        body = self.read_json() or {}
+        sha, cid = body.get("to", ""), str(body.get("id", ""))
+        if not re.fullmatch(r"[0-9a-f]{7,40}", sha or "") or not cid:
+            return self.send_json({"ok": False, "error": "bad request"}, 400)
+
+        was = {str(c.get("id")): c for c in catalogue_at(sha)}.get(cid)
+
+        with _lock:
+            coins = load_coins()
+            now = {str(c.get("id")): c for c in coins}.get(cid)
+
+            # Clear whichever photographs the coin has now, then lay down the
+            # ones it had then. Doing it in that order handles a face that
+            # existed at one point and not the other.
+            for src in (now, was):
+                if not src:
+                    continue
+                for fn in (src.get("images") or {}).values():
+                    for size in ("full", "thumbs"):
+                        p = COLLECTION / "images" / size / fn
+                        if src is now and p.exists():
+                            p.unlink()
+            if was:
+                for fn in (was.get("images") or {}).values():
+                    for size in ("full", "thumbs"):
+                        git("checkout", sha, "--", f"{COLLECTION_REL}images/{size}/{fn}")
+
+            if was is None:
+                # The coin did not exist at that point, so going back removes it.
+                coins = [c for c in coins if str(c.get("id")) != cid]
+                verb = "removed"
+            else:
+                restored = dict(was)
+                restored["updated"] = today()
+                coins = [restored if str(c.get("id")) == cid else c for c in coins]
+                if not any(str(c.get("id")) == cid for c in coins):
+                    coins.append(restored)     # it had been deleted since
+                verb = "restored"
+            save_coins(coins)
+
+        self.send_json({"ok": True, "id": cid, "action": verb,
+                        "coin": was, "existed": was is not None})
+
     def commit(self):
         add = git("add", *TRACKED)
         if add.returncode != 0:
@@ -716,15 +816,21 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             elif status == "D":
                 deleted += 1
 
-        bits = []
-        if added:
-            bits.append(f"added {added} photo{'s' if added > 1 else ''}")
-        if deleted:
-            bits.append(f"removed {deleted} photo{'s' if deleted > 1 else ''}")
-        msg = "Coins: " + (", ".join(bits) if bits else "catalogue update")
+        global _pending_restore
+        if _pending_restore:
+            stamp = _pending_restore["date"][:16].replace("T", " ")
+            msg = f"Coins: restored the collection to {stamp}"
+        else:
+            bits = []
+            if added:
+                bits.append(f"added {added} photo{'s' if added > 1 else ''}")
+            if deleted:
+                bits.append(f"removed {deleted} photo{'s' if deleted > 1 else ''}")
+            msg = "Coins: " + (", ".join(bits) if bits else "catalogue update")
 
         result = git("commit", "-m", msg)
         if result.returncode == 0:
+            _pending_restore = None
             return self.send_json({"ok": True, "msg": msg})
         blob = result.stdout + result.stderr
         if "nothing to commit" in blob:
@@ -759,6 +865,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                          "Delete individual coins instead."
             })
 
+        global _pending_restore
+        _pending_restore = None
         git("clean", "-fd", COLLECTION_REL)
         git("checkout", "--", COLLECTION_REL)
         self.send_json({"ok": True})

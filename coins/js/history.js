@@ -286,6 +286,16 @@ window.CoinHistory = (function () {
     p.textContent = head.sub;
     hd.appendChild(h2);
     hd.appendChild(p);
+
+    // Restoring is only meaningful for a single point in time, not a range.
+    if (sel.length === 1 && idx(sel[0]) > 0) {
+      var back = document.createElement("button");
+      back.type = "button";
+      back.className = "hrestore-all";
+      back.textContent = "Put the collection back to here";
+      back.addEventListener("click", function () { restoreAll(sel[0], head.sub); });
+      hd.appendChild(back);
+    }
     el.body.appendChild(hd);
 
     if (!d.added.length && !d.changed.length && !d.removed.length) {
@@ -315,6 +325,7 @@ window.CoinHistory = (function () {
 
         var detail = document.createElement("div");
         detail.className = "hdetail";
+        if (sel.length === 1) detail.appendChild(coinRestore(e));
 
         // Photographs first — they're the most visible kind of change.
         e.photos.forEach(function (ph) {
@@ -390,9 +401,89 @@ window.CoinHistory = (function () {
         var row = document.createElement("div");
         row.className = "hrow";
         row.appendChild(coinChip(e, "removed"));
+        if (sel.length === 1 && d.from) {
+          var wrap = document.createElement("div");
+          wrap.className = "hdetail";
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "hrestore-coin";
+          b.textContent = "Bring this coin back";
+          b.addEventListener("click", function () { restoreCoin(d.from, e.id, b); });
+          wrap.appendChild(b);
+          row.appendChild(wrap);
+        }
         return row;
       });
     if (rmSec) el.body.appendChild(rmSec);
+  }
+
+  /* ── Restoring ──────────────────────────────────────────────────────────── */
+
+  function toast(msg, bad) {
+    var t = document.createElement("div");
+    t.className = "toast" + (bad ? " is-error" : "");
+    t.style.zIndex = "90";
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { t.classList.add("is-out"); }, bad ? 5000 : 2400);
+    setTimeout(function () { t.remove(); }, bad ? 5400 : 2800);
+  }
+
+  /** Undo one coin, back to how it stood at the selected step. */
+  function coinRestore(entry) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "hrestore-coin";
+    b.textContent = "Undo these changes to this coin";
+    b.addEventListener("click", function () { restoreCoin(sel[0], entry.id, b); });
+    return b;
+  }
+
+  function restoreCoin(sha, id, btn) {
+    btn.disabled = true;
+    btn.textContent = "Restoring…";
+    fetch("/api/restore/coin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to: sha, id: id })
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (!res.ok) { toast(res.error || "Could not restore", true); btn.disabled = false; return; }
+      btn.textContent = res.existed ? "✓ Restored" : "✓ Removed";
+      btn.classList.add("is-done");
+      afterRestore(res.existed ? "Coin restored — save when you're happy with it"
+                               : "Coin removed — save when you're happy with it");
+    });
+  }
+
+  function restoreAll(sha, label) {
+    if (!confirm("Put the whole collection back to " + label + "?\n\n" +
+                 "Nothing is lost: the later steps stay in the history, and you can " +
+                 "come back to them the same way. This appears as an unsaved change " +
+                 "until you save it.")) return;
+
+    fetch("/api/restore", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to: sha })
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (!res.ok) { toast(res.error || "Could not restore", true); return; }
+      var u = res.summary || {}, bits = [];
+      if (u.added)   bits.push(u.added + " back");
+      if (u.removed) bits.push(u.removed + " removed");
+      if (u.changed) bits.push(u.changed + " reverted");
+      afterRestore("Collection restored" + (bits.length ? " — " + bits.join(", ") : "") +
+                   ". Save when you're happy with it.");
+      close();
+    });
+  }
+
+  /** The exhibit underneath has changed, so bring it back into agreement. */
+  function afterRestore(msg) {
+    window.Coins.reload().then(function () {
+      if (window.Viewer && window.Viewer.currentId()) window.Viewer.rerender();
+      document.dispatchEvent(new CustomEvent("coins:restored"));
+      toast(msg);
+    });
   }
 
   /* ── Open / close ───────────────────────────────────────────────────────── */
