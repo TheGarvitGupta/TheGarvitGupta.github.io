@@ -109,13 +109,15 @@
 .hday:first-child { margin-top: 0; }
 
 .hstep { position: relative; }
+/* Steps are separate events; touching cards read as one block. */
+.hstep + .hstep { margin-top: 0.35rem; }
 
 /* The node on the thread. */
 .hstep::before {
   content: "";
   position: absolute;
   left: -1.1rem;
-  top: 0.95rem;
+  top: 1rem;
   width: 0.55rem;
   height: 0.55rem;
   margin-left: 0.005rem;
@@ -135,7 +137,7 @@
 .hstep-btn {
   display: block;
   width: 100%;
-  padding: 0.6rem 0.7rem;
+  padding: 0.65rem 0.75rem;
   background: none;
   border: 0;
   border-radius: 8px;
