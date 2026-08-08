@@ -65,28 +65,37 @@
 }
 .coin-add-btn:hover { color: var(--gold-soft); }
 
+/* The same box a coin occupies, with the ring drawn where the coin's own edge
+   falls — the image pipeline leaves a 6% margin around each coin, so a circle
+   at 88% sits exactly on the rim of its neighbours. */
 .coin-add-disc {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 72%;
-  margin: 0 auto;
+  width: 100%;
+  aspect-ratio: 1;
+  font-size: 1.5rem;
+  font-weight: 300;
+  line-height: 1;
+  transition: transform 0.35s var(--ease), color 0.25s var(--ease);
+}
+.coin-add-disc::before {
+  content: "";
+  position: absolute;
+  width: 88%;
   aspect-ratio: 1;
   border: 1px dashed var(--line-strong);
   border-radius: 50%;
-  font-size: 1.75rem;
-  font-weight: 300;
-  transition: border-color 0.25s var(--ease), transform 0.35s var(--ease);
+  transition: border-color 0.25s var(--ease);
 }
-.coin-add-btn:hover .coin-add-disc {
-  border-color: rgba(201, 162, 39, 0.6);
-  transform: scale(1.05);
-}
+.coin-add-btn:hover .coin-add-disc { transform: scale(1.06) translateY(-2px); }
+.coin-add-btn:hover .coin-add-disc::before { border-color: rgba(201, 162, 39, 0.6); }
 
 .coin-add-label {
   display: block;
-  margin-top: 0.9rem;
   font-family: var(--serif);
   font-size: 1.0625rem;
+  line-height: 1.25;
   color: inherit;
 }
 .coin-add-hint {

@@ -732,9 +732,12 @@
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "coin-add-btn";
+    // Same shape as a coin tile — disc, then caption — so the two line up.
     btn.innerHTML = '<span class="coin-add-disc" aria-hidden="true">+</span>' +
-                    '<span class="coin-add-label">Add a coin</span>' +
-                    '<span class="coin-add-hint">or drop photos anywhere</span>';
+                    '<span class="coin-caption">' +
+                      '<span class="coin-add-label">Add a coin</span>' +
+                      '<span class="coin-add-hint">or drop photos anywhere</span>' +
+                    '</span>';
 
     var picker = document.createElement("input");
     picker.type = "file";
