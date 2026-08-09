@@ -263,7 +263,9 @@
 
     if (field.type === "select") {
       var sel = document.createElement("select");
-      sel.innerHTML = '<option value="">Add</option>';
+      // Hidden, so it is the placeholder rather than a choice in the list —
+      // "Add" is not a metal. Clearing a field is what the × on the row is for.
+      sel.innerHTML = '<option value="" hidden disabled>Add</option>';
       optionsFor(field, coin).forEach(function (o) {
         var opt = document.createElement("option");
         opt.value = o.id;

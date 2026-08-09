@@ -133,6 +133,15 @@
 
 .edit-unit { font-size: 0.75rem; color: var(--ink-faint); }
 
+/* The stepper arrows are chrome, and this panel is meant to read as a page.
+   The values are typed, not nudged. */
+.spec .edit-control input[type="number"] { -moz-appearance: textfield; }
+.spec .edit-control input[type="number"]::-webkit-outer-spin-button,
+.spec .edit-control input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .edit-note {
   flex: 1 0 100%;
   margin: 0.4rem 0 0;
@@ -533,7 +542,7 @@
 .spec .edit-control select,
 .mintmark-trigger {
   flex: 1 1 auto;
-  width: 100%;
+  width: auto;              /* 100% here pushed the unit onto its own line */
   min-width: 0;
   padding: 0.12rem 0.35rem;
   margin: -0.12rem -0.35rem;
