@@ -381,6 +381,11 @@ a { color: inherit; }
 .search-field input::-webkit-search-decoration,
 .search-field input::-webkit-search-cancel-button { -webkit-appearance: none; }
 
+/* The attribute has to win: an author display rule beats the browser's own
+   [hidden] { display: none }, so without this the cross sits there on an empty
+   field with nothing to clear. */
+.search-clear[hidden] { display: none; }
+
 .search-clear {
   flex: 0 0 auto;
   display: grid;
