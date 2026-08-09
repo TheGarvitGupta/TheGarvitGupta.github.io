@@ -315,13 +315,32 @@ window.Coins = (function () {
     return coin._hay;
   }
 
+  var queryTests = { q: null, tests: [] };
+
+  /**
+   * How one search word is matched.
+   *
+   * A number has to match a whole number: searching "1 rupee" found the 5
+   * Rupees of 1999 and the 2 Rupees of 1998, because "1" sits inside both
+   * years. Words match from their start instead, so "rupee" still finds
+   * "Rupees" and "hyder" finds "Hyderabad" — a prefix is usually what someone
+   * half-typing a word means.
+   */
+  function wordTest(word) {
+    var esc = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return /^\d+(\.\d+)?$/.test(word)
+      ? new RegExp("(^|[^\\d.])" + esc + "([^\\d.]|$)")
+      : new RegExp("(^|[^a-z0-9])" + esc);
+  }
+
   function matchesQuery(coin) {
     if (!state.query) return true;
+    if (queryTests.q !== state.query) {
+      queryTests = { q: state.query, tests: state.query.split(/\s+/).map(wordTest) };
+    }
     var hay = haystack(coin);
     // Every word must appear, so "1988 paise" narrows rather than widens.
-    return state.query.split(/\s+/).every(function (word) {
-      return hay.indexOf(word) !== -1;
-    });
+    return queryTests.tests.every(function (re) { return re.test(hay); });
   }
 
   /** Does this coin pass the active filters (optionally ignoring one facet)? */
