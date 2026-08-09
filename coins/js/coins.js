@@ -737,6 +737,24 @@ window.Coins = (function () {
     });
   }
 
+  /** The search field above the collection. */
+  function initSearch() {
+    var input = document.getElementById("search");
+    var clear = document.getElementById("search-clear");
+    if (!input) return;
+
+    function run() {
+      state.query = input.value.trim().toLowerCase();
+      if (clear) clear.hidden = !input.value;
+      apply();
+    }
+    input.addEventListener("input", run);
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { input.value = ""; run(); input.blur(); }
+    });
+    if (clear) clear.addEventListener("click", function () { input.value = ""; run(); input.focus(); });
+  }
+
   /**
    * The filter drawer. Closed to begin with: the collection should be the first
    * thing anyone meets, not a list of ways to narrow it.
