@@ -1051,6 +1051,9 @@
     // Every field, filled or not, renders in its proper place while editing.
     window.Coins.showEmptyFields(true);
 
+    // Unversioned, unlike the assets in the page: these only ever load from
+    // the local editor, which serves them fresh, so there is no cache between
+    // them and the file on disk. See coins/tools/stamp.py.
     ["css/edit.css", "css/history.css"].forEach(function (href) {
       var link = document.createElement("link");
       link.rel = "stylesheet";
