@@ -339,8 +339,13 @@ window.CoinHistory = (function () {
     if (sel.length === 1 && idx(sel[0]) > 0 && !(here && here.unsaved)) {
       var back = document.createElement("button");
       back.type = "button";
-      back.className = "hrestore-all";
-      back.textContent = "Put the collection back to here";
+      // The arrow Discard used to wear: it always meant "go back", which is
+      // what this does and what that never quite did.
+      back.className = "hrestore-all eb";
+      back.innerHTML =
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M4.5 11a7.5 7.5 0 1 1 2 5.3"/><path d="M4.5 6v5h5"/></svg>' +
+        "<span>Put the collection back to here</span>";
       back.addEventListener("click", function () { restoreAll(sel[0], head.sub); });
       hd.appendChild(back);
     }
