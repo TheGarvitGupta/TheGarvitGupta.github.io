@@ -323,10 +323,10 @@ a { color: inherit; }
   stroke-linecap: round;
   stroke-linejoin: round;
   opacity: 0.45;
-  transition: transform 0.18s var(--ease), opacity 0.16s;
+  transition: opacity 0.16s;
 }
 .facet-btn:hover .chev { opacity: 0.75; }
-.facet-btn[aria-expanded="true"] .chev { transform: rotate(180deg); opacity: 0.9; }
+.facet-btn[aria-expanded="true"] .chev { opacity: 0.9; }
 
 .facet-menu {
   position: absolute;
