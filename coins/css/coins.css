@@ -424,11 +424,79 @@ a { color: inherit; }
 .sort select:hover { background-color: var(--hover-tint); color: var(--ink); }
 .sort select option { background: var(--bg-raise); color: var(--ink); }
 
+/*
+   On a phone the one-bar idea stops paying for itself. Three controls sharing
+   a single pill leave each of them too little room, and wrapping the field
+   onto its own line inside the bar only made the box taller without giving
+   anything more space — it read as congested. So the bar dissolves: the field
+   takes a row, the two menus sit beneath it as separate taps, and the gaps
+   between them do the work the dividers did on a wide screen.
+*/
 @media (max-width: 620px) {
-  .toolbar-bar { flex-wrap: wrap; border-radius: 18px; }
-  .search-field { order: -1; flex: 1 0 100%; }
+  .toolbar-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+  }
+  :root[data-theme="dark"] .toolbar-bar { background: none; box-shadow: none; }
+  .toolbar-bar:hover,
+  .toolbar-bar:focus-within { border-color: transparent; box-shadow: none; }
+
   .tb-rule { display: none; }
-  .sort { margin-left: auto; }
+
+  /* Each piece carries the surface the bar used to carry for all three. */
+  .search-field,
+  .tb-filters,
+  .sort select {
+    background: var(--bg-raise);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    box-shadow: 0 1px 2px rgba(40, 34, 22, 0.05),
+                0 4px 14px rgba(40, 34, 22, 0.05);
+  }
+  :root[data-theme="dark"] .search-field,
+  :root[data-theme="dark"] .tb-filters,
+  :root[data-theme="dark"] .sort select {
+    background: rgba(255, 255, 255, 0.045);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  .search-field {
+    grid-column: 1 / -1;
+    padding: 0.75rem 1rem;
+    transition: border-color 0.18s, box-shadow 0.18s;
+  }
+  .search-field:focus-within {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.13);
+  }
+  /* Sixteen pixels exactly. Any smaller and iOS zooms the whole page in when
+     the field takes focus, and it never zooms back out. */
+  .search-field input { font-size: 1rem; }
+
+  .tb-filters {
+    justify-content: center;
+    padding: 0.7rem 1rem;
+    color: var(--ink);
+    font-size: 0.875rem;
+  }
+  .tb-filters:hover { background: var(--bg-raise); }
+
+  .sort { display: block; }
+  .sort select {
+    width: 100%;
+    padding: 0.7rem 1.9rem 0.7rem 1rem;
+    background-position: right 0.85rem center;
+    color: var(--ink);
+    font-size: 0.875rem;
+    text-align: center;
+    text-align-last: center;
+  }
+  .sort select:hover { background-color: var(--bg-raise); }
 }
 
 /* ── The filter drawer ────────────────────────────────────────────────────── */
@@ -600,15 +668,6 @@ body.filters-open .drawer { transform: none; }
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
-}
-
-@media (max-width: 720px) {
-  .toolbar {
-    grid-template-columns: auto minmax(0, 1fr);
-    row-gap: 0.75rem;
-  }
-  .search-field { grid-column: 1 / -1; order: -1; }
-  .toolbar .sort { justify-self: end; }
 }
 
 /* ── The grid ─────────────────────────────────────────────────────────────── */
@@ -1167,6 +1226,16 @@ body.filters-open .drawer { transform: none; }
 
 @media (max-width: 620px) {
   :root { --topbar-h: 3rem; }
+
+  /* Twelve vh of headroom and six vh under the count is generous on a
+     monitor and most of the first screen on a phone — you arrived to look at
+     coins and had to scroll to find any. */
+  .masthead { padding: clamp(2rem, 7vh, 3.5rem) 0 clamp(1.25rem, 3vh, 2rem); }
+  .masthead-blurb { margin-top: 1.25rem; font-size: 0.875rem; line-height: 1.65; }
+  .masthead-count { margin-top: 1.1rem; }
+  .toolbar { padding-top: 0.25rem; }
+  .grid { margin-top: clamp(1.5rem, 5vw, 2.25rem); }
+
   .topbar-inner { gap: 0.5rem; }
   .eb span { display: none; }        /* icons alone once space is tight */
   .eb { padding: 0.4rem 0.6rem; }
