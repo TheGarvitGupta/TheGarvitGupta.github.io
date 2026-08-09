@@ -647,10 +647,14 @@
 /* The one field that cannot stay open: a grid of glyphs in a table row. */
 .mintmark-field { position: relative; }
 .mintmark-trigger { cursor: pointer; }
+/* Anchored to the right edge and opening leftward. The field sits in the right
+   column of a panel that clips what overflows it, so anything opening rightward
+   runs straight off the edge of the window. */
 .mintmark-pop {
   position: absolute;
   top: 100%;
-  left: -0.35rem;
+  right: -0.35rem;
+  left: auto;
   z-index: 20;
   margin-top: 0.4rem;
   width: 15rem;
