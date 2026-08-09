@@ -260,15 +260,12 @@ a { color: inherit; }
 
 :root { --rail-gap: clamp(1.5rem, 3vw, 3rem); }
 
+/* Scrolls with the page rather than inside itself. Pinned and capped, it grew
+   a scroll bar of its own — a second thing to scroll on one screen, and the
+   last filters were reachable only by finding it. */
 .sidebar {
-  position: sticky;
-  top: calc(var(--topbar-h) + 1.75rem);
   flex: 0 0 13.5rem;
   width: 13.5rem;
-  max-height: calc(100vh - var(--topbar-h) - 3.5rem);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
   padding: 1.75rem 0 2rem;
   transition: flex-basis 0.3s var(--ease), width 0.3s var(--ease),
               opacity 0.22s var(--ease), margin-right 0.3s var(--ease);
