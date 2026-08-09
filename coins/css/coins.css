@@ -435,10 +435,14 @@ a { color: inherit; }
    underneath — no boxes, no borders, just text at either end.
 */
 @media (max-width: 620px) {
+  /* Flex, not grid. Two auto tracks with a full-width item spanning both get
+     sized by that item, so the tracks end up half the bar each and
+     space-between has no slack to distribute — the sort menu came to rest on
+     the centre line instead of the right edge. Wrapping flex has no tracks to
+     be captured by. */
   .toolbar-bar {
-    display: grid;
-    grid-template-columns: auto auto;
-    justify-content: space-between;
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.35rem 1rem;
     padding: 0;
@@ -456,7 +460,7 @@ a { color: inherit; }
      row, wrong for a stack, where it belongs on top. Grid honours order. */
   .search-field {
     order: -1;
-    grid-column: 1 / -1;
+    flex: 1 0 100%;
     padding: 0.8rem 1.05rem;
     background: var(--bg-raise);
     border: 1px solid var(--line);
@@ -480,6 +484,8 @@ a { color: inherit; }
   /* The negative margins pull the text out to the same edges the field sits
      on, while the padding keeps both comfortably thumb-sized. */
   .tb-filters {
+    /* The auto margin is what puts the sort menu on the far edge. */
+    margin-right: auto;
     margin-left: -0.55rem;
     padding: 0.55rem;
     font-size: 0.8125rem;
@@ -487,9 +493,10 @@ a { color: inherit; }
   .tb-filters:hover,
   .tb-filters[aria-expanded="true"] { background: none; color: var(--ink); }
 
+  .sort { flex: 0 0 auto; }
   .sort select {
-    margin-right: -0.55rem;
-    padding: 0.55rem 1.55rem 0.55rem 0.55rem;
+    margin-right: -0.5rem;
+    padding: 0.55rem 1.5rem 0.55rem 0.55rem;
     background-position: right 0.5rem center;
     font-size: 0.8125rem;
   }
