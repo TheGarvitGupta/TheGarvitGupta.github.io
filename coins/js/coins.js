@@ -435,9 +435,12 @@ window.Coins = (function () {
       btn.type = "button";
       btn.className = "facet-btn" + (sel.size ? " has-value" : "");
       btn.setAttribute("aria-expanded", "false");
+      // A drawn chevron rather than the ▾ character, which renders at a
+      // different weight and baseline in every font it falls back to.
       btn.innerHTML = escapeHtml(facet.label) +
-        (sel.size ? ' <span class="n">' + sel.size + "</span>" : "") +
-        ' <span class="chev" aria-hidden="true">▾</span>';
+        (sel.size ? '<span class="n">' + sel.size + "</span>" : "") +
+        '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M6.5 9.75L12 15.25l5.5-5.5"/></svg>';
 
       var menu = document.createElement("div");
       menu.className = "facet-menu";
