@@ -1240,6 +1240,14 @@ body.filters-open .drawer { transform: none; }
   .toolbar { padding-top: 0.25rem; }
   .grid { margin-top: clamp(1.5rem, 5vw, 2.25rem); }
 
+  /* No arrows on a phone. They were the only reason the stage carried three-rem
+     gutters, so the coins take that width back — which is most of the spacing
+     fix: two faces across a narrow screen need every millimetre. */
+  .viewer-nav { display: none; }
+  :root { --stage-gutter: 1.25rem; --stage-top: 1.5rem; }
+  .stage { padding-bottom: 2.5rem; }
+  .detail { padding-top: 1.75rem; }
+
   .topbar-inner { gap: 0.5rem; }
   .eb span { display: none; }        /* icons alone once space is tight */
   .eb { padding: 0.4rem 0.6rem; }
