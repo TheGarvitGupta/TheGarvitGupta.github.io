@@ -236,17 +236,42 @@ window.Coins = (function () {
     { key: "shape",  label: "Shape",        get: function (c) { return c.shape; },  fmt: function (v) { return labelOf("shapes", v); } }
   ];
 
-  /** Every value this facet takes anywhere in the collection. */
+  // The order options are listed in, worked out once per catalogue and held.
+  var facetOrder = {};
+
+  /**
+   * Every value this facet takes, in a fixed order.
+   *
+   * Ordered by how much of the collection holds each value — commonest first —
+   * measured against the whole collection rather than the current view. Sorting
+   * by the live counts meant the list resorted itself every time a box was
+   * ticked: the option you had just clicked would slide away, and the one you
+   * were reaching for next moved somewhere else. The counts still change; the
+   * order does not.
+   */
   function facetValues(facet) {
-    var seen = {};
+    if (facetOrder[facet.key]) return facetOrder[facet.key];
+
+    var total = {};
     state.all.forEach(function (c) {
       if (c.status === "draft") return;
       var v = facet.get(c);
       if (v === null || v === undefined || v === "") return;
-      seen[v] = true;
+      total[v] = (total[v] || 0) + 1;
     });
-    return Object.keys(seen);
+
+    var order = Object.keys(total).sort(function (x, y) {
+      if (facet.key === "decade") return x.localeCompare(y);   // time has its own order
+      if (total[y] !== total[x]) return total[y] - total[x];
+      return String(facet.fmt(x)).localeCompare(String(facet.fmt(y)));
+    });
+
+    facetOrder[facet.key] = order;
+    return order;
   }
+
+  /** Only the catalogue changing can change what the options are. */
+  function forgetFacetOrder() { facetOrder = {}; }
 
   /** Count coins per value for one facet, against everything the OTHER facets
       allow — so counts reflect what clicking would actually give you. */
@@ -557,10 +582,7 @@ window.Coins = (function () {
       title.textContent = facet.label;
       group.appendChild(title);
 
-      values.sort(function (x, y) {
-        if (facet.key === "decade") return x.localeCompare(y);
-        return (counts[y] || 0) - (counts[x] || 0);
-      }).forEach(function (value) {
+      values.forEach(function (value) {
         var n = counts[value] || 0;
         var chosen = sel.has(value);
         // Nothing left to reach, and not already chosen: shown, but inert.
@@ -843,7 +865,11 @@ window.Coins = (function () {
     reload: function () {
       return fetch(DB + "coins.json?t=" + Date.now())
         .then(function (r) { return r.json(); })
-        .then(function (data) { state.all = Array.isArray(data) ? data : []; apply(); });
+        .then(function (data) {
+          state.all = Array.isArray(data) ? data : [];
+          forgetFacetOrder();
+          apply();
+        });
     },
     onChange: function (fn) { listeners.push(fn); },
     wantedView: function () { return wantedView; },
