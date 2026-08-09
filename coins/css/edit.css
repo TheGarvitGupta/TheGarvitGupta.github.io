@@ -528,8 +528,6 @@
   cursor: pointer;
 }
 
-.face-star, .face-star * { cursor: pointer; }
-.face-star[disabled], .face-star[disabled] * { cursor: default; }
 
 /* ── Which side the collection shows ──────────────────────────────────────── */
 /* Opposite the edit control, on the photograph it applies to. Filled on the

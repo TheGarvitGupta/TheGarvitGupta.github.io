@@ -148,7 +148,13 @@ body > * { position: relative; z-index: 1; }
 
 img { max-width: 100%; display: block; }
 
-button { font: inherit; color: inherit; cursor: pointer; }
+/* Anything you can press shows the hand, and everything inside it inherits
+   that rather than picking up its own — text inside a control would otherwise
+   show the I-beam and a glyph the arrow. Inheriting also means the disabled
+   case is handled once, below, instead of per control. */
+button, label.eb, [role="button"] { font: inherit; color: inherit; cursor: pointer; }
+button *, label.eb *, [role="button"] * { cursor: inherit; }
+button[disabled], button[disabled] * { cursor: default; }
 
 a { color: inherit; }
 
@@ -768,8 +774,9 @@ a { color: inherit; }
   perspective: none;
   cursor: default;
 }
-/* Each face opens its own photograph. */
-.viewer.is-spread .face { cursor: zoom-in; }
+/* Each face opens its own photograph — a plain hand, since nothing magnifies
+   in place. */
+.viewer.is-spread .face { cursor: pointer; }
 
 .viewer.is-spread .flipper {
   display: flex;
@@ -858,12 +865,6 @@ a { color: inherit; }
   transition: background 0.16s, color 0.16s, border-color 0.16s,
               box-shadow 0.16s, transform 0.08s;
 }
-/* The whole control is the target, so the whole control shows the hand — the
-   text and the glyph inside would otherwise pick up their own cursors, and the
-   label-based ones miss the rule on button entirely. */
-.eb, .eb * { cursor: pointer; }
-.eb[disabled], .eb[disabled] * { cursor: default; }
-
 .eb svg {
   width: 0.95rem;
   height: 0.95rem;
