@@ -35,9 +35,12 @@
   --coin-shadow-hover: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.65)) brightness(1.06);
   --coin-shadow-big:   drop-shadow(0 24px 50px rgba(0, 0, 0, 0.7));
   --coin-pool:   radial-gradient(circle at 50% 42%, rgba(255, 250, 235, 0.09), transparent 62%);
+  /* The word keeps one colour; only a highlight travels across it. The old
+     gradient swung the whole wordmark between two tones, so the letters
+     themselves appeared to change colour rather than catch the light. */
   --sheen:       linear-gradient(100deg,
-                   #cfcbc2 0%, #f7f2e6 22%, var(--gold-soft) 38%,
-                   #f7f2e6 54%, #cfcbc2 74%, #cfcbc2 100%);
+                   #f2f0ec 0%, #f2f0ec 34%, #ffffff 44%,
+                   var(--gold-soft) 50%, #ffffff 56%, #f2f0ec 66%, #f2f0ec 100%);
   --bar-bg:      rgba(11, 11, 13, 0.86);
   --viewer-bg:   rgba(6, 6, 8, 0.96);
   --panel-bg:    rgba(22, 22, 26, 0.94);
@@ -84,8 +87,8 @@
   /* The pool becomes a soft cast shadow rather than a pool of light. */
   --coin-pool:   radial-gradient(circle at 50% 58%, rgba(60, 50, 30, 0.10), transparent 64%);
   --sheen:       linear-gradient(100deg,
-                   #4a463d 0%, #23211c 22%, #8a6d0f 38%,
-                   #23211c 54%, #4a463d 74%, #4a463d 100%);
+                   #1b1a17 0%, #1b1a17 34%, #6b5f45 44%,
+                   #876a0c 50%, #6b5f45 56%, #1b1a17 66%, #1b1a17 100%);
   --bar-bg:      rgba(245, 243, 239, 0.88);
   --viewer-bg:   rgba(243, 241, 236, 0.97);
   --panel-bg:    rgba(255, 255, 255, 0.96);
@@ -198,12 +201,16 @@ a { color: inherit; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: sheen 14s var(--ease-in-out) infinite;
+  animation: sheen 24s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
+/* The crossing takes most of the cycle now. It used to hold for two seconds,
+   cross in about six with an easing that accelerated through the middle —
+   exactly where the letters are — and then sit still for another six. The
+   result was a long wait, a flash, and another long wait. */
 @keyframes sheen {
-  0%, 12%   { background-position: 130% 0; }
-  55%, 100% { background-position: -30% 0; }
+  0%, 6%    { background-position: 132% 0; }
+  94%, 100% { background-position: -32% 0; }
 }
 
 .masthead-blurb {
