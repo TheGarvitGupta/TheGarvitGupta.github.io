@@ -449,11 +449,6 @@ a { color: inherit; }
 }
 .coin-btn:hover .coin-meta { color: var(--ink-dim); }
 
-/* Coins nobody has identified yet. Marked quietly — a gap in the record is
-   part of the record, not something to hide. */
-.coin.is-unidentified .coin-name { color: var(--ink-dim); font-style: italic; }
-.coin.is-unidentified .coin-disc img { filter: var(--coin-shadow) saturate(0.85); }
-
 .coin-missing {
   display: grid;
   place-items: center;

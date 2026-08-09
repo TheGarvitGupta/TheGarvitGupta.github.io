@@ -225,9 +225,7 @@ window.Coins = (function () {
     { key: "decade", label: "Decade",       get: decade,                            fmt: function (v) { return v; } },
     { key: "unit",   label: "Denomination", get: function (c) { return c.denomination && c.denomination.unit; },
       fmt: function (v) { return unitLabel(v, 2); } },
-    { key: "shape",  label: "Shape",        get: function (c) { return c.shape; },  fmt: function (v) { return labelOf("shapes", v); } },
-    { key: "status", label: "Status",       get: function (c) { return c.status === "unidentified" ? "unidentified" : null; },
-      fmt: function () { return "Not yet identified"; } }
+    { key: "shape",  label: "Shape",        get: function (c) { return c.shape; },  fmt: function (v) { return labelOf("shapes", v); } }
   ];
 
   /** Count coins per value for one facet, against everything the OTHER facets
@@ -334,7 +332,7 @@ window.Coins = (function () {
 
   function coinNode(coin, index) {
     var li = document.createElement("li");
-    li.className = "coin" + (coin.status === "unidentified" ? " is-unidentified" : "");
+    li.className = "coin";
     li.dataset.id = coin.id;
 
     var btn = document.createElement("button");

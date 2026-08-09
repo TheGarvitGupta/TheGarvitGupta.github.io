@@ -759,7 +759,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             coins = load_coins()
             coin = {
                 "id": next_id(coins),
-                "status": body.get("status", "unidentified"),
+                "status": body.get("status", "published"),
                 "images": {},
                 "updated": today(),
             }

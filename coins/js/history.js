@@ -73,10 +73,6 @@ window.CoinHistory = (function () {
       return C().denomLabel({ denomination: value }) || "—";
     }
     if (key === "leadFace") return value === "rev" ? "Reverse" : "Obverse";
-    // A coin's status is about whether it has been identified, not about
-    // whether it is on the web — "Published" now means the latter everywhere
-    // else, so this must not borrow the word.
-    if (key === "status")   return value === "unidentified" ? "Not yet identified" : "Identified";
     if (key === "notes")    return String(value);
 
     if (f && f.type === "select") return C().labelOf(f.vocab, value);

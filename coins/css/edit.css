@@ -243,15 +243,6 @@
   gap: 0.4rem;
 }
 
-/* The coin is currently flagged as unidentified — the button is a state, not
-   just an action, so it shows which way it is set. */
-.eb.is-on {
-  background: rgba(201, 162, 39, 0.14);
-  border-color: rgba(201, 162, 39, 0.45);
-  color: var(--gold-soft);
-}
-.eb.is-on:hover { background: rgba(201, 162, 39, 0.2); }
-
 .add-detail { position: relative; }
 
 .add-detail-btn {

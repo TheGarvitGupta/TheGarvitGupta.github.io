@@ -485,14 +485,6 @@
     var tools = document.createElement("div");
     tools.className = "edit-tools";
 
-    var flagged = coin.status === "unidentified";
-    var idBtn = barButton("unknown", flagged ? "Not identified" : "Mark unidentified",
-                          "eb-quiet" + (flagged ? " is-on" : ""));
-    idBtn.addEventListener("click", function () {
-      patch(coin.id, { status: flagged ? "published" : "unidentified" });
-    });
-    tools.appendChild(idBtn);
-
     var del = barButton("trash", "Delete coin", "eb-danger");
     del.addEventListener("click", function () {
       if (!confirm("Delete this coin and both its photographs?")) return;
@@ -791,9 +783,6 @@
     discard: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 11a7.5 7.5 0 1 1 2 5.3"/><path d="M4.5 6v5h5"/></svg>',
     save:    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11"/></svg>',
     publish: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19.5V5.5"/><path d="M5.5 12L12 5.5 18.5 12"/></svg>',
-    unknown: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/>' +
-             '<path d="M9.7 9.5a2.4 2.4 0 1 1 3.2 2.3c-.7.3-1 .8-1 1.5v.3"/>' +
-             '<path d="M11.9 16.8h.02"/></svg>',
     trash:   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15"/>' +
              '<path d="M9.5 7V5.4h5V7"/><path d="M6.6 7l.8 11.9h9.2L17.4 7"/></svg>'
   };
