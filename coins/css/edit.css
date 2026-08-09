@@ -498,11 +498,19 @@
    is the side you meant. Visible at rest rather than on hover — a control that
    only appears when you happen to pass over it may as well not exist. */
 
-.face-edit {
+/* One cluster, top left, holding both controls for this photograph. */
+.face-tools {
   position: absolute;
   top: 0;
-  right: 0;
+  left: 0;
   z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.face-edit {
+  position: relative;
   overflow: hidden;                 /* contains the file input */
   /* Sits over a photograph, so it needs a surface of its own rather than the
      translucent tint the bar's buttons rest on. */
@@ -535,10 +543,7 @@
    and setting it is one click on the face you want. */
 
 .face-star {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 4;
+  position: relative;
   display: grid;
   place-items: center;
   width: 2rem;

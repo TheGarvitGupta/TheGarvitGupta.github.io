@@ -571,7 +571,14 @@
     // which side they meant; here that is simply where you clicked.
     [["obv", "Obverse"], ["rev", "Reverse"]].forEach(function (pair) {
       var faceEl = frame.querySelector(".face-" + pair[0]);
-      if (!faceEl || faceEl.querySelector(".face-edit")) return;
+      if (!faceEl || faceEl.querySelector(".face-tools")) return;
+
+      // Both controls in one cluster rather than a corner each: they act on the
+      // same photograph, and split apart they read as two unrelated things
+      // pinned to opposite ends of it.
+      var tools = document.createElement("div");
+      tools.className = "face-tools";
+      faceEl.appendChild(tools);
 
       var label = document.createElement("label");
       // Shares the bar's button language, so a control is a control wherever
@@ -599,7 +606,7 @@
       label.appendChild(input);
       // The face beneath opens the photograph or turns the coin over.
       label.addEventListener("click", function (e) { e.stopPropagation(); });
-      faceEl.appendChild(label);
+      tools.appendChild(label);
 
       // Which side the collection shows. A coin's denomination is not always
       // on the same face — the 1988 minors carry it beside the Lion Capital,
@@ -619,7 +626,7 @@
         if (!coin) return;
         patch(coin.id, { leadFace: pair[0] });
       });
-      faceEl.appendChild(star);
+      tools.insertBefore(star, label);
     });
   }
 
