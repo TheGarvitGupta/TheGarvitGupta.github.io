@@ -674,6 +674,15 @@
 }
 .edit-unit { flex: 0 0 auto; font-size: 0.75rem; color: var(--ink-faint); }
 
+/* A number that carries a unit is only as wide as the number, so the unit sits
+   with it: "9 g", not "9" above "g". */
+.spec .edit-control input.is-sized {
+  flex: 0 0 auto;
+  min-width: 3ch;
+  max-width: 12ch;
+}
+.edit-unit { flex: 0 0 auto; white-space: nowrap; }
+
 /* Sits under the control it explains, not beside it. */
 .edit-note {
   flex: 1 0 100%;

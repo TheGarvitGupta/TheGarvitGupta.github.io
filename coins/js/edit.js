@@ -457,6 +457,12 @@
     });
     wrap.appendChild(input);
     if (field.unit) {
+      // Sized to the number so its unit stays beside it. Left to grow, the
+      // input took the whole row and pushed "g" onto a line of its own.
+      input.classList.add("is-sized");
+      fitWidth(input, 3);
+      input.addEventListener("input", function () { fitWidth(input, 3); });
+
       var u = document.createElement("span");
       u.className = "edit-unit";
       u.textContent = field.unit;
