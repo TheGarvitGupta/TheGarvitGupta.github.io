@@ -150,43 +150,72 @@
 }
 
 /* ── Mint-mark picker ─────────────────────────────────────────────────────── */
+/*
+   A list rather than a grid of tiles. The panel it opens in is about 27rem wide
+   and clips what overflows it, so a two-column grid of cards ran off the right
+   edge and down past the fold. One narrow column fits, and reads faster: the
+   glyph is what you are matching against the coin, and the name and mint follow
+   it on the same line.
+*/
 
 .mintmark-picker {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
-  gap: 0.4rem;
-  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding: 0.3rem;
+  max-height: 55vh;
+  overflow-y: auto;
   background: var(--bg-raise);
-  border: 1px solid var(--gold);
+  border: 1px solid var(--line-strong);
   border-radius: 8px;
+  scrollbar-width: thin;
 }
 
 .mintmark-choice {
   display: grid;
-  gap: 0.15rem;
-  padding: 0.5rem 0.35rem;
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+  column-gap: 0.6rem;
+  align-items: center;
+  padding: 0.3rem 0.45rem;
   background: none;
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: 6px;
-  text-align: center;
-  transition: border-color 0.18s, background 0.18s;
+  text-align: left;
+  transition: background 0.15s;
 }
-.mintmark-choice:hover { border-color: var(--line-strong); background: var(--hover-tint); }
-.mintmark-choice.is-active { border-color: var(--gold); background: rgba(201, 162, 39, 0.12); }
+.mintmark-choice:hover { background: var(--hover-tint); }
+.mintmark-choice.is-active { background: rgba(201, 162, 39, 0.14); }
 
 .mintmark-choice .glyph {
-  font-size: 1.375rem;
-  line-height: 1.1;
+  grid-row: 1 / 3;
+  font-size: 1.05rem;
+  line-height: 1;
+  text-align: center;
   color: var(--gold-soft);
 }
-.mintmark-choice .mark-label { font-size: 0.6875rem; color: var(--ink); }
-.mintmark-choice .mark-mint  { font-size: 0.625rem; color: var(--ink-faint); line-height: 1.3; }
+.mintmark-choice .mark-label {
+  grid-column: 2;
+  align-self: end;
+  font-size: 0.8125rem;
+  color: var(--ink);
+}
+.mintmark-choice .mark-mint {
+  grid-column: 2;
+  align-self: start;
+  font-size: 0.625rem;
+  line-height: 1.3;
+  color: var(--ink-faint);
+}
 
 .mintmark-choice.is-clear {
-  grid-column: 1 / -1;
+  display: block;
+  margin-top: 0.15rem;
+  padding: 0.35rem;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  text-align: center;
   font-size: 0.75rem;
   color: var(--ink-faint);
-  padding: 0.35rem;
 }
 .detail-notes.is-empty { color: var(--ink-faint); font-style: italic; }
 
@@ -624,7 +653,8 @@
   left: -0.35rem;
   z-index: 20;
   margin-top: 0.4rem;
-  min-width: 17rem;
+  width: 15rem;
+  max-width: calc(100vw - 3rem);
   box-shadow: var(--shadow-pop);
   border-radius: 8px;
 }
