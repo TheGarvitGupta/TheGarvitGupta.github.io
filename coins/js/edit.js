@@ -267,8 +267,31 @@
 
   /** Size a text area to its content, so it is never a window onto the text. */
   function autoFit(ta) {
+    if (!ta.isConnected) return;
     ta.style.height = "auto";
     ta.style.height = ta.scrollHeight + "px";
+  }
+
+  // Every text area currently on the panel, so they can all be re-measured
+  // together when something that affects their height changes.
+  function fitAll() {
+    Array.prototype.forEach.call(
+      document.querySelectorAll("#detail textarea"), autoFit);
+  }
+
+  /**
+   * Measure once the layout is settled, and again once the fonts have arrived.
+   *
+   * Reading scrollHeight straight away measures the fallback font: the real one
+   * loads a moment later, the text reflows taller, and the box keeps the height
+   * it was given — which is why a note came back cropped after a reload but was
+   * fine when opened by hand a second later.
+   */
+  function scheduleFit(ta) {
+    requestAnimationFrame(function () { autoFit(ta); });
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () { autoFit(ta); });
+    }
   }
 
   /** Build the control for one field. onDone(value) fires when it's settled;
@@ -388,7 +411,7 @@
       ta.placeholder = field.placeholder || "Add";
       ta.value = coin[field.key] != null ? coin[field.key] : "";
       wrap.appendChild(ta);
-      setTimeout(function () { autoFit(ta); }, 0);
+      scheduleFit(ta);
       ta.addEventListener("input", function () { autoFit(ta); });
       ta.addEventListener("blur", function () {
         var v = ta.value.trim();
@@ -518,7 +541,7 @@
     host.appendChild(ta);
 
     ta.addEventListener("input", function () { autoFit(ta); });
-    setTimeout(function () { autoFit(ta); }, 0);
+    scheduleFit(ta);
 
     ta.addEventListener("blur", function () {
       if ((coin.notes || "") === ta.value.trim()) return;
@@ -1031,6 +1054,9 @@
     bindPageDrop();
     decorateGrid();
     refreshPending();
+
+    // A narrower panel wraps the text further, which makes it taller.
+    window.addEventListener("resize", fitAll);
 
     window.Coins.onChange(decorateGrid);
     document.addEventListener("coins:restored", refreshPending);
