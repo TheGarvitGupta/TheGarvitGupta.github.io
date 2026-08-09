@@ -278,24 +278,41 @@ a { color: inherit; }
 
 .facet { position: relative; }
 
+/* The same chip as every other control. These were the last things on the page
+   still outline-only, in smaller type, so a row of filters read as a different
+   kind of object from the buttons in the bar above them. */
 .facet-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.75rem;
-  background: transparent;
+  gap: 0.45rem;
+  padding: 0.4rem 0.85rem;
+  background: var(--hover-tint);
   border: 1px solid var(--line);
   border-radius: 999px;
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  color: var(--ink-dim);
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  font-size: 0.78125rem;
+  color: var(--ink);
+  transition: background 0.16s, color 0.16s, border-color 0.16s, transform 0.08s;
 }
-.facet-btn:hover { border-color: var(--line-strong); color: var(--ink); }
-.facet-btn[aria-expanded="true"] { border-color: var(--line-strong); color: var(--ink); background: var(--bg-raise); }
-.facet-btn.has-value { border-color: rgba(201, 162, 39, 0.5); color: var(--gold-soft); }
+.facet-btn:hover { background: var(--active-tint); border-color: var(--line-strong); }
+.facet-btn:active { transform: translateY(0.5px); }
+.facet-btn[aria-expanded="true"] {
+  background: var(--active-tint);
+  border-color: var(--line-strong);
+}
+/* A filter that is doing something says so. */
+.facet-btn.has-value {
+  background: rgba(201, 162, 39, 0.14);
+  border-color: rgba(201, 162, 39, 0.45);
+  color: var(--gold-soft);
+}
+.facet-btn .n {
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
 
-.facet-btn .chev { font-size: 0.6rem; opacity: 0.6; }
+.facet-btn .chev { font-size: 0.55rem; opacity: 0.5; transition: transform 0.16s; }
+.facet-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
 
 .facet-menu {
   position: absolute;
@@ -338,14 +355,16 @@ a { color: inherit; }
   color: var(--ink-faint);
 }
 .sort select {
-  padding: 0.35rem 0.5rem;
-  background: transparent;
-  color: var(--ink-dim);
+  padding: 0.4rem 0.6rem;
+  background: var(--hover-tint);
+  color: var(--ink);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 999px;
   font-family: inherit;
-  font-size: 0.75rem;
+  font-size: 0.78125rem;
+  transition: background 0.16s, border-color 0.16s;
 }
+.sort select:hover { background: var(--active-tint); border-color: var(--line-strong); }
 .sort select option { background: var(--bg-raise); }
 
 .clear-filters {
