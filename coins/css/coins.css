@@ -423,6 +423,14 @@ a { color: inherit; }
 }
 .sort select:hover { background-color: var(--hover-tint); color: var(--ink); }
 .sort select option { background: var(--bg-raise); color: var(--ink); }
+/* Safari counts a click on a select as keyboard focus, so the shared ring
+   appeared on an ordinary tap — a hard gold outline around a control that is
+   meant to be quiet. A tint says the same thing without drawing a box. */
+.sort select:focus-visible {
+  outline: none;
+  background-color: var(--hover-tint);
+  color: var(--ink);
+}
 
 /*
    On a phone the bar becomes a stack, and a stack of three identical pills is
@@ -483,11 +491,14 @@ a { color: inherit; }
 
   /* The negative margins pull the text out to the same edges the field sits
      on, while the padding keeps both comfortably thumb-sized. */
+  /* Both controls keep their boxes inside the container and shift their glyphs
+     to its edges instead. Negative margins put the boxes themselves outside,
+     which is fine until something is drawn around them — a focus ring then has
+     nowhere to go and runs off the side of the page. */
   .tb-filters {
     /* The auto margin is what puts the sort menu on the far edge. */
     margin-right: auto;
-    margin-left: -0.55rem;
-    padding: 0.55rem;
+    padding: 0.55rem 0.55rem 0.55rem 0;
     font-size: 0.8125rem;
   }
   .tb-filters:hover,
@@ -495,9 +506,8 @@ a { color: inherit; }
 
   .sort { flex: 0 0 auto; }
   .sort select {
-    margin-right: -0.5rem;
-    padding: 0.55rem 1.5rem 0.55rem 0.55rem;
-    background-position: right 0.5rem center;
+    padding: 0.55rem 0.9rem 0.55rem 0.55rem;
+    background-position: right 0 center;
     font-size: 0.8125rem;
   }
   .sort select:hover { background-color: transparent; color: var(--ink); }
