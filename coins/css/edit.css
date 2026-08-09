@@ -656,14 +656,18 @@
    be clipped. Both selectors have to out-specify the shared input rule above,
    which was stretching the number across the row and squeezing "Rupee" until
    it lost its last letters. */
+/* Wide enough for the values a denomination actually takes: four digits, or a
+   fraction like 0.25. Two point six fitted three, so 1222 showed as 112 with no
+   sign the rest was there — the worst kind of clipping, since it looks like a
+   number rather than part of one. */
 .spec .edit-control input.denom-value {
-  flex: 0 0 2.6rem;
-  width: 2.6rem;
+  flex: 0 0 3.8rem;
+  width: 3.8rem;
   text-align: left;
 }
 .spec .edit-control .denom-value + select {
   flex: 1 1 auto;
-  min-width: 5.5rem;
+  min-width: 5rem;
 }
 .edit-unit { flex: 0 0 auto; font-size: 0.75rem; color: var(--ink-faint); }
 
