@@ -355,6 +355,7 @@ window.Coins = (function () {
     var li = document.createElement("li");
     li.className = "coin";
     li.dataset.id = coin.id;
+    li.dataset.sig = tileSignature(coin);
 
     var btn = document.createElement("button");
     btn.type = "button";
@@ -404,9 +405,42 @@ window.Coins = (function () {
     return li;
   }
 
+  /** What a tile is showing, so a reused one can be checked against the coin. */
+  function tileSignature(coin) {
+    var face = primaryFace(coin);
+    return [title(coin), subtitle(coin), face, face ? imgSrc(coin, face, "thumbs") : ""].join("|");
+  }
+
+  /**
+   * Draw the grid, keeping the tiles that are already on screen.
+   *
+   * Rebuilding it wholesale meant every coin faded in again on every filter,
+   * including the ones that had not moved — so narrowing a search made the
+   * coins you were looking at flicker and re-enter, which reads as the whole
+   * page reloading rather than as a few coins leaving.
+   */
   function renderGrid() {
+    var existing = {};
+    Array.prototype.forEach.call(el.grid.children, function (node) {
+      if (node.dataset && node.dataset.id) existing[node.dataset.id] = node;
+    });
+
     var frag = document.createDocumentFragment();
-    state.view.forEach(function (coin, i) { frag.appendChild(coinNode(coin, i)); });
+    state.view.forEach(function (coin, i) {
+      var id = String(coin.id);
+      var node = existing[id];
+      // Reuse it only if it is still showing the same thing; an edited coin
+      // needs redrawing, a merely re-filtered one does not.
+      if (node && node.dataset.sig === tileSignature(coin)) {
+        delete existing[id];
+        frag.appendChild(node);      // moved, not rebuilt: no animation
+        return;
+      }
+      frag.appendChild(coinNode(coin, i));
+    });
+
+    // Anything left in `existing` is no longer in view.
+    Object.keys(existing).forEach(function (id) { existing[id].remove(); });
     el.grid.textContent = "";
     el.grid.appendChild(frag);
 
