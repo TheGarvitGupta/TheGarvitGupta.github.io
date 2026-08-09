@@ -765,6 +765,11 @@
       var b = document.getElementById(pair[1]);
       if (b) b.classList.toggle("is-unsaved", !!(u && (u.whole || u.photos[pair[0]])));
     });
+
+    // The note is not a row in the table and has no label to hang a mark on,
+    // so it was the one edit that left no trace.
+    var notes = document.getElementById("detail-notes");
+    if (notes) notes.classList.toggle("is-unsaved", !!(u && (u.whole || u.fields.notes)));
   }
 
   function decorateGrid() {
