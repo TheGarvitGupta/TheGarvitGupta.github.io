@@ -801,7 +801,7 @@
 
   var ICON = {
     history: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>',
-    discard: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 11a7.5 7.5 0 1 1 2 5.3"/><path d="M4.5 6v5h5"/></svg>',
+    discard: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11"/><path d="M17.5 6.5l-11 11"/></svg>',
     save:    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11"/></svg>',
     publish: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19.5V5.5"/><path d="M5.5 12L12 5.5 18.5 12"/></svg>',
     trash:   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15"/>' +
