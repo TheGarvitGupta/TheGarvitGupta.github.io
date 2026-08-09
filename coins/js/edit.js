@@ -318,9 +318,11 @@
 
     if (field.type === "select") {
       var sel = document.createElement("select");
-      // Hidden, so it is the placeholder rather than a choice in the list —
-      // "Add" is not a metal. Clearing a field is what the × on the row is for.
-      sel.innerHTML = '<option value="" hidden disabled>Add</option>';
+      // Hidden so it is the placeholder rather than a choice in the list —
+      // "Add" is not a metal. Not disabled: a disabled option cannot be the
+      // selected one, so clearing a field left the browser to fall through to
+      // the first real entry, and a cleared mint quietly became Birmingham.
+      sel.innerHTML = '<option value="" hidden>Add</option>';
       optionsFor(field, coin).forEach(function (o) {
         var opt = document.createElement("option");
         opt.value = o.id;
@@ -328,6 +330,7 @@
         if (String(coin[field.key]) === String(o.id)) opt.selected = true;
         sel.appendChild(opt);
       });
+      sel.value = coin[field.key] != null ? String(coin[field.key]) : "";
       sel.addEventListener("change", function () { onDone(sel.value || null); });
       sel.addEventListener("keydown", function (e) {
         if (e.key === "Escape") { e.preventDefault(); onDone(undefined); }
