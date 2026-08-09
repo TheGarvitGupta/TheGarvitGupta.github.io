@@ -858,6 +858,12 @@ a { color: inherit; }
   transition: background 0.16s, color 0.16s, border-color 0.16s,
               box-shadow 0.16s, transform 0.08s;
 }
+/* The whole control is the target, so the whole control shows the hand — the
+   text and the glyph inside would otherwise pick up their own cursors, and the
+   label-based ones miss the rule on button entirely. */
+.eb, .eb * { cursor: pointer; }
+.eb[disabled], .eb[disabled] * { cursor: default; }
+
 .eb svg {
   width: 0.95rem;
   height: 0.95rem;
