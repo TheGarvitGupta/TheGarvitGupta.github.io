@@ -201,16 +201,21 @@ a { color: inherit; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: sheen 24s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation: sheen 18s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
 /* The crossing takes most of the cycle now. It used to hold for two seconds,
    cross in about six with an easing that accelerated through the middle —
    exactly where the letters are — and then sit still for another six. The
    result was a long wait, a flash, and another long wait. */
+/* The travel is trimmed to the width of the word plus a little either side.
+   It used to run from 132% to -32%, which sent the highlight a long way off
+   each end — six and a half seconds of a twenty-four second cycle with nothing
+   over the letters at all, at each end. That reads as a delay and then a
+   flash, however slowly the background itself is moving. */
 @keyframes sheen {
-  0%, 6%    { background-position: 132% 0; }
-  94%, 100% { background-position: -32% 0; }
+  0%, 4%    { background-position: 108% 0; }
+  96%, 100% { background-position: -8% 0; }
 }
 
 .masthead-blurb {

@@ -23,13 +23,14 @@
 
 .history-panel {
   height: 100%;
-  /* Clears the bar, which floats above this panel. */
-  padding-top: var(--topbar-h);
   width: min(1180px, 100%);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  padding: 0 clamp(1rem, 3vw, 2rem);
+  /* Top value clears the bar, which floats above this panel. It has to be part
+     of the shorthand: set as padding-top above it, the shorthand below reset it
+     to zero and the fix silently did nothing. */
+  padding: var(--topbar-h) clamp(1rem, 3vw, 2rem) 0;
 }
 
 /* ── Top ──────────────────────────────────────────────────────────────────── */
