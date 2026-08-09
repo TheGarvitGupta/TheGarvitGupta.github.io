@@ -17,7 +17,8 @@ window.Coins = (function () {
     view: [],       // after filtering + sorting
     vocab: null,
     filters: {},    // facetKey -> Set of selected values
-    sort: "year-desc"
+    sort: "year-desc",
+    query: ""
   };
 
   var listeners = [];
@@ -251,7 +252,7 @@ window.Coins = (function () {
       allow — so counts reflect what clicking would actually give you. */
   function facetCounts(facet) {
     var pool = state.all.filter(function (c) {
-      return c.status !== "draft" && matches(c, facet.key);
+      return c.status !== "draft" && matchesQuery(c) && matches(c, facet.key);
     });
     var counts = {};
     pool.forEach(function (c) {
@@ -260,6 +261,42 @@ window.Coins = (function () {
       counts[v] = (counts[v] || 0) + 1;
     });
     return counts;
+  }
+
+  /**
+   * Everything about a coin worth searching, as one string.
+   *
+   * Deliberately wide: someone looking for "Hyderabad" is as likely to be
+   * thinking of the mint as of the word in a note, and "1988" could be a year,
+   * a catalogue number or part of the story. Narrowing it to a name would only
+   * be right for people who already know what the record contains.
+   */
+  function haystack(coin) {
+    if (coin._hay) return coin._hay;
+    var bits = [title(coin), subtitle(coin), denomLabel(coin), coin.notes, coin.km,
+                coin.series, coin.acquired, coin.yearOnCoin, coin.yearIssued];
+    ["era", "ruler", "mint", "metal", "shape", "edge", "grade", "type"].forEach(function (k) {
+      if (coin[k]) bits.push(labelOf(k === "era" ? "eras"
+                           : k === "ruler" ? "rulers"
+                           : k === "mint" ? "mints"
+                           : k === "metal" ? "metals"
+                           : k === "shape" ? "shapes"
+                           : k === "edge" ? "edges"
+                           : k === "grade" ? "grades" : "types", coin[k]));
+    });
+    var mark = look("mintMarks", coin.mintMark);
+    if (mark) bits.push(mark.label, mark.glyph);
+    coin._hay = bits.filter(Boolean).join(" ").toLowerCase();
+    return coin._hay;
+  }
+
+  function matchesQuery(coin) {
+    if (!state.query) return true;
+    var hay = haystack(coin);
+    // Every word must appear, so "1988 paise" narrows rather than widens.
+    return state.query.split(/\s+/).every(function (word) {
+      return hay.indexOf(word) !== -1;
+    });
   }
 
   /** Does this coin pass the active filters (optionally ignoring one facet)? */
@@ -324,7 +361,7 @@ window.Coins = (function () {
   function apply() {
     state.view = state.all
       .filter(function (c) { return c.status !== "draft"; })
-      .filter(function (c) { return matches(c); })
+      .filter(function (c) { return matchesQuery(c) && matches(c); })
       .sort(SORTS[state.sort] || SORTS["year-desc"]);
     renderGrid();
     renderFilters();
@@ -480,7 +517,9 @@ window.Coins = (function () {
     if (none) {
       el.empty.textContent = state.all.length === 0
         ? "The collection is empty — no coins have been catalogued yet."
-        : "No coins match those filters.";
+        : state.query
+          ? "Nothing matches “" + state.query + "”."
+          : "No coins match those filters.";
     }
   }
 
@@ -677,6 +716,10 @@ window.Coins = (function () {
       if (window.CoinHistory && window.CoinHistory.isOpen()) { window.CoinHistory.close(); return; }
       if (window.Viewer && window.Viewer.currentId()) { window.Viewer.close(); return; }
       state.filters = {};
+      state.query = "";
+      if (el.search) el.search.value = "";
+      var sc = document.getElementById("search-clear");
+      if (sc) sc.hidden = true;
       state.sort = "year-desc";
       if (el.sort) el.sort.value = state.sort;
       apply();
@@ -685,6 +728,23 @@ window.Coins = (function () {
   }
 
   /** The filter column, opened and closed from the bar. */
+  function initSearch() {
+    var input = document.getElementById("search");
+    var clear = document.getElementById("search-clear");
+    if (!input) return;
+
+    function run() {
+      state.query = input.value.trim().toLowerCase();
+      if (clear) clear.hidden = !input.value;
+      apply();
+    }
+    input.addEventListener("input", run);
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { input.value = ""; run(); input.blur(); }
+    });
+    if (clear) clear.addEventListener("click", function () { input.value = ""; run(); input.focus(); });
+  }
+
   function initFilterToggle() {
     var btn = document.getElementById("btn-filters");
     if (!btn) return;
@@ -710,6 +770,7 @@ window.Coins = (function () {
     initTheme();
     initHome();
     initFilterToggle();
+    initSearch();
     el.grid = document.getElementById("grid");
     el.empty = document.getElementById("empty");
     el.count = document.getElementById("count");
@@ -720,6 +781,7 @@ window.Coins = (function () {
 
     el.sort.addEventListener("change", function () { state.sort = el.sort.value; apply(); });
     el.clear.addEventListener("click", function () { state.filters = {}; apply(); });
+    el.search = document.getElementById("search");
 
     // Cache-bust so edit mode sees its own writes immediately.
     var bust = window.location.protocol === "file:" ? "" : "?t=" + Date.now();

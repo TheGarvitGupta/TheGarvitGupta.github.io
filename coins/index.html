@@ -41,11 +41,6 @@
 <div class="topbar" id="topbar">
   <div class="topbar-inner">
     <div class="topbar-lead">
-      <button type="button" class="eb eb-icon" id="btn-filters" aria-expanded="true" aria-label="Hide filters">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/>
-        </svg>
-      </button>
       <button type="button" class="eb eb-home" id="btn-home">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M4 10.5L12 4l8 6.5"/><path d="M6 9.6V20h12V9.6"/>
@@ -85,6 +80,12 @@
   <aside class="sidebar" id="filterbar" hidden aria-label="Filter the collection">
     <div class="sidebar-inner">
       <div class="sidebar-head">
+        <button type="button" class="rail-toggle" id="btn-filters"
+                aria-expanded="true" aria-label="Hide filters">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/>
+          </svg>
+        </button>
         <h2 class="sidebar-title">Filter</h2>
         <button type="button" class="clear-filters" id="clear-filters" hidden>Clear</button>
       </div>
@@ -107,6 +108,19 @@
   </aside>
 
   <div class="collection">
+    <div class="search">
+      <label class="search-field">
+        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.5"/><path d="M15.8 15.8L20 20"/>
+        </svg>
+        <input type="search" id="search" autocomplete="off" spellcheck="false"
+               placeholder="Search the collection" aria-label="Search the collection">
+        <button type="button" class="search-clear" id="search-clear" hidden aria-label="Clear search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10"/><path d="M17 7L7 17"/></svg>
+        </button>
+      </label>
+    </div>
+
     <ul class="grid" id="grid" aria-label="The collection"></ul>
     <p class="empty" id="empty" hidden></p>
   </div>
