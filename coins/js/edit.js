@@ -280,18 +280,34 @@
   }
 
   /**
-   * Measure once the layout is settled, and again once the fonts have arrived.
+   * Keep a text area the height of its contents, whenever that becomes true.
    *
-   * Reading scrollHeight straight away measures the fallback font: the real one
-   * loads a moment later, the text reflows taller, and the box keeps the height
-   * it was given — which is why a note came back cropped after a reload but was
-   * fine when opened by hand a second later.
+   * Measuring at a chosen moment is guesswork: on a reload the panel's width is
+   * not settled, the fonts may not have arrived, and the viewer is still hidden
+   * when the panel first draws — each of which makes scrollHeight answer a
+   * question about a layout that is about to change. Watching the element
+   * instead means the height is corrected whenever the thing it depends on
+   * moves, rather than at whichever instant seemed late enough.
    */
+  var fitObserver = null;
+
   function scheduleFit(ta) {
     requestAnimationFrame(function () { autoFit(ta); });
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(function () { autoFit(ta); });
     }
+    if (typeof ResizeObserver === "undefined") return;
+    if (!fitObserver) {
+      fitObserver = new ResizeObserver(function (entries) {
+        entries.forEach(function (e) {
+          var inner = e.target.querySelector("textarea");
+          if (inner) autoFit(inner);
+        });
+      });
+    }
+    // Observing the parent: the width it gives the text area is what decides
+    // how the text wraps, and observing the area itself would loop.
+    if (ta.parentElement) fitObserver.observe(ta.parentElement);
   }
 
   /** Build the control for one field. onDone(value) fires when it's settled;
