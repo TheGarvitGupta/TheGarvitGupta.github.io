@@ -581,9 +581,18 @@ window.Coins = (function () {
     el.grid.appendChild(frag);
 
     var none = state.view.length === 0;
+    var neverAny = state.all.length === 0;
+
+    // A search that finds nothing should leave the page to the message. The
+    // grid keeps its margins even when empty, and edit mode's "Add a coin" tile
+    // sits inside it — so a fruitless search left a lone tile and a sentence
+    // stranded far below the field that produced them. An empty collection is
+    // different: there the tile is the only thing to offer.
+    el.grid.hidden = none && !neverAny;
+
     el.empty.hidden = !none;
     if (none) {
-      el.empty.textContent = state.all.length === 0
+      el.empty.textContent = neverAny
         ? "The collection is empty — no coins have been catalogued yet."
         : state.query
           ? "Nothing matches “" + state.query + "”."
