@@ -103,18 +103,6 @@
 
 .spec.is-editable { position: relative; padding-right: 1.5rem; }
 
-.spec.is-editable dd {
-  border-radius: 4px;
-  padding: 0.1rem 0.35rem;
-  margin: -0.1rem -0.35rem;
-  cursor: text;
-  transition: background 0.18s, box-shadow 0.18s;
-}
-.spec.is-editable dd:hover {
-  background: var(--hover-tint);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-
 .spec.is-new { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: 1rem; padding: 0.5rem 0; }
 .spec.is-new dt { color: var(--gold); font-size: 0.875rem; }
 .spec.is-new dd { margin: 0; }
@@ -141,28 +129,7 @@
 .spec-remove:focus-visible { opacity: 1; }
 .spec-remove:hover { background: rgba(248, 113, 113, 0.15); color: #f87171; }
 
-/* ── Inline controls ──────────────────────────────────────────────────────── */
-
 .edit-control { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
-
-.edit-control input,
-.edit-control select,
-.notes-input {
-  width: 100%;
-  min-width: 0;
-  padding: 0.35rem 0.5rem;
-  background: var(--bg-raise);
-  color: var(--ink);
-  border: 1px solid var(--gold);
-  border-radius: 5px;
-  font-family: inherit;
-  font-size: 0.875rem;
-}
-.edit-control select option { background: var(--bg-raise); }
-.edit-control input[type="number"] { font-variant-numeric: tabular-nums; }
-
-.edit-control .denom-value { width: 5rem; flex: 0 0 auto; }
-.edit-control .denom-value + select { width: auto; flex: 1 1 6rem; }
 
 .edit-unit { font-size: 0.75rem; color: var(--ink-faint); }
 
@@ -213,23 +180,7 @@
   color: var(--ink-faint);
   padding: 0.35rem;
 }
-
-/* ── Notes ────────────────────────────────────────────────────────────────── */
-
-.detail-notes.is-editable {
-  border-radius: 5px;
-  padding: 0.35rem 0.5rem;
-  margin-inline: -0.5rem;
-  cursor: text;
-  transition: background 0.18s, box-shadow 0.18s;
-}
-.detail-notes.is-editable:hover {
-  background: var(--hover-tint);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
 .detail-notes.is-empty { color: var(--ink-faint); font-style: italic; }
-
-.notes-input { line-height: 1.7; resize: vertical; }
 
 /* ── Panel tools ──────────────────────────────────────────────────────────── */
 
@@ -301,22 +252,6 @@
   color: var(--gold-soft);
   z-index: 3;
 }
-
-/* ── Fields waiting to be filled ──────────────────────────────────────────── */
-/* Edit mode lists every field in its proper place rather than hiding the
-   unfilled ones behind a menu. They read as quiet gaps in the table, not as
-   demands — the collection is half-documented and always will be. */
-
-.spec.is-empty dt { color: var(--ink-faint); opacity: 0.75; }
-
-.spec.is-empty dd:empty::before {
-  content: "Add";
-  color: var(--ink-faint);
-  opacity: 0.55;
-  font-size: 0.8125rem;
-  letter-spacing: 0.02em;
-}
-.spec.is-empty dd:hover:empty::before { opacity: 0.9; }
 
 /* ── What editing adds to the bar ─────────────────────────────────────────── */
 /*
@@ -582,3 +517,106 @@
 }
 .face-star.is-on svg { fill: currentColor; }
 .face-star[disabled]:not(.is-on) { opacity: 0.35; cursor: default; }
+
+/* ── Fields, live ─────────────────────────────────────────────────────────── */
+/*
+   Editing is not a state a field enters when clicked; the page is already in
+   it. So the controls are present from the moment the panel draws, and they
+   wear the finished page — same type, same colour, no boxes — showing
+   themselves only on hover and focus. What you are looking at while you fill a
+   coin in is what it will look like when you have.
+*/
+
+.edit-control { display: flex; align-items: baseline; gap: 0.4rem; min-width: 0; }
+
+.spec .edit-control input,
+.spec .edit-control select,
+.mintmark-trigger {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  padding: 0.12rem 0.35rem;
+  margin: -0.12rem -0.35rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.spec .edit-control input:hover,
+.spec .edit-control select:hover,
+.mintmark-trigger:hover { background: var(--hover-tint); }
+
+.spec .edit-control input:focus,
+.spec .edit-control select:focus,
+.mintmark-trigger:focus-visible {
+  outline: none;
+  background: var(--bg-raise);
+  border-color: var(--gold);
+}
+
+.spec .edit-control input::placeholder,
+.mintmark-trigger .is-placeholder {
+  color: var(--ink-faint);
+  opacity: 0.55;
+}
+.spec .edit-control select option { background: var(--bg-raise); color: var(--ink); }
+
+/* Denomination is two answers to one question. */
+.edit-control .denom-value { flex: 0 0 3.5rem; width: 3.5rem; }
+.edit-unit { flex: 0 0 auto; font-size: 0.75rem; color: var(--ink-faint); }
+
+.edit-note {
+  flex: 1 0 100%;
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+/* The note: a text area wearing the paragraph it holds, growing as it fills so
+   it is never a window onto the writing. */
+.detail-notes .notes-input {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  margin: -0.4rem -0.55rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  resize: none;
+  overflow: hidden;
+  transition: background 0.15s, border-color 0.15s;
+}
+.detail-notes .notes-input:hover { background: var(--hover-tint); }
+.detail-notes .notes-input:focus {
+  outline: none;
+  background: var(--bg-raise);
+  border-color: var(--gold);
+}
+.detail-notes .notes-input::placeholder { color: var(--ink-faint); opacity: 0.55; font-style: italic; }
+
+/* The one field that cannot stay open: a grid of glyphs in a table row. */
+.mintmark-field { position: relative; }
+.mintmark-trigger { cursor: pointer; }
+.mintmark-pop {
+  position: absolute;
+  top: 100%;
+  left: -0.35rem;
+  z-index: 20;
+  margin-top: 0.4rem;
+  min-width: 17rem;
+  box-shadow: var(--shadow-pop);
+  border-radius: 8px;
+}

@@ -263,7 +263,7 @@
 
     if (field.type === "select") {
       var sel = document.createElement("select");
-      sel.innerHTML = '<option value="">—</option>';
+      sel.innerHTML = '<option value="">Add</option>';
       optionsFor(field, coin).forEach(function (o) {
         var opt = document.createElement("option");
         opt.value = o.id;
@@ -276,7 +276,6 @@
         if (e.key === "Escape") { e.preventDefault(); onDone(undefined); }
       });
       wrap.appendChild(sel);
-      setTimeout(function () { sel.focus(); }, 0);
 
       var hint = look(field.vocab, coin[field.key]);
       if (hint && hint.note) {
@@ -288,7 +287,38 @@
       return wrap;
     }
 
-    if (field.type === "mintmark") return mintMarkPicker(coin, onDone);
+    if (field.type === "mintmark") {
+      // A grid of glyphs cannot sit open in a table row, so this one field
+      // keeps a trigger — styled as its own value, so it reads like the rest.
+      var mm = document.createElement("div");
+      mm.className = "edit-control mintmark-field";
+
+      var trigger = document.createElement("button");
+      trigger.type = "button";
+      trigger.className = "mintmark-trigger";
+      var mark = look("mintMarks", coin.mintMark);
+      trigger.innerHTML = mark
+        ? '<span class="mintmark-glyph" aria-hidden="true">' +
+          window.Coins.escapeHtml(mark.glyph) + "</span>" +
+          window.Coins.escapeHtml(mark.label)
+        : '<span class="is-placeholder">Add</span>';
+
+      var pop = document.createElement("div");
+      pop.className = "mintmark-pop";
+      pop.hidden = true;
+      pop.appendChild(mintMarkPicker(coin, function (v) { pop.hidden = true; onDone(v); }));
+
+      trigger.addEventListener("click", function (e) {
+        e.stopPropagation();
+        pop.hidden = !pop.hidden;
+      });
+      pop.addEventListener("click", function (e) { e.stopPropagation(); });
+      document.addEventListener("click", function () { pop.hidden = true; });
+
+      mm.appendChild(trigger);
+      mm.appendChild(pop);
+      return mm;
+    }
 
     if (field.type === "denomination") {
       var d = coin.denomination || {};
@@ -325,14 +355,13 @@
       unit.addEventListener("change", push);
       wrap.appendChild(val);
       wrap.appendChild(unit);
-      setTimeout(function () { val.focus(); val.select(); }, 0);
       return wrap;
     }
 
     var input = document.createElement("input");
     input.type = (field.type === "number" || field.type === "year") ? "number" : "text";
     if (field.type === "number" && field.format !== "integer") input.step = "any";
-    if (field.placeholder) input.placeholder = field.placeholder;
+    input.placeholder = field.placeholder || "Add";
     if (field.unit) input.setAttribute("aria-label", field.label + " in " + field.unit);
     input.value = coin[field.key] != null ? coin[field.key] : "";
 
@@ -353,7 +382,6 @@
       u.textContent = field.unit;
       wrap.appendChild(u);
     }
-    setTimeout(function () { input.focus(); input.select(); }, 0);
     return wrap;
   }
 
@@ -413,56 +441,80 @@
     return f[0] || null;
   }
 
-  function beginEdit(coin, field, host) {
-    if (host.dataset.editing === "1") return;
-    host.dataset.editing = "1";
-    var previous = host.innerHTML;
-
+  /** Put a live control in the row, in place of the rendered value. */
+  function mountControl(coin, field, host) {
     var ctrl = control(coin, field, function (value) {
-      if (value === undefined) {            // cancelled
-        host.innerHTML = previous;
-        delete host.dataset.editing;
-        return;
-      }
+      if (value === undefined) return;              // cancelled
       var body = {};
-      if (field.type === "mintmark") body = value;         // may set mint too
+      if (field.type === "mintmark") body = value;  // may set the mint too
       else body[field.key] = value;
       var merged = {};
       Object.keys(coin).forEach(function (k) { merged[k] = coin[k]; });
       Object.keys(body).forEach(function (k) { merged[k] = body[k]; });
       rememberCarry(merged);
-      patch(coin.id, body).then(function () { delete host.dataset.editing; });
+      patch(coin.id, body);
     });
-
     host.textContent = "";
     host.appendChild(ctrl);
+  }
+
+  /** The note, as a text area that looks like the paragraph it replaces. */
+  function mountNotes(coin, host) {
+    if (!host) return;
+    host.hidden = false;
+    host.classList.add("is-editable");
+    host.textContent = "";
+
+    var ta = document.createElement("textarea");
+    ta.className = "notes-input";
+    ta.value = coin.notes || "";
+    ta.placeholder = "Where it came from, what is on it, why it matters…";
+    ta.rows = 1;
+    host.appendChild(ta);
+
+    // Grows with what is written, so the box is never a window onto the text.
+    function fit() {
+      ta.style.height = "auto";
+      ta.style.height = ta.scrollHeight + "px";
+    }
+    ta.addEventListener("input", fit);
+    setTimeout(fit, 0);
+
+    ta.addEventListener("blur", function () {
+      if ((coin.notes || "") === ta.value.trim()) return;
+      patch(coin.id, { notes: ta.value.trim() || null });
+    });
+    ta.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" || (e.key === "Enter" && (e.metaKey || e.ctrlKey))) {
+        e.preventDefault();
+        ta.blur();
+      }
+    });
   }
 
   function decorateDetail(coin) {
     var panel = document.getElementById("detail");
     if (!panel) return;
 
-    // Existing rows become click-to-edit.
+    // Every field is live. Editing is not a mode a field enters when clicked —
+    // the page is already in it, so a control that has to be summoned is one
+    // more step between having a fact and recording it. They are styled as the
+    // finished page and only show themselves on hover and focus.
     Array.prototype.forEach.call(panel.querySelectorAll(".spec"), function (row) {
       var field = fieldByKey(row.dataset.key);
       if (!field) return;
       var dd = row.querySelector("dd");
       row.classList.add("is-editable");
-      dd.tabIndex = 0;
-      dd.setAttribute("role", "button");
-      dd.title = "Click to edit";
-      dd.addEventListener("click", function () { beginEdit(coin, field, dd); });
-      dd.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); beginEdit(coin, field, dd); }
-      });
-      // Removing a detail entirely, as distinct from blanking it. Nothing to
-      // remove on a field that has no value yet.
+      mountControl(coin, field, dd);
+
+      // Clearing a field is distinct from blanking it, and there is nothing to
+      // clear on one that has no value yet.
       if (row.classList.contains("is-empty")) return;
       var del = document.createElement("button");
       del.type = "button";
       del.className = "spec-remove";
-      del.title = "Remove this detail";
-      del.setAttribute("aria-label", "Remove " + field.label);
+      del.title = "Clear this detail";
+      del.setAttribute("aria-label", "Clear " + field.label);
       del.textContent = "×";
       del.addEventListener("click", function (e) {
         e.stopPropagation();
@@ -473,14 +525,8 @@
       row.appendChild(del);
     });
 
-    // Notes: the prose that carries the coin's story.
-    var notes = document.getElementById("detail-notes");
-    notes.hidden = false;
-    notes.classList.add("is-editable");
-    notes.classList.toggle("is-empty", !coin.notes);
-    if (!coin.notes) notes.textContent = "Add a note about this coin…";
-    notes.tabIndex = 0;
-    notes.addEventListener("click", function () { editNotes(coin, notes); });
+    // The note, likewise: a text area wearing the prose it holds.
+    mountNotes(coin, document.getElementById("detail-notes"));
 
     var tools = document.createElement("div");
     tools.className = "edit-tools";
@@ -498,31 +544,6 @@
     tools.appendChild(del);
 
     document.getElementById("detail-specs").appendChild(tools);
-  }
-
-  function editNotes(coin, host) {
-    if (host.dataset.editing === "1") return;
-    host.dataset.editing = "1";
-    var ta = document.createElement("textarea");
-    ta.className = "notes-input";
-    ta.value = coin.notes || "";
-    ta.rows = 6;
-    ta.placeholder = "Where it came from, what's on it, why it matters…";
-    host.textContent = "";
-    host.classList.remove("is-empty");
-    host.appendChild(ta);
-    ta.focus();
-
-    ta.addEventListener("blur", function () {
-      patch(coin.id, { notes: ta.value.trim() || null })
-        .then(function () { delete host.dataset.editing; });
-    });
-    ta.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" || (e.key === "Enter" && (e.metaKey || e.ctrlKey))) {
-        e.preventDefault();
-        ta.blur();
-      }
-    });
   }
 
   /* ── Photo drop targets ─────────────────────────────────────────────────── */
