@@ -412,6 +412,17 @@ def thumbs_at(sha):
     return found
 
 
+def committed_coin(cid):
+    """A coin as it stood at the last save, or None if it is new."""
+    head = git("rev-parse", "HEAD").stdout.strip()
+    if not head:
+        return None
+    for c in catalogue_at(head):
+        if str(c.get("id")) == cid:
+            return c
+    return None
+
+
 def working_coin_changes():
     """
     Which coins differ from the last save, in the terms the interface uses.
@@ -813,7 +824,23 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                             coin[k] = v
                             touched = True
                     if touched:
-                        coin["updated"] = today()
+                        # Editing a field and then putting it back leaves the
+                        # coin exactly as it was saved. Stamping today's date on
+                        # that invents a change: the file differs, the interface
+                        # has nothing to show for it, and the difference never
+                        # goes away on its own. Restore the saved date instead,
+                        # so returning a coin to its saved state returns the
+                        # file to it too.
+                        was = committed_coin(coin_id)
+                        def bare(c):
+                            return {k: v for k, v in c.items() if k != "updated"}
+                        if was is not None and _same(bare(coin), bare(was)):
+                            if "updated" in was:
+                                coin["updated"] = was["updated"]
+                            else:
+                                coin.pop("updated", None)
+                        else:
+                            coin["updated"] = today()
                         save_coins(coins)
                     return self.send_json({"ok": True, "coin": coin, "changed": touched})
         self.send_json({"ok": False, "error": "no such coin"}, 404)
