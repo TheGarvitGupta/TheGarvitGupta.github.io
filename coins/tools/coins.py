@@ -412,6 +412,24 @@ def thumbs_at(sha):
     return found
 
 
+def working_coin_changes():
+    """
+    Which coins differ from the last save, in the terms the interface uses.
+
+    Not the same question as "is the file modified". Setting a field back to the
+    value it was saved with still bumps `updated`, so git reports a changed file
+    while nothing about any coin differs — which showed up as a bar saying
+    "unsaved changes" beside a timeline saying "no change to the collection".
+    Both were right about different things; the interface should only ever speak
+    about coins.
+    """
+    head = git("rev-parse", "HEAD").stdout.strip()
+    if not head:
+        return []
+    d = diff_versions(head, WORKING)
+    return [x["id"] for x in (d["added"] + d["changed"] + d["removed"])]
+
+
 def working_thumb_name(stem):
     """The thumbnail file on disk for a coin face, whatever its extension."""
     if THUMB_DIR.exists():
@@ -506,7 +524,7 @@ def history_steps():
     for st in steps:
         st["state"] = "live" if st["sha"] in reachable else "saved"
 
-    if pending_changes()["total"] > 0:
+    if working_coin_changes():
         import datetime
         steps.insert(0, {
             "sha": WORKING,
@@ -541,8 +559,14 @@ def golive_preview():
     live = git("rev-parse", "--verify", "-q", PUBLISH_BRANCH).stdout.strip()
     here = git("rev-parse", "HEAD").stdout.strip()
 
-    dirty = pending_changes()["total"] > 0
-    unclean = bool(git("status", "--porcelain").stdout.strip())
+    unsaved_ids = working_coin_changes()
+    dirty = bool(unsaved_ids)
+    # Only files outside the collection: what the collection is doing is already
+    # reported by `dirty`, and a stray timestamp there would otherwise block
+    # publishing with a message about files somewhere else entirely.
+    unclean = any(not line[3:].strip().startswith(COLLECTION_REL)
+                  for line in git("status", "--porcelain").stdout.splitlines()
+                  if line.strip())
 
     if branch == PUBLISH_BRANCH:
         remote = git("rev-parse", "--verify", "-q", f"origin/{PUBLISH_BRANCH}").stdout.strip()
@@ -580,16 +604,11 @@ def golive_preview():
     # Coins, not files. Editing three coins' details touches one file, and
     # replacing one photograph touches two — neither number means anything to
     # someone cataloguing a collection.
-    unsaved_ids = []
-    if dirty and here:
-        w = diff_versions(here, WORKING)
-        # Removed coins are not in the grid to mark, but they still count.
-        unsaved_ids = [x["id"] for x in (w["added"] + w["changed"] + w["removed"])]
     unsaved_coins = len(unsaved_ids)
 
     return {"branch": branch, "publishBranch": PUBLISH_BRANCH,
             "isLive": branch == PUBLISH_BRANCH,
-            "pending": pending_changes()["total"],
+            "pending": unsaved_coins,
             "pendingCoins": unsaved_coins,
             "pendingIds": unsaved_ids,
             "commits": ahead,
