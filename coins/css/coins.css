@@ -707,17 +707,18 @@ a { color: inherit; }
   color: var(--ink-faint);
 }
 
+/* The glyph reads as part of the value, not as a badge beside it. A bordered
+   box a rem and a half tall was the only value on the panel wearing one, and
+   being taller than the line it sat on, it pulled the label off the baseline
+   every other value shares. */
 .mintmark-glyph {
-  display: inline-grid;
-  place-items: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  margin-right: 0.5rem;
-  vertical-align: -0.35rem;
-  border: 1px solid var(--line-strong);
-  border-radius: 4px;
-  font-size: 0.8125rem;
-  color: var(--gold-soft);
+  display: inline-block;
+  min-width: 1.1rem;
+  margin-right: 0.4rem;
+  text-align: center;
+  font-size: 0.9375rem;
+  line-height: inherit;
+  color: var(--gold);
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
