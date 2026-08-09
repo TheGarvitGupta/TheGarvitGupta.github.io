@@ -101,7 +101,8 @@
 
 /* ── Editable spec rows ───────────────────────────────────────────────────── */
 
-.spec.is-editable { position: relative; padding-right: 2rem; }
+.spec { position: relative; }
+.spec.is-editable { padding-right: 2rem; }
 
 .spec.is-new { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: 1rem; padding: 0.5rem 0; }
 .spec.is-new dt { color: var(--gold); font-size: 0.875rem; }
@@ -454,22 +455,23 @@
 }
 :root[data-theme="dark"] .detail-notes.is-unsaved::after { color: #fbbf24; }
 
-.spec.is-unsaved dt::after {
-  content: "Unsaved";
-  display: inline-block;
-  margin-left: 0.5rem;
-  padding: 0.02rem 0.4rem;
-  border-radius: 999px;
-  background: rgba(245, 158, 11, 0.14);
-  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.32);
-  color: #b8860b;
-  font-size: 0.5rem;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  vertical-align: 0.1rem;
+/* A marker on the row rather than a label beside it. The label column is
+   8.5rem and "Denomination" plus a pill wants about 9.6, so the pill wrapped
+   onto its own line and read as a mistake — and widening the column would
+   starve values that already wrap. The bar costs no layout at all, and the
+   amber label says the same thing. */
+.spec.is-unsaved::before {
+  content: "";
+  position: absolute;
+  left: -0.8rem;
+  top: 0.4rem;
+  bottom: 0.4rem;
+  width: 2px;
+  border-radius: 1px;
+  background: #f59e0b;
 }
-:root[data-theme="dark"] .spec.is-unsaved dt::after { color: #fbbf24; }
+.spec.is-unsaved dt { color: #b8860b; }
+:root[data-theme="dark"] .spec.is-unsaved dt { color: #fbbf24; }
 
 .face-toggle button.is-unsaved {
   color: #b8860b;

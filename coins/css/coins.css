@@ -670,7 +670,7 @@ a { color: inherit; }
 }
 .detail-notes:empty { display: none; }
 
-.detail-specs { margin-top: 2.5rem; }
+.detail-specs { margin-top: 2.5rem; padding-left: 0.8rem; margin-left: -0.8rem; }
 
 .spec-group + .spec-group { margin-top: 2rem; }
 

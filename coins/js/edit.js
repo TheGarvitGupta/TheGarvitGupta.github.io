@@ -785,7 +785,11 @@
     var u = unsavedDetail[String(coin.id)];
 
     Array.prototype.forEach.call(document.querySelectorAll("#detail .spec"), function (row) {
-      row.classList.toggle("is-unsaved", !!(u && (u.whole || u.fields[row.dataset.key])));
+      var changed = !!(u && (u.whole || u.fields[row.dataset.key]));
+      row.classList.toggle("is-unsaved", changed);
+      // The mark is a colour and a bar, so say it for anyone not seeing either.
+      var dt = row.querySelector("dt");
+      if (dt) dt.title = changed ? "Unsaved" : "";
     });
     [["obv", "btn-obv"], ["rev", "btn-rev"]].forEach(function (pair) {
       var b = document.getElementById(pair[1]);
