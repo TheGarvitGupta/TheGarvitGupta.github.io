@@ -78,36 +78,44 @@
   <!-- One toolbar: filters on the left, search in the middle, order on the
        right. A three-column grid, so the search sits on the page's centre line
        whatever the controls either side of it are doing. -->
+  <!-- One bar rather than three controls adrift across the width: filters,
+       search and order are the same job — deciding what you are looking at. -->
   <div class="toolbar">
-    <button type="button" class="eb toolbar-filters" id="btn-filters"
-            aria-expanded="false" aria-controls="filterbar">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/>
-      </svg>
-      <span>Filters</span>
-      <span class="toolbar-count" id="filter-count" hidden></span>
-    </button>
-
-    <label class="search-field">
-      <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="11" cy="11" r="6.5"/><path d="M15.8 15.8L20 20"/>
-      </svg>
-      <input type="search" id="search" autocomplete="off" spellcheck="false"
-             placeholder="Search the collection" aria-label="Search the collection">
-      <button type="button" class="search-clear" id="search-clear" hidden aria-label="Clear search">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10"/><path d="M17 7L7 17"/></svg>
+    <div class="toolbar-bar">
+      <button type="button" class="tb-filters" id="btn-filters"
+              aria-expanded="false" aria-controls="filterbar">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/>
+        </svg>
+        <span>Filters</span>
+        <span class="toolbar-count" id="filter-count" hidden></span>
       </button>
-    </label>
 
-    <label class="sort">
-      <span class="sr-only">Order</span>
-      <select id="sort">
-        <option value="year-desc">Newest first</option>
-        <option value="year-asc">Oldest first</option>
-        <option value="denomination">Denomination</option>
-        <option value="added">Recently added</option>
-      </select>
-    </label>
+      <span class="tb-rule" aria-hidden="true"></span>
+
+      <label class="search-field">
+        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.5"/><path d="M15.8 15.8L20 20"/>
+        </svg>
+        <input type="search" id="search" autocomplete="off" spellcheck="false"
+               placeholder="Search the collection" aria-label="Search the collection">
+        <button type="button" class="search-clear" id="search-clear" hidden aria-label="Clear search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10"/><path d="M17 7L7 17"/></svg>
+        </button>
+      </label>
+
+      <span class="tb-rule" aria-hidden="true"></span>
+
+      <label class="sort">
+        <span class="sr-only">Order</span>
+        <select id="sort">
+          <option value="year-desc">Newest first</option>
+          <option value="year-asc">Oldest first</option>
+          <option value="denomination">Denomination</option>
+          <option value="added">Recently added</option>
+        </select>
+      </label>
+    </div>
   </div>
 
   <ul class="grid" id="grid" aria-label="The collection"></ul>

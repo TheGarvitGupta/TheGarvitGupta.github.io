@@ -257,22 +257,85 @@ a { color: inherit; }
 }
 
 /* ── Toolbar ──────────────────────────────────────────────────────────────── */
-/* Three columns rather than a flex row, so the search sits on the page's centre
-   line no matter what the controls either side of it are doing. */
+/*
+   One bar, centred. These were three controls adrift across the full width —
+   a button at the far left, a field in the middle, a menu at the far right —
+   which read as three unrelated things rather than as the one job they do
+   between them: deciding what you are looking at.
+*/
 
 .toolbar {
-  display: grid;
-  grid-template-columns: 1fr minmax(0, 30rem) 1fr;
-  align-items: center;
-  gap: 1rem;
+  display: flex;
+  justify-content: center;
   padding: clamp(1.25rem, 3.5vw, 2.25rem) 0 clamp(0.5rem, 2vw, 1rem);
 }
-.toolbar-filters { justify-self: start; }
-.toolbar .sort { justify-self: end; }
+
+.toolbar-bar {
+  display: flex;
+  align-items: stretch;
+  width: min(42rem, 100%);
+  padding: 0.3rem;
+  background: var(--bg-raise);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  /* A shadow soft enough to lift it off the page without announcing itself —
+     this is the only thing on the page you operate, and the coins should stay
+     the brightest objects on it. */
+  box-shadow: 0 1px 2px rgba(40, 34, 22, 0.05),
+              0 6px 18px rgba(40, 34, 22, 0.055);
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+:root[data-theme="dark"] .toolbar-bar {
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+.toolbar-bar:hover {
+  border-color: var(--line-strong);
+  box-shadow: 0 1px 2px rgba(40, 34, 22, 0.06),
+              0 8px 24px rgba(40, 34, 22, 0.08);
+}
+.toolbar-bar:hover { border-color: var(--line-strong); }
+/* The whole bar responds when you are typing in it, since the field has no
+   edges of its own to light up. */
+.toolbar-bar:focus-within {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.13),
+              0 6px 18px rgba(40, 34, 22, 0.06);
+}
+
+.tb-rule {
+  flex: 0 0 auto;
+  width: 1px;
+  margin: 0.55rem 0.2rem;
+  background: var(--line-strong);
+  opacity: 0.5;
+}
+
+/* ── Segments ── */
+
+.tb-filters {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.95rem;
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  color: var(--ink-dim);
+  font-size: 0.8125rem;
+  transition: background 0.15s, color 0.15s;
+}
+.tb-filters svg {
+  width: 0.95rem; height: 0.95rem;
+  fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round;
+}
+.tb-filters:hover { background: var(--hover-tint); color: var(--ink); }
+.tb-filters[aria-expanded="true"] { color: var(--ink); }
 
 .toolbar-count {
-  min-width: 1.15rem;
-  padding: 0.05rem 0.35rem;
+  min-width: 1.1rem;
+  padding: 0.05rem 0.3rem;
   border-radius: 999px;
   background: var(--gold);
   color: var(--on-gold);
@@ -282,37 +345,25 @@ a { color: inherit; }
   text-align: center;
 }
 
-/* ── Search ───────────────────────────────────────────────────────────────── */
-
+/* The field is the middle of the bar, so it carries no border of its own. */
 .search-field {
-  position: relative;
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
-  gap: 0.7rem;
-  padding: 0.72rem 1.05rem;
-  background: var(--hover-tint);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  transition: background 0.18s, border-color 0.18s, box-shadow 0.18s;
-}
-.search-field:hover { border-color: var(--line-strong); }
-.search-field:focus-within {
-  background: var(--bg-raise);
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.13);
+  gap: 0.6rem;
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: 0;
 }
 
 .search-icon {
   flex: 0 0 auto;
-  width: 1rem;
-  height: 1rem;
-  fill: none;
-  stroke: var(--ink-faint);
-  stroke-width: 1.8;
-  stroke-linecap: round;
+  width: 0.95rem; height: 0.95rem;
+  fill: none; stroke: var(--ink-faint); stroke-width: 1.8; stroke-linecap: round;
   transition: stroke 0.18s;
 }
-.search-field:focus-within .search-icon { stroke: var(--gold); }
+.toolbar-bar:focus-within .search-icon { stroke: var(--gold); }
 
 .search-field input {
   flex: 1 1 auto;
@@ -322,7 +373,7 @@ a { color: inherit; }
   outline: none;
   color: var(--ink);
   font-family: inherit;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   appearance: none;
   -webkit-appearance: none;
 }
@@ -334,8 +385,7 @@ a { color: inherit; }
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  width: 1.35rem;
-  height: 1.35rem;
+  width: 1.3rem; height: 1.3rem;
   padding: 0;
   background: none;
   border: 0;
@@ -344,29 +394,37 @@ a { color: inherit; }
   transition: background 0.15s, color 0.15s;
 }
 .search-clear svg {
-  width: 0.8rem; height: 0.8rem;
+  width: 0.75rem; height: 0.75rem;
   fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round;
 }
 .search-clear:hover { background: var(--hover-tint); color: var(--ink); }
 
+.sort { flex: 0 0 auto; display: flex; align-items: center; }
 .sort select {
-  padding: 0.45rem 1.9rem 0.45rem 0.75rem;
-  background: var(--hover-tint);
+  padding: 0.5rem 1.8rem 0.5rem 0.85rem;
+  background: none;
   background-image: var(--sort-caret);
   background-repeat: no-repeat;
-  background-position: right 0.65rem center;
-  background-size: 0.7rem;
-  color: var(--ink);
-  border: 1px solid var(--line);
+  background-position: right 0.6rem center;
+  background-size: 0.65rem;
+  color: var(--ink-dim);
+  border: 0;
   border-radius: 999px;
   font-family: inherit;
-  font-size: 0.78125rem;
+  font-size: 0.8125rem;
   appearance: none;
   -webkit-appearance: none;
-  transition: background-color 0.16s, border-color 0.16s;
+  transition: background-color 0.15s, color 0.15s;
 }
-.sort select:hover { background-color: var(--active-tint); border-color: var(--line-strong); }
-.sort select option { background: var(--bg-raise); }
+.sort select:hover { background-color: var(--hover-tint); color: var(--ink); }
+.sort select option { background: var(--bg-raise); color: var(--ink); }
+
+@media (max-width: 620px) {
+  .toolbar-bar { flex-wrap: wrap; border-radius: 18px; }
+  .search-field { order: -1; flex: 1 0 100%; }
+  .tb-rule { display: none; }
+  .sort { margin-left: auto; }
+}
 
 /* ── The filter drawer ────────────────────────────────────────────────────── */
 
