@@ -498,19 +498,25 @@
    is the side you meant. Visible at rest rather than on hover — a control that
    only appears when you happen to pass over it may as well not exist. */
 
-/* One cluster, top left, holding both controls for this photograph. */
+/* One cluster, top left, holding both controls for this photograph. Both are
+   given the same height here rather than each arriving at its own: the star is
+   a fixed circle and the pencil a pill sized by its text, so left alone they
+   never quite line up. */
 .face-tools {
   position: absolute;
   top: 0;
   left: 0;
   z-index: 4;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 0.3rem;
+  height: 2rem;
 }
+.face-tools > * { height: 100%; }
 
 .face-edit {
   position: relative;
+  padding: 0 0.8rem;                /* height comes from the cluster */
   overflow: hidden;                 /* contains the file input */
   /* Sits over a photograph, so it needs a surface of its own rather than the
      translucent tint the bar's buttons rest on. */
@@ -547,7 +553,6 @@
   display: grid;
   place-items: center;
   width: 2rem;
-  height: 2rem;
   padding: 0;
   background: var(--panel-bg);
   backdrop-filter: blur(8px);
