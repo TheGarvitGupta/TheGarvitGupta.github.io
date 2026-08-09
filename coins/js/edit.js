@@ -517,7 +517,12 @@
       del.className = "spec-remove";
       del.title = "Clear this detail";
       del.setAttribute("aria-label", "Clear " + field.label);
-      del.textContent = "×";
+      // The same cross Discard wears, so clearing looks like clearing wherever
+      // it happens.
+      del.innerHTML =
+        '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" ' +
+        'stroke-width="1.9" stroke-linecap="round">' +
+        '<path d="M7 7l10 10"/><path d="M17 7L7 17"/></svg>';
       del.addEventListener("click", function (e) {
         e.stopPropagation();
         var body = {};
