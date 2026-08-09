@@ -62,7 +62,6 @@ IMG_EXT = {".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff", ".heic", ".bmp"}
 
 _lock = threading.Lock()
 
-
 # ── Catalogue I/O ────────────────────────────────────────────────────────────
 
 def load_coins():
@@ -74,19 +73,15 @@ def load_coins():
     except json.JSONDecodeError:
         return []
 
-
 def save_coins(coins):
     DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
     DATA_FILE.write_text(json.dumps(coins, indent=2, ensure_ascii=False) + "\n")
 
-
 _high_water = None   # highest id ever issued; scanned once per run, then held
-
 
 def _ids_in(text):
     return {int(m) for m in re.findall(r'"id"\s*:\s*"(\d+)"', text)} | \
            {int(m) for m in re.findall(r'/(\d+)-(?:obv|rev)\.\w+', text)}
-
 
 def _scan_high_water():
     """
@@ -111,7 +106,6 @@ def _scan_high_water():
         pass  # not a git repo, or no history yet — current catalogue is enough
     return max(ids) if ids else 0
 
-
 def next_id(coins):
     global _high_water
     if _high_water is None:
@@ -126,19 +120,12 @@ def next_id(coins):
     _high_water += 1
     return f"{_high_water:04d}"
 
-
-def today():
-    import datetime
-    return datetime.date.today().isoformat()
-
-
 # ── Image processing ─────────────────────────────────────────────────────────
 # Adapted from tools/gallery.py:85 — same EXIF-orientation handling and the
 # same save_resized() shape, so the two files read as siblings. What's new here
 # is cutting the coin out of its backdrop.
 
 ORIENTATION_ROTATIONS = None  # filled on first use, needs PIL imported
-
 
 def _open_upright(src: Path):
     """Open an image with EXIF rotation baked in and GPS stripped."""
@@ -171,7 +158,6 @@ def _open_upright(src: Path):
     elif img.mode not in ("RGB", "RGBA"):
         img = img.convert("RGB")
     return img
-
 
 def _coin_mask(img):
     """
@@ -219,7 +205,6 @@ def _coin_mask(img):
         return None  # found nothing, or found the whole frame
 
     return mask
-
 
 def process_coin_image(src: Path, coin_id: str, face: str, cutout: bool = True):
     """
@@ -286,7 +271,6 @@ def process_coin_image(src: Path, coin_id: str, face: str, cutout: bool = True):
     save_resized(THUMB_DIR / filename, IMG_THUMB_W, IMG_THUMB_Q)
     return filename
 
-
 # ── Git ──────────────────────────────────────────────────────────────────────
 # Same shape as tools/gallery.py:693 — status for the pending count, then
 # add/commit/push, with a discard escape hatch.
@@ -298,11 +282,9 @@ def process_coin_image(src: Path, coin_id: str, face: str, cutout: bool = True):
 
 TRACKED = [COLLECTION_REL]
 
-
 def git(*args, **kw):
     return subprocess.run(["git", *args], cwd=str(REPO_ROOT),
                           capture_output=True, text=True, **kw)
-
 
 def pending_changes():
     # -uall so an untracked collection lists every file rather than collapsing
@@ -329,7 +311,6 @@ def pending_changes():
             "isLive": branch == PUBLISH_BRANCH,
             "publishBranch": PUBLISH_BRANCH}
 
-
 # ── History ──────────────────────────────────────────────────────────────────
 # Every commit that touched the collection is one step in the collection's life.
 # Nothing extra is recorded to make this work: git already holds a snapshot of
@@ -342,21 +323,16 @@ def pending_changes():
 CATALOGUE_PATHS = ["coins/collection/coins.json", "coins/data/coins.json"]
 THUMB_DIRS      = ["coins/collection/images/thumbs", "coins/images/thumbs"]
 
-# Fields that say nothing about the coin itself and would only add noise.
-IGNORED_FIELDS = {"updated"}
-
 _cat_cache, _tree_cache = {}, {}
 
 # Set when a restore is staged, so the commit that saves it says so rather than
 # being described as a pile of additions and deletions.
 _pending_restore = None
 
-
 # The uncommitted working tree, addressed like any other version so that the
 # same diff machinery describes work in progress. Everything that has not been
 # saved yet is simply the newest step.
 WORKING = "WORKING"
-
 
 def catalogue_at(sha):
     """The whole catalogue as it stood at one commit, or right now."""
@@ -375,7 +351,6 @@ def catalogue_at(sha):
             break
     _cat_cache[sha] = out
     return out
-
 
 def thumbs_at(sha):
     """
@@ -411,18 +386,6 @@ def thumbs_at(sha):
     _tree_cache[sha] = found
     return found
 
-
-def committed_coin(cid):
-    """A coin as it stood at the last save, or None if it is new."""
-    head = git("rev-parse", "HEAD").stdout.strip()
-    if not head:
-        return None
-    for c in catalogue_at(head):
-        if str(c.get("id")) == cid:
-            return c
-    return None
-
-
 def working_coin_changes():
     """
     Which coins differ from the last save, in the terms the interface uses.
@@ -440,7 +403,6 @@ def working_coin_changes():
     d = diff_versions(head, WORKING)
     return [x["id"] for x in (d["added"] + d["changed"] + d["removed"])]
 
-
 def working_thumb_name(stem):
     """The thumbnail file on disk for a coin face, whatever its extension."""
     if THUMB_DIR.exists():
@@ -449,10 +411,8 @@ def working_thumb_name(stem):
                 return f.name
     return stem + ".webp"
 
-
 def _same(a, b):
     return json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
-
 
 def diff_versions(old_sha, new_sha):
     """
@@ -481,7 +441,7 @@ def diff_versions(old_sha, new_sha):
     for cid in set(old) & set(new):
         fields = []
         for key in sorted(set(old[cid]) | set(new[cid])):
-            if key in IGNORED_FIELDS or key == "images":
+            if key == "images":
                 continue
             a, b = old[cid].get(key), new[cid].get(key)
             if not _same(a, b):
@@ -506,7 +466,6 @@ def diff_versions(old_sha, new_sha):
     return {"added": sorted(added, key=key),
             "removed": sorted(removed, key=key),
             "changed": sorted(changed, key=key)}
-
 
 def history_steps():
     """
@@ -545,17 +504,14 @@ def history_steps():
         })
     return steps
 
-
 def step_parent(sha):
     if sha == WORKING:
         return git("rev-parse", "HEAD").stdout.strip() or None
     r = git("rev-parse", f"{sha}^")
     return r.stdout.strip() if r.returncode == 0 else None
 
-
 def current_branch():
     return git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
-
 
 def golive_preview():
     """
@@ -629,7 +585,6 @@ def golive_preview():
             "steps": steps, "summary": summary,
             "hasUnsaved": dirty, "workingTreeDirty": unclean,
             "upToDate": ahead == 0}
-
 
 # ── HTTP ─────────────────────────────────────────────────────────────────────
 
@@ -791,10 +746,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 "id": next_id(coins),
                 "status": body.get("status", "published"),
                 "images": {},
-                "updated": today(),
             }
             for k, v in body.items():
-                if k not in ("id", "updated") and v not in (None, ""):
+                if k != "id" and v not in (None, ""):
                     coin[k] = v
             coins.append(coin)
             save_coins(coins)
@@ -824,23 +778,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                             coin[k] = v
                             touched = True
                     if touched:
-                        # Editing a field and then putting it back leaves the
-                        # coin exactly as it was saved. Stamping today's date on
-                        # that invents a change: the file differs, the interface
-                        # has nothing to show for it, and the difference never
-                        # goes away on its own. Restore the saved date instead,
-                        # so returning a coin to its saved state returns the
-                        # file to it too.
-                        was = committed_coin(coin_id)
-                        def bare(c):
-                            return {k: v for k, v in c.items() if k != "updated"}
-                        if was is not None and _same(bare(coin), bare(was)):
-                            if "updated" in was:
-                                coin["updated"] = was["updated"]
-                            else:
-                                coin.pop("updated", None)
-                        else:
-                            coin["updated"] = today()
                         save_coins(coins)
                     return self.send_json({"ok": True, "coin": coin, "changed": touched})
         self.send_json({"ok": False, "error": "no such coin"}, 404)
@@ -901,7 +838,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             for coin in coins:
                 if str(coin.get("id")) == coin_id:
                     coin.setdefault("images", {})[face] = filename
-                    coin["updated"] = today()
                     break
             save_coins(coins)
 
@@ -1081,11 +1017,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         git("checkout", "--", COLLECTION_REL)
         self.send_json({"ok": True})
 
-
 class Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
     daemon_threads = True
     allow_reuse_address = True
-
 
 def main():
     try:
@@ -1115,7 +1049,6 @@ def main():
     except KeyboardInterrupt:
         print("\nStopped.")
         server.shutdown()
-
 
 if __name__ == "__main__":
     main()

@@ -295,8 +295,10 @@ window.Coins = (function () {
       if (rb === null) return -1;
       return ra - rb;
     },
+    // Ids are issued in order and never reused, so id order is the order coins
+    // were added — exactly, and without a date to keep.
     "added": function (a, b) {
-      return String(b.updated || "").localeCompare(String(a.updated || ""));
+      return (parseInt(b.id, 10) || 0) - (parseInt(a.id, 10) || 0);
     }
   };
 
