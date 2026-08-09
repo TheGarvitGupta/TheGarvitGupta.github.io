@@ -6,7 +6,6 @@
       "obv": "0001-obv.webp",
       "rev": "0001-rev.webp"
     },
-    "updated": "2026-08-05",
     "metal": "nickel",
     "type": "circulation",
     "notes": "The first rupee of the Republic. Struck in only two years — 1950 and 1954 — before decimalisation swept away annas and pies in 1957, making this the last rupee of the old sixteen-anna system.\n\nThe obverse carries the Lion Capital of Ashoka above the legend GOVERNMENT OF INDIA, the emblem adopted in 1950 to replace the profile of George VI. The reverse gives the denomination in Hindi and English, flanked by ears of wheat — a deliberate nod to the agricultural priorities of the first Five-Year Plan.\n\nThe star beneath the Lion Capital is the mark of the Hyderabad mint.",
@@ -35,7 +34,6 @@
       "obv": "0002-obv.webp",
       "rev": "0002-rev.webp"
     },
-    "updated": "2026-08-05",
     "era": "republic-india",
     "denomination": {
       "value": 10,
@@ -61,7 +59,6 @@
       "obv": "0003-obv.webp",
       "rev": "0003-rev.webp"
     },
-    "updated": "2026-08-05",
     "era": "republic-india",
     "denomination": {
       "value": 25,
@@ -88,7 +85,6 @@
       "obv": "0004-obv.webp",
       "rev": "0004-rev.webp"
     },
-    "updated": "2026-08-05",
     "era": "republic-india",
     "denomination": {
       "value": 50,
@@ -115,7 +111,6 @@
       "obv": "0005-obv.webp",
       "rev": "0005-rev.webp"
     },
-    "updated": "2026-08-05",
     "era": "republic-india",
     "denomination": {
       "value": 1,
@@ -142,7 +137,6 @@
       "obv": "0006-obv.webp",
       "rev": "0006-rev.webp"
     },
-    "updated": "2026-08-05",
     "era": "republic-india",
     "denomination": {
       "value": 2,
@@ -168,7 +162,6 @@
       "obv": "0007-obv.webp",
       "rev": "0007-rev.webp"
     },
-    "updated": "2026-08-05",
     "era": "republic-india",
     "denomination": {
       "value": 5,
