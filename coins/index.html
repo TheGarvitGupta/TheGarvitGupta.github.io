@@ -41,6 +41,11 @@
 <div class="topbar" id="topbar">
   <div class="topbar-inner">
     <div class="topbar-lead">
+      <button type="button" class="eb eb-icon" id="btn-filters" aria-expanded="true" aria-label="Hide filters">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/>
+        </svg>
+      </button>
       <button type="button" class="eb eb-home" id="btn-home">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M4 10.5L12 4l8 6.5"/><path d="M6 9.6V20h12V9.6"/>
@@ -74,30 +79,37 @@
   </div>
 </header>
 
-<!-- Filters. Populated from the catalogue itself, so an option only ever appears
-     if at least one coin actually has that value. -->
-<div class="filterbar" id="filterbar" hidden>
-  <div class="filterbar-inner">
-    <div class="filters" id="filters"></div>
-    <div class="filterbar-tail">
-      <label class="sort">
-        <span class="sort-label">Sort</span>
-        <select id="sort">
-          <option value="year-desc">Newest first</option>
-          <option value="year-asc">Oldest first</option>
-          <option value="denomination">Denomination</option>
-          <option value="added">Recently added</option>
-        </select>
-      </label>
-      <button type="button" class="clear-filters" id="clear-filters" hidden>Clear</button>
+<main class="shell">
+  <!-- Filters live in a column of their own. Populated from the catalogue, so
+       an option only appears if at least one coin actually has that value. -->
+  <aside class="sidebar" id="filterbar" hidden aria-label="Filter the collection">
+    <div class="sidebar-inner">
+      <div class="sidebar-head">
+        <h2 class="sidebar-title">Filter</h2>
+        <button type="button" class="clear-filters" id="clear-filters" hidden>Clear</button>
+      </div>
+
+      <section class="facet facet-sort">
+        <h3 class="facet-title">Order</h3>
+        <label class="sort">
+          <span class="sr-only">Sort</span>
+          <select id="sort">
+            <option value="year-desc">Newest first</option>
+            <option value="year-asc">Oldest first</option>
+            <option value="denomination">Denomination</option>
+            <option value="added">Recently added</option>
+          </select>
+        </label>
+      </section>
+
+      <div class="filters" id="filters"></div>
     </div>
+  </aside>
+
+  <div class="collection">
+    <ul class="grid" id="grid" aria-label="The collection"></ul>
+    <p class="empty" id="empty" hidden></p>
   </div>
-</div>
-
-<main>
-  <ul class="grid" id="grid" aria-label="The collection"></ul>
-
-  <p class="empty" id="empty" hidden></p>
 </main>
 
 <footer class="colophon">

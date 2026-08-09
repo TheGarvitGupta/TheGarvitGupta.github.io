@@ -242,175 +242,205 @@ a { color: inherit; }
   color: var(--ink-faint);
 }
 
-/* ── Filter bar ───────────────────────────────────────────────────────────── */
+/* ── Filters ──────────────────────────────────────────────────────────────── */
+/*
+   A column of their own, so every option of every facet is visible at once
+   rather than one menu at a time. Opened and closed from the bar; the choice is
+   remembered, since somebody browsing and somebody cataloguing want opposite
+   defaults.
+*/
 
-.filterbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: var(--bar-bg);
-  backdrop-filter: saturate(140%) blur(14px);
-  -webkit-backdrop-filter: saturate(140%) blur(14px);
-  border-block: 1px solid var(--line);
-}
-
-.filterbar-inner {
+.shell {
   width: var(--shell);
   margin: 0 auto;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  padding: 0.75rem 0;
+  align-items: flex-start;
+  gap: var(--rail-gap);
 }
 
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  min-width: 0;
-}
+:root { --rail-gap: clamp(1.5rem, 3vw, 3rem); }
 
-.filterbar-tail {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-shrink: 0;
-}
-
-.facet { position: relative; }
-
-/* The same chip as every other control. These were the last things on the page
-   still outline-only, in smaller type, so a row of filters read as a different
-   kind of object from the buttons in the bar above them. */
-.facet-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.4rem 0.85rem;
-  background: var(--hover-tint);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-size: 0.78125rem;
-  color: var(--ink);
-  transition: background 0.16s, color 0.16s, border-color 0.16s, transform 0.08s;
-}
-.facet-btn:hover { background: var(--active-tint); border-color: var(--line-strong); }
-.facet-btn:active { transform: translateY(0.5px); }
-.facet-btn[aria-expanded="true"] {
-  background: var(--active-tint);
-  border-color: var(--line-strong);
-}
-/* A filter that is doing something says so. */
-.facet-btn.has-value {
-  background: rgba(201, 162, 39, 0.14);
-  border-color: rgba(201, 162, 39, 0.45);
-  color: var(--gold-soft);
-}
-/* The chosen value, set apart from the filter's name. */
-.facet-btn .n {
-  padding-left: 0.45rem;
-  margin-left: 0.05rem;
-  border-left: 1px solid rgba(201, 162, 39, 0.4);
-  font-size: 0.78125rem;
-  font-weight: 500;
-}
-
-.facet-btn .chev {
-  width: 0.7rem;
-  height: 0.7rem;
-  margin-left: -0.05rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0.45;
-  transition: opacity 0.16s;
-}
-.facet-btn:hover .chev { opacity: 0.75; }
-.facet-btn[aria-expanded="true"] .chev { opacity: 0.9; }
-
-.facet-menu {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  left: 0;
-  min-width: 13rem;
-  max-height: 60vh;
+.sidebar {
+  position: sticky;
+  top: calc(var(--topbar-h) + 1.75rem);
+  flex: 0 0 13.5rem;
+  width: 13.5rem;
+  max-height: calc(100vh - var(--topbar-h) - 3.5rem);
   overflow-y: auto;
-  padding: 0.4rem;
-  background: var(--bg-raise);
-  border: 1px solid var(--line-strong);
-  border-radius: 10px;
-  box-shadow: var(--shadow-pop);
-  z-index: 30;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding: 1.75rem 0 2rem;
+  transition: flex-basis 0.3s var(--ease), width 0.3s var(--ease),
+              opacity 0.22s var(--ease), margin-right 0.3s var(--ease);
+}
+.sidebar[hidden] { display: none; }
+
+body:not(.filters-open) .sidebar {
+  flex-basis: 0;
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding-block: 1.75rem;
+  margin-right: calc(-1 * var(--rail-gap));
+  pointer-events: none;
+}
+
+.sidebar-inner { width: 13.5rem; }
+
+.sidebar-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.9rem;
+  margin-bottom: 1.4rem;
+  border-bottom: 1px solid var(--line);
+}
+.sidebar-title {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.clear-filters {
+  padding: 0;
+  background: none;
+  border: 0;
+  font-size: 0.75rem;
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.clear-filters:hover { color: var(--gold-soft); }
+
+.facet + .facet { margin-top: 1.6rem; }
+
+.facet-title {
+  margin: 0 0 0.55rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
 }
 
 .facet-option {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  width: 100%;
-  padding: 0.45rem 0.6rem;
-  background: none;
-  border: 0;
+  gap: 0.6rem;
+  padding: 0.28rem 0.4rem 0.28rem 0.35rem;
+  margin-left: -0.35rem;
   border-radius: 6px;
-  text-align: left;
   font-size: 0.8125rem;
   color: var(--ink-dim);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
 }
 .facet-option:hover { background: var(--hover-tint); color: var(--ink); }
-.facet-option[aria-pressed="true"] { color: var(--gold-soft); }
-.facet-option .n { font-size: 0.6875rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.facet-option.is-on { color: var(--ink); }
 
-.sort { display: flex; align-items: center; gap: 0.5rem; }
-.sort-label {
-  font-size: 0.6875rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-.sort select {
-  padding: 0.4rem 0.6rem;
-  background: var(--hover-tint);
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-family: inherit;
-  font-size: 0.78125rem;
-  transition: background 0.16s, border-color 0.16s;
-}
-.sort select:hover { background: var(--active-tint), var(--sort-caret); border-color: var(--line-strong); }
-
-/* The same chevron, drawn into the control, since a select cannot hold markup. */
-.sort select {
+/* A drawn box, so the tick is the collection's gold rather than the system's
+   blue, and the same in both themes. */
+.facet-option input {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 0.95rem;
+  height: 0.95rem;
+  margin: 0;
   appearance: none;
   -webkit-appearance: none;
-  padding-right: 1.9rem;
+  background: var(--bg-raise);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.facet-option input:checked { background: var(--gold); border-color: var(--gold); }
+.facet-option input:checked::after {
+  content: "";
+  width: 0.45rem;
+  height: 0.24rem;
+  margin-top: -0.1rem;
+  border-left: 1.8px solid var(--on-gold);
+  border-bottom: 1.8px solid var(--on-gold);
+  transform: rotate(-45deg);
+}
+.facet-option input:focus-visible { outline: 2px solid var(--gold-soft); outline-offset: 2px; }
+
+.facet-name { flex: 1 1 auto; min-width: 0; }
+.facet-count {
+  flex: 0 0 auto;
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+.facet-option.is-on .facet-count { color: var(--gold); }
+
+/* Order sits with the filters: both are ways of arranging what you are seeing. */
+.facet-sort .sort { display: block; }
+.sort select {
+  width: 100%;
+  padding: 0.4rem 1.9rem 0.4rem 0.6rem;
+  background: var(--hover-tint);
   background-image: var(--sort-caret);
   background-repeat: no-repeat;
-  background-position: right 0.65rem center;
+  background-position: right 0.6rem center;
   background-size: 0.7rem;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.78125rem;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: background-color 0.16s, border-color 0.16s;
 }
+.sort select:hover { background-color: var(--active-tint); border-color: var(--line-strong); }
 .sort select option { background: var(--bg-raise); }
 
-.clear-filters {
-  padding: 0.35rem 0.7rem;
-  background: none;
-  border: 0;
-  font-size: 0.75rem;
-  color: var(--ink-faint);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+.collection { flex: 1 1 auto; min-width: 0; }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
-.clear-filters:hover { color: var(--ink); }
+
+/* Narrow: the column becomes a sheet over the collection rather than squeezing
+   it into nothing. */
+@media (max-width: 760px) {
+  .sidebar {
+    position: fixed;
+    top: var(--topbar-h);
+    left: 0;
+    bottom: 0;
+    z-index: 30;
+    width: 15rem;
+    flex-basis: 0;
+    margin: 0;
+    padding: 1.5rem 1.25rem 2rem;
+    background: var(--bg);
+    border-right: 1px solid var(--line);
+    box-shadow: var(--shadow-pop);
+    transform: translateX(-100%);
+    transition: transform 0.28s var(--ease), opacity 0.2s;
+  }
+  body.filters-open .sidebar { transform: none; }
+  body:not(.filters-open) .sidebar { width: 15rem; padding: 1.5rem 1.25rem 2rem; }
+  .sidebar-inner { width: auto; }
+}
 
 /* ── The grid ─────────────────────────────────────────────────────────────── */
 
 .grid {
-  width: var(--shell);
-  margin: clamp(2.5rem, 6vw, 4.5rem) auto;
+  width: 100%;
+  margin: clamp(2.5rem, 6vw, 4.5rem) 0;
   padding: 0;
   list-style: none;
   display: grid;
@@ -516,8 +546,8 @@ a { color: inherit; }
 }
 
 .empty {
-  width: var(--shell);
-  margin: 6rem auto;
+  width: 100%;
+  margin: 6rem 0;
   text-align: center;
   color: var(--ink-faint);
   font-family: var(--serif);

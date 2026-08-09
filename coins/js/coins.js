@@ -428,75 +428,52 @@ window.Coins = (function () {
       if (values.length < 2 && !sel.size) return;
       if (sel.size) anyActive = true;
 
-      var wrap = document.createElement("div");
-      wrap.className = "facet";
+      var group = document.createElement("section");
+      group.className = "facet";
 
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "facet-btn" + (sel.size ? " has-value" : "");
-      btn.setAttribute("aria-expanded", "false");
-      // Name what was chosen rather than counting the choices. A bare "1" next
-      // to a grid of four coins reads as a coin count, and the menu underneath
-      // was already saying "Rupees 4" — two numbers inches apart meaning
-      // different things.
-      var chosen = "";
-      if (sel.size) {
-        var picked = Array.from(sel).map(function (v) { return facet.fmt(v); });
-        chosen = '<span class="n">' + escapeHtml(picked[0]) +
-                 (picked.length > 1 ? " +" + (picked.length - 1) : "") + "</span>";
-      }
+      var title = document.createElement("h3");
+      title.className = "facet-title";
+      title.textContent = facet.label;
+      group.appendChild(title);
 
-      // A drawn chevron rather than the ▾ character, which renders at a
-      // different weight and baseline in every font it falls back to.
-      btn.innerHTML = escapeHtml(facet.label) + chosen +
-        '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true">' +
-        '<path d="M6.5 9.75L12 15.25l5.5-5.5"/></svg>';
-
-      var menu = document.createElement("div");
-      menu.className = "facet-menu";
-      menu.hidden = true;
-
-      values.sort(function (a, b) {
-        if (facet.key === "decade") return a.localeCompare(b);
-        return counts[b] - counts[a];
+      values.sort(function (x, y) {
+        if (facet.key === "decade") return x.localeCompare(y);
+        return counts[y] - counts[x];
       }).forEach(function (value) {
-        var opt = document.createElement("button");
-        opt.type = "button";
-        opt.className = "facet-option";
-        opt.setAttribute("aria-pressed", sel.has(value) ? "true" : "false");
-        opt.innerHTML = "<span>" + escapeHtml(facet.fmt(value)) + '</span><span class="n">' + counts[value] + "</span>";
-        opt.addEventListener("click", function () {
-          var s = state.filters[facet.key] || new Set();
-          if (s.has(value)) s.delete(value); else s.add(value);
-          state.filters[facet.key] = s;
+        var row = document.createElement("label");
+        row.className = "facet-option" + (sel.has(value) ? " is-on" : "");
+
+        var box = document.createElement("input");
+        box.type = "checkbox";
+        box.checked = sel.has(value);
+        box.addEventListener("change", function () {
+          var next = state.filters[facet.key] || new Set();
+          if (next.has(value)) next.delete(value); else next.add(value);
+          state.filters[facet.key] = next;
           apply();
         });
-        menu.appendChild(opt);
+
+        var name = document.createElement("span");
+        name.className = "facet-name";
+        name.textContent = facet.fmt(value);
+
+        var n = document.createElement("span");
+        n.className = "facet-count";
+        n.textContent = counts[value];
+
+        row.appendChild(box);
+        row.appendChild(name);
+        row.appendChild(n);
+        group.appendChild(row);
       });
 
-      btn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        var open = menu.hidden;
-        closeMenus();
-        menu.hidden = !open;
-        btn.setAttribute("aria-expanded", String(open));
-      });
-      menu.addEventListener("click", function (e) { e.stopPropagation(); });
-
-      wrap.appendChild(btn);
-      wrap.appendChild(menu);
-      frag.appendChild(wrap);
+      frag.appendChild(group);
     });
 
     el.filters.textContent = "";
     el.filters.appendChild(frag);
     el.filterbar.hidden = state.all.length === 0;
     el.clear.hidden = !anyActive;
-  }
-
-  function closeMenus() {
-    Array.prototype.forEach.call(document.querySelectorAll(".facet-menu"), function (m) { m.hidden = true; });
-    Array.prototype.forEach.call(document.querySelectorAll(".facet-btn"), function (b) { b.setAttribute("aria-expanded", "false"); });
   }
 
   function escapeHtml(s) {
@@ -617,9 +594,32 @@ window.Coins = (function () {
     });
   }
 
+  /** The filter column, opened and closed from the bar. */
+  function initFilterToggle() {
+    var btn = document.getElementById("btn-filters");
+    if (!btn) return;
+
+    var open = true;
+    try { open = localStorage.getItem("coins:filters") !== "closed"; } catch (e) {}
+
+    function paint() {
+      document.body.classList.toggle("filters-open", open);
+      btn.setAttribute("aria-expanded", String(open));
+      btn.setAttribute("aria-label", open ? "Hide filters" : "Show filters");
+    }
+    paint();
+
+    btn.addEventListener("click", function () {
+      open = !open;
+      try { localStorage.setItem("coins:filters", open ? "open" : "closed"); } catch (e) {}
+      paint();
+    });
+  }
+
   function init() {
     initTheme();
     initHome();
+    initFilterToggle();
     el.grid = document.getElementById("grid");
     el.empty = document.getElementById("empty");
     el.count = document.getElementById("count");
@@ -630,8 +630,6 @@ window.Coins = (function () {
 
     el.sort.addEventListener("change", function () { state.sort = el.sort.value; apply(); });
     el.clear.addEventListener("click", function () { state.filters = {}; apply(); });
-    document.addEventListener("click", closeMenus);
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeMenus(); });
 
     // Cache-bust so edit mode sees its own writes immediately.
     var bust = window.location.protocol === "file:" ? "" : "?t=" + Date.now();
