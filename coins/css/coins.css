@@ -242,93 +242,174 @@ a { color: inherit; }
   color: var(--ink-faint);
 }
 
-/* ── Filters ──────────────────────────────────────────────────────────────── */
+/* ── The page ─────────────────────────────────────────────────────────────── */
 /*
-   A column of their own, so every option of every facet is visible at once
-   rather than one menu at a time. Opened and closed from the bar; the choice is
-   remembered, since somebody browsing and somebody cataloguing want opposite
-   defaults.
+   One centre line, from the wordmark down through the search field to the
+   coins. The filters used to sit in the flow and push the collection sideways,
+   so the exhibit was never quite centred and the whole grid reflowed — coins
+   changing places — every time they were opened. They float over the page now
+   and the collection never moves.
 */
 
 .shell {
   width: var(--shell);
   margin: 0 auto;
-  display: flex;
-  align-items: flex-start;
-  gap: var(--rail-gap);
 }
 
-:root { --rail-gap: clamp(1.5rem, 3vw, 3rem); }
+/* ── Toolbar ──────────────────────────────────────────────────────────────── */
+/* Three columns rather than a flex row, so the search sits on the page's centre
+   line no matter what the controls either side of it are doing. */
 
-/* Sticks once it reaches the top, and has no scroll bar of its own — a second
-   thing to scroll on one screen is one too many, and the filters are few
-   enough to fit. */
-.sidebar {
-  position: sticky;
-  top: calc(var(--topbar-h) + 1.25rem);
-  align-self: flex-start;
-  flex: 0 0 13.5rem;
-  width: 13.5rem;
-  padding: 1.75rem 0 2rem;
-  transition: flex-basis 0.3s var(--ease), width 0.3s var(--ease),
-              opacity 0.22s var(--ease), margin-right 0.3s var(--ease);
-}
-.sidebar[hidden] { display: none; }
-
-/* Collapsed to a rail rather than to nothing: the control that reopens it lives
-   inside it, so it has to survive being closed. */
-body:not(.filters-open) .sidebar {
-  flex-basis: 2.25rem;
-  width: 2.25rem;
-  margin-right: calc(var(--rail-gap) * -0.55);
-}
-body:not(.filters-open) .sidebar-inner { width: 2.25rem; }
-body:not(.filters-open) .sidebar-head {
-  border-bottom: 0;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-body:not(.filters-open) .sidebar-title,
-body:not(.filters-open) .clear-filters,
-body:not(.filters-open) .filters,
-body:not(.filters-open) .facet-sort { display: none; }
-
-.sidebar-inner { width: 13.5rem; transition: width 0.3s var(--ease); }
-
-/* The toggle, at the head of the column it opens. */
-.rail-toggle {
-  flex: 0 0 auto;
+.toolbar {
   display: grid;
-  place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  margin-left: -0.35rem;
-  padding: 0;
-  background: none;
-  border: 0;
-  border-radius: 6px;
-  color: var(--ink-faint);
-  transition: background 0.16s, color 0.16s;
+  grid-template-columns: 1fr minmax(0, 30rem) 1fr;
+  align-items: center;
+  gap: 1rem;
+  padding: clamp(1.25rem, 3.5vw, 2.25rem) 0 clamp(0.5rem, 2vw, 1rem);
 }
-.rail-toggle svg {
+.toolbar-filters { justify-self: start; }
+.toolbar .sort { justify-self: end; }
+
+.toolbar-count {
+  min-width: 1.15rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--on-gold);
+  font-size: 0.625rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* ── Search ───────────────────────────────────────────────────────────────── */
+
+.search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.72rem 1.05rem;
+  background: var(--hover-tint);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  transition: background 0.18s, border-color 0.18s, box-shadow 0.18s;
+}
+.search-field:hover { border-color: var(--line-strong); }
+.search-field:focus-within {
+  background: var(--bg-raise);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.13);
+}
+
+.search-icon {
+  flex: 0 0 auto;
   width: 1rem;
   height: 1rem;
   fill: none;
-  stroke: currentColor;
+  stroke: var(--ink-faint);
   stroke-width: 1.8;
   stroke-linecap: round;
+  transition: stroke 0.18s;
 }
-.rail-toggle:hover { background: var(--hover-tint); color: var(--ink); }
+.search-field:focus-within .search-icon { stroke: var(--gold); }
 
-.sidebar-head {
+.search-field input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.search-field input::placeholder { color: var(--ink-faint); }
+.search-field input::-webkit-search-decoration,
+.search-field input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+.search-clear {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  color: var(--ink-faint);
+  transition: background 0.15s, color 0.15s;
+}
+.search-clear svg {
+  width: 0.8rem; height: 0.8rem;
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round;
+}
+.search-clear:hover { background: var(--hover-tint); color: var(--ink); }
+
+.sort select {
+  padding: 0.45rem 1.9rem 0.45rem 0.75rem;
+  background: var(--hover-tint);
+  background-image: var(--sort-caret);
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+  background-size: 0.7rem;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.78125rem;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: background-color 0.16s, border-color 0.16s;
+}
+.sort select:hover { background-color: var(--active-tint); border-color: var(--line-strong); }
+.sort select option { background: var(--bg-raise); }
+
+/* ── The filter drawer ────────────────────────────────────────────────────── */
+
+.scrim {
+  position: fixed;
+  inset: var(--topbar-h) 0 0;
+  z-index: 24;
+  background: rgba(10, 10, 12, 0.28);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.24s var(--ease);
+}
+.scrim[hidden] { display: none; }
+body.filters-open .scrim { opacity: 1; }
+
+.drawer {
+  position: fixed;
+  top: var(--topbar-h);
+  left: 0;
+  bottom: 0;
+  z-index: 25;
+  width: min(17rem, 82vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+  box-shadow: 12px 0 40px rgba(0, 0, 0, 0.1);
+  transform: translateX(-101%);
+  transition: transform 0.3s var(--ease);
+}
+.drawer[hidden] { display: none; }
+body.filters-open .drawer { transform: none; }
+:root[data-theme="dark"] .drawer { box-shadow: 12px 0 40px rgba(0, 0, 0, 0.5); }
+
+.drawer-head {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding-bottom: 1rem;
-  margin-bottom: 1.7rem;
+  gap: 0.75rem;
+  padding: 1.35rem 1.35rem 1rem;
   border-bottom: 1px solid var(--line);
 }
-.sidebar-title {
+.drawer-title {
   flex: 1 1 auto;
   margin: 0;
   font-size: 0.6875rem;
@@ -337,7 +418,6 @@ body:not(.filters-open) .facet-sort { display: none; }
   text-transform: uppercase;
   color: var(--ink);
 }
-
 .clear-filters {
   padding: 0;
   background: none;
@@ -349,11 +429,38 @@ body:not(.filters-open) .facet-sort { display: none; }
 }
 .clear-filters:hover { color: var(--gold-soft); }
 
-/* The sort group and the first facet are not siblings — one sits directly in
-   the sidebar, the rest inside #filters — so the adjacent-sibling rule never
-   reached between them and the two ran together. */
-.facet + .facet,
-.filters { margin-top: 1.9rem; }
+.drawer-close {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-right: -0.35rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink-faint);
+  transition: background 0.15s, color 0.15s;
+}
+.drawer-close svg {
+  width: 0.9rem; height: 0.9rem;
+  fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round;
+}
+.drawer-close:hover { background: var(--hover-tint); color: var(--ink); }
+
+/* The one place a scroll bar is unavoidable: a panel fixed to the window. */
+.drawer-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding: 1.4rem 1.35rem 2rem;
+}
+
+/* ── Facets ───────────────────────────────────────────────────────────────── */
+
+.facet + .facet { margin-top: 1.9rem; }
 
 .facet-title {
   margin: 0 0 0.7rem;
@@ -379,10 +486,6 @@ body:not(.filters-open) .facet-sort { display: none; }
 .facet-option:hover { background: var(--hover-tint); color: var(--ink); }
 .facet-option.is-on { color: var(--ink); }
 
-/* Nothing to reach alongside the current choices. Kept in place rather than
-   removed: a list that rearranges itself as you tick things is hard to use,
-   and a missing option cannot say whether the collection lacks it or your
-   other filters have ruled it out. */
 .facet-option.is-inert {
   color: var(--ink-faint);
   cursor: default;
@@ -391,8 +494,7 @@ body:not(.filters-open) .facet-sort { display: none; }
 .facet-option.is-inert:hover { background: none; color: var(--ink-faint); }
 .facet-option.is-inert input { background: transparent; border-style: dashed; }
 
-/* A drawn box, so the tick is the collection's gold rather than the system's
-   blue, and the same in both themes. */
+/* Drawn, so the tick is the collection's gold rather than the system's blue. */
 .facet-option input {
   flex: 0 0 auto;
   display: grid;
@@ -428,114 +530,6 @@ body:not(.filters-open) .facet-sort { display: none; }
 }
 .facet-option.is-on .facet-count { color: var(--gold); }
 
-/* Order sits with the filters: both are ways of arranging what you are seeing. */
-.facet-sort .sort { display: block; }
-.sort select {
-  width: 100%;
-  padding: 0.4rem 1.9rem 0.4rem 0.6rem;
-  background: var(--hover-tint);
-  background-image: var(--sort-caret);
-  background-repeat: no-repeat;
-  background-position: right 0.6rem center;
-  background-size: 0.7rem;
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 0.78125rem;
-  appearance: none;
-  -webkit-appearance: none;
-  transition: background-color 0.16s, border-color 0.16s;
-}
-.sort select:hover { background-color: var(--active-tint); border-color: var(--line-strong); }
-.sort select option { background: var(--bg-raise); }
-
-.collection { flex: 1 1 auto; min-width: 0; }
-
-/* ── Search ───────────────────────────────────────────────────────────────── */
-/*
-   Centred above the collection, because it is the thing you reach for when you
-   know what you are looking for — which, in a case of 250 coins, is most of the
-   time. Quiet at rest so it does not compete with the coins, and unmistakable
-   once you are in it.
-*/
-
-.search {
-  display: flex;
-  justify-content: center;
-  padding: clamp(1.5rem, 4vw, 2.75rem) 0 0;
-}
-
-.search-field {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  width: min(30rem, 100%);
-  padding: 0.7rem 1rem;
-  background: var(--hover-tint);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  transition: background 0.18s, border-color 0.18s, box-shadow 0.18s;
-}
-.search-field:hover { border-color: var(--line-strong); }
-.search-field:focus-within {
-  background: var(--bg-raise);
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.14);
-}
-
-.search-icon {
-  flex: 0 0 auto;
-  width: 1rem;
-  height: 1rem;
-  fill: none;
-  stroke: var(--ink-faint);
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  transition: stroke 0.18s;
-}
-.search-field:focus-within .search-icon { stroke: var(--gold); }
-
-.search input {
-  flex: 1 1 auto;
-  min-width: 0;
-  background: none;
-  border: 0;
-  outline: none;
-  color: var(--ink);
-  font-family: inherit;
-  font-size: 0.9375rem;
-  appearance: none;
-  -webkit-appearance: none;
-}
-.search input::placeholder { color: var(--ink-faint); }
-.search input::-webkit-search-decoration,
-.search input::-webkit-search-cancel-button { -webkit-appearance: none; }
-
-.search-clear {
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  width: 1.35rem;
-  height: 1.35rem;
-  padding: 0;
-  background: none;
-  border: 0;
-  border-radius: 50%;
-  color: var(--ink-faint);
-  transition: background 0.15s, color 0.15s;
-}
-.search-clear svg {
-  width: 0.8rem;
-  height: 0.8rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-}
-.search-clear:hover { background: var(--hover-tint); color: var(--ink); }
-
 .sr-only {
   position: absolute;
   width: 1px; height: 1px;
@@ -545,28 +539,13 @@ body:not(.filters-open) .facet-sort { display: none; }
   white-space: nowrap;
 }
 
-/* Narrow: the column becomes a sheet over the collection rather than squeezing
-   it into nothing. */
-@media (max-width: 760px) {
-  .sidebar {
-    position: fixed;
-    top: var(--topbar-h);
-    left: 0;
-    bottom: 0;
-    z-index: 30;
-    width: 15rem;
-    flex-basis: 0;
-    margin: 0;
-    padding: 1.5rem 1.25rem 2rem;
-    background: var(--bg);
-    border-right: 1px solid var(--line);
-    box-shadow: var(--shadow-pop);
-    transform: translateX(-100%);
-    transition: transform 0.28s var(--ease), opacity 0.2s;
+@media (max-width: 720px) {
+  .toolbar {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: 0.75rem;
   }
-  body.filters-open .sidebar { transform: none; }
-  body:not(.filters-open) .sidebar { width: 15rem; padding: 1.5rem 1.25rem 2rem; }
-  .sidebar-inner { width: auto; }
+  .search-field { grid-column: 1 / -1; order: -1; }
+  .toolbar .sort { justify-self: end; }
 }
 
 /* ── The grid ─────────────────────────────────────────────────────────────── */
@@ -1116,7 +1095,6 @@ body:not(.filters-open) .facet-sort { display: none; }
 }
 
 /* Everything that used to assume nothing was above it. */
-.filterbar    { top: var(--topbar-h); }
 .viewer-body  { padding-top: var(--topbar-h); }
 
 @media (max-width: 620px) {

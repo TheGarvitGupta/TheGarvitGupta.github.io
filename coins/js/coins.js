@@ -603,6 +603,16 @@ window.Coins = (function () {
     el.filters.appendChild(frag);
     el.filterbar.hidden = state.all.length === 0;
     el.clear.hidden = !anyActive;
+
+    // The drawer is usually shut, so the button carries how much is on.
+    var total = 0;
+    Object.keys(state.filters).forEach(function (k) {
+      total += (state.filters[k] && state.filters[k].size) || 0;
+    });
+    if (el.filterCount) {
+      el.filterCount.textContent = total;
+      el.filterCount.hidden = total === 0;
+    }
   }
 
   function escapeHtml(s) {
@@ -727,43 +737,37 @@ window.Coins = (function () {
     });
   }
 
-  /** The filter column, opened and closed from the bar. */
-  function initSearch() {
-    var input = document.getElementById("search");
-    var clear = document.getElementById("search-clear");
-    if (!input) return;
-
-    function run() {
-      state.query = input.value.trim().toLowerCase();
-      if (clear) clear.hidden = !input.value;
-      apply();
-    }
-    input.addEventListener("input", run);
-    input.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") { input.value = ""; run(); input.blur(); }
-    });
-    if (clear) clear.addEventListener("click", function () { input.value = ""; run(); input.focus(); });
-  }
-
+  /**
+   * The filter drawer. Closed to begin with: the collection should be the first
+   * thing anyone meets, not a list of ways to narrow it.
+   */
   function initFilterToggle() {
     var btn = document.getElementById("btn-filters");
+    var closeBtn = document.getElementById("btn-filters-close");
+    var scrim = document.getElementById("scrim");
     if (!btn) return;
 
-    var open = true;
-    try { open = localStorage.getItem("coins:filters") !== "closed"; } catch (e) {}
+    var open = false;
 
     function paint() {
       document.body.classList.toggle("filters-open", open);
       btn.setAttribute("aria-expanded", String(open));
-      btn.setAttribute("aria-label", open ? "Hide filters" : "Show filters");
+      if (scrim) scrim.hidden = !open;
+      if (open && el.filters) {
+        var first = el.filters.querySelector("input");
+        if (first) first.focus();
+      }
     }
-    paint();
 
-    btn.addEventListener("click", function () {
-      open = !open;
-      try { localStorage.setItem("coins:filters", open ? "open" : "closed"); } catch (e) {}
-      paint();
+    function set(next) { open = next; paint(); }
+
+    btn.addEventListener("click", function () { set(!open); });
+    if (closeBtn) closeBtn.addEventListener("click", function () { set(false); btn.focus(); });
+    if (scrim) scrim.addEventListener("click", function () { set(false); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && open) { set(false); btn.focus(); }
     });
+    paint();
   }
 
   function init() {
@@ -778,6 +782,7 @@ window.Coins = (function () {
     el.filterbar = document.getElementById("filterbar");
     el.sort = document.getElementById("sort");
     el.clear = document.getElementById("clear-filters");
+    el.filterCount = document.getElementById("filter-count");
 
     el.sort.addEventListener("change", function () { state.sort = el.sort.value; apply(); });
     el.clear.addEventListener("click", function () { state.filters = {}; apply(); });

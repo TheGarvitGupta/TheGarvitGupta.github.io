@@ -75,56 +75,61 @@
 </header>
 
 <main class="shell">
-  <!-- Filters live in a column of their own. Populated from the catalogue, so
-       an option only appears if at least one coin actually has that value. -->
-  <aside class="sidebar" id="filterbar" hidden aria-label="Filter the collection">
-    <div class="sidebar-inner">
-      <div class="sidebar-head">
-        <button type="button" class="rail-toggle" id="btn-filters"
-                aria-expanded="true" aria-label="Hide filters">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/>
-          </svg>
-        </button>
-        <h2 class="sidebar-title">Filter</h2>
-        <button type="button" class="clear-filters" id="clear-filters" hidden>Clear</button>
-      </div>
+  <!-- One toolbar: filters on the left, search in the middle, order on the
+       right. A three-column grid, so the search sits on the page's centre line
+       whatever the controls either side of it are doing. -->
+  <div class="toolbar">
+    <button type="button" class="eb toolbar-filters" id="btn-filters"
+            aria-expanded="false" aria-controls="filterbar">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/>
+      </svg>
+      <span>Filters</span>
+      <span class="toolbar-count" id="filter-count" hidden></span>
+    </button>
 
-      <section class="facet facet-sort">
-        <h3 class="facet-title">Order</h3>
-        <label class="sort">
-          <span class="sr-only">Sort</span>
-          <select id="sort">
-            <option value="year-desc">Newest first</option>
-            <option value="year-asc">Oldest first</option>
-            <option value="denomination">Denomination</option>
-            <option value="added">Recently added</option>
-          </select>
-        </label>
-      </section>
+    <label class="search-field">
+      <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="6.5"/><path d="M15.8 15.8L20 20"/>
+      </svg>
+      <input type="search" id="search" autocomplete="off" spellcheck="false"
+             placeholder="Search the collection" aria-label="Search the collection">
+      <button type="button" class="search-clear" id="search-clear" hidden aria-label="Clear search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10"/><path d="M17 7L7 17"/></svg>
+      </button>
+    </label>
 
-      <div class="filters" id="filters"></div>
-    </div>
-  </aside>
-
-  <div class="collection">
-    <div class="search">
-      <label class="search-field">
-        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="11" cy="11" r="6.5"/><path d="M15.8 15.8L20 20"/>
-        </svg>
-        <input type="search" id="search" autocomplete="off" spellcheck="false"
-               placeholder="Search the collection" aria-label="Search the collection">
-        <button type="button" class="search-clear" id="search-clear" hidden aria-label="Clear search">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10"/><path d="M17 7L7 17"/></svg>
-        </button>
-      </label>
-    </div>
-
-    <ul class="grid" id="grid" aria-label="The collection"></ul>
-    <p class="empty" id="empty" hidden></p>
+    <label class="sort">
+      <span class="sr-only">Order</span>
+      <select id="sort">
+        <option value="year-desc">Newest first</option>
+        <option value="year-asc">Oldest first</option>
+        <option value="denomination">Denomination</option>
+        <option value="added">Recently added</option>
+      </select>
+    </label>
   </div>
+
+  <ul class="grid" id="grid" aria-label="The collection"></ul>
+  <p class="empty" id="empty" hidden></p>
 </main>
+
+<!-- Filters float over the page rather than pushing it, so the collection keeps
+     the same centre line whether they are open or not. -->
+<div class="scrim" id="scrim" hidden></div>
+
+<aside class="drawer" id="filterbar" hidden aria-label="Filter the collection">
+  <div class="drawer-head">
+    <h2 class="drawer-title">Filter</h2>
+    <button type="button" class="clear-filters" id="clear-filters" hidden>Clear all</button>
+    <button type="button" class="drawer-close" id="btn-filters-close" aria-label="Close filters">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10"/><path d="M17 7L7 17"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body">
+    <div class="filters" id="filters"></div>
+  </div>
+</aside>
 
 <footer class="colophon">
   <p>Photographed and catalogued by hand.</p>
