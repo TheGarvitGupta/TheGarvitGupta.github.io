@@ -334,13 +334,6 @@
       });
       wrap.appendChild(sel);
 
-      var hint = look(field.vocab, coin[field.key]);
-      if (hint && hint.note) {
-        var n = document.createElement("p");
-        n.className = "edit-note";
-        n.textContent = hint.note;
-        wrap.appendChild(n);
-      }
       return wrap;
     }
 

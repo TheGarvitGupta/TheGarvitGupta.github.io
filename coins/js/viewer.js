@@ -136,6 +136,12 @@ window.Viewer = (function () {
         dt.textContent = row.label;
         var dd = document.createElement("dd");
         dd.innerHTML = row.html;
+        if (row.note) {
+          var gloss = document.createElement("span");
+          gloss.className = "spec-note";
+          gloss.textContent = row.note;
+          dd.appendChild(gloss);
+        }
         wrap.appendChild(dt);
         wrap.appendChild(dd);
         dl.appendChild(wrap);

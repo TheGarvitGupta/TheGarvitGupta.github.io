@@ -201,10 +201,17 @@ window.Coins = (function () {
       if (field.onlyEra && coin.era && field.onlyEra.indexOf(coin.era) === -1) return;
       var html = formatField(coin, field);
       if (html === null && !showEmpty) return;
+      // A gloss from the vocabulary, where the chosen value has one — what a
+      // die axis means, which mint a star stands for. This belongs to the coin,
+      // not to editing it: a visitor who does not collect coins needs it more
+      // than the person filling the record in.
+      var chosen = field.vocab ? look(field.vocab, coin[field.key]) : null;
+
       (byGroup[field.group] = byGroup[field.group] || []).push({
         key: field.key, label: field.label,
         html: html === null ? "" : html,
-        empty: html === null
+        empty: html === null,
+        note: (chosen && chosen.note) || null
       });
     });
 

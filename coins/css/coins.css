@@ -695,6 +695,18 @@ a { color: inherit; }
 .spec dt { color: var(--ink-faint); }
 .spec dd { margin: 0; color: var(--ink); font-variant-numeric: tabular-nums; }
 
+/* A gloss under a value: what a die axis means, which mint a star stands for.
+   Shown to everyone, since a visitor who does not collect coins needs it more
+   than the person filling the record in. */
+.spec-note {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  font-style: italic;
+  color: var(--ink-faint);
+}
+
 .mintmark-glyph {
   display: inline-grid;
   place-items: center;
