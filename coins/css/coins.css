@@ -610,7 +610,6 @@ a { color: inherit; }
   transition: opacity 0.3s;
 }
 
-.viewer-close,
 .viewer-nav {
   position: absolute;
   z-index: 5;
@@ -623,9 +622,8 @@ a { color: inherit; }
   color: var(--ink-faint);
   transition: color 0.2s, transform 0.2s;
 }
-.viewer-close:hover, .viewer-nav:hover { color: var(--ink); }
+.viewer-nav:hover { color: var(--ink); }
 
-.viewer-close { top: 1rem; right: 1rem; font-size: 2rem; line-height: 1; }
 .viewer-nav   { top: 50%; margin-top: -1.5rem; font-size: 2.5rem; line-height: 1; }
 .viewer-prev  { left: 0.5rem; }
 .viewer-next  { left: auto; right: calc(27rem + 0.5rem); }
@@ -884,7 +882,6 @@ a { color: inherit; }
 /* Everything that used to assume nothing was above it. */
 .filterbar    { top: var(--topbar-h); }
 .viewer-body  { padding-top: var(--topbar-h); }
-.viewer-close { top: calc(var(--topbar-h) + 0.6rem); }
 
 @media (max-width: 620px) {
   :root { --topbar-h: 3rem; }

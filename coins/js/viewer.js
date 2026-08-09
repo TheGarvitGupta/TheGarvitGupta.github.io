@@ -174,7 +174,7 @@ window.Viewer = (function () {
     el.root.hidden = false;
     document.body.style.overflow = "hidden";
     paint(false);
-    el.close.focus();
+    el.root.focus();
     window.Coins.writeHash();
   }
 
@@ -255,7 +255,6 @@ window.Viewer = (function () {
     el.imgRev = document.getElementById("img-rev");
     el.btnObv = document.getElementById("btn-obv");
     el.btnRev = document.getElementById("btn-rev");
-    el.close = document.getElementById("viewer-close");
     el.prev = document.getElementById("viewer-prev");
     el.next = document.getElementById("viewer-next");
     el.era = document.getElementById("detail-era");
@@ -277,7 +276,6 @@ window.Viewer = (function () {
     if (wide.addEventListener) wide.addEventListener("change", applyMode);
     else if (wide.addListener) wide.addListener(applyMode);
 
-    el.close.addEventListener("click", close);
     el.prev.addEventListener("click", function () { step(-1); });
     el.next.addEventListener("click", function () { step(1); });
     el.btnObv.addEventListener("click", function () { show("obv"); });

@@ -558,41 +558,15 @@
     });
   }
 
-  function decorateStage() {
-    var frame = document.getElementById("stage-frame");
-    var stage = document.getElementById("stage");
-    if (!frame || frame.dataset.editReady === "1") return;
-    frame.dataset.editReady = "1";
-
-    // The face toggle doesn't re-render the panel, so hook it directly.
-    ["btn-obv", "btn-rev"].forEach(function (id) {
-      document.getElementById(id).addEventListener("click", function () {
-        setTimeout(refreshLead, 0);
-      });
-    });
-
-    ["dragenter", "dragover"].forEach(function (ev) {
-      frame.addEventListener(ev, function (e) { e.preventDefault(); frame.classList.add("is-drop"); });
-    });
-    ["dragleave", "drop"].forEach(function (ev) {
-      frame.addEventListener(ev, function () { frame.classList.remove("is-drop"); });
-    });
-    frame.addEventListener("drop", function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      var coin = window.Viewer.current();
-      if (!coin || !e.dataTransfer.files.length) return;
-      // With both faces on show, the one you dropped on is the one you meant.
-      var onFace = e.target && e.target.closest ? e.target.closest(".face") : null;
-      var showing = onFace
-        ? (onFace.classList.contains("face-rev") ? "rev" : "obv")
-        : (document.getElementById("btn-rev").classList.contains("is-active") ? "rev" : "obv");
-      uploadFace(coin.id, showing, e.dataTransfer.files[0]).then(function (f) {
-        if (f) toast((showing === "obv" ? "Obverse" : "Reverse") + " replaced");
-      });
-    });
-
-    // A control on each photograph, where the thing it replaces is. The pair
+  /**
+   * The controls that live on each photograph. Called on every render and
+   * guarded per control, so they cannot go missing: attaching them once meant
+   * any path that reached the viewer without passing through here left the
+   * photographs bare.
+   */
+  function addFaceControls(frame) {
+    // Where the thing it acts on is — the side you clicked is the side
+    // you meant, so neither control needs a label naming it. The pair
     // of buttons underneath sat a long way from either face and had to name
     // which side they meant; here that is simply where you clicked.
     [["obv", "Obverse"], ["rev", "Reverse"]].forEach(function (pair) {
@@ -647,6 +621,44 @@
       });
       faceEl.appendChild(star);
     });
+  }
+
+  function decorateStage() {
+    var frame = document.getElementById("stage-frame");
+    if (!frame) return;
+    addFaceControls(frame);            // checked every render, not just once
+    if (frame.dataset.editReady === "1") return;
+    frame.dataset.editReady = "1";
+
+    // The face toggle doesn't re-render the panel, so hook it directly.
+    ["btn-obv", "btn-rev"].forEach(function (id) {
+      document.getElementById(id).addEventListener("click", function () {
+        setTimeout(refreshLead, 0);
+      });
+    });
+
+    ["dragenter", "dragover"].forEach(function (ev) {
+      frame.addEventListener(ev, function (e) { e.preventDefault(); frame.classList.add("is-drop"); });
+    });
+    ["dragleave", "drop"].forEach(function (ev) {
+      frame.addEventListener(ev, function () { frame.classList.remove("is-drop"); });
+    });
+    frame.addEventListener("drop", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var coin = window.Viewer.current();
+      if (!coin || !e.dataTransfer.files.length) return;
+      // With both faces on show, the one you dropped on is the one you meant.
+      var onFace = e.target && e.target.closest ? e.target.closest(".face") : null;
+      var showing = onFace
+        ? (onFace.classList.contains("face-rev") ? "rev" : "obv")
+        : (document.getElementById("btn-rev").classList.contains("is-active") ? "rev" : "obv");
+      uploadFace(coin.id, showing, e.dataTransfer.files[0]).then(function (f) {
+        if (f) toast((showing === "obv" ? "Obverse" : "Reverse") + " replaced");
+      });
+    });
+
+
   }
 
   /* ── Grid affordances ───────────────────────────────────────────────────── */
