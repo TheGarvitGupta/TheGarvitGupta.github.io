@@ -345,7 +345,7 @@ window.CoinHistory = (function () {
       back.innerHTML =
         '<svg viewBox="0 0 24 24" aria-hidden="true">' +
         '<path d="M4.5 11a7.5 7.5 0 1 1 2 5.3"/><path d="M4.5 6v5h5"/></svg>' +
-        "<span>Put the collection back to here</span>";
+        "<span>Restore</span>";
       back.addEventListener("click", function () { restoreAll(sel[0], head.sub); });
       hd.appendChild(back);
     }
@@ -474,8 +474,8 @@ window.CoinHistory = (function () {
   }
 
   function restoreAll(sha, label) {
-    if (!confirm("Put the whole collection back to " + label + "?\n\n" +
-                 "Nothing is lost: the later steps stay in the history, and you can " +
+    if (!confirm("Put the whole collection back to how it was on " + label + "?\n\n" +
+                 "Nothing is lost: the later steps stay in the history and you can " +
                  "come back to them the same way. This appears as an unsaved change " +
                  "until you save it.")) return;
 
