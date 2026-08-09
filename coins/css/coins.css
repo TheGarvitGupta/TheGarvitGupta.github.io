@@ -307,10 +307,13 @@ a { color: inherit; }
   border-color: rgba(201, 162, 39, 0.45);
   color: var(--gold-soft);
 }
+/* The chosen value, set apart from the filter's name. */
 .facet-btn .n {
-  font-size: 0.6875rem;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.8;
+  padding-left: 0.45rem;
+  margin-left: 0.05rem;
+  border-left: 1px solid rgba(201, 162, 39, 0.4);
+  font-size: 0.78125rem;
+  font-weight: 500;
 }
 
 .facet-btn .chev {

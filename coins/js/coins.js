@@ -435,10 +435,20 @@ window.Coins = (function () {
       btn.type = "button";
       btn.className = "facet-btn" + (sel.size ? " has-value" : "");
       btn.setAttribute("aria-expanded", "false");
+      // Name what was chosen rather than counting the choices. A bare "1" next
+      // to a grid of four coins reads as a coin count, and the menu underneath
+      // was already saying "Rupees 4" — two numbers inches apart meaning
+      // different things.
+      var chosen = "";
+      if (sel.size) {
+        var picked = Array.from(sel).map(function (v) { return facet.fmt(v); });
+        chosen = '<span class="n">' + escapeHtml(picked[0]) +
+                 (picked.length > 1 ? " +" + (picked.length - 1) : "") + "</span>";
+      }
+
       // A drawn chevron rather than the ▾ character, which renders at a
       // different weight and baseline in every font it falls back to.
-      btn.innerHTML = escapeHtml(facet.label) +
-        (sel.size ? '<span class="n">' + sel.size + "</span>" : "") +
+      btn.innerHTML = escapeHtml(facet.label) + chosen +
         '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true">' +
         '<path d="M6.5 9.75L12 15.25l5.5-5.5"/></svg>';
 
