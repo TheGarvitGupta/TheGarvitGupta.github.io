@@ -943,6 +943,12 @@
       markUnsavedDetail();
     });
 
+    // Opening the page on a coin draws the panel before this listener exists:
+    // edit mode only starts once the ping has answered, by which time a coin
+    // named in the address bar has already been rendered. Draw it again now
+    // that there is something to decorate it with.
+    if (window.Viewer && window.Viewer.currentId()) window.Viewer.rerender();
+
     console.log("[coins] edit mode on — served by tools/coins.py");
   }
 
