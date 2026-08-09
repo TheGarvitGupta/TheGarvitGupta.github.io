@@ -267,7 +267,7 @@ a { color: inherit; }
 .toolbar {
   display: flex;
   justify-content: center;
-  padding: clamp(1.25rem, 3.5vw, 2.25rem) 0 clamp(0.5rem, 2vw, 1rem);
+  padding: clamp(1.25rem, 3.5vw, 2.25rem) 0 0;
 }
 
 .toolbar-bar {
@@ -618,7 +618,7 @@ body.filters-open .drawer { transform: none; }
 
 .grid {
   width: 100%;
-  margin: clamp(2.5rem, 6vw, 4.5rem) 0;
+  margin: clamp(2rem, 5vw, 3.5rem) 0 clamp(2.5rem, 6vw, 4.5rem);
   padding: 0;
   list-style: none;
   display: grid;
@@ -731,11 +731,11 @@ body.filters-open .drawer { transform: none; }
   text-transform: uppercase;
 }
 
-/* Close enough to the search to read as its answer. Six rem down the page it
-   looked like a separate announcement about something else. */
+/* Directly under the field, as its answer. Anywhere lower and it reads as an
+   announcement about something else. */
 .empty {
   width: 100%;
-  margin: 2.5rem 0 6rem;
+  margin: 1rem 0 5rem;
   text-align: center;
   color: var(--ink-faint);
   font-family: var(--serif);
