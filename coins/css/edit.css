@@ -597,6 +597,7 @@
 
 .spec .edit-control input,
 .spec .edit-control select,
+.spec .edit-control .text-input,
 .mintmark-trigger {
   flex: 1 1 auto;
   width: auto;              /* 100% here pushed the unit onto its own line */
@@ -618,10 +619,12 @@
 
 .spec .edit-control input:hover,
 .spec .edit-control select:hover,
+.spec .edit-control .text-input:hover,
 .mintmark-trigger:hover { background: var(--hover-tint); }
 
 .spec .edit-control input:focus,
 .spec .edit-control select:focus,
+.spec .edit-control .text-input:focus,
 .mintmark-trigger:focus-visible {
   outline: none;
   background: var(--bg-raise);
@@ -629,11 +632,22 @@
 }
 
 .spec .edit-control input::placeholder,
+.spec .edit-control .text-input::placeholder,
 .mintmark-trigger .is-placeholder {
   color: var(--ink-faint);
   opacity: 0.55;
 }
 .spec .edit-control select option { background: var(--bg-raise); color: var(--ink); }
+
+/* A text area pretending to be a line of text: it wraps, grows with what is
+   written, and never shows a scroll bar or a resize grip. */
+.spec .edit-control .text-input {
+  display: block;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.5;
+  min-height: 0;
+}
 
 /* Denomination is two answers to one question: a number, then a unit. The
    number needs room for two digits and no more; the unit needs enough not to

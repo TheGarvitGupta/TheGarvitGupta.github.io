@@ -255,6 +255,12 @@
     return vocab;
   }
 
+  /** Size a text area to its content, so it is never a window onto the text. */
+  function autoFit(ta) {
+    ta.style.height = "auto";
+    ta.style.height = ta.scrollHeight + "px";
+  }
+
   /** Build the control for one field. onDone(value) fires when it's settled;
       onDone(undefined) means the edit was cancelled. */
   function control(coin, field, onDone) {
@@ -357,6 +363,31 @@
       unit.addEventListener("change", push);
       wrap.appendChild(val);
       wrap.appendChild(unit);
+      return wrap;
+    }
+
+    // Free text wraps, so it needs a text area: a single-line input clips what
+    // it cannot fit, and "Cupro-nickel five rupees (1992–2004)" simply
+    // disappeared past the edge of the row.
+    if (field.type === "text") {
+      var ta = document.createElement("textarea");
+      ta.className = "text-input";
+      ta.rows = 1;
+      ta.placeholder = field.placeholder || "Add";
+      ta.value = coin[field.key] != null ? coin[field.key] : "";
+      wrap.appendChild(ta);
+      setTimeout(function () { autoFit(ta); }, 0);
+      ta.addEventListener("input", function () { autoFit(ta); });
+      ta.addEventListener("blur", function () {
+        var v = ta.value.trim();
+        if (v === String(coin[field.key] == null ? "" : coin[field.key])) return;
+        onDone(v === "" ? null : v);
+      });
+      ta.addEventListener("keydown", function (e) {
+        // One line of meaning, however many lines it takes to show.
+        if (e.key === "Enter") { e.preventDefault(); ta.blur(); }
+        if (e.key === "Escape") { e.preventDefault(); ta.value = coin[field.key] || ""; autoFit(ta); ta.blur(); }
+      });
       return wrap;
     }
 
@@ -474,13 +505,8 @@
     ta.rows = 1;
     host.appendChild(ta);
 
-    // Grows with what is written, so the box is never a window onto the text.
-    function fit() {
-      ta.style.height = "auto";
-      ta.style.height = ta.scrollHeight + "px";
-    }
-    ta.addEventListener("input", fit);
-    setTimeout(fit, 0);
+    ta.addEventListener("input", function () { autoFit(ta); });
+    setTimeout(function () { autoFit(ta); }, 0);
 
     ta.addEventListener("blur", function () {
       if ((coin.notes || "") === ta.value.trim()) return;
