@@ -517,3 +517,40 @@
   .hstep, .hstep.is-leaving { transition: none; transform: none; }
   .hstep-enter { animation: none; }
 }
+
+/* ── A note that changed ──────────────────────────────────────────────────── */
+/* Shown rather than summarised: it is the one field whose content is the whole
+   point, and "rewritten" withholds exactly the part worth reading. */
+
+.hfield-val.is-prose { font-style: normal; color: var(--ink); }
+
+.hnote {
+  display: block;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  max-height: 9rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.hnote + .hnote { margin-top: 0.35rem; }
+
+.hnote.is-was {
+  background: var(--hover-tint);
+  color: var(--ink-faint);
+}
+.hnote.is-now {
+  background: rgba(74, 222, 128, 0.12);
+  color: var(--ink);
+}
+
+/* An arrow between two paragraphs would sit oddly; the order says enough. */
+.hnote.is-was + .hnote.is-now::before {
+  content: "↓";
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+}

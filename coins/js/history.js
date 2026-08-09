@@ -434,8 +434,13 @@ window.CoinHistory = (function () {
           v.className = "hfield-val";
 
           if (f.key === "notes") {
+            // The note is the one field whose content is the point. "Rewritten"
+            // says a change happened and withholds the only part worth seeing.
             v.classList.add("is-prose");
-            v.textContent = !from ? "added" : (!to ? "removed" : "rewritten");
+            v.innerHTML =
+              (from ? '<span class="hnote is-was">' + C().escapeHtml(from) + "</span>" : "") +
+              (to   ? '<span class="hnote is-now">' + C().escapeHtml(to) + "</span>"
+                    : '<span class="hgone">no longer recorded</span>');
           } else if (from === null) {
             v.innerHTML = '<span class="hnew">' + C().escapeHtml(to) + "</span>";
           } else if (to === null) {
