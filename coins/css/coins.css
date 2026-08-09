@@ -466,6 +466,10 @@ a { color: inherit; }
   }
 
   .search-field {
+    /* The field is third in the markup, between the two dividers — right for a
+       row, wrong for a stack, where it belongs at the top. Grid honours order,
+       so the two menus fall in behind it and share the row below. */
+    order: -1;
     grid-column: 1 / -1;
     padding: 0.75rem 1rem;
     transition: border-color 0.18s, box-shadow 0.18s;
