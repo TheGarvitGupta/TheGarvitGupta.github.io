@@ -348,6 +348,12 @@ window.CoinHistory = (function () {
         "<span>Restore</span>";
       back.addEventListener("click", function () { restoreAll(sel[0], head.sub); });
       hd.appendChild(back);
+
+      // The button is one word; this says which way it goes.
+      var note = document.createElement("p");
+      note.className = "hrestore-note";
+      note.textContent = "Restore the collection to this state";
+      hd.appendChild(note);
     }
     el.body.appendChild(hd);
 

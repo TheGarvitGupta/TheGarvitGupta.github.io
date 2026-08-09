@@ -357,6 +357,12 @@
 /* Inherits the shared button from coins.css; this only places it and gives it
    the gold accent the other going-back controls use. */
 .hrestore-all { margin-top: 1.1rem; }
+
+.hrestore-note {
+  margin: 0.45rem 0 0;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
 .hrestore-all:hover {
   border-color: var(--gold);
   color: var(--gold-soft);
