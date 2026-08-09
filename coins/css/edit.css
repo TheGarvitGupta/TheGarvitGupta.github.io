@@ -238,10 +238,19 @@
   padding-top: 1.5rem;
   border-top: 1px solid var(--line);
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
 }
+
+/* The coin is currently flagged as unidentified — the button is a state, not
+   just an action, so it shows which way it is set. */
+.eb.is-on {
+  background: rgba(201, 162, 39, 0.14);
+  border-color: rgba(201, 162, 39, 0.45);
+  color: var(--gold-soft);
+}
+.eb.is-on:hover { background: rgba(201, 162, 39, 0.2); }
 
 .add-detail { position: relative; }
 
@@ -284,20 +293,6 @@
   color: var(--ink-dim);
 }
 .add-detail-item:hover { background: var(--hover-tint); color: var(--ink); }
-
-.edit-flag,
-.edit-delete {
-  padding: 0.35rem 0;
-  background: none;
-  border: 0;
-  font-size: 0.75rem;
-  color: var(--ink-faint);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.edit-flag:hover { color: var(--ink); }
-.edit-flag.is-on { color: var(--gold-soft); }
-.edit-delete:hover { color: #f87171; }
 
 /* ── Photo drop on the coin itself ────────────────────────────────────────── */
 
