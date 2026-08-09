@@ -534,7 +534,9 @@
   -webkit-backdrop-filter: none;
   transition: background 0.16s, color 0.16s;
 }
-.face-tools > * + * { box-shadow: inset 1px 0 0 var(--line); }
+/* The divider between the two segments. --line is too faint to read inside a
+   pill this small, where it has only a couple of rem to register in. */
+.face-tools > * + * { box-shadow: inset 1px 0 0 var(--line-strong); }
 .face-tools > *:hover:not([disabled]) { background: var(--hover-tint); }
 
 .face-edit {
