@@ -744,13 +744,6 @@
     if (frame.dataset.editReady === "1") return;
     frame.dataset.editReady = "1";
 
-    // The face toggle doesn't re-render the panel, so hook it directly.
-    ["btn-obv", "btn-rev"].forEach(function (id) {
-      document.getElementById(id).addEventListener("click", function () {
-        setTimeout(refreshLead, 0);
-      });
-    });
-
     ["dragenter", "dragover"].forEach(function (ev) {
       frame.addEventListener(ev, function (e) { e.preventDefault(); frame.classList.add("is-drop"); });
     });
@@ -764,9 +757,9 @@
       if (!coin || !e.dataTransfer.files.length) return;
       // With both faces on show, the one you dropped on is the one you meant.
       var onFace = e.target && e.target.closest ? e.target.closest(".face") : null;
-      var showing = onFace
-        ? (onFace.classList.contains("face-rev") ? "rev" : "obv")
-        : (document.getElementById("btn-rev").classList.contains("is-active") ? "rev" : "obv");
+      // Both faces are always on show, so a drop that misses one is a drop on
+      // the frame around them; the obverse is the reasonable reading.
+      var showing = onFace && onFace.classList.contains("face-rev") ? "rev" : "obv";
       uploadFace(coin.id, showing, e.dataTransfer.files[0]).then(function (f) {
         if (f) toast((showing === "obv" ? "Obverse" : "Reverse") + " replaced");
       });
@@ -844,9 +837,15 @@
       var dt = row.querySelector("dt");
       if (dt) dt.title = changed ? "Unsaved" : "";
     });
-    [["obv", "btn-obv"], ["rev", "btn-rev"]].forEach(function (pair) {
-      var b = document.getElementById(pair[1]);
-      if (b) b.classList.toggle("is-unsaved", !!(u && (u.whole || u.photos[pair[0]])));
+    // The mark used to sit on the obverse/reverse buttons, which are gone now
+    // that both faces are always on show. It belongs on the photograph itself
+    // anyway — that is the thing that changed.
+    [["obv", ".face-obv"], ["rev", ".face-rev"]].forEach(function (pair) {
+      var f = document.querySelector(pair[1]);
+      if (!f) return;
+      var changed = !!(u && (u.whole || u.photos[pair[0]]));
+      f.classList.toggle("is-unsaved", changed);
+      f.title = changed ? "Unsaved" : "";
     });
 
     // The note is not a row in the table and has no label to hang a mark on,

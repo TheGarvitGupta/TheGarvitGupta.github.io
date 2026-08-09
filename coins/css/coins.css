@@ -860,7 +860,6 @@ body.filters-open .drawer { transform: none; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
   padding: clamp(1.5rem, 4vw, 3.5rem);
   min-width: 0;
   /* Scroll rather than clip. The controls sit under the coin, and with the
@@ -914,45 +913,6 @@ body.filters-open .drawer { transform: none; }
 
 /* Blurred thumb standing in until the full-resolution file has decoded. */
 .face img.is-placeholder { filter: var(--coin-shadow-big) blur(6px); }
-
-.stage-controls {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.face-toggle {
-  display: inline-flex;
-  padding: 0.25rem;
-  background: var(--bg-raise);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-}
-.face-toggle button {
-  padding: 0.4rem 1.1rem;
-  background: none;
-  border: 0;
-  border-radius: 999px;
-  font-size: 0.6875rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  transition: color 0.25s, background 0.25s;
-}
-.face-toggle button.is-active {
-  background: var(--active-tint);
-  color: var(--ink);
-}
-.face-toggle button[disabled] { opacity: 0.35; cursor: default; }
-
-.stage-hint {
-  margin: 0;
-  font-size: 0.6875rem;
-  letter-spacing: 0.1em;
-  color: var(--ink-faint);
-  transition: opacity 0.3s;
-}
 
 .viewer-nav {
   position: absolute;
@@ -1062,22 +1022,54 @@ body.filters-open .drawer { transform: none; }
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 
 @media (max-width: 900px) {
-  :root { --shell: min(1440px, 100% - 2rem); }
+  :root {
+    --shell: min(1440px, 100% - 2rem);
+    /* Gutters wide enough to hold the arrows, so they sit beside the coin
+       rather than on top of it; the frame is sized against this padded box and
+       takes the remaining width on its own. */
+    --stage-gutter: 3rem;
+    --stage-top: 3.5rem;
+    /* The frame is as wide as the padded stage and holds two faces side by
+       side, so its height is that width over the spread aspect ratio. */
+    --frame-h: calc((100vw - var(--stage-gutter) * 2) / 2.1);
+  }
 
+  /*
+     One scroll for the whole thing. The stage and the details panel each used
+     to scroll inside their own box, so the coin sat in a short window with the
+     panel's edge cutting across it — you scrolled the coin itself to see the
+     bottom of it, and the photograph was never whole.
+
+     Both rows size to their content now and the body scrolls once, so the coin
+     is shown at full height and the details simply follow underneath.
+  */
   .viewer-body {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    height: 100%;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
-  .stage { padding: 3.5rem 1rem 1rem; }
-  .stage-frame { width: min(62vw, 22rem); }
+  .stage {
+    padding: var(--stage-top) var(--stage-gutter) 1rem;
+    overflow: visible;
+  }
   .detail {
     border-left: 0;
     border-top: 1px solid var(--line);
-    max-height: 55vh;
+    overflow: visible;
   }
-  .viewer-next { right: 0.5rem; }
-  .viewer-nav { top: auto; bottom: 1rem; margin-top: 0; }
+
+  /* Level with the middle of the coin, near the top of the screen. They used
+     to sit at the very bottom — a thumb's travel from the thing they act on,
+     and below the fold as soon as the details had any height to them. */
+  .viewer-nav {
+    top: calc(var(--topbar-h) + var(--stage-top) + var(--frame-h) / 2);
+    bottom: auto;
+    margin-top: -1.5rem;
+  }
+  .viewer-prev { left: 0; }
+  .viewer-next { left: auto; right: 0; }
 }
 
 @media (max-width: 560px) {
@@ -1161,10 +1153,6 @@ body.filters-open .drawer { transform: none; }
 }
 
 /* Nothing to turn over when both are on show. */
-.viewer.is-spread .face-toggle { display: none; }
-
-.viewer.is-spread .stage-controls { margin-top: 1.25rem; }
-
 /* ── The bar across the top ───────────────────────────────────────────────── */
 /*
    Present on the published site as well as while editing, because it carries

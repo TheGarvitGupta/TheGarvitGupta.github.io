@@ -43,23 +43,12 @@ window.Viewer = (function () {
     if (url) window.open(url, "_blank", "noopener");
   }
 
-  function updateHint() {
-    if (!el.hint) return;
-    // Nothing to explain when both faces are on show — clicking a photograph
-    // to see it larger needs no caption. The narrow layout keeps its line,
-    // where turning the coin over is the only way to the other side.
-    el.hint.textContent = spread ? "" : "Tap the coin to turn it over";
-    el.hint.hidden = spread;
-  }
-
   /* ── Flip ───────────────────────────────────────────────────────────────── */
 
   function show(nextFace) {
     if (!current) return;
     if (!window.Coins.hasImage(current, nextFace)) return;
     face = nextFace;
-    el.btnObv.classList.toggle("is-active", face === "obv");
-    el.btnRev.classList.toggle("is-active", face === "rev");
     paint(true);
   }
 
@@ -169,11 +158,6 @@ window.Viewer = (function () {
     loadFace(el.imgObv, coin, "obv");
     loadFace(el.imgRev, coin, "rev");
 
-    el.btnObv.disabled = !window.Coins.hasImage(coin, "obv");
-    el.btnRev.disabled = !window.Coins.hasImage(coin, "rev");
-    el.btnObv.classList.toggle("is-active", face === "obv");
-    el.btnRev.classList.toggle("is-active", face === "rev");
-
     renderDetail(coin);
     updateNav();
 
@@ -259,38 +243,28 @@ window.Viewer = (function () {
     el.flipper = document.getElementById("flipper");
     el.imgObv = document.getElementById("img-obv");
     el.imgRev = document.getElementById("img-rev");
-    el.btnObv = document.getElementById("btn-obv");
-    el.btnRev = document.getElementById("btn-rev");
     el.prev = document.getElementById("viewer-prev");
     el.next = document.getElementById("viewer-next");
     el.era = document.getElementById("detail-era");
     el.title = document.getElementById("viewer-title");
     el.notes = document.getElementById("detail-notes");
     el.specs = document.getElementById("detail-specs");
-    el.hint = document.getElementById("stage-hint");
 
     reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    var wide = window.matchMedia("(min-width: 900px)");
-    function applyMode() {
-      spread = wide.matches;
-      el.root.classList.toggle("is-spread", spread);
-      paint(false);
-      updateHint();
-    }
-    applyMode();
-    if (wide.addEventListener) wide.addEventListener("change", applyMode);
-    else if (wide.addListener) wide.addListener(applyMode);
+    // Both faces, on every screen. This used to be a wide-screen luxury, with a
+    // phone getting one side and a tap to turn it over — but comparing the two
+    // is most of what looking at a coin is, and doing it from memory, one side
+    // at a time, is the version that needs the bigger screen, not the smaller.
+    spread = true;
+    el.root.classList.add("is-spread");
 
     el.prev.addEventListener("click", function () { step(-1); });
     el.next.addEventListener("click", function () { step(1); });
-    el.btnObv.addEventListener("click", function () { show("obv"); });
-    el.btnRev.addEventListener("click", function () { show("rev"); });
     el.root.addEventListener("click", function (e) { if (e.target === el.root) close(); });
     document.addEventListener("keydown", onKey);
 
     bindStage();
-    updateHint();
 
     // Re-check the prev/next bounds when filtering changes what's on screen.
     window.Coins.onChange(updateNav);
@@ -316,8 +290,6 @@ window.Viewer = (function () {
       if (fresh) current = fresh;
       loadFace(el.imgObv, current, "obv");
       loadFace(el.imgRev, current, "rev");
-      el.btnObv.disabled = !window.Coins.hasImage(current, "obv");
-      el.btnRev.disabled = !window.Coins.hasImage(current, "rev");
       if (!window.Coins.hasImage(current, face)) {
         var only = window.Coins.primaryFace(current);
         if (only) show(only);
