@@ -1051,7 +1051,9 @@ body.filters-open .drawer { transform: none; }
     -webkit-overflow-scrolling: touch;
   }
   .stage {
-    padding: var(--stage-top) var(--stage-gutter) 1rem;
+    /* The captions hang 1.7rem below the frame, so a 1rem floor left them
+       sitting on the details panel with the divider drawn through them. */
+    padding: var(--stage-top) var(--stage-gutter) 3rem;
     overflow: visible;
   }
   .detail {
