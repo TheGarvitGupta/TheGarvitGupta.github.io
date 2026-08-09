@@ -255,6 +255,16 @@
     return vocab;
   }
 
+  /**
+   * Size a single-line field to what is in it. Digits are tabular here, so a
+   * ch is an honest measure — the field ends up exactly as wide as the number
+   * needs and no wider, whether that is 1 or 1222.
+   */
+  function fitWidth(el, min) {
+    var text = String(el.value || el.placeholder || "");
+    el.style.width = (Math.max(min || 2, text.length) + 2) + "ch";
+  }
+
   /** Size a text area to its content, so it is never a window onto the text. */
   function autoFit(ta) {
     ta.style.height = "auto";
@@ -336,6 +346,8 @@
       val.placeholder = "1";
       val.className = "denom-value";
       val.value = d.value != null ? d.value : "";
+      setTimeout(function () { fitWidth(val, 2); }, 0);
+      val.addEventListener("input", function () { fitWidth(val, 2); });
 
       var unit = document.createElement("select");
       unit.innerHTML = '<option value="">unit</option>';
