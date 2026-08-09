@@ -175,7 +175,10 @@
 
 .history-body {
   overflow-y: auto;
-  padding: 1.25rem 0.25rem 4rem;
+  /* Left value gives the coins' drop shadow somewhere to fall. A column that
+     scrolls clips sideways as well, and the shadow reaches about 12px past the
+     image, so it was being sliced off flat against the edge. */
+  padding: 1.25rem 0.5rem 4rem 1rem;
   scrollbar-width: thin;
 }
 .history-body.is-loading { opacity: 0.35; }
