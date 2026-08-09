@@ -315,32 +315,56 @@ window.Coins = (function () {
     return coin._hay;
   }
 
-  var queryTests = { q: null, tests: [] };
+  /** The words a coin can be found by. */
+  function tokens(coin) {
+    if (coin._tok) return coin._tok;
+    coin._tok = haystack(coin).split(/[^a-z0-9.]+/).filter(Boolean);
+    return coin._tok;
+  }
 
   /**
-   * How one search word is matched.
+   * True when two words differ by a single slip — a letter typed twice, missed,
+   * swapped or mistyped.
    *
-   * A number has to match a whole number: searching "1 rupee" found the 5
-   * Rupees of 1999 and the 2 Rupees of 1998, because "1" sits inside both
-   * years. Words match from their start instead, so "rupee" still finds
-   * "Rupees" and "hyder" finds "Hyderabad" — a prefix is usually what someone
-   * half-typing a word means.
+   * "5 rupeess" should still find the 5 Rupees. Nobody types a catalogue
+   * perfectly, and an empty page is a poor answer to a doubled letter.
    */
-  function wordTest(word) {
-    var esc = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    return /^\d+(\.\d+)?$/.test(word)
-      ? new RegExp("(^|[^\\d.])" + esc + "([^\\d.]|$)")
-      : new RegExp("(^|[^a-z0-9])" + esc);
+  function withinOneEdit(a, b) {
+    if (a === b) return true;
+    if (Math.abs(a.length - b.length) > 1) return false;
+
+    var i = 0, j = 0, slips = 0;
+    while (i < a.length && j < b.length) {
+      if (a.charAt(i) === b.charAt(j)) { i++; j++; continue; }
+      if (++slips > 1) return false;
+      if (a.length === b.length) { i++; j++; }   // mistyped
+      else if (a.length > b.length) i++;         // one letter too many
+      else j++;                                  // one letter too few
+    }
+    return slips + (a.length - i) + (b.length - j) <= 1;
   }
+
+  var queryWords = { q: null, words: [] };
 
   function matchesQuery(coin) {
     if (!state.query) return true;
-    if (queryTests.q !== state.query) {
-      queryTests = { q: state.query, tests: state.query.split(/\s+/).map(wordTest) };
+    if (queryWords.q !== state.query) {
+      queryWords = { q: state.query, words: state.query.split(/\s+/).filter(Boolean) };
     }
-    var hay = haystack(coin);
-    // Every word must appear, so "1988 paise" narrows rather than widens.
-    return queryTests.tests.every(function (re) { return re.test(hay); });
+    var toks = tokens(coin);
+
+    // Every word must be found somewhere, so adding words narrows.
+    return queryWords.words.every(function (word) {
+      var numeric = /^\d+(\.\d+)?$/.test(word);
+      for (var i = 0; i < toks.length; i++) {
+        var t = toks[i];
+        // A number must be the whole number: "1" is not 1999.
+        if (numeric) { if (t === word) return true; continue; }
+        if (t.indexOf(word) === 0) return true;               // half-typed word
+        if (word.length >= 4 && withinOneEdit(word, t)) return true;
+      }
+      return false;
+    });
   }
 
   /** Does this coin pass the active filters (optionally ignoring one facet)? */

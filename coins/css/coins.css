@@ -728,9 +728,11 @@ body.filters-open .drawer { transform: none; }
   text-transform: uppercase;
 }
 
+/* Close enough to the search to read as its answer. Six rem down the page it
+   looked like a separate announcement about something else. */
 .empty {
   width: 100%;
-  margin: 6rem 0;
+  margin: 2.5rem 0 6rem;
   text-align: center;
   color: var(--ink-faint);
   font-family: var(--serif);
