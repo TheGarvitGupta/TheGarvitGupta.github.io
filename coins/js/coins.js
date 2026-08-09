@@ -235,6 +235,18 @@ window.Coins = (function () {
     { key: "shape",  label: "Shape",        get: function (c) { return c.shape; },  fmt: function (v) { return labelOf("shapes", v); } }
   ];
 
+  /** Every value this facet takes anywhere in the collection. */
+  function facetValues(facet) {
+    var seen = {};
+    state.all.forEach(function (c) {
+      if (c.status === "draft") return;
+      var v = facet.get(c);
+      if (v === null || v === undefined || v === "") return;
+      seen[v] = true;
+    });
+    return Object.keys(seen);
+  }
+
   /** Count coins per value for one facet, against everything the OTHER facets
       allow — so counts reflect what clicking would actually give you. */
   function facetCounts(facet) {
@@ -422,7 +434,12 @@ window.Coins = (function () {
 
     FACETS.forEach(function (facet) {
       var counts = facetCounts(facet);
-      var values = Object.keys(counts);
+      // Every value the collection holds, not only those still reachable. An
+      // option that disappears takes its information with it: you cannot tell
+      // whether the collection has no silver coins or whether your other
+      // choices have ruled them out, and the list moves under the cursor as
+      // you tick things.
+      var values = facetValues(facet);
       var sel = state.filters[facet.key] || new Set();
       // A facet nobody's data distinguishes on is just noise.
       if (values.length < 2 && !sel.size) return;
@@ -438,14 +455,22 @@ window.Coins = (function () {
 
       values.sort(function (x, y) {
         if (facet.key === "decade") return x.localeCompare(y);
-        return counts[y] - counts[x];
+        return (counts[y] || 0) - (counts[x] || 0);
       }).forEach(function (value) {
+        var n = counts[value] || 0;
+        var chosen = sel.has(value);
+        // Nothing left to reach, and not already chosen: shown, but inert.
+        var inert = n === 0 && !chosen;
+
         var row = document.createElement("label");
-        row.className = "facet-option" + (sel.has(value) ? " is-on" : "");
+        row.className = "facet-option" + (chosen ? " is-on" : "") +
+                        (inert ? " is-inert" : "");
+        if (inert) row.title = "No coins match this alongside your other filters";
 
         var box = document.createElement("input");
         box.type = "checkbox";
-        box.checked = sel.has(value);
+        box.checked = chosen;
+        box.disabled = inert;
         box.addEventListener("change", function () {
           var next = state.filters[facet.key] || new Set();
           if (next.has(value)) next.delete(value); else next.add(value);
@@ -457,13 +482,13 @@ window.Coins = (function () {
         name.className = "facet-name";
         name.textContent = facet.fmt(value);
 
-        var n = document.createElement("span");
-        n.className = "facet-count";
-        n.textContent = counts[value];
+        var count = document.createElement("span");
+        count.className = "facet-count";
+        count.textContent = n;
 
         row.appendChild(box);
         row.appendChild(name);
-        row.appendChild(n);
+        row.appendChild(count);
         group.appendChild(row);
       });
 

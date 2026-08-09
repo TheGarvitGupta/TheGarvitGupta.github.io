@@ -346,6 +346,18 @@ body:not(.filters-open) .sidebar {
 .facet-option:hover { background: var(--hover-tint); color: var(--ink); }
 .facet-option.is-on { color: var(--ink); }
 
+/* Nothing to reach alongside the current choices. Kept in place rather than
+   removed: a list that rearranges itself as you tick things is hard to use,
+   and a missing option cannot say whether the collection lacks it or your
+   other filters have ruled it out. */
+.facet-option.is-inert {
+  color: var(--ink-faint);
+  cursor: default;
+  opacity: 0.55;
+}
+.facet-option.is-inert:hover { background: none; color: var(--ink-faint); }
+.facet-option.is-inert input { background: transparent; border-style: dashed; }
+
 /* A drawn box, so the tick is the collection's gold rather than the system's
    blue, and the same in both themes. */
 .facet-option input {
