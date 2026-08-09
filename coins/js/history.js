@@ -56,11 +56,31 @@ window.CoinHistory = (function () {
 
   var C = function () { return window.Coins; };
 
+  // Keys that carry no vocabulary entry because they are not things anyone
+  // fills in — they are set by the software, or left over from a version of it.
+  var OTHER_LABELS = {
+    notes:    "Note",
+    title:    "Name",
+    status:   "Status",
+    images:   "Photographs",
+    leadFace: "Side shown in the collection",
+    updated:  "Last updated",
+    id:       "Reference"
+  };
+
+  /**
+   * A readable name for a field. Falls back to spelling out the key rather than
+   * printing it: a row reading "updated · 2026-08-05 → removed" tells a reader
+   * nothing, and no part of this interface should show the shape of the data.
+   */
   function fieldLabel(key) {
     var f = (C().state.vocab.fields || []).filter(function (x) { return x.key === key; })[0];
     if (f) return f.label;
-    return { notes: "Note", status: "Status", leadFace: "Front in grid",
-             title: "Name", images: "Photographs" }[key] || key;
+    if (OTHER_LABELS[key]) return OTHER_LABELS[key];
+    return String(key)
+      .replace(/_/g, " ")
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+      .replace(/^./, function (c) { return c.toUpperCase(); });
   }
 
   /** Render one value the way the exhibit would, so history reads like the site. */
@@ -407,7 +427,8 @@ window.CoinHistory = (function () {
             v.innerHTML = '<span class="hnew">' + C().escapeHtml(to) + "</span>";
           } else if (to === null) {
             v.innerHTML = '<span class="hold">' + C().escapeHtml(from) + "</span>" +
-                          '<span class="harrow">→</span><span class="hgone">removed</span>';
+                          '<span class="harrow">→</span>' +
+                          '<span class="hgone">no longer recorded</span>';
           } else {
             v.innerHTML = '<span class="hold">' + C().escapeHtml(from) + "</span>" +
                           '<span class="harrow">→</span>' +
