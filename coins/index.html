@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The Coin Collection</title>
 <meta name="description" content="A collection of coins from British India and the Republic of India, photographed front and back.">
-<meta name="theme-color" content="#0b0b0d">
+<meta name="theme-color" content="#f5f3ef">
 
 <meta property="og:title" content="The Coin Collection">
 <meta property="og:description" content="Coins of British India and the Republic of India, photographed front and back.">
@@ -19,15 +19,19 @@
 <link rel="stylesheet" href="css/coins.css">
 
 <!-- Set the theme before first paint, so there's no flash of the wrong one.
-     Deliberately inline and synchronous; an external file would be too late. -->
+     Deliberately inline and synchronous; an external file would be too late.
+
+     Light is the collection's own look, not a fallback: paper, the way coins
+     sit in an album. It no longer follows the system, so a visitor whose
+     machine is set to dark still arrives at the page as intended. Dark stays
+     available from the toggle, and once chosen it is remembered. -->
 <script>
 (function () {
   try {
-    var saved = localStorage.getItem("coins:theme");
-    var theme = saved || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
-    document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.theme =
+      localStorage.getItem("coins:theme") === "dark" ? "dark" : "light";
   } catch (e) {
-    document.documentElement.dataset.theme = "dark";
+    document.documentElement.dataset.theme = "light";
   }
 })();
 </script>

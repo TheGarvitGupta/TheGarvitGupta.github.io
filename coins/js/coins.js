@@ -758,8 +758,9 @@ window.Coins = (function () {
   /* ── Theme ──────────────────────────────────────────────────────────────── */
 
   // The theme is already applied by the inline script in index.html; this only
-  // wires up the toggle and remembers the choice. Once chosen explicitly, the
-  // preference sticks and no longer follows the system.
+  // wires up the toggle and remembers the choice. The page opens light whatever
+  // the machine is set to — that is the collection's look, not a fallback — so
+  // there is no system preference to follow here.
   function initTheme() {
     var btn = document.getElementById("theme-toggle");
     if (!btn) return;
@@ -776,16 +777,6 @@ window.Coins = (function () {
       try { localStorage.setItem("coins:theme", next); } catch (e) {}
       label();
     });
-
-    // Follow the system only while the user hasn't expressed a preference.
-    var mq = window.matchMedia("(prefers-color-scheme: light)");
-    var onChange = function (e) {
-      try { if (localStorage.getItem("coins:theme")) return; } catch (err) {}
-      document.documentElement.dataset.theme = e.matches ? "light" : "dark";
-      label();
-    };
-    if (mq.addEventListener) mq.addEventListener("change", onChange);
-    else if (mq.addListener) mq.addListener(onChange);
   }
 
   /**
