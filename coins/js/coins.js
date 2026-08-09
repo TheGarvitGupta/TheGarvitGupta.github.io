@@ -356,6 +356,7 @@ window.Coins = (function () {
     li.className = "coin";
     li.dataset.id = coin.id;
     li.dataset.sig = tileSignature(coin);
+    li.dataset.pos = String(index);
 
     var btn = document.createElement("button");
     btn.type = "button";
@@ -433,10 +434,16 @@ window.Coins = (function () {
       // needs redrawing, a merely re-filtered one does not.
       if (node && node.dataset.sig === tileSignature(coin)) {
         delete existing[id];
-        // Already settled, so it must not be observed back into view: the
-        // observer would re-add is-in, and any element re-inserted starts its
-        // animations again. Moving it is all that happens.
         node.classList.add("is-in");
+
+        // A coin that has not moved should not move: re-entering in place makes
+        // the whole grid look reloaded. One that has landed somewhere else
+        // should, since that is the change worth noticing. Re-inserting an
+        // element restarts its animations, so this only has to decide whether
+        // the class is on it — the restart comes free.
+        node.classList.toggle("is-shifting", node.dataset.pos !== String(i));
+        node.dataset.pos = String(i);
+
         frag.appendChild(node);
         return;
       }

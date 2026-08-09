@@ -469,6 +469,14 @@ body:not(.filters-open) .sidebar {
 }
 .coin.is-in { opacity: 1; transform: none; }
 
+/* Landed somewhere new. An animation rather than a transition, because it has
+   to replay on demand — and re-inserting the element is what replays it. */
+.coin.is-shifting { animation: coin-shift 0.42s var(--ease) both; }
+@keyframes coin-shift {
+  from { opacity: 0; transform: translateY(9px); }
+  to   { opacity: 1; transform: none; }
+}
+
 .coin-btn {
   display: block;
   width: 100%;
@@ -858,6 +866,7 @@ body:not(.filters-open) .sidebar {
   .flipper.is-flipped .face-obv { opacity: 0; }
   .flipper.is-flipped .face-rev { opacity: 1; }
   .coin { opacity: 1; transform: none; }
+  .coin.is-shifting { animation: none; }
 }
 
 /* ── Both sides at once ───────────────────────────────────────────────────── */
