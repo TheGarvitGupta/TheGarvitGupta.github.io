@@ -380,7 +380,9 @@ window.CoinHistory = (function () {
           pr.className = "hphoto";
           var lab = document.createElement("span");
           lab.className = "hfield-key";
-          lab.textContent = ph.face === "obv" ? "Obverse" : "Reverse";
+          // "Reverse" alone reads as a field of the coin; it is the photograph
+          // of that side which changed.
+          lab.textContent = (ph.face === "obv" ? "Obverse" : "Reverse") + " photo";
           pr.appendChild(lab);
 
           var pair = document.createElement("span");
