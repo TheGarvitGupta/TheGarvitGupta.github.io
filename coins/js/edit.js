@@ -811,7 +811,11 @@
     // The note is not a row in the table and has no label to hang a mark on,
     // so it was the one edit that left no trace.
     var notes = document.getElementById("detail-notes");
-    if (notes) notes.classList.toggle("is-unsaved", !!(u && (u.whole || u.fields.notes)));
+    if (notes) {
+      var noteChanged = !!(u && (u.whole || u.fields.notes));
+      notes.classList.toggle("is-unsaved", noteChanged);
+      notes.title = noteChanged ? "Unsaved" : "";
+    }
   }
 
   function decorateGrid() {
