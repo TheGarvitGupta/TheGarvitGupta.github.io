@@ -508,7 +508,8 @@ body:not(.filters-open) .sidebar {
   height: 100%;
   object-fit: contain;
   filter: var(--coin-shadow);
-  transition: transform 0.45s var(--ease), filter 0.45s var(--ease);
+  transition: opacity 0.5s var(--ease), transform 0.45s var(--ease),
+              filter 0.45s var(--ease);
 }
 .coin-btn:hover .coin-disc img,
 .coin-btn:focus-visible .coin-disc img {
@@ -516,9 +517,12 @@ body:not(.filters-open) .sidebar {
   filter: var(--coin-shadow-hover);
 }
 
-.coin-disc img:not(.is-loaded) { opacity: 0; }
-.coin-disc img.is-loaded { animation: fade-in 0.5s var(--ease) both; }
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+/* A transition, not an animation. An animation replays whenever the element is
+   re-inserted into the document, and reordering the grid does exactly that —
+   so a coin that had not moved still had its photograph fade in again on every
+   filter. A transition only runs when the value actually changes. */
+.coin-disc img { opacity: 0; }
+.coin-disc img.is-loaded { opacity: 1; }
 
 .coin-caption {
   margin-top: 0.9rem;

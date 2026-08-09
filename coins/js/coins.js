@@ -433,7 +433,11 @@ window.Coins = (function () {
       // needs redrawing, a merely re-filtered one does not.
       if (node && node.dataset.sig === tileSignature(coin)) {
         delete existing[id];
-        frag.appendChild(node);      // moved, not rebuilt: no animation
+        // Already settled, so it must not be observed back into view: the
+        // observer would re-add is-in, and any element re-inserted starts its
+        // animations again. Moving it is all that happens.
+        node.classList.add("is-in");
+        frag.appendChild(node);
         return;
       }
       frag.appendChild(coinNode(coin, i));
