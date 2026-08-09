@@ -425,18 +425,22 @@ a { color: inherit; }
 .sort select option { background: var(--bg-raise); color: var(--ink); }
 
 /*
-   On a phone the one-bar idea stops paying for itself. Three controls sharing
-   a single pill leave each of them too little room, and wrapping the field
-   onto its own line inside the bar only made the box taller without giving
-   anything more space — it read as congested. So the bar dissolves: the field
-   takes a row, the two menus sit beneath it as separate taps, and the gaps
-   between them do the work the dividers did on a wide screen.
+   On a phone the bar becomes a stack, and a stack of three identical pills is
+   worse than the crowding it was meant to fix — three heavy white slabs, a
+   whole screen of chrome above a collection you came to look at.
+
+   So the pieces stop being equals. Searching is the thing you do here, so the
+   field keeps its surface and its full width. Filtering and sorting are things
+   you do occasionally, so they drop to a quiet line of two plain controls
+   underneath — no boxes, no borders, just text at either end.
 */
 @media (max-width: 620px) {
   .toolbar-bar {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.35rem 1rem;
     padding: 0;
     background: none;
     border: 0;
@@ -448,31 +452,22 @@ a { color: inherit; }
 
   .tb-rule { display: none; }
 
-  /* Each piece carries the surface the bar used to carry for all three. */
-  .search-field,
-  .tb-filters,
-  .sort select {
+  /* The field is third in the markup, between the two dividers — right for a
+     row, wrong for a stack, where it belongs on top. Grid honours order. */
+  .search-field {
+    order: -1;
+    grid-column: 1 / -1;
+    padding: 0.8rem 1.05rem;
     background: var(--bg-raise);
     border: 1px solid var(--line);
     border-radius: 999px;
     box-shadow: 0 1px 2px rgba(40, 34, 22, 0.05),
-                0 4px 14px rgba(40, 34, 22, 0.05);
-  }
-  :root[data-theme="dark"] .search-field,
-  :root[data-theme="dark"] .tb-filters,
-  :root[data-theme="dark"] .sort select {
-    background: rgba(255, 255, 255, 0.045);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 16px rgba(0, 0, 0, 0.3);
-  }
-
-  .search-field {
-    /* The field is third in the markup, between the two dividers — right for a
-       row, wrong for a stack, where it belongs at the top. Grid honours order,
-       so the two menus fall in behind it and share the row below. */
-    order: -1;
-    grid-column: 1 / -1;
-    padding: 0.75rem 1rem;
+                0 6px 18px rgba(40, 34, 22, 0.055);
     transition: border-color 0.18s, box-shadow 0.18s;
+  }
+  :root[data-theme="dark"] .search-field {
+    background: rgba(255, 255, 255, 0.045);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 22px rgba(0, 0, 0, 0.35);
   }
   .search-field:focus-within {
     border-color: var(--gold);
@@ -482,25 +477,23 @@ a { color: inherit; }
      the field takes focus, and it never zooms back out. */
   .search-field input { font-size: 1rem; }
 
+  /* The negative margins pull the text out to the same edges the field sits
+     on, while the padding keeps both comfortably thumb-sized. */
   .tb-filters {
-    justify-content: center;
-    padding: 0.7rem 1rem;
-    color: var(--ink);
-    font-size: 0.875rem;
+    margin-left: -0.55rem;
+    padding: 0.55rem;
+    font-size: 0.8125rem;
   }
-  .tb-filters:hover { background: var(--bg-raise); }
+  .tb-filters:hover,
+  .tb-filters[aria-expanded="true"] { background: none; color: var(--ink); }
 
-  .sort { display: block; }
   .sort select {
-    width: 100%;
-    padding: 0.7rem 1.9rem 0.7rem 1rem;
-    background-position: right 0.85rem center;
-    color: var(--ink);
-    font-size: 0.875rem;
-    text-align: center;
-    text-align-last: center;
+    margin-right: -0.55rem;
+    padding: 0.55rem 1.55rem 0.55rem 0.55rem;
+    background-position: right 0.5rem center;
+    font-size: 0.8125rem;
   }
-  .sort select:hover { background-color: var(--bg-raise); }
+  .sort select:hover { background-color: transparent; color: var(--ink); }
 }
 
 /* ── The filter drawer ────────────────────────────────────────────────────── */
