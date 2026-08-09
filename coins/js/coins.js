@@ -337,13 +337,30 @@ window.Coins = (function () {
 
   var io = null;
 
+  /**
+   * A tile appears once, when both things are true: it has scrolled into view
+   * and its photograph has arrived. Revealing on whichever happened first gave
+   * two separate movements — a fade with no rise if the picture was slow, a
+   * rise with no fade if it was cached.
+   */
+  function markReady(node) {
+    if (node.dataset.inview === "1" && node.dataset.shot === "1") {
+      node.classList.add("is-in");
+    }
+  }
+
   function observe(node) {
     if (!io) {
-      if (!("IntersectionObserver" in window)) { node.classList.add("is-in"); return; }
+      if (!("IntersectionObserver" in window)) {
+        node.dataset.inview = "1";
+        markReady(node);
+        return;
+      }
       io = new IntersectionObserver(function (entries) {
         entries.forEach(function (e) {
           if (!e.isIntersecting) return;
-          e.target.classList.add("is-in");
+          e.target.dataset.inview = "1";
+          markReady(e.target);
           io.unobserve(e.target);
         });
       }, { rootMargin: "120px" });
@@ -372,10 +389,13 @@ window.Coins = (function () {
       img.alt = title(coin) + ", " + (face === "obv" ? "obverse" : "reverse");
       img.loading = index < 12 ? "eager" : "lazy";
       img.decoding = "async";
-      img.addEventListener("load", function () { img.classList.add("is-loaded"); });
-      if (img.complete) img.classList.add("is-loaded");
+      var arrived = function () { li.dataset.shot = "1"; markReady(li); };
+      img.addEventListener("load", arrived);
+      img.addEventListener("error", arrived);   // a broken file must not hold the tile back
+      if (img.complete) arrived();
       disc.appendChild(img);
     } else {
+      li.dataset.shot = "1";   // nothing to wait for
       var ph = document.createElement("div");
       ph.className = "coin-missing";
       ph.textContent = "No photo";

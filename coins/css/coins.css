@@ -464,8 +464,8 @@ body:not(.filters-open) .sidebar {
 .coin {
   position: relative;
   opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+  transform: translateY(9px);
+  transition: opacity 0.42s var(--ease), transform 0.42s var(--ease);
 }
 .coin.is-in { opacity: 1; transform: none; }
 
@@ -516,8 +516,7 @@ body:not(.filters-open) .sidebar {
   height: 100%;
   object-fit: contain;
   filter: var(--coin-shadow);
-  transition: opacity 0.5s var(--ease), transform 0.45s var(--ease),
-              filter 0.45s var(--ease);
+  transition: transform 0.45s var(--ease), filter 0.45s var(--ease);
 }
 .coin-btn:hover .coin-disc img,
 .coin-btn:focus-visible .coin-disc img {
@@ -525,12 +524,9 @@ body:not(.filters-open) .sidebar {
   filter: var(--coin-shadow-hover);
 }
 
-/* A transition, not an animation. An animation replays whenever the element is
-   re-inserted into the document, and reordering the grid does exactly that —
-   so a coin that had not moved still had its photograph fade in again on every
-   filter. A transition only runs when the value actually changes. */
-.coin-disc img { opacity: 0; }
-.coin-disc img.is-loaded { opacity: 1; }
+/* The photograph has no fade of its own. The tile carries one reveal for the
+   whole thing — rise and fade together — held until the picture has arrived,
+   so there is never one without the other. */
 
 .coin-caption {
   margin-top: 0.9rem;
