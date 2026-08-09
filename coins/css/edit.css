@@ -302,21 +302,6 @@
   z-index: 3;
 }
 
-/* ── Which side leads in the grid ─────────────────────────────────────────── */
-
-.face-lead {
-  padding: 0.3rem 0.85rem;
-  background: none;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-size: 0.6875rem;
-  letter-spacing: 0.08em;
-  color: var(--ink-faint);
-  transition: border-color 0.2s, color 0.2s, opacity 0.2s;
-}
-.face-lead:hover:not([disabled]) { border-color: var(--gold); color: var(--gold-soft); }
-.face-lead.is-on { border-color: transparent; color: var(--gold); cursor: default; }
-
 /* ── Fields waiting to be filled ──────────────────────────────────────────── */
 /* Edit mode lists every field in its proper place rather than hiding the
    unfilled ones behind a menu. They read as quiet gaps in the table, not as
@@ -542,3 +527,42 @@
   opacity: 0;
   cursor: pointer;
 }
+
+/* ── Which side the collection shows ──────────────────────────────────────── */
+/* Opposite the edit control, on the photograph it applies to. Filled on the
+   side currently shown, hollow on the other — the whole state is one glance,
+   and setting it is one click on the face you want. */
+
+.face-star {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background: var(--panel-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  color: var(--ink-faint);
+  opacity: 0.75;
+  transition: opacity 0.18s, color 0.18s, border-color 0.18s, transform 0.18s;
+}
+.face-star svg { width: 0.95rem; height: 0.95rem; fill: none; stroke: currentColor;
+                 stroke-width: 1.6; stroke-linejoin: round; }
+.face-star:hover:not([disabled]) { opacity: 1; color: var(--gold); transform: scale(1.06); }
+
+/* The side the collection is showing. Not a button any more — a statement. */
+.face-star.is-on {
+  opacity: 1;
+  color: var(--gold);
+  border-color: rgba(201, 162, 39, 0.5);
+  cursor: default;
+}
+.face-star.is-on svg { fill: currentColor; }
+.face-star[disabled]:not(.is-on) { opacity: 0.3; cursor: default; }

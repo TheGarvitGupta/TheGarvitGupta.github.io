@@ -527,12 +527,12 @@
 
   /* ── Photo drop targets ─────────────────────────────────────────────────── */
 
-  /** Keep the lead-face button in step with whichever side is showing. */
+  /** Keep the controls on each face in step with the coin on screen. */
   function refreshLead() {
     var coin = window.Viewer.current();
     if (!coin) return;
+    var lead = window.Coins.primaryFace(coin);
 
-    // "Replace" or "Add", depending on whether that side has a photograph yet.
     Array.prototype.forEach.call(document.querySelectorAll(".face-edit"), function (el) {
       var f = el.dataset.face;
       if (!f) return;
@@ -544,13 +544,18 @@
       el.setAttribute("aria-label", (has ? "Replace" : "Add") + " the " + side + " photograph");
     });
 
-    var btn = document.querySelector(".face-lead");
-    if (!btn) return;
-    var showing = document.getElementById("btn-rev").classList.contains("is-active") ? "rev" : "obv";
-    var isLead = window.Coins.primaryFace(coin) === showing;
-    btn.classList.toggle("is-on", isLead);
-    btn.disabled = isLead;
-    btn.textContent = isLead ? "★ Leads in the grid" : "☆ Lead with this side";
+    Array.prototype.forEach.call(document.querySelectorAll(".face-star"), function (el) {
+      var f = el.dataset.face;
+      if (!f) return;
+      var on = lead === f;
+      var side = f === "obv" ? "obverse" : "reverse";
+      el.classList.toggle("is-on", on);
+      el.disabled = on || !window.Coins.hasImage(coin, f);
+      el.title = on ? "Shown in the collection" : "Show this side in the collection";
+      el.setAttribute("aria-label", on
+        ? "The " + side + " is shown in the collection"
+        : "Show the " + side + " in the collection");
+    });
   }
 
   function decorateStage() {
@@ -587,22 +592,6 @@
       });
     });
 
-    // Which side leads in the grid. The denomination isn't always on the same
-    // face, so this is a judgement made by looking at the coin.
-    var lead = document.createElement("button");
-    lead.type = "button";
-    lead.className = "face-lead";
-    lead.addEventListener("click", function () {
-      var coin = window.Viewer.current();
-      if (!coin) return;
-      var showing = document.getElementById("btn-rev").classList.contains("is-active") ? "rev" : "obv";
-      patch(coin.id, { leadFace: showing }).then(function () {
-        toast("This side now leads in the grid");
-      });
-    });
-    stage.querySelector(".stage-controls").appendChild(lead);
-    refreshLead();
-
     // A control on each photograph, where the thing it replaces is. The pair
     // of buttons underneath sat a long way from either face and had to name
     // which side they meant; here that is simply where you clicked.
@@ -637,6 +626,26 @@
       // The face beneath opens the photograph or turns the coin over.
       label.addEventListener("click", function (e) { e.stopPropagation(); });
       faceEl.appendChild(label);
+
+      // Which side the collection shows. A coin's denomination is not always
+      // on the same face — the 1988 minors carry it beside the Lion Capital,
+      // the rupees on the reverse — so it is a judgement made by looking, and
+      // the place to make it is on the photograph you are looking at.
+      var star = document.createElement("button");
+      star.type = "button";
+      star.className = "face-star";
+      star.dataset.face = pair[0];
+      star.innerHTML =
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M12 4.6l2.2 4.5 5 .7-3.6 3.5.85 4.95L12 15.9l-4.45 2.35.85-4.95L4.8 9.8l5-.7z"/>' +
+        "</svg>";
+      star.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var coin = window.Viewer.current();
+        if (!coin) return;
+        patch(coin.id, { leadFace: pair[0] });
+      });
+      faceEl.appendChild(star);
     });
   }
 
