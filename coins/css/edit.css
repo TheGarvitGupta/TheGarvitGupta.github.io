@@ -635,8 +635,20 @@
 }
 .spec .edit-control select option { background: var(--bg-raise); color: var(--ink); }
 
-/* Denomination is two answers to one question. */
-.edit-control .denom-value { flex: 0 0 3.5rem; width: 3.5rem; }
+/* Denomination is two answers to one question: a number, then a unit. The
+   number needs room for two digits and no more; the unit needs enough not to
+   be clipped. Both selectors have to out-specify the shared input rule above,
+   which was stretching the number across the row and squeezing "Rupee" until
+   it lost its last letters. */
+.spec .edit-control input.denom-value {
+  flex: 0 0 2.6rem;
+  width: 2.6rem;
+  text-align: left;
+}
+.spec .edit-control .denom-value + select {
+  flex: 1 1 auto;
+  min-width: 5.5rem;
+}
 .edit-unit { flex: 0 0 auto; font-size: 0.75rem; color: var(--ink-faint); }
 
 .edit-note {
