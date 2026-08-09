@@ -108,6 +108,80 @@ window.CoinHistory = (function () {
     return String(value);
   }
 
+  /* ── Diffing prose ──────────────────────────────────────────────────────── */
+
+  /**
+   * Word-level difference between two notes.
+   *
+   * Showing both versions in full leaves the reader to find the change
+   * themselves, which is the work the panel exists to do. Notes run to a
+   * paragraph or two, so a plain longest-common-subsequence over words is
+   * quick enough and gives an exact answer.
+   */
+  function wordDiff(from, to) {
+    var a = from.split(/(\s+)/), b = to.split(/(\s+)/);
+    var n = a.length, m = b.length;
+    if (n * m > 400000) {          // pathological; fall back to whole blocks
+      return [{ t: "del", s: from }, { t: "add", s: to }];
+    }
+
+    var dp = [], i, j;
+    for (i = 0; i <= n; i++) dp.push(new Uint32Array(m + 1));
+    for (i = n - 1; i >= 0; i--) {
+      for (j = m - 1; j >= 0; j--) {
+        dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1
+                                 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+      }
+    }
+
+    var ops = [];
+    i = 0; j = 0;
+    while (i < n && j < m) {
+      if (a[i] === b[j]) { ops.push({ t: "same", s: a[i] }); i++; j++; }
+      else if (dp[i + 1][j] >= dp[i][j + 1]) { ops.push({ t: "del", s: a[i] }); i++; }
+      else { ops.push({ t: "add", s: b[j] }); j++; }
+    }
+    while (i < n) ops.push({ t: "del", s: a[i++] });
+    while (j < m) ops.push({ t: "add", s: b[j++] });
+
+    // Run the neighbours together so the markup follows the sense.
+    var merged = [];
+    ops.forEach(function (op) {
+      var last = merged[merged.length - 1];
+      if (last && last.t === op.t) last.s += op.s;
+      else merged.push({ t: op.t, s: op.s });
+    });
+    return merged;
+  }
+
+  var KEEP_WORDS = 8;   // context either side of a change
+
+  /** Trim untouched stretches to a snippet around what actually moved. */
+  function snippet(segments) {
+    return segments.map(function (seg, k) {
+      if (seg.t !== "same") return seg;
+      var words = seg.s.split(/(\s+)/);
+      if (words.length <= KEEP_WORDS * 4) return seg;
+
+      var first = k === 0, last = k === segments.length - 1;
+      if (first) return { t: "same", s: "… " + words.slice(-KEEP_WORDS * 2).join("") };
+      if (last)  return { t: "same", s: words.slice(0, KEEP_WORDS * 2).join("") + " …" };
+      return { t: "same", s: words.slice(0, KEEP_WORDS * 2).join("") +
+                            " … " + words.slice(-KEEP_WORDS * 2).join("") };
+    });
+  }
+
+  function renderProse(from, to) {
+    var html = "";
+    snippet(wordDiff(from || "", to || "")).forEach(function (seg) {
+      var text = C().escapeHtml(seg.s);
+      if (seg.t === "del") html += "<del>" + text + "</del>";
+      else if (seg.t === "add") html += "<ins>" + text + "</ins>";
+      else html += text;
+    });
+    return '<span class="hdiff">' + html + "</span>";
+  }
+
   /* ── Building blocks ────────────────────────────────────────────────────── */
 
   /** A thumbnail out of history — or, for unsaved work, straight off disk. */
@@ -434,13 +508,10 @@ window.CoinHistory = (function () {
           v.className = "hfield-val";
 
           if (f.key === "notes") {
-            // The note is the one field whose content is the point. "Rewritten"
-            // says a change happened and withholds the only part worth seeing.
             v.classList.add("is-prose");
-            v.innerHTML =
-              (from ? '<span class="hnote is-was">' + C().escapeHtml(from) + "</span>" : "") +
-              (to   ? '<span class="hnote is-now">' + C().escapeHtml(to) + "</span>"
-                    : '<span class="hgone">no longer recorded</span>');
+            v.innerHTML = to
+              ? renderProse(from, to)
+              : '<span class="hdiff"><del>' + C().escapeHtml(from) + "</del></span>";
           } else if (from === null) {
             v.innerHTML = '<span class="hnew">' + C().escapeHtml(to) + "</span>";
           } else if (to === null) {

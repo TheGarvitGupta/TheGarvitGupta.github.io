@@ -126,9 +126,13 @@
 }
 .spec-remove svg { width: 0.85rem; height: 0.85rem; }
 
-.spec-remove:hover { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+/* Lost in an earlier tidy-up, which left the button permanently invisible —
+   present, hoverable, and showing its tooltip, but never drawn. */
+.spec.is-editable:hover .spec-remove,
+.spec.is-editable:focus-within .spec-remove,
+.spec-remove:focus-visible { opacity: 1; }
 
-.edit-control { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.spec-remove:hover { background: rgba(248, 113, 113, 0.15); color: #f87171; }
 
 .edit-unit { font-size: 0.75rem; color: var(--ink-faint); }
 
@@ -564,7 +568,13 @@
    coin in is what it will look like when you have.
 */
 
-.edit-control { display: flex; align-items: baseline; gap: 0.4rem; min-width: 0; }
+.edit-control {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: nowrap;        /* a value and its unit belong on one line */
+  gap: 0.4rem;
+  min-width: 0;
+}
 
 .spec .edit-control input,
 .spec .edit-control select,

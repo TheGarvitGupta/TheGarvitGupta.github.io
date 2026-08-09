@@ -519,38 +519,36 @@
 }
 
 /* ── A note that changed ──────────────────────────────────────────────────── */
-/* Shown rather than summarised: it is the one field whose content is the whole
-   point, and "rewritten" withholds exactly the part worth reading. */
+/* Word by word, deletions struck and additions marked, with untouched
+   stretches trimmed to a snippet. Showing both versions in full leaves the
+   reader to find the change themselves, which is the work this panel is for. */
 
 .hfield-val.is-prose { font-style: normal; color: var(--ink); }
 
-.hnote {
+.hdiff {
   display: block;
   padding: 0.4rem 0.6rem;
   border-radius: 6px;
+  background: var(--hover-tint);
   font-size: 0.8125rem;
-  line-height: 1.65;
+  line-height: 1.7;
   white-space: pre-wrap;
-  max-height: 9rem;
+  max-height: 11rem;
   overflow-y: auto;
   scrollbar-width: thin;
+  color: var(--ink-dim);
 }
-.hnote + .hnote { margin-top: 0.35rem; }
 
-.hnote.is-was {
-  background: var(--hover-tint);
-  color: var(--ink-faint);
+.hdiff del {
+  background: rgba(239, 68, 68, 0.15);
+  color: #b91c1c;
+  text-decoration: line-through;
+  border-radius: 3px;
 }
-.hnote.is-now {
-  background: rgba(74, 222, 128, 0.12);
+.hdiff ins {
+  background: rgba(34, 197, 94, 0.18);
   color: var(--ink);
+  text-decoration: none;
+  border-radius: 3px;
 }
-
-/* An arrow between two paragraphs would sit oddly; the order says enough. */
-.hnote.is-was + .hnote.is-now::before {
-  content: "↓";
-  display: block;
-  margin-bottom: 0.2rem;
-  color: var(--ink-faint);
-  font-size: 0.75rem;
-}
+:root[data-theme="dark"] .hdiff del { color: #fca5a5; }
