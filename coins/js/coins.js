@@ -697,7 +697,18 @@ window.Coins = (function () {
 
   /* ── Routing ────────────────────────────────────────────────────────────── */
 
-  function writeHash() {
+  // Back has to mean something on a page that has no pages. Opening a coin and
+  // stepping from one to the next each add an entry, so Back returns to the
+  // coin you were looking at and then to the collection. Changing a filter or
+  // the sort only rewrites the entry you are on — otherwise a run of tick-boxes
+  // would have to be unwound one press at a time before Back could leave.
+  var depth = 0;        // entries added since the viewer was opened
+  var pushes = 0;       // entries this page has added at all
+  var syncing = false;  // rebuilding from an entry: writes would fight the rebuild
+  var lastHash = null;  // popstate and hashchange both fire; only act once
+
+  function writeHash(push) {
+    if (syncing) return;
     var parts = [];
     FACETS.forEach(function (f) {
       var sel = state.filters[f.key];
@@ -709,10 +720,55 @@ window.Coins = (function () {
     // So that reloading leaves you where you were rather than back at the grid.
     if (window.CoinHistory && window.CoinHistory.isOpen()) parts.push("view=history");
     var hash = parts.length ? "#" + parts.join("&") : "";
-    if (hash !== window.location.hash) {
-      history.replaceState(null, "", window.location.pathname + window.location.search + hash);
+    if (hash === window.location.hash) return;
+    var url = window.location.pathname + window.location.search + hash;
+    lastHash = hash;
+    if (push) {
+      depth += 1;
+      pushes += 1;
+      history.pushState({ d: depth }, "", url);
+    } else {
+      history.replaceState({ d: depth }, "", url);
     }
   }
+
+  /**
+   * Put the page back into the state an address describes. Used when the reader
+   * moves through their own history, and when a hash is typed or pasted.
+   */
+  function syncFromHash() {
+    if (window.location.hash === lastHash) return;
+    lastHash = window.location.hash;
+
+    syncing = true;
+    var openId = readHash();
+    if (el.sort) el.sort.value = state.sort;
+    apply();
+    syncing = false;
+
+    if (!window.Viewer) return;
+    if (openId) window.Viewer.open(openId, true);
+    else window.Viewer.close(true);
+  }
+
+  /**
+   * Step back out of however many coins were opened, in one move, so closing
+   * lands on the collection rather than retracing every coin looked at on the
+   * way. False when there is nothing of ours to go back to — someone who
+   * arrived on a #coin= link directly has our grid behind them, not a page.
+   */
+  function rewind() {
+    var back = Math.min(depth, pushes);
+    if (back <= 0) return false;
+    history.go(-back);
+    return true;
+  }
+
+  window.addEventListener("popstate", function (e) {
+    depth = (e.state && e.state.d) || 0;
+    syncFromHash();
+  });
+  window.addEventListener("hashchange", syncFromHash);
 
   function readHash() {
     var hash = window.location.hash.replace(/^#/, "");
@@ -933,7 +989,8 @@ window.Coins = (function () {
     look: look,
     labelOf: labelOf,
     escapeHtml: escapeHtml,
-    writeHash: writeHash
+    writeHash: writeHash,
+    rewind: rewind
   };
 })();
 

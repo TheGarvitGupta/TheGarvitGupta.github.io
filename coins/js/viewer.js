@@ -145,7 +145,12 @@ window.Viewer = (function () {
 
   /* ── Open / close ───────────────────────────────────────────────────────── */
 
-  function open(id) {
+  /**
+   * @param {string} id
+   * @param {boolean} [fromHistory] set when this is the browser going back or
+   *   forward, in which case the entry already exists and must not be added.
+   */
+  function open(id, fromHistory) {
     // Nothing here works before init() has found the elements.
     if (!el.root) return;
     var coin = window.Coins.byId(id);
@@ -165,14 +170,20 @@ window.Viewer = (function () {
     document.body.style.overflow = "hidden";
     paint(false);
     el.root.focus();
-    window.Coins.writeHash();
+    window.Coins.writeHash(!fromHistory);
   }
 
-  function close() {
+  function close(fromHistory) {
+    if (el.root.hidden) return;   // a back into the grid from the grid
+
+    // Closing is a step back, not a new place: leave it to the history to
+    // unwind and this runs again with fromHistory set, doing the actual work.
+    if (!fromHistory && window.Coins.rewind()) return;
+
     el.root.hidden = true;
     document.body.style.overflow = "";
     current = null;
-    window.Coins.writeHash();
+    if (!fromHistory) window.Coins.writeHash();
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
 
