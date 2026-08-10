@@ -695,7 +695,17 @@ body.filters-open .drawer { transform: none; }
   padding: 0;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  /* auto-fit, not auto-fill: an empty track still occupies its share of the
+     row, so a search that found two coins left them pinned to the left with
+     five columns of nothing beside them. auto-fit collapses the tracks nobody
+     is using, and centring what remains puts any number of results — two, or a
+     full row — on the same centre line as the rest of the page.
+
+     A ceiling on the track keeps that honest. At 1fr a lone result would
+     stretch to the full width of the shell and there would be nothing to
+     centre; capped, a coin is always shown at a coin's size. */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 220px));
+  justify-content: center;
   gap: clamp(1.5rem, 3.5vw, 3.25rem) clamp(1rem, 2.5vw, 2rem);
 }
 
@@ -1075,7 +1085,7 @@ body.filters-open .drawer { transform: none; }
 }
 
 @media (max-width: 560px) {
-  .grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  .grid { grid-template-columns: repeat(auto-fit, minmax(120px, 200px)); }
   .spec { grid-template-columns: 7rem minmax(0, 1fr); gap: 0.75rem; }
 }
 
