@@ -227,7 +227,10 @@ a { color: inherit; }
 }
 
 .masthead-blurb {
-  max-width: 30rem;
+  /* Wide enough for the sentence to sit on one line wherever there is room —
+     it breaks into two only on a screen too narrow to hold it, rather than
+     because the measure said so. */
+  max-width: 40rem;
   margin: 1.25rem auto 0;
   color: var(--ink-dim);
   font-size: 0.8125rem;
