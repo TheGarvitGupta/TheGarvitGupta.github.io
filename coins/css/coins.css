@@ -227,10 +227,11 @@ a { color: inherit; }
 }
 
 .masthead-blurb {
-  /* Wide enough for the sentence to sit on one line wherever there is room —
-     it breaks into two only on a screen too narrow to hold it, rather than
-     because the measure said so. */
-  max-width: 40rem;
+  /* No measure at all. It is one sentence, not a paragraph, so the only thing
+     that should ever break it is a window too narrow to hold it — guessing a
+     width in rem just means guessing the font's metrics, and guessing low
+     breaks the line for no reason the reader can see. */
+  max-width: none;
   margin: 1.25rem auto 0;
   color: var(--ink-dim);
   font-size: 0.8125rem;
