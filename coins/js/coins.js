@@ -622,7 +622,7 @@ window.Coins = (function () {
 
     el.results.hidden = !show;
     if (!show) { el.count.textContent = ""; return; }
-    el.count.innerHTML = "<b>" + shown + "</b> of " + total +
+    el.count.innerHTML = "Showing <b>" + shown + "</b> of " + total +
       (total === 1 ? " coin" : " coins");
   }
 
