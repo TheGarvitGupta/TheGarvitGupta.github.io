@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/coins.css?v=19be395c">
+<link rel="stylesheet" href="css/coins.css?v=23d8958c">
 
 <!-- Set the theme before first paint, so there's no flash of the wrong one.
      Deliberately inline and synchronous; an external file would be too late.
@@ -74,7 +74,6 @@
       Coins of British India and the Republic of India, photographed on both faces.
       Click any coin to turn it over and look closely.
     </p>
-    <p class="masthead-count" id="count" aria-live="polite"></p>
   </div>
 </header>
 
@@ -120,6 +119,19 @@
         </select>
       </label>
     </div>
+  </div>
+
+  <!-- Only present when the collection is being narrowed: it says how far, and
+       undoes all of it at once. The count used to sit above the search bar and
+       be there whatever you did, which made it scenery — and the two ways of
+       undoing were a cross inside the field and a button folded away in the
+       filter drawer, neither of them anywhere near the other. -->
+  <div class="results" id="results" hidden>
+    <p class="results-count" id="count" aria-live="polite"></p>
+    <button type="button" class="results-reset" id="reset">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 2v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/></svg>
+      <span>Show all coins</span>
+    </button>
   </div>
 
   <ul class="grid" id="grid" aria-label="The collection"></ul>
@@ -172,8 +184,8 @@
   </div>
 </div>
 
-<script src="js/coins.js?v=19be395c"></script>
-<script src="js/viewer.js?v=19be395c"></script>
-<script src="js/edit.js?v=19be395c"></script>
+<script src="js/coins.js?v=23d8958c"></script>
+<script src="js/viewer.js?v=23d8958c"></script>
+<script src="js/edit.js?v=23d8958c"></script>
 </body>
 </html>

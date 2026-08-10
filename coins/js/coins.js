@@ -600,13 +600,40 @@ window.Coins = (function () {
     }
   }
 
+  /** True when a search or a filter is holding coins back from the view. */
+  function isNarrowed() {
+    if (state.query) return true;
+    return FACETS.some(function (f) {
+      var sel = state.filters[f.key];
+      return !!(sel && sel.size);
+    });
+  }
+
+  /**
+   * The line under the search bar. It only exists while the collection is
+   * being narrowed — a count that is always there stops being read, and the
+   * one moment it matters is the moment coins are missing.
+   */
   function renderCount() {
+    if (!el.results) return;
     var total = state.all.filter(function (c) { return c.status !== "draft"; }).length;
     var shown = state.view.length;
-    if (total === 0) { el.count.textContent = ""; return; }
-    el.count.textContent = shown === total
-      ? total + (total === 1 ? " coin" : " coins")
-      : shown + " of " + total + " coins";
+    var show = total > 0 && isNarrowed();
+
+    el.results.hidden = !show;
+    if (!show) { el.count.textContent = ""; return; }
+    el.count.innerHTML = "<b>" + shown + "</b> of " + total +
+      (total === 1 ? " coin" : " coins");
+  }
+
+  /** Undo every narrowing at once: the search text and all the filters. */
+  function resetView() {
+    state.filters = {};
+    state.query = "";
+    if (el.search) el.search.value = "";
+    var sc = document.getElementById("search-clear");
+    if (sc) sc.hidden = true;
+    apply();
   }
 
   function renderFilters() {
@@ -857,14 +884,11 @@ window.Coins = (function () {
     btn.addEventListener("click", function () {
       if (window.CoinHistory && window.CoinHistory.isOpen()) { window.CoinHistory.close(); return; }
       if (window.Viewer && window.Viewer.currentId()) { window.Viewer.close(); return; }
-      state.filters = {};
-      state.query = "";
-      if (el.search) el.search.value = "";
-      var sc = document.getElementById("search-clear");
-      if (sc) sc.hidden = true;
+      // Home resets the order as well, which the button under the search does
+      // not — that one only puts the coins back, it does not rearrange them.
       state.sort = "year-desc";
       if (el.sort) el.sort.value = state.sort;
-      apply();
+      resetView();
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
   }
@@ -936,6 +960,12 @@ window.Coins = (function () {
 
     el.sort.addEventListener("change", function () { state.sort = el.sort.value; apply(); });
     el.clear.addEventListener("click", function () { state.filters = {}; apply(); });
+    el.results = document.getElementById("results");
+    el.reset = document.getElementById("reset");
+    if (el.reset) el.reset.addEventListener("click", function () {
+      resetView();
+      if (el.search) el.search.focus();
+    });
     el.search = document.getElementById("search");
 
     // Cache-bust so edit mode sees its own writes immediately.
