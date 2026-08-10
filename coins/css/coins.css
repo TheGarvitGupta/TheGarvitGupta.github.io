@@ -269,10 +269,6 @@ a { color: inherit; }
   color: var(--ink-dim);
   font-variant-numeric: tabular-nums;
 }
-.results-count b {
-  font-weight: 600;
-  color: var(--ink);
-}
 
 /* Deliberately a button and not a whisper. It is the way out of a view that
    shows almost nothing, which is exactly when a reader needs to find it fast. */
