@@ -573,7 +573,7 @@ window.CoinHistory = (function () {
       if (u.changed) bits.push(u.changed + " reverted");
       afterRestore("Collection restored" + (bits.length ? " — " + bits.join(", ") : "") +
                    ". Save when you're happy with it.");
-      show();   // the restore is itself an unsaved step now
+      show(true);   // the restore is a new step on this screen, not a new screen
 
     });
   }
@@ -621,13 +621,17 @@ window.CoinHistory = (function () {
     });
   }
 
-  function show() {
+  /**
+   * @param {boolean} [fromHistory] set when the browser brought us here, in
+   *   which case this screen is already the entry we are standing on.
+   */
+  function show(fromHistory) {
     var reopened = open;      // a re-read, rather than opening for the first time
     if (!el.root) build();
     open = true;
     el.root.hidden = false;
     document.body.style.overflow = "hidden";
-    window.Coins.writeHash();
+    window.Coins.route(!fromHistory);
     el.rail.textContent = "";
     el.body.textContent = "";
     el.body.classList.add("is-loading");
@@ -656,7 +660,7 @@ window.CoinHistory = (function () {
   function refresh() {
     var li = el.rail && el.rail.querySelector(".hstep.is-unsaved");
     if (!li || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      show();
+      show(true);        // a re-read of this screen, not a journey to it
       return;
     }
     li.style.height = li.offsetHeight + "px";
@@ -669,11 +673,11 @@ window.CoinHistory = (function () {
     setTimeout(show, 320);
   }
 
-  function close() {
+  function close(fromHistory) {
     open = false;
     if (el.root) el.root.hidden = true;
     document.body.style.overflow = "";
-    window.Coins.writeHash();
+    window.Coins.route(!fromHistory);
   }
 
   return {

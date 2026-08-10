@@ -170,20 +170,16 @@ window.Viewer = (function () {
     document.body.style.overflow = "hidden";
     paint(false);
     el.root.focus();
-    window.Coins.writeHash(!fromHistory);
+    window.Coins.route(!fromHistory);
   }
 
   function close(fromHistory) {
-    if (el.root.hidden) return;   // a back into the grid from the grid
-
-    // Closing is a step back, not a new place: leave it to the history to
-    // unwind and this runs again with fromHistory set, doing the actual work.
-    if (!fromHistory && window.Coins.rewind()) return;
+    if (el.root.hidden) return;   // arriving at the grid from the grid
 
     el.root.hidden = true;
     document.body.style.overflow = "";
     current = null;
-    if (!fromHistory) window.Coins.writeHash();
+    window.Coins.route(!fromHistory);
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
 

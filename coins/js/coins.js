@@ -434,7 +434,7 @@ window.Coins = (function () {
     renderGrid();
     renderFilters();
     renderCount();
-    writeHash();
+    route(false);
     listeners.forEach(function (fn) { fn(); });
   }
 
@@ -697,99 +697,110 @@ window.Coins = (function () {
 
   /* ── Routing ────────────────────────────────────────────────────────────── */
 
-  // Back has to mean something on a page that has no pages. Opening a coin and
-  // stepping from one to the next each add an entry, so Back returns to the
-  // coin you were looking at and then to the collection. Changing a filter or
-  // the sort only rewrites the entry you are on — otherwise a run of tick-boxes
-  // would have to be unwound one press at a time before Back could leave.
-  var depth = 0;        // entries added since the viewer was opened
-  var pushes = 0;       // entries this page has added at all
-  var syncing = false;  // rebuilding from an entry: writes would fight the rebuild
-  var lastHash = null;  // popstate and hashchange both fire; only act once
+  /*
+     The address is the state of the page, and the only record of it. Every view
+     — the collection, a filtered collection, a coin, the history — has one, so
+     moving somewhere is writing an address and Back is the browser replaying an
+     address already written. Nothing counts steps or remembers how it got here,
+     which is what the previous version got wrong: it tracked its own depth,
+     and anything it failed to account for (the history screen, for one) simply
+     fell out of the reckoning.
 
-  function writeHash(push) {
-    if (syncing) return;
+     Two kinds of change, and the difference is whether you have gone somewhere.
+     Opening a coin, closing it, opening the history: each is a place, and takes
+     an entry of its own. Filtering, sorting and typing in the search refine the
+     place you are already in, so they rewrite the entry you are on — a search
+     box that added an entry per keystroke would bury the collection under its
+     own history.
+  */
+
+  var applying = false;  // rebuilding from an address: writes would fight it
+  var applied = null;    // the address the page is currently showing
+
+  function hashNow() {
     var parts = [];
     FACETS.forEach(function (f) {
       var sel = state.filters[f.key];
       if (sel && sel.size) parts.push(f.key + "=" + Array.from(sel).map(encodeURIComponent).join(","));
     });
+    if (state.query) parts.push("q=" + encodeURIComponent(state.query));
     if (state.sort !== "year-desc") parts.push("sort=" + state.sort);
     var open = window.Viewer && window.Viewer.currentId();
     if (open) parts.push("coin=" + encodeURIComponent(open));
-    // So that reloading leaves you where you were rather than back at the grid.
     if (window.CoinHistory && window.CoinHistory.isOpen()) parts.push("view=history");
-    var hash = parts.length ? "#" + parts.join("&") : "";
+    return parts.length ? "#" + parts.join("&") : "";
+  }
+
+  /**
+   * Write where we are into the address bar.
+   * @param {boolean} [push] true when this is somewhere new rather than a
+   *   refinement of where we already were.
+   */
+  function route(push) {
+    if (applying) return;
+    var hash = hashNow();
     if (hash === window.location.hash) return;
+    applied = hash;
     var url = window.location.pathname + window.location.search + hash;
-    lastHash = hash;
-    if (push) {
-      depth += 1;
-      pushes += 1;
-      history.pushState({ d: depth }, "", url);
-    } else {
-      history.replaceState({ d: depth }, "", url);
-    }
+    if (push) history.pushState(null, "", url);
+    else history.replaceState(null, "", url);
   }
 
-  /**
-   * Put the page back into the state an address describes. Used when the reader
-   * moves through their own history, and when a hash is typed or pasted.
-   */
-  function syncFromHash() {
-    if (window.location.hash === lastHash) return;
-    lastHash = window.location.hash;
-
-    syncing = true;
-    var openId = readHash();
-    if (el.sort) el.sort.value = state.sort;
-    apply();
-    syncing = false;
-
-    if (!window.Viewer) return;
-    if (openId) window.Viewer.open(openId, true);
-    else window.Viewer.close(true);
-  }
-
-  /**
-   * Step back out of however many coins were opened, in one move, so closing
-   * lands on the collection rather than retracing every coin looked at on the
-   * way. False when there is nothing of ours to go back to — someone who
-   * arrived on a #coin= link directly has our grid behind them, not a page.
-   */
-  function rewind() {
-    var back = Math.min(depth, pushes);
-    if (back <= 0) return false;
-    history.go(-back);
-    return true;
-  }
-
-  window.addEventListener("popstate", function (e) {
-    depth = (e.state && e.state.d) || 0;
-    syncFromHash();
-  });
-  window.addEventListener("hashchange", syncFromHash);
-
+  /** Read an address and make the page match it. */
   function readHash() {
     var hash = window.location.hash.replace(/^#/, "");
     state.filters = {};
-    var openId = null;
-    wantedView = null;
+    state.query = "";
+    var want = { coin: null, view: null };
     if (hash) {
       hash.split("&").forEach(function (pair) {
         var i = pair.indexOf("=");
         if (i < 0) return;
         var key = pair.slice(0, i), val = decodeURIComponent(pair.slice(i + 1));
-        if (key === "coin") { openId = val; return; }
-        if (key === "view") { wantedView = val; return; }
+        if (key === "coin") { want.coin = val; return; }
+        if (key === "view") { want.view = val; return; }
+        if (key === "q") { state.query = val; return; }
         if (key === "sort") { state.sort = val; return; }
         if (FACETS.some(function (f) { return f.key === key; })) {
           state.filters[key] = new Set(val.split(",").map(decodeURIComponent));
         }
       });
     }
-    return openId;
+    wantedView = want.view;
+    return want;
   }
+
+  /** Bring the whole page into line with whatever the address now says. */
+  function render() {
+    if (window.location.hash === applied) return;
+    applied = window.location.hash;
+
+    applying = true;
+    var want = readHash();
+    if (el.sort) el.sort.value = state.sort;
+    if (el.search) {
+      el.search.value = state.query;
+      var sc = document.getElementById("search-clear");
+      if (sc) sc.hidden = !state.query;
+    }
+    apply();
+    applying = false;
+
+    // Each screen is told what the address says about it, and closes itself if
+    // the address no longer mentions it. The flag says "this is already in the
+    // history", so none of them writes an entry on the way.
+    if (window.Viewer) {
+      if (want.coin) window.Viewer.open(want.coin, true);
+      else window.Viewer.close(true);
+    }
+    if (window.CoinHistory) {
+      if (want.view === "history") window.CoinHistory.show(true);
+      else if (window.CoinHistory.isOpen()) window.CoinHistory.close(true);
+    }
+  }
+
+  window.addEventListener("popstate", render);
+  window.addEventListener("hashchange", render);
 
   function openCoin(id) {
     if (window.Viewer) window.Viewer.open(id);
@@ -947,13 +958,22 @@ window.Coins = (function () {
       indexVocab(state.vocab);
       state.all = Array.isArray(res[1]) ? res[1] : [];
 
-      var openId = readHash();
+      // Reading the first address is the same job as reading any later one,
+      // except that the screens it names do not exist yet — the viewer sets
+      // itself up on coins:ready, which has not been dispatched. So the wanted
+      // view is handed back to be opened once it can be.
+      applying = true;
+      var want = readHash();
       if (el.sort) el.sort.value = state.sort;
+      if (el.search) {
+        el.search.value = state.query;
+        var sc = document.getElementById("search-clear");
+        if (sc) sc.hidden = !state.query;
+      }
       apply();
-      // Handed back rather than opened here: the viewer sets itself up on
-      // coins:ready, which has not been dispatched yet, so opening a coin from
-      // the address bar at this point would reach into an empty viewer.
-      return openId;
+      applying = false;
+      applied = window.location.hash;
+      return want;
     });
   }
 
@@ -989,15 +1009,16 @@ window.Coins = (function () {
     look: look,
     labelOf: labelOf,
     escapeHtml: escapeHtml,
-    writeHash: writeHash,
-    rewind: rewind
+    route: route
   };
 })();
 
 document.addEventListener("DOMContentLoaded", function () {
-  window.Coins.init().then(function (openId) {
+  window.Coins.init().then(function (want) {
     document.dispatchEvent(new CustomEvent("coins:ready"));
-    // Now that the viewer exists, a #coin= link can be honoured.
-    if (openId) window.Coins.open(openId);
+    // Now that the viewer exists, a #coin= link can be honoured. It opens as
+    // though from the history, because the address it came from is already the
+    // entry we are standing on — pushing here would double it.
+    if (want && want.coin && window.Viewer) window.Viewer.open(want.coin, true);
   });
 });

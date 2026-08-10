@@ -1064,8 +1064,10 @@
     var hist = document.createElement("script");
     hist.src = "js/history.js";
     hist.onload = function () {
+      // Asked for by the address we arrived on, so it is already the entry we
+      // are standing on and must not add another.
       if (window.Coins.wantedView() === "history" && window.CoinHistory) {
-        window.CoinHistory.show();
+        window.CoinHistory.show(true);
       }
     };
     document.head.appendChild(hist);
