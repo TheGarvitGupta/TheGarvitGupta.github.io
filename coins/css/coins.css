@@ -262,6 +262,11 @@ a { color: inherit; }
   to   { opacity: 1; transform: none; }
 }
 
+/* Nothing matched, so the grid is gone and its margins with it. This stands in
+   for them, keeping the page's proportions rather than dropping the footer up
+   under the button. */
+.results.is-alone { margin-bottom: clamp(5rem, 14vh, 9rem); }
+
 .results-count {
   margin: 0;
   font-size: 0.8125rem;

@@ -621,6 +621,9 @@ window.Coins = (function () {
     var show = total > 0 && isNarrowed();
 
     el.results.hidden = !show;
+    // With no coins to show, the grid is taken out of the page and contributes
+    // no space at all — leaving this line sitting on the colophon's rule.
+    el.results.classList.toggle("is-alone", show && shown === 0);
     if (!show) { el.count.textContent = ""; return; }
     el.count.textContent = "Showing " + shown + " of " + total +
       (total === 1 ? " coin" : " coins");
