@@ -590,13 +590,13 @@ window.Coins = (function () {
     // different: there the tile is the only thing to offer.
     el.grid.hidden = none && !neverAny;
 
-    el.empty.hidden = !none;
-    if (none) {
-      el.empty.textContent = neverAny
-        ? "The collection is empty — no coins have been catalogued yet."
-        : state.query
-          ? "Nothing matches “" + state.query + "”."
-          : "No coins match those filters.";
+    // Only the genuinely empty collection has anything left to say. A search or
+    // a filter that matches nothing is already reported by the line under the
+    // bar — "Showing 0 of 7 coins", with the way back out beside it — and a
+    // second sentence saying the same thing underneath added nothing but words.
+    el.empty.hidden = !neverAny;
+    if (neverAny) {
+      el.empty.textContent = "The collection is empty — no coins have been catalogued yet.";
     }
   }
 
