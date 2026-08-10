@@ -1325,7 +1325,6 @@ body.filters-open .drawer { transform: none; }
      monitor and most of the first screen on a phone — you arrived to look at
      coins and had to scroll to find any. */
   .masthead { padding: clamp(2rem, 7vh, 3.5rem) 0 clamp(1.25rem, 3vh, 2rem); }
-  .masthead-blurb { margin-top: 1.25rem; font-size: 0.875rem; line-height: 1.65; }
   .toolbar { padding-top: 0.25rem; }
   .grid { margin-top: clamp(1.5rem, 5vw, 2.25rem); }
 
