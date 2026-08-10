@@ -182,7 +182,7 @@ a { color: inherit; }
 .masthead {
   width: var(--shell);
   margin: 0 auto;
-  padding: clamp(4rem, 12vh, 8rem) 0 clamp(2.5rem, 6vh, 4rem);
+  padding: clamp(2.75rem, 8vh, 5rem) 0 clamp(1.5rem, 4vh, 2.5rem);
   text-align: center;
 }
 
@@ -227,11 +227,11 @@ a { color: inherit; }
 }
 
 .masthead-blurb {
-  max-width: 34rem;
-  margin: 1.75rem auto 0;
+  max-width: 30rem;
+  margin: 1.25rem auto 0;
   color: var(--ink-dim);
-  font-size: 0.9375rem;
-  line-height: 1.75;
+  font-size: 0.8125rem;
+  line-height: 1.7;
 }
 
 /*
@@ -336,7 +336,7 @@ a { color: inherit; }
 .toolbar {
   display: flex;
   justify-content: center;
-  padding: clamp(1.25rem, 3.5vw, 2.25rem) 0 0;
+  padding: clamp(1rem, 2.5vw, 1.5rem) 0 0;
 }
 
 .toolbar-bar {
@@ -760,7 +760,7 @@ body.filters-open .drawer { transform: none; }
 
 .grid {
   width: 100%;
-  margin: clamp(2rem, 5vw, 3.5rem) 0 clamp(2.5rem, 6vw, 4.5rem);
+  margin: clamp(1.5rem, 3.5vw, 2.5rem) 0 clamp(2.5rem, 6vw, 4.5rem);
   padding: 0;
   list-style: none;
   display: grid;
