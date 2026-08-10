@@ -703,8 +703,15 @@ body.filters-open .drawer { transform: none; }
 
      A ceiling on the track keeps that honest. At 1fr a lone result would
      stretch to the full width of the shell and there would be nothing to
-     centre; capped, a coin is always shown at a coin's size. */
-  grid-template-columns: repeat(auto-fit, minmax(150px, 220px));
+     centre; capped, a coin is always shown at a coin's size.
+
+     The ceiling is what sets the size, not the floor. Where the maximum is a
+     definite length the column count is worked out from it, so 220px did not
+     mean "up to 220" — it meant five columns of exactly 220, and coins half as
+     big again as before. 175px is the width they were already being drawn at
+     under auto-fill, so the row keeps its old rhythm and only gains the
+     centring. */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 175px));
   justify-content: center;
   gap: clamp(1.5rem, 3.5vw, 3.25rem) clamp(1rem, 2.5vw, 2rem);
 }
@@ -1085,7 +1092,7 @@ body.filters-open .drawer { transform: none; }
 }
 
 @media (max-width: 560px) {
-  .grid { grid-template-columns: repeat(auto-fit, minmax(120px, 200px)); }
+  .grid { grid-template-columns: repeat(auto-fit, minmax(120px, 165px)); }
   .spec { grid-template-columns: 7rem minmax(0, 1fr); gap: 0.75rem; }
 }
 
