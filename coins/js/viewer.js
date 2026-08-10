@@ -256,6 +256,8 @@ window.Viewer = (function () {
     el.title = document.getElementById("viewer-title");
     el.notes = document.getElementById("detail-notes");
     el.specs = document.getElementById("detail-specs");
+    el.detail = document.getElementById("detail");
+    el.body = document.querySelector(".viewer-body");
 
     reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -289,7 +291,21 @@ window.Viewer = (function () {
     rerender: function () {
       if (!current) return;
       var fresh = window.Coins.byId(current.id);
-      if (fresh) { current = fresh; renderDetail(fresh); }
+      if (!fresh) return;
+      current = fresh;
+
+      // Saving a field rebuilds this whole panel, and a scroller whose contents
+      // are replaced returns to the top — so choosing a die axis halfway down
+      // the table threw the reader back up to the title. Which element scrolls
+      // depends on the width: the panel has its own overflow on a wide screen,
+      // and on a narrow one the page scrolls as a whole. Remember both.
+      var panelTop = el.detail ? el.detail.scrollTop : 0;
+      var bodyTop = el.body ? el.body.scrollTop : 0;
+
+      renderDetail(fresh);
+
+      if (el.detail) el.detail.scrollTop = panelTop;
+      if (el.body) el.body.scrollTop = bodyTop;
     },
     reloadFaces: function () {
       if (!current) return;
