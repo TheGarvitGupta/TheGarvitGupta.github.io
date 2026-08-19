@@ -1160,3 +1160,49 @@ input {
     margin-bottom: 7px;
     margin-left: 2px;
 }
+/* ── Lightbox video ───────────────────────────────────────────────────────────
+   Videos open as inline slides carrying a bare <video> — no controls, so a clip
+   reads as a moving photograph rather than a player. The stock inline slide is a
+   white card, capped at 95vh, that scrolls its content; these rules strip that
+   back and then mirror what GLightbox does to .gslide-image img, so a video is
+   inset from the edges and sits on the same translucent overlay as a photo. */
+.glightbox-container .gslide-inline,
+.glightbox-container .gslide-media:has(.gallery-lightbox-video) {
+    /* transparent, so the .92 black overlay shows around the frame as it does
+       around a photo — an opaque colour here is what made video look boxed in */
+    background: transparent !important;
+    overflow: visible !important;
+    /* let the element's own max-height decide, exactly as an image does */
+    max-height: none !important;
+    width: auto !important;
+    height: auto !important;
+    margin: auto;
+}
+
+.glightbox-container .ginlined-content {
+    /* stock inline content carries 20px of padding — a photo has none */
+    padding: 0 !important;
+    overflow: visible !important;
+    width: auto;
+    height: auto;
+}
+
+/* Sized the way .gslide-image img is: intrinsic dimensions, capped against the
+   viewport. Nothing is stretched, so the margin around a clip matches a photo's. */
+.gallery-lightbox-video {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100vw;
+    max-height: 100vh;
+    margin: auto;
+    background: transparent;
+}
+
+@media (min-width: 769px) {
+    .gallery-lightbox-video {
+        /* the same pair of values the stylesheet gives a photo at this width */
+        max-height: 97vh;
+        max-width: 100%;
+    }
+}

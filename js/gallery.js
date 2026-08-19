@@ -544,22 +544,90 @@
 		});
 	};
 
+	const lightboxVideo = (name) => {
+		const v = document.createElement("video");
+		v.src = `images/photographs/${name}`;
+		v.className = "gallery-lightbox-video";
+		// No controls: a video should behave like the photo either side of it, and
+		// every clip is encoded silent anyway (tools/gallery.py passes -an), so a
+		// scrubber and a volume slider were chrome over nothing. It also settles the
+		// swipe question — with no scrubber to drag, a horizontal drag can only ever
+		// mean "next slide".
+		v.loop = true;
+		v.muted = true;          // phones only autoplay silent video
+		v.playsInline = true;
+		v.setAttribute("playsinline", "");
+		// Metadata, not "none": the slide is sized from the element's intrinsic
+		// dimensions so it can be inset like a photo, and a <video> with nothing
+		// loaded reports the spec's default 300x150 — the frame would appear at a
+		// fraction of its size and jump once the first bytes arrived. Headers only;
+		// ffmpeg writes these files with +faststart, so it is a small read.
+		v.preload = "metadata";
+		return v;
+	};
+
+	// GLightbox suppresses swipe navigation inside an inline slide so that
+	// interactive content can be used without flicking to the next slide. Its test
+	// (glightbox.js, touchstart) lets the swipe through when the touched node's
+	// immediate parent is itself .gslide-inline, so marking the content wrapper
+	// gives a video slide back the swipe every photo slide has. Without it a phone
+	// reaches a video and cannot swipe past it.
+	const enableSwipeOverVideos = () => {
+		document.querySelectorAll(".glightbox-container .ginlined-content").forEach(el => {
+			if (el.querySelector(".gallery-lightbox-video")) el.classList.add("gslide-inline");
+		});
+	};
+
+	// Pause every lightbox video, then start the one on the slide now showing.
+	const syncLightboxPlayback = () => {
+		enableSwipeOverVideos();
+		const vids = document.querySelectorAll(".glightbox-container .gallery-lightbox-video");
+		const active = document.querySelector(".gslide.current .gallery-lightbox-video");
+		vids.forEach(v => {
+			if (v === active) return;
+			v.pause();
+			v.currentTime = 0;
+		});
+		if (!active) return;
+
+		// A phone will only autoplay a video that is muted and inline, and both are
+		// set — but only headers are preloaded, so this first call can still be
+		// rejected for having no frames yet. Swallowing that promise is what leaves a
+		// clip sitting on its first frame, so the attempt is made again once the
+		// browser reports it has something. play() is idempotent when it is already
+		// running, and the listeners are one-shot.
+		const attempt = () => { const p = active.play(); if (p) p.catch(() => {}); };
+		attempt();
+		active.addEventListener("canplay",    attempt, { once: true });
+		active.addEventListener("loadeddata", attempt, { once: true });
+	};
+
 	const rebuildLightbox = () => {
 		if (typeof GLightbox !== "function") return;
 		if (lightbox) { try { lightbox.destroy(); } catch (e) {} lightbox = null; }
 
-		const elements = allPhotos.map(name => ({
-			href: `images/photographs/${name}`,
-			type: VIDEO_RE.test(name) ? "video" : "image"
-		}));
+		// Videos are handed over as inline content, not type:"video". That path pulls
+		// Plyr off a CDN and wraps the clip in a player UI, which is the opposite of
+		// what's wanted here — inline content leaves a bare element that shows nothing
+		// but the picture, the way the photo slides do. Note that an inline slide must
+		// not carry an href: slideInline() reads it as a hash, looks for an element by
+		// that id, and abandons the slide when it finds none.
+		const elements = allPhotos.map(name => VIDEO_RE.test(name)
+			? { content: lightboxVideo(name) }
+			: { href: `images/photographs/${name}`, type: "image" });
 
 		lightbox = GLightbox({
 			elements,
 			touchNavigation: true,
 			loop: true,
 			selector: ".__glightbox_disabled__",
-			onOpen:  () => setArrowsHidden(true),
-			onClose: () => updateDots(Math.ceil(allPhotos.length / PAGE_SIZE)),
+			onOpen:  () => { setArrowsHidden(true); syncLightboxPlayback(); },
+			afterSlideChange: () => syncLightboxPlayback(),
+			afterSlideLoad:   () => syncLightboxPlayback(),
+			onClose: () => {
+				document.querySelectorAll(".gallery-lightbox-video").forEach(v => v.pause());
+				updateDots(Math.ceil(allPhotos.length / PAGE_SIZE));
+			},
 		});
 
 		if (stage && !stage._galleryClickBound) {
@@ -568,8 +636,12 @@
 				const link = e.target.closest("a.gallery-link");
 				if (!link || !link.href) return;
 				e.preventDefault();
-				const href = link.getAttribute("href");
-				const idx  = elements.findIndex(el => el.href === href);
+				// Locally the tiles carry a ?b= cache-buster, so match on the path
+				// alone or every click on this machine would open the first slide.
+				const href = link.getAttribute("href").split("?")[0];
+				// Read allPhotos now rather than closing over a list: this listener is
+				// bound once, but rebuildLightbox runs on every page change.
+				const idx  = allPhotos.findIndex(n => `images/photographs/${n}` === href);
 				lightbox?.openAt(idx >= 0 ? idx : 0);
 			});
 		}
