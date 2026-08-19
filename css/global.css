@@ -1197,6 +1197,12 @@ input {
     max-height: 100vh;
     margin: auto;
     background: transparent;
+    /* the stock rule gives .gslide video touch-action:auto, handing vertical
+       gestures to the browser, so a drag-to-close never reached GLightbox. A
+       photo is touch-action:none for exactly this reason. */
+    touch-action: none;
+    /* and it sets a 165px floor that a photo is not held to */
+    min-height: 0;
 }
 
 @media (min-width: 769px) {

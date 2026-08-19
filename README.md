@@ -23,7 +23,7 @@ js/                     JavaScript
   loadUncover.js        Page load reveal + image prefetch
   darkmode.js           Dark-mode toggle and persistence
   gallery.js            Photo gallery (GitHub API + GLightbox)
-  glightbox.js          Vendored GLightbox build
+  glightbox.js          Vendored GLightbox build — locally patched, see below
   spotify.js            Spotify now-playing widget
   strava.js             Strava YTD running bar
   weather.js            Local weather widget + icon swapping
@@ -112,6 +112,26 @@ The `FALLBACK` array in `js/gallery.js` is only read when the GitHub API is
 unreachable, so it rots silently. `sync_fallback()` in `tools/gallery.py`
 rewrites it on every add and delete; don't hand-edit it.
 
+
+### The GLightbox fork
+
+`js/glightbox.js` is a vendored copy with one local change, marked `LOCAL PATCH`
+in the source. **Replacing it with a stock build will silently undo this.**
+
+Dragging a slide down to dismiss it was gated on the slide being a photo: the
+touch handler resolves a `mediaImage` only when the media carries `gslide-image`,
+and both the vertical follow and the close that ends it test that variable. The
+gallery's videos are inline slides, so they had no `mediaImage`, would not follow
+a downward drag, and could not be dismissed with one — every photo around them
+could. The patch adds a `mediaDrag` alongside it, set to the `<img>` or, failing
+that, the slide's `<video>`, and points the three drag checks at it. Pinch-zoom
+still reads `mediaImage`, so it stays photo-only rather than trying to scale a
+video.
+
+The matching half is in CSS: the stock sheet sets `touch-action: auto` on video,
+which hands vertical gestures to the browser before GLightbox sees them, so
+`.gallery-lightbox-video` overrides it to `none` the way a photo already is.
+
 ---
 
 ## External dependencies (CDN, no local copies)
@@ -121,7 +141,7 @@ rewrites it on every add and delete; don't hand-edit it.
 | [GSAP TweenMax 1.17](https://cdnjs.cloudflare.com/ajax/libs/gsap/1.17.0/TweenMax.min.js) | Polygon lion (polylion) animation |
 | [jQuery 1.11.3](https://code.jquery.com/jquery-1.11.3.min.js) | DOM helpers used by loaders.js and polylion |
 | [Particles.js 2.0](https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js) | Particle background on home section |
-| [GLightbox 3](https://cdn.jsdelivr.net/npm/glightbox@3/) | Full-screen photo lightbox |
+| [GLightbox 3](https://cdn.jsdelivr.net/npm/glightbox@3/) | Full-screen photo lightbox (stylesheet only — the JS is vendored and patched) |
 | [Google Fonts](https://fonts.googleapis.com) | Montserrat, Open Sans |
 
 ---

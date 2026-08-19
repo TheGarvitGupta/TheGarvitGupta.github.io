@@ -1826,6 +1826,11 @@
     var currentSlide = null;
     var media = null;
     var mediaImage = null;
+    // LOCAL PATCH: drag-to-close is gated on mediaImage, so it only ever worked
+    // on photo slides. This tracks the media that a vertical drag may move —
+    // an <img>, or the <video> on the gallery's inline video slides. Kept
+    // separate from mediaImage so pinch-zoom below stays images-only.
+    var mediaDrag = null;
     var doingMove = false;
     var initScale = 1;
     var maxScale = 4.5;
@@ -1871,6 +1876,8 @@
           if (hasClass(media, 'gslide-image')) {
             mediaImage = media.querySelector('img');
           }
+          // LOCAL PATCH: see mediaDrag declaration above.
+          mediaDrag = mediaImage || media.querySelector('video');
           var windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
           if (windowWidth > 769) {
             media = currentSlide.querySelector('.ginner-container');
@@ -1913,7 +1920,7 @@
         vDistance = endCoords.pageY - startCoords.pageY;
         vDistancePercent = vDistance * 100 / winHeight;
         var opacity;
-        if (vSwipe && mediaImage) {
+        if (vSwipe && mediaDrag) { // LOCAL PATCH: was mediaImage
           opacity = 1 - Math.abs(vDistance) / winHeight;
           overlay.style.opacity = opacity;
           if (instance.settings.touchFollowAxis) {
@@ -1927,7 +1934,7 @@
             vDistancePercent = 0;
           }
         }
-        if (!mediaImage) {
+        if (!mediaDrag) { // LOCAL PATCH: was mediaImage
           return cssTransform(media, "translate3d(".concat(hDistancePercent, "%, 0, 0)"));
         }
         cssTransform(media, "translate3d(".concat(hDistancePercent, "%, ").concat(vDistancePercent, "%, 0)"));
@@ -1944,7 +1951,7 @@
         }
         var v = Math.abs(parseInt(vDistancePercent));
         var h = Math.abs(parseInt(hDistancePercent));
-        if (v > 29 && mediaImage) {
+        if (v > 29 && mediaDrag) { // LOCAL PATCH: was mediaImage
           instance.close();
           return;
         }
