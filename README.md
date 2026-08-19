@@ -15,25 +15,57 @@ css/                    Stylesheets
   work.css              Work/projects section
   responsive.css        Media queries
   animations.css        Keyframe animations (replaces animate.css)
+  darkmode.css          Dark-mode palette overrides
   particle-support.css  Particles.js canvas styles
 js/                     JavaScript
+  initiateVariables.js  Global variables used across scripts
   loaders.js            Scroll-triggered animations and section reveals
+  loadUncover.js        Page load reveal + image prefetch
+  darkmode.js           Dark-mode toggle and persistence
   gallery.js            Photo gallery (GitHub API + GLightbox)
+  glightbox.js          Vendored GLightbox build
   spotify.js            Spotify now-playing widget
   strava.js             Strava YTD running bar
+  weather.js            Local weather widget + icon swapping
+  units.js              Unit formatting/conversion helpers
   contact-form.js       Contact form submission
-  loadUncover.js        Page load reveal + image prefetch
-  initiateVariables.js  Global variables used across scripts
   polylion-execute.js   GSAP polygon lion animation setup
   particle-support.js   Particles.js config
-  stopScroll.js         Scroll lock utility
 images/                 All production assets
+  photographs/          Gallery originals
+  photographs/thumbs/   Low-res versions loaded first
+  weather/              Weather icons (each has a dark- twin)
 favicon/                Favicon set (multiple sizes)
 aberlift/               Standalone project page — AberLift carpooling app
 status-tiles/           Standalone project page — Status Tiles Windows app
 panorama-demo/          Standalone 360° VR demo (Marzipano viewer)
+coins/                  Standalone sub-site — the coin collection (own README)
+demo/                   Unlinked dev preview pages for widgets
+tools/gallery.py        Local gallery manager (add/remove photos)
+start                   Local dev: preview server + gallery manager
 extras/                 Unused / archived assets and source files
+FUTURE.md               Ideas not built yet
 ```
+
+---
+
+## Local development
+
+```sh
+./start
+```
+
+Serves the site at `http://localhost:8080` and opens the gallery manager
+(`tools/gallery.py`) at `http://localhost:8765`. The gallery manager needs
+`pip install Pillow` and `brew install ffmpeg`; it generates the thumbnail and
+full-res versions for anything you add, and keeps the fallback list in
+`js/gallery.js` in sync.
+
+`demo/` holds standalone preview pages for individual widgets — not linked from
+the site, just open them directly while iterating:
+
+- `demo/strava-ui.html` — the Strava bar against the real site assets
+- `demo/weather-icons.html` — every weather icon in light and dark
 
 ---
 
@@ -67,7 +99,18 @@ To redeploy either worker: open the Cloudflare dashboard → Workers & Pages →
 ### Photo gallery
 `js/gallery.js` fetches the file list from the GitHub Contents API at runtime to auto-discover photos in `images/photographs/`. Falls back to a hardcoded list if the API is unavailable. Photos are shuffled and paged 12 at a time with GLightbox for full-screen viewing.
 
-To add photos: drop `.jpeg`/`.png`/`.webp` files into `images/photographs/` and push. The gallery picks them up automatically.
+Each photo has a small counterpart in `images/photographs/thumbs/` under the
+same filename. Every thumbnail loads first, then the full-res versions swap in
+behind them, so the grid fills immediately rather than popping in piecemeal.
+
+To add photos: run `./start` and use the gallery manager, which resizes the
+original, writes the matching thumbnail, and refreshes the fallback list. If you
+drop files into `images/photographs/` by hand, generate a thumbnail of the same
+name too — a photo with no thumbnail renders as an empty tile.
+
+The `FALLBACK` array in `js/gallery.js` is only read when the GitHub API is
+unreachable, so it rots silently. `sync_fallback()` in `tools/gallery.py`
+rewrites it on every add and delete; don't hand-edit it.
 
 ---
 
@@ -110,3 +153,6 @@ Archived files kept for reference, not served by the site:
 - `css/separators/` — unused vendor CSS from an old section-separator experiment
 - `js/stopScroll.js` — unused `disableScroll`/`enableScroll` utilities, never wired up
 - `images/` — old mockup images, duplicate work screenshots, replaced social icon PNGs
+- `images/weather/` — weather SVGs not in the icon set (`weather.svg`, `weather-sprite.svg`, `weather_sagittarius.svg`, `weather_sunset.svg`)
+- `images/latte.svg` — superseded by `latte.png`, which is what the CSS loads
+- `status-tiles/` — 2016 development screenshots, unreferenced app screenshots, and PNG twins of images the stylesheet loads as `.jpg`
