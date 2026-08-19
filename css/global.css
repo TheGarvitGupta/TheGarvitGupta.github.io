@@ -396,8 +396,6 @@ input {
     height: 2.2em;
     width: 2.2em;
     vertical-align: middle;
-    position: relative;
-    top: -0.05em;
     cursor: pointer;
     display: inline-block;
 }
