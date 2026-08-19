@@ -22,6 +22,7 @@ from pathlib import Path
 REPO_ROOT   = Path(__file__).parent.parent
 PHOTO_DIR   = REPO_ROOT / "images" / "photographs"
 THUMB_DIR   = PHOTO_DIR / "thumbs"
+GALLERY_JS  = REPO_ROOT / "js" / "gallery.js"
 PORT        = 8765
 
 # ── Processing settings ──────────────────────────────────────────────────────
@@ -51,6 +52,26 @@ def list_photos():
     files = [f for f in PHOTO_DIR.iterdir()
              if f.is_file() and f.suffix.lower() in MEDIA_EXT]
     return [f.name for f in sorted(files, key=lambda f: f.stat().st_mtime, reverse=True)]
+
+def sync_fallback():
+    """Rewrite the FALLBACK array in js/gallery.js to match what's on disk.
+
+    The gallery discovers photos through the GitHub contents API at runtime and
+    only falls back to this hardcoded list when the API is unreachable, so the
+    list silently rots as photos come and go. Regenerating it on every add and
+    delete keeps the offline path honest.
+    """
+    try:
+        src = GALLERY_JS.read_text(encoding="utf-8")
+        start = src.index("\tconst FALLBACK = [")
+        end   = src.index("\t];", start) + len("\t];")
+    except (OSError, ValueError):
+        return  # gallery.js missing or restructured — leave it alone
+
+    names = sorted(n for n in list_photos() if Path(n).suffix.lower() != ".mov")
+    block = "\tconst FALLBACK = [\n" + "\n".join(f'\t\t"{n}",' for n in names) + "\n\t];"
+    if block != src[start:end]:
+        GALLERY_JS.write_text(src[:start] + block + src[end:], encoding="utf-8")
 
 def capture_date(path: Path) -> str | None:
     """Return capture date as 'Mon D YYYY' string, or None if unavailable."""
@@ -686,6 +707,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if f.exists(): f.unlink()
             t = thumb_path(filename)
             if t.exists(): t.unlink()
+            sync_fallback()
             self.send_json({"ok": True})
         else:
             self.send_response(404); self.end_headers()
@@ -782,6 +804,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     process_image(src, dest_full, dest_thumb)
                 if src != dest_full and src.exists():
                     src.unlink()
+                sync_fallback()
                 self.send_json({"ok": True})
             except Exception as e:
                 self.send_json({"error": str(e)}, 500)
@@ -866,6 +889,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 final_path = PHOTO_DIR / final_name
                 os.utime(final_path, (old_mtime, old_mtime))
 
+            sync_fallback()
             self.send_json({"ok": True, "name": final_name})
         except Exception as e:
             self.send_json({"error": str(e)}, 500)
