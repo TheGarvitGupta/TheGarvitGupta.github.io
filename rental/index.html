@@ -405,11 +405,17 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
     <div class="grp">
       <span class="eyebrow">Housemates</span>
       <div class="fields">
-        <div class="f"><label for="rent1">Room 1 / mo<button type="button" class="inf" data-tip="What the first housemate pays you each month." aria-label="What this means">i</button></label>
-          <div class="ip"><span class="pre">$</span><input class="pl" type="number" id="rent1" value="" placeholder="0" step="100" min="0"></div></div>
-        <div class="f"><label for="rent2">Room 2 / mo<button type="button" class="inf" data-tip="What the second housemate pays you each month." aria-label="What this means">i</button></label>
-          <div class="ip"><span class="pre">$</span><input class="pl" type="number" id="rent2" value="" placeholder="0" step="100" min="0"></div></div>
-        <div class="f"><label for="share">Their share<button type="button" class="inf" data-tip="How much of the home they occupy. Two of three bedrooms plus shared space is often about two thirds." aria-label="What this means">i</button></label>
+        <div class="f"><label for="roomCount">Roommates<button type="button" class="inf" data-tip="How many people are renting a room from you, from none up to five." aria-label="What this means">i</button></label>
+          <select id="roomCount">
+            <option value="0" selected>None</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select></div>
+        <div id="rentSlots" style="display:contents"></div>
+        <div class="f"><label for="share">Their share<button type="button" class="inf" data-tip="How much of the home they occupy combined. Two of three bedrooms plus shared space is often about two thirds." aria-label="What this means">i</button></label>
           <div class="ip"><input class="pr" type="number" id="share" value="" placeholder="0" step="0.1" min="0" max="100"><span class="suf">%</span></div></div>
         <div class="f"><label for="land">Land share of price<button type="button" class="inf" data-tip="How much of the price is land. Land cannot be depreciated, and your tax bill splits land from structure." aria-label="What this means">i</button></label>
           <div class="ip"><input class="pr" type="number" id="land" value="" placeholder="0" step="5" min="0" max="95"><span class="suf">%</span></div></div>
@@ -613,7 +619,7 @@ function model(I, year, sched) {
   const assessed    = I.price * Math.pow(1 + ASSESS_GROWTH, year - 1);
   const propertyTax = assessed * I.ptax;
 
-  const annualRent = (I.rent1 + I.rent2) * 12;
+  const annualRent = I.rentTotal * 12;
 
   /* ── §280A(c)(5) waterfall for renting rooms in your own residence ──
      Deductions allocable to the rental use are capped at gross rental income and
@@ -723,7 +729,25 @@ const esc    = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
 let rentMode = "schedE";
 const num = id => { const v = parseFloat($(id).value); return isFinite(v) ? v : 0; };
 
+/* Rebuilds the Room 1…N rent inputs to match the roommate count, keeping
+   whatever was already typed for the rooms that survive the resize.       */
+function buildRentFields(n) {
+  const slot = $("rentSlots");
+  const existing = {};
+  slot.querySelectorAll("input").forEach(inp => { existing[inp.id] = inp.value; });
+  let h = "";
+  for (let i = 1; i <= n; i++) {
+    h += `<div class="f"><label for="rent${i}">Room ${i} / mo<button type="button" class="inf" data-tip="What housemate ${i} pays you each month." aria-label="What this means">i</button></label>` +
+      `<div class="ip"><span class="pre">$</span><input class="pl" type="number" id="rent${i}" value="${esc(existing["rent" + i] || "")}" placeholder="0" step="100" min="0"></div></div>`;
+  }
+  slot.innerHTML = h;
+  slot.querySelectorAll(".inf").forEach(wireTip);
+}
+
 function readInputs() {
+  const roomCount = Math.max(0, Math.min(5, parseInt($("roomCount").value, 10) || 0));
+  let rentTotal = 0;
+  for (let i = 1; i <= roomCount; i++) rentTotal += num("rent" + i);
   return {
     price: num("price"), downPct: num("down") / 100, rate: num("rate") / 100,
     term: Math.max(1, num("term")), ptax: num("ptax") / 100,
@@ -731,7 +755,7 @@ function readInputs() {
     fs: $("filing").value, w2: num("w2"), otherInc: num("other_inc"),
     income: num("w2") + num("other_inc"),
     charity: num("charity"), other: num("other"),
-    rent1: num("rent1"), rent2: num("rent2"), rentMode,
+    roomCount, rentTotal, rentMode,
     share: num("share") / 100, landShare: num("land") / 100,
     apprec: num("apprec") / 100, comprent: num("comprent"),
     year: Math.round(num("year"))
@@ -1061,6 +1085,14 @@ function save() {
 function restore() {
   let o; try { o = JSON.parse(jar.read() || "{}"); } catch (e) { return; }
   if (!o || typeof o !== "object") return;
+  if (typeof o.roomCount === "string") {
+    $("roomCount").value = o.roomCount;
+    buildRentFields(Math.max(0, Math.min(5, parseInt(o.roomCount, 10) || 0)));
+  } else if (o.rent1 || o.rent2) {
+    // a save from before the roommate-count control existed — keep their rooms
+    $("roomCount").value = "2";
+    buildRentFields(2);
+  }
   fields().forEach(el => { if (typeof o[el.id] === "string") el.value = o[el.id]; });
   if (["schedE", "costshare", "full"].includes(o.__mode)) {
     rentMode = o.__mode;
@@ -1074,6 +1106,11 @@ const onEdit = () => { save(); render(); };
 $("rail").addEventListener("input", onEdit);
 $("rail").addEventListener("change", onEdit);
 $("resetBtn").addEventListener("click", () => { jar.clear(); location.reload(); });
+$("roomCount").addEventListener("change", ev => {
+  ev.stopPropagation();
+  buildRentFields(Math.max(0, Math.min(5, parseInt($("roomCount").value, 10) || 0)));
+  onEdit();
+});
 $("rtSeg").addEventListener("click", ev => {
   const b = ev.target.closest("button[data-mode]");
   if (!b) return;
@@ -1121,7 +1158,7 @@ function hideTip() {
   if (tipFor) tipFor.setAttribute("aria-expanded", "false");
   tipFor = null;
 }
-document.querySelectorAll(".inf").forEach(btn => {
+function wireTip(btn) {
   btn.setAttribute("aria-expanded", "false");
   btn.addEventListener("pointerenter", ev => { if (ev.pointerType === "mouse") showTip(btn); });
   btn.addEventListener("pointerleave", ev => { if (ev.pointerType === "mouse") hideTip(); });
@@ -1131,7 +1168,8 @@ document.querySelectorAll(".inf").forEach(btn => {
     ev.preventDefault(); ev.stopPropagation();
     tipFor === btn ? hideTip() : showTip(btn);
   });
-});
+}
+document.querySelectorAll(".inf").forEach(wireTip);
 document.addEventListener("click", () => { if (tipFor) hideTip(); });
 document.addEventListener("keydown", ev => { if (ev.key === "Escape") hideTip(); });
 window.addEventListener("scroll", () => { if (tipFor) hideTip(); }, { passive: true });
