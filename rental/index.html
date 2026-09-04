@@ -415,10 +415,10 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
             <option value="5">5</option>
           </select></div>
         <div id="rentSlots" style="display:contents"></div>
-        <div class="f"><label for="share">Their share<button type="button" class="inf" data-tip="How much of the home they occupy combined. Two of three bedrooms plus shared space is often about two thirds." aria-label="What this means">i</button></label>
-          <div class="ip"><input class="pr" type="number" id="share" value="" placeholder="0" step="0.1" min="0" max="100"><span class="suf">%</span></div></div>
-        <div class="f"><label for="land">Land share of price<button type="button" class="inf" data-tip="How much of the price is land. Land cannot be depreciated, and your tax bill splits land from structure." aria-label="What this means">i</button></label>
-          <div class="ip"><input class="pr" type="number" id="land" value="" placeholder="0" step="5" min="0" max="95"><span class="suf">%</span></div></div>
+        <div class="f"><label for="share">Their share<button type="button" class="inf" data-tip="How much of the home they occupy combined. Set from the roommate count, assuming you live there too — split evenly, override if the rooms aren't equal." aria-label="What this means">i</button></label>
+          <div class="ip"><input class="pr" type="number" id="share" value="0" placeholder="0" step="0.1" min="0" max="100"><span class="suf">%</span></div></div>
+        <div class="f"><label for="land">Land share of price<button type="button" class="inf" data-tip="How much of the price is land. Land cannot be depreciated, and your tax bill splits land from structure. Defaulted from a comparable San Francisco assessor's roll — check yours." aria-label="What this means">i</button></label>
+          <div class="ip"><input class="pr" type="number" id="land" value="60" step="5" min="0" max="95"><span class="suf">%</span></div></div>
         <div class="f w2"><label>Treatment<button type="button" class="inf" data-tip="How you report housemate rent: on Schedule E with their share of expenses, as cost sharing, or taxed in full." aria-label="What this means">i</button></label>
           <div class="seg" role="group" aria-label="Rent tax treatment" id="rtSeg">
             <button type="button" data-mode="schedE" aria-pressed="true">Schedule E</button>
@@ -1108,7 +1108,10 @@ $("rail").addEventListener("change", onEdit);
 $("resetBtn").addEventListener("click", () => { jar.clear(); location.reload(); });
 $("roomCount").addEventListener("change", ev => {
   ev.stopPropagation();
-  buildRentFields(Math.max(0, Math.min(5, parseInt($("roomCount").value, 10) || 0)));
+  const n = Math.max(0, Math.min(5, parseInt($("roomCount").value, 10) || 0));
+  buildRentFields(n);
+  // Even split of the home among roommates plus the owner living there too.
+  $("share").value = n === 0 ? "0" : Math.round((n / (n + 1)) * 1000) / 10;
   onEdit();
 });
 $("rtSeg").addEventListener("click", ev => {
