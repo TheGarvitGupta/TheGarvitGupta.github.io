@@ -14,7 +14,7 @@
   --acc:#0071E3; --acc-ink:#0062C4; --acc-wash:rgba(0,113,227,.09);
   --out:#C2570A; --out-ink:#9E4A00;
   --flag:#C0342B;
-  --wm1:#0B3B8C; --wm2:#1C7DF0; --wm3:#8FD8FF;
+  --wm1:#061D4D; --wm2:#0F4CA6; --wm3:#2E6FC4;
   --sh:0 1px 2px rgba(0,0,0,.04), 0 8px 28px -14px rgba(0,0,0,.18);
   --sh-2:0 2px 6px rgba(0,0,0,.06), 0 18px 44px -18px rgba(0,0,0,.24);
   --plot:#FFFFFF;
@@ -29,7 +29,7 @@
   --acc:#4490FE; --acc-ink:#7FB4FF; --acc-wash:rgba(68,144,254,.14);
   --out:#D6760C; --out-ink:#E8A15A;
   --flag:#FF6F61;
-  --wm1:#123166; --wm2:#3E86F5; --wm3:#A9E2FF;
+  --wm1:#081D45; --wm2:#1C4E96; --wm3:#3E76C4;
   --sh:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -16px rgba(0,0,0,.9);
   --sh-2:0 2px 8px rgba(0,0,0,.6), 0 20px 48px -20px rgba(0,0,0,1);
   --plot:#1D1D1F;
@@ -41,7 +41,7 @@
   --acc:#4490FE; --acc-ink:#7FB4FF; --acc-wash:rgba(68,144,254,.14);
   --out:#D6760C; --out-ink:#E8A15A;
   --flag:#FF6F61;
-  --wm1:#123166; --wm2:#3E86F5; --wm3:#A9E2FF;
+  --wm1:#081D45; --wm2:#1C4E96; --wm3:#3E76C4;
   --sh:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -16px rgba(0,0,0,.9);
   --sh-2:0 2px 8px rgba(0,0,0,.6), 0 20px 48px -20px rgba(0,0,0,1);
   --plot:#1D1D1F;
@@ -276,7 +276,7 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
 
   <header>
     <h1 class="wm">
-      <svg class="wm-splash" id="wmSvg" viewBox="0 0 640 360" preserveAspectRatio="none" aria-hidden="true">
+      <svg class="wm-splash" id="wmSvg" viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <defs>
           <linearGradient id="wmGrad" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" style="stop-color:var(--wm1)"></stop>
@@ -284,8 +284,8 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
             <stop offset="1" style="stop-color:var(--wm3)"></stop>
           </linearGradient>
         </defs>
-        <path id="wmPath" fill="url(#wmGrad)" d="M260,10 C380,-6 520,14 578,92 C630,164 612,254 538,308 C460,360 340,360 230,338 C120,316 26,256 20,168 C14,86 96,34 178,18 C205,13 232,11 260,10 Z"/>
-        <ellipse id="wmGloss" cx="210" cy="86" rx="140" ry="56" fill="#fff" opacity=".14" transform="rotate(-16 210 86)"/>
+        <path id="wmPath" fill="url(#wmGrad)" d="M246.5,-36.1 Q320.0,-56.9 393.5,-36.1 Q467.0,-15.2 528.6,22.6 Q590.2,60.4 602.1,120.2 Q614.0,180.0 600.8,239.2 Q587.6,298.4 527.3,336.8 Q467.0,375.2 393.5,397.2 Q320.0,419.2 246.5,397.2 Q173.0,375.2 112.7,336.8 Q52.4,298.5 39.2,239.2 Q26.0,180.0 37.9,120.2 Q49.8,60.4 111.4,22.6 Q173.0,-15.2 246.5,-36.1 Z"/>
+        <ellipse id="wmGloss" cx="222.2" cy="104.1" rx="84.6" ry="46.3" fill="#fff" opacity=".16" transform="rotate(-22 222.2 104.1)"/>
       </svg>
       <span class="wm-rental">Rental</span>
       <span class="wm-math">Math</span>
@@ -301,10 +301,13 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
     /* A ring of point-masses, each on a damped spring toward a slowly drifting
        target radius. Two detuned sine terms per point stand in for a forcing
        function, so the ring settles the way a lightly damped membrane does —
-       never still, never chaotic — rather than pulsing in and out as one. */
-    const N = 10, cx = 320, cy = 180, RX = 300, RY = 168;
-    const baseM = [1.05, .92, 1.1, .95, 1.08, .9, 1.06, .94, 1.09, .93];
-    const STIFF = .02, DAMP = .9, AMP = .05;
+       never still, never chaotic — rather than pulsing in and out as one.
+       RX/RY sit close together (a proper round blob, not a stretched oval),
+       and the fit is "slice" rather than a non-uniform stretch, so the shape
+       never gets distorted into something more angular by the container.   */
+    const N = 12, cx = 320, cy = 180, RX = 300, RY = 230;
+    const baseM = [1.03, .98, 1.04, .98, 1.03, .98, 1.04, .98, 1.03, .98, 1.04, .98];
+    const STIFF = .02, DAMP = .9, AMP = .018;
     const pts = baseM.map((m, i) => ({
       angle: -Math.PI / 2 + (i / N) * Math.PI * 2, rest: m, r: m, v: 0,
       w1: .16 * (1 + i * .031), p1: i * 1.7,
@@ -312,6 +315,7 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
     }));
     const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
     const at = p => [cx + RX * p.r * Math.cos(p.angle), cy + RY * p.r * Math.sin(p.angle)];
+    const glossIdx = [9, 10, 11, 0];   // the upper-left arc of the ring
 
     const t0 = performance.now();
     (function frame(now) {
@@ -329,12 +333,22 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
       });
       path.setAttribute("d", d + "Z");
 
-      /* Gloss traces a slow ellipse — simple harmonic motion in two axes,
-         90° out of phase — like a highlight riding a gently rocking surface. */
-      const gx = 205 + Math.sin(t * .11) * 26, gy = 88 + Math.cos(t * .11) * 14;
-      const rot = -16 + Math.sin(t * .09) * 7;
+      /* The gloss is derived from the ring's own points rather than an
+         independent orbit, so it is geometrically pinned inside the blob —
+         it rides at 55% of the way from the centre out to the upper-left
+         arc's midpoint, and resizes with that arc's own current radius,
+         instead of drifting on a path that could ever clear the edge. */
+      const arc = glossIdx.map(i => xy[i]);
+      const arcCx = arc.reduce((s, p) => s + p[0], 0) / arc.length;
+      const arcCy = arc.reduce((s, p) => s + p[1], 0) / arc.length;
+      const gx = cx + (arcCx - cx) * .55, gy = cy + (arcCy - cy) * .55;
+      const localR = glossIdx.reduce((s, i) => s + pts[i].r, 0) / glossIdx.length;
+      const grx = RX * .28 * localR, gry = RY * .2 * localR;
+      const rot = -22 + Math.sin(t * .09) * 5;
       gloss.setAttribute("cx", gx.toFixed(1));
       gloss.setAttribute("cy", gy.toFixed(1));
+      gloss.setAttribute("rx", grx.toFixed(1));
+      gloss.setAttribute("ry", gry.toFixed(1));
       gloss.setAttribute("transform", `rotate(${rot.toFixed(1)} ${gx.toFixed(1)} ${gy.toFixed(1)})`);
 
       requestAnimationFrame(frame);
