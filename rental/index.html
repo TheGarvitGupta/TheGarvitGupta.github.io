@@ -1,747 +1,423 @@
 <title>After-Tax Carrying Cost</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="Work out the real monthly cost of owning a home after the federal and California tax you actually get back, including the section 280A waterfall for renting rooms to housemates.">
-
+<meta name="description" content="What a home really costs each month, after the federal and California tax you actually get back.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&family=Open+Sans:wght@400;600&display=swap">
 
 <style>
-/* ─────────────────────────── tokens ─────────────────────────── */
 :root{
-  --bg:#EEF1F4; --surface:#FFFFFF; --surface-2:#F6F8FA; --surface-3:#E7EDF2;
-  --line:#D5DDE4; --line-strong:#B8C6D1;
-  --ink:#0D1A22; --ink-2:#33454F; --muted:#5A6B77;
-  --accent:#046B96; --accent-ink:#03536F; --accent-wash:#E2EEF5;
-  --amber:#D76F04; --amber-ink:#8A4A05; --amber-wash:#FAECDA;
-  --flag:#B0342B; --flag-wash:#F8E7E4;
-  --good:#1E7A4F;
-  --shadow:0 1px 2px rgba(13,26,34,.05), 0 10px 28px -16px rgba(13,26,34,.28);
-  --chart-surface:#FFFFFF;
-
-  --f-display:"Newsreader", Georgia, "Times New Roman", serif;
-  --f-body:"IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  --f-mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-
-  --r:10px; --r-sm:6px;
+  --bg:#F5F5F7; --card:#FFFFFF; --card-2:#FBFBFD;
+  --ink:#1D1D1F; --ink-2:#424245; --mut:#6E6E73;
+  --line:rgba(0,0,0,.09); --line-2:rgba(0,0,0,.16);
+  --acc:#0071E3; --acc-ink:#0062C4; --acc-wash:rgba(0,113,227,.09);
+  --out:#C2570A; --out-ink:#9E4A00;
+  --flag:#C0342B;
+  --sh:0 1px 2px rgba(0,0,0,.04), 0 8px 28px -14px rgba(0,0,0,.18);
+  --sh-2:0 2px 6px rgba(0,0,0,.06), 0 18px 44px -18px rgba(0,0,0,.24);
+  --plot:#FFFFFF;
+  --f:-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  --fm:"Montserrat", var(--f);
+  --r:18px; --r2:12px; --r3:9px;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#0B1116; --surface:#121A21; --surface-2:#17222A; --surface-3:#1D2A33;
-    --line:#25333D; --line-strong:#3A4E5B;
-    --ink:#E3EAF0; --ink-2:#BCC9D3; --muted:#8FA3B0;
-    --accent:#0497D2; --accent-ink:#7FCBEB; --accent-wash:#0E2A38;
-    --amber:#D16E0D; --amber-ink:#E9A961; --amber-wash:#2B1E0D;
-    --flag:#E9887A; --flag-wash:#2E1714;
-    --good:#5FC08C;
-    --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px -18px rgba(0,0,0,.8);
-    --chart-surface:#121A21;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#0B1116; --surface:#121A21; --surface-2:#17222A; --surface-3:#1D2A33;
-  --line:#25333D; --line-strong:#3A4E5B;
-  --ink:#E3EAF0; --ink-2:#BCC9D3; --muted:#8FA3B0;
-  --accent:#0497D2; --accent-ink:#7FCBEB; --accent-wash:#0E2A38;
-  --amber:#D16E0D; --amber-ink:#E9A961; --amber-wash:#2B1E0D;
-  --flag:#E9887A; --flag-wash:#2E1714;
-  --good:#5FC08C;
-  --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px -18px rgba(0,0,0,.8);
-  --chart-surface:#121A21;
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#141414; --card:#1D1D1F; --card-2:#242426;
+  --ink:#F5F5F7; --ink-2:#D0D0D2; --mut:#9A9AA0;
+  --line:rgba(255,255,255,.11); --line-2:rgba(255,255,255,.2);
+  --acc:#4490FE; --acc-ink:#7FB4FF; --acc-wash:rgba(68,144,254,.14);
+  --out:#D6760C; --out-ink:#E8A15A;
+  --flag:#FF6F61;
+  --sh:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -16px rgba(0,0,0,.9);
+  --sh-2:0 2px 8px rgba(0,0,0,.6), 0 20px 48px -20px rgba(0,0,0,1);
+  --plot:#1D1D1F;
+}}
+:root[data-theme="dark"], html.dark-mode:root{
+  --bg:#141414; --card:#1D1D1F; --card-2:#242426;
+  --ink:#F5F5F7; --ink-2:#D0D0D2; --mut:#9A9AA0;
+  --line:rgba(255,255,255,.11); --line-2:rgba(255,255,255,.2);
+  --acc:#4490FE; --acc-ink:#7FB4FF; --acc-wash:rgba(68,144,254,.14);
+  --out:#D6760C; --out-ink:#E8A15A;
+  --flag:#FF6F61;
+  --sh:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -16px rgba(0,0,0,.9);
+  --sh-2:0 2px 8px rgba(0,0,0,.6), 0 20px 48px -20px rgba(0,0,0,1);
+  --plot:#1D1D1F;
 }
 
-/* ─────────────────────────── base ─────────────────────────── */
 *{box-sizing:border-box}
 body{
   margin:0; background:var(--bg); color:var(--ink);
-  font-family:var(--f-body); font-size:15px; line-height:1.55;
-  -webkit-font-smoothing:antialiased;
+  font-family:var(--f); font-size:16px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; letter-spacing:-.008em;
 }
-h1,h2,h3{font-family:var(--f-display); font-weight:600; text-wrap:balance; margin:0; letter-spacing:-.012em}
+h1,h2,h3{margin:0; font-weight:600; letter-spacing:-.026em; text-wrap:balance; line-height:1.08}
 p{margin:0}
-code{font-family:var(--f-mono)}
-a{color:var(--accent-ink)}
-:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
-.num{font-variant-numeric:tabular-nums}
+.n{font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1}
+:focus-visible{outline:3px solid var(--acc); outline-offset:2px; border-radius:6px}
 
-.shell{max-width:1360px; margin:0 auto; padding:0 24px 96px}
-
-/* ─────────────────────────── masthead ─────────────────────────── */
-.masthead{padding:56px 0 28px; border-bottom:1px solid var(--line)}
-.eyebrow{
-  font-family:var(--f-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
-  color:var(--muted); margin-bottom:18px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;
-}
-.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--line-strong)}
-.masthead h1{font-size:clamp(30px,4.4vw,50px); line-height:1.06; max-width:19ch}
-.masthead h1 em{font-style:italic; color:var(--accent-ink)}
-.masthead .lede{margin-top:16px; max-width:62ch; color:var(--ink-2); font-size:16.5px}
-
-/* ─────────────────────────── layout ─────────────────────────── */
-/* Controls sit beside the headline figures; the long-form derivations below run
-   the full width, so the rail never leaves a dead column under itself. */
-.work{display:grid; grid-template-columns:352px minmax(0,1fr); gap:40px; align-items:start; padding-top:32px}
-@media (max-width:1020px){ .work{grid-template-columns:1fr; gap:28px} }
-#results2{padding-top:0}
-
-/* One page, one scrollbar — the rail flows with the document rather than
-   trapping a second scroll context inside itself. */
-.rail{min-width:0}
-
-/* ─────────────────────────── controls ─────────────────────────── */
-.grp{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px 16px 18px; margin-bottom:14px; box-shadow:var(--shadow)}
-.grp > legend, .grp-title{
-  font-family:var(--f-mono); font-size:10.5px; letter-spacing:.15em; text-transform:uppercase;
-  color:var(--muted); padding:0 0 12px; display:block; width:100%;
-}
-.fields{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-.fields .wide{grid-column:1 / -1}
-.f label{display:block; font-size:11.5px; color:var(--muted); margin-bottom:5px; letter-spacing:.01em}
-.inp{position:relative; display:flex; align-items:center}
-.inp .pre,.inp .suf{position:absolute; font-family:var(--f-mono); font-size:12px; color:var(--muted); pointer-events:none}
-.inp .pre{left:9px} .inp .suf{right:9px}
-input[type=number], select{
-  width:100%; font-family:var(--f-mono); font-size:13.5px; font-variant-numeric:tabular-nums;
-  color:var(--ink); background:var(--surface-2); border:1px solid var(--line);
-  border-radius:var(--r-sm); padding:8px 9px; appearance:none;
-}
-input.pad-l{padding-left:20px} input.pad-r{padding-right:26px} input.pad-r-wide{padding-right:36px}
-select{padding-right:26px; background-image:none}
-input:hover, select:hover{border-color:var(--line-strong)}
-input:focus, select:focus{border-color:var(--accent); background:var(--surface)}
-input[type=range]{width:100%; accent-color:var(--accent); background:transparent; border:0; padding:0; margin:6px 0 0}
-
-.seg{display:flex; gap:0; border:1px solid var(--line); border-radius:var(--r-sm); overflow:hidden; background:var(--surface-2)}
-.seg button{
-  flex:1; font-family:var(--f-body); font-size:12px; padding:7px 6px; border:0; cursor:pointer;
-  background:transparent; color:var(--muted); border-right:1px solid var(--line);
-}
-.seg button:last-child{border-right:0}
-.seg button[aria-pressed="true"]{background:var(--accent-wash); color:var(--accent-ink); font-weight:600}
-.hint{font-size:11.5px; color:var(--muted); margin-top:9px; line-height:1.45}
-.btn{
-  font-family:var(--f-body); font-size:12px; padding:7px 12px; cursor:pointer;
-  background:var(--surface-2); color:var(--ink-2); border:1px solid var(--line);
-  border-radius:var(--r-sm); margin-top:10px;
-}
-.btn:hover{border-color:var(--line-strong); background:var(--surface-3)}
-.grp.saved{padding-bottom:16px}
-
-/* empty state */
-.empty{padding:44px 26px; text-align:center}
-.empty h2{font-size:22px; margin-bottom:10px}
-.empty p{font-size:14px; color:var(--muted); max-width:46ch; margin:0 auto}
-.empty .mark{font-size:30px; margin-bottom:14px; opacity:.55}
-
-/* ─────────────────────────── result cards ─────────────────────────── */
-.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); margin-bottom:22px}
-.card-hd{padding:18px 22px 0}
-.card-hd h2{font-size:21px}
-.card-hd .sub{font-size:13px; color:var(--muted); margin-top:5px; max-width:70ch}
-.card-bd{padding:18px 22px 22px}
+.wrap{max-width:1080px; margin:0 auto; padding:0 22px 120px}
+.eyebrow{font-family:var(--fm); font-size:11px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--mut)}
 
 /* hero */
-.hero{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden; margin-bottom:22px}
-.hero-top{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); gap:0}
-@media (max-width:760px){ .hero-top{grid-template-columns:1fr} }
-.hero-fig{padding:26px 26px 24px; border-right:1px solid var(--line)}
-@media (max-width:760px){ .hero-fig{border-right:0; border-bottom:1px solid var(--line)} }
-.hero-fig .k{font-family:var(--f-mono); font-size:10.5px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted)}
-.hero-fig .v{font-family:var(--f-display); font-weight:600; font-size:clamp(44px,6.6vw,68px); line-height:1; letter-spacing:-.025em; margin-top:12px; font-variant-numeric:tabular-nums}
-.hero-fig .v .cents{font-size:.44em; color:var(--muted); letter-spacing:0}
-.hero-fig .note{font-size:12.5px; color:var(--muted); margin-top:12px; max-width:36ch}
+header{padding:96px 0 56px; text-align:center}
+header h1{font-size:clamp(38px,6.4vw,64px)}
+header .sub{margin:18px auto 0; max-width:34ch; color:var(--mut); font-size:19px; letter-spacing:-.012em}
 
-.chain{padding:22px 26px; display:flex; flex-direction:column; gap:0; justify-content:center}
-.chain-row{display:flex; align-items:baseline; justify-content:space-between; gap:14px; padding:7px 0; border-bottom:1px dashed var(--line)}
-.chain-row:last-child{border-bottom:0}
-.chain-row.total{border-top:1.5px solid var(--ink); margin-top:6px; padding-top:11px; font-weight:600}
-.chain-row .lb{font-size:13px; color:var(--ink-2)}
-.chain-row .lb small{display:block; color:var(--muted); font-size:11px; font-family:var(--f-mono)}
-.chain-row .vl{font-family:var(--f-mono); font-size:14.5px; font-variant-numeric:tabular-nums; white-space:nowrap}
-.out{color:var(--amber-ink)} .in{color:var(--accent-ink)}
+/* card */
+.card{background:var(--card); border-radius:var(--r); box-shadow:var(--sh); margin-bottom:22px; overflow:hidden}
+.card > .hd{padding:26px 30px 0}
+.card > .hd h2{font-size:24px}
+.card > .hd .sub{margin-top:7px; color:var(--mut); font-size:15px; max-width:56ch}
+.card > .bd{padding:22px 30px 28px}
 
-.stats{display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--line)}
-@media (max-width:760px){ .stats{grid-template-columns:repeat(2,1fr)} }
-.stat{padding:15px 20px; border-right:1px solid var(--line)}
-.stat:last-child{border-right:0}
-@media (max-width:760px){ .stat:nth-child(2n){border-right:0} .stat:nth-child(-n+2){border-bottom:1px solid var(--line)} }
-.stat .k{font-family:var(--f-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
-.stat .v{font-family:var(--f-mono); font-size:19px; font-variant-numeric:tabular-nums; margin-top:6px; letter-spacing:-.01em}
-.stat .m{font-size:11.5px; color:var(--muted); margin-top:3px}
+/* ── controls ── */
+.panel{background:var(--card); border-radius:var(--r); box-shadow:var(--sh); padding:8px 30px 26px; margin-bottom:22px}
+.grp{padding-top:22px}
+.grp + .grp{border-top:1px solid var(--line)}
+.grp > .eyebrow{display:block; margin-bottom:16px}
+.fields{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px 18px}
+@media (max-width:820px){ .fields{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:460px){ .fields{grid-template-columns:1fr} }
+.f.w2{grid-column:span 2} @media (max-width:460px){ .f.w2{grid-column:span 1} }
+.f label{display:block; font-size:12.5px; color:var(--mut); margin-bottom:6px; letter-spacing:-.004em}
+.ip{position:relative; display:flex; align-items:center}
+.ip .pre,.ip .suf{position:absolute; font-size:14px; color:var(--mut); pointer-events:none}
+.ip .pre{left:13px} .ip .suf{right:13px}
+input[type=number], select{
+  width:100%; font-family:var(--f); font-size:16px; font-variant-numeric:tabular-nums;
+  color:var(--ink); background:var(--card-2); border:1px solid var(--line);
+  border-radius:var(--r3); padding:11px 13px; appearance:none; transition:border-color .15s, background .15s;
+}
+input.pl{padding-left:26px} input.pr{padding-right:34px} input.pr2{padding-right:46px}
+select{padding-right:34px}
+input:hover, select:hover{border-color:var(--line-2)}
+input:focus, select:focus{border-color:var(--acc); background:var(--card); outline:none; box-shadow:0 0 0 4px var(--acc-wash)}
+input[type=range]{width:100%; accent-color:var(--acc); background:none; border:0; padding:0; margin:10px 0 0}
 
-/* ─────────────────────────── ledger ─────────────────────────── */
-.tbl-wrap{overflow-x:auto}
-table{width:100%; border-collapse:collapse; font-size:13.5px}
+/* iOS segmented control */
+.seg{display:flex; background:var(--card-2); border:1px solid var(--line); border-radius:var(--r3); padding:3px; gap:3px}
+.seg button{
+  flex:1; font-family:var(--f); font-size:13.5px; font-weight:500; padding:8px 6px; border:0;
+  cursor:pointer; background:none; color:var(--mut); border-radius:7px; transition:all .18s; letter-spacing:-.006em;
+}
+.seg button[aria-pressed="true"]{background:var(--card); color:var(--ink); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.hint{font-size:13px; color:var(--mut); margin-top:16px; line-height:1.5; max-width:74ch}
+.hint b{color:var(--ink-2); font-weight:600}
+.btn{
+  font-family:var(--f); font-size:14px; font-weight:500; padding:9px 18px; cursor:pointer;
+  background:var(--card-2); color:var(--acc-ink); border:1px solid var(--line); border-radius:980px; transition:all .15s;
+}
+.btn:hover{border-color:var(--acc); background:var(--acc-wash)}
+
+/* ── hero figure ── */
+.fig{padding:52px 30px 46px; text-align:center}
+.fig .eyebrow{display:block; margin-bottom:16px}
+.fig .v{font-size:clamp(56px,10vw,92px); font-weight:600; letter-spacing:-.045em; line-height:1; font-variant-numeric:tabular-nums}
+.fig .v .c{font-size:.42em; color:var(--mut); letter-spacing:-.02em}
+.fig .note{margin:16px auto 0; max-width:40ch; color:var(--mut); font-size:14.5px}
+
+.chain{padding:10px 30px 6px}
+.row{display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:14px 0; border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .l{font-size:15px; color:var(--ink-2)}
+.row .l s{display:block; color:var(--mut); font-size:12.5px; text-decoration:none; margin-top:2px}
+.row .v{font-size:16px; font-variant-numeric:tabular-nums; white-space:nowrap}
+.row.tot{border-top:1px solid var(--line-2); border-bottom:0; padding-top:16px; margin-top:2px}
+.row.tot .l{font-weight:600; color:var(--ink); font-size:16px}
+.row.tot .v{font-weight:600; font-size:19px}
+.o{color:var(--out-ink)} .i{color:var(--acc-ink)}
+
+.tiles{display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--line)}
+@media (max-width:700px){ .tiles{grid-template-columns:repeat(2,1fr)} }
+.tile{padding:22px 24px; border-right:1px solid var(--line)}
+.tile:last-child{border-right:0}
+@media (max-width:700px){ .tile:nth-child(2n){border-right:0} .tile:nth-child(-n+2){border-bottom:1px solid var(--line)} }
+.tile .k{font-size:12.5px; color:var(--mut)}
+.tile .v{font-size:26px; font-weight:600; letter-spacing:-.03em; margin-top:6px; font-variant-numeric:tabular-nums}
+.tile .m{font-size:12.5px; color:var(--mut); margin-top:3px}
+
+/* ── tables ── */
+.scroll{overflow-x:auto}
+table{width:100%; border-collapse:collapse; font-size:15px}
 th{
-  text-align:left; font-family:var(--f-mono); font-weight:500; font-size:10px; letter-spacing:.13em;
-  text-transform:uppercase; color:var(--muted); padding:0 12px 9px 0; border-bottom:1px solid var(--line); white-space:nowrap;
+  text-align:left; font-family:var(--fm); font-weight:600; font-size:10.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--mut); padding:0 14px 12px 0; border-bottom:1px solid var(--line); white-space:nowrap;
 }
 th.r, td.r{text-align:right}
-td{padding:9px 12px 9px 0; border-bottom:1px solid var(--line); vertical-align:baseline}
-td.r{font-family:var(--f-mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+td{padding:14px 14px 14px 0; border-bottom:1px solid var(--line); vertical-align:baseline}
+td.r{font-variant-numeric:tabular-nums; white-space:nowrap}
 tr:last-child td{border-bottom:0}
-tr.sum td{border-top:1.5px solid var(--ink); border-bottom:0; font-weight:600; padding-top:11px}
-td .why{display:block; font-size:11.5px; color:var(--muted); margin-top:2px; max-width:60ch}
+tr.tot td{border-top:1px solid var(--line-2); border-bottom:0; font-weight:600; padding-top:16px}
+td .w{display:block; font-size:13px; color:var(--mut); margin-top:3px; max-width:58ch}
 
-/* ─────────────────────────── derivations ─────────────────────────── */
-.drv-grid{display:grid; grid-template-columns:1fr 1fr; gap:0}
-@media (max-width:900px){ .drv-grid{grid-template-columns:1fr} }
-.drv-col{padding:20px 22px; border-right:1px solid var(--line)}
-.drv-col:last-child{border-right:0}
-@media (max-width:900px){ .drv-col{border-right:0; border-bottom:1px solid var(--line)} .drv-col:last-child{border-bottom:0} }
-.drv-col > h3{font-size:16px; display:flex; align-items:center; gap:9px; margin-bottom:4px}
+/* ── derivations ── */
+.two{display:grid; grid-template-columns:1fr 1fr}
+@media (max-width:860px){ .two{grid-template-columns:1fr} }
+.col{padding:26px 30px; border-right:1px solid var(--line)}
+.col:last-child{border-right:0}
+@media (max-width:860px){ .col{border-right:0; border-bottom:1px solid var(--line)} .col:last-child{border-bottom:0} }
+.col > h3{font-size:19px; display:flex; align-items:center; gap:10px; margin-bottom:6px}
 .pill{
-  font-family:var(--f-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
-  padding:2.5px 7px; border-radius:99px; background:var(--surface-3); color:var(--muted); font-weight:400;
+  font-family:var(--fm); font-size:9.5px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+  padding:4px 9px; border-radius:980px; background:var(--card-2); color:var(--mut); border:1px solid var(--line);
 }
-.pill.on{background:var(--accent-wash); color:var(--accent-ink)}
-.drv{padding:13px 0; border-bottom:1px dashed var(--line)}
-.drv:last-child{border-bottom:0}
-.drv-hd{display:flex; justify-content:space-between; align-items:baseline; gap:12px}
-.drv-hd .l{font-size:13.5px; font-weight:500}
-.drv-hd .v{font-family:var(--f-mono); font-size:14px; font-variant-numeric:tabular-nums; white-space:nowrap}
-.drv-f{
-  display:block; margin-top:7px; font-size:11.5px; color:var(--ink-2); background:var(--surface-2);
-  border:1px solid var(--line); border-left:2px solid var(--accent); border-radius:0 var(--r-sm) var(--r-sm) 0;
-  padding:6px 9px; overflow-x:auto; white-space:pre; line-height:1.5;
+.pill.on{background:var(--acc-wash); color:var(--acc-ink); border-color:transparent}
+.d{padding:16px 0; border-bottom:1px solid var(--line)}
+.d:last-child{border-bottom:0}
+.d .t{display:flex; justify-content:space-between; align-items:baseline; gap:14px}
+.d .t .l{font-size:15px; font-weight:500}
+.d .t .v{font-size:16px; font-variant-numeric:tabular-nums; white-space:nowrap}
+.d code{
+  display:block; margin-top:9px; font-size:12.5px; line-height:1.5; color:var(--ink-2);
+  font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  background:var(--card-2); border-radius:8px; padding:9px 12px; overflow-x:auto; white-space:pre;
 }
-.drv-why{font-size:12px; color:var(--muted); margin-top:7px; max-width:58ch; line-height:1.5}
-.drv.emph .drv-hd .v{color:var(--accent-ink); font-weight:500}
-.drv.emph .drv-hd .l{font-weight:600}
+.d .w{font-size:13px; color:var(--mut); margin-top:9px; max-width:52ch; line-height:1.5}
+.d.key .t .v{color:var(--acc-ink); font-weight:600}
+.d.key .t .l{font-weight:600}
 
-/* ─────────────────────────── chart ─────────────────────────── */
-.chart-hd{display:flex; justify-content:space-between; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:14px}
-.legend{display:flex; gap:16px; flex-wrap:wrap}
-.legend .it{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--ink-2)}
-.legend .sw{width:14px; height:3px; border-radius:2px}
+/* ── chart ── */
+.legend{display:flex; gap:20px; margin-bottom:16px}
+.legend i{display:flex; align-items:center; gap:8px; font-style:normal; font-size:13.5px; color:var(--ink-2)}
+.legend b{width:16px; height:3px; border-radius:2px}
 figure{margin:0}
-figcaption{font-size:12px; color:var(--muted); margin-top:12px; max-width:72ch}
-.chart-box{position:relative; width:100%}
-svg.chart{display:block; width:100%; height:auto; touch-action:none}
+figcaption{font-size:13px; color:var(--mut); margin-top:14px; max-width:70ch}
+.box{position:relative}
+svg.ch{display:block; width:100%; height:auto; touch-action:none}
 .tip{
-  position:absolute; pointer-events:none; opacity:0; transition:opacity .1s;
-  background:var(--surface); border:1px solid var(--line-strong); border-radius:var(--r-sm);
-  box-shadow:var(--shadow); padding:9px 11px; font-size:12px; min-width:172px; z-index:5;
+  position:absolute; pointer-events:none; opacity:0; transition:opacity .12s; z-index:5;
+  background:var(--card); border:1px solid var(--line); border-radius:var(--r2);
+  box-shadow:var(--sh-2); padding:12px 14px; font-size:13px; min-width:180px;
 }
-.tip .ty{font-family:var(--f-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:6px}
-.tip .tr{display:flex; justify-content:space-between; gap:14px; padding:2px 0}
-.tip .tr .n{font-family:var(--f-mono); font-variant-numeric:tabular-nums}
-.tip .tsw{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:6px; vertical-align:baseline}
+.tip .y{font-family:var(--fm); font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--mut); margin-bottom:8px}
+.tip .r{display:flex; justify-content:space-between; gap:16px; padding:3px 0}
+.tip .r span:last-child{font-variant-numeric:tabular-nums}
+.tip em{display:inline-block; width:9px; height:9px; border-radius:3px; margin-right:7px}
 
-/* ─────────────────────────── corrections ─────────────────────────── */
-.fixes{display:flex; flex-direction:column; gap:0}
-.fix{display:grid; grid-template-columns:96px minmax(0,1fr); gap:16px; padding:15px 0; border-bottom:1px solid var(--line)}
-.fix:last-child{border-bottom:0}
-@media (max-width:640px){ .fix{grid-template-columns:1fr; gap:8px} }
-.tag{
-  font-family:var(--f-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase;
-  padding:3px 7px; border-radius:var(--r-sm); align-self:start; text-align:center; white-space:nowrap;
-}
-.tag.material{background:var(--flag-wash); color:var(--flag)}
-.tag.minor{background:var(--surface-3); color:var(--muted)}
-.fix h4{margin:0 0 5px; font-family:var(--f-body); font-size:13.5px; font-weight:600}
-.fix p{font-size:12.5px; color:var(--muted); max-width:78ch}
-.fix .was{
-  font-family:var(--f-mono); font-size:11.5px; color:var(--ink-2); margin-top:7px;
-  display:flex; gap:8px; flex-wrap:wrap; align-items:center;
-}
-.fix .was b{font-weight:500; color:var(--flag); text-decoration:line-through; text-decoration-thickness:1px}
-.fix .was i{font-style:normal; color:var(--accent-ink); font-weight:500}
+/* ── notes ── */
+.notes{display:grid; grid-template-columns:1fr 1fr}
+@media (max-width:760px){ .notes{grid-template-columns:1fr} }
+.notes .c{padding:24px 30px; border-right:1px solid var(--line)}
+.notes .c:last-child{border-right:0}
+@media (max-width:760px){ .notes .c{border-right:0; border-bottom:1px solid var(--line)} .notes .c:last-child{border-bottom:0} }
+.notes h3{font-size:16px; margin-bottom:12px}
+.notes ul{margin:0; padding-left:18px; font-size:13.5px; color:var(--mut); line-height:1.6}
+.notes li{margin-bottom:7px}
+.notes b{color:var(--ink-2); font-weight:600}
 
-/* ─────────────────────────── footer ─────────────────────────── */
-.notes{display:grid; grid-template-columns:1fr 1fr; gap:0}
-@media (max-width:820px){ .notes{grid-template-columns:1fr} }
-.notes .n{padding:20px 22px; border-right:1px solid var(--line)}
-.notes .n:last-child{border-right:0}
-@media (max-width:820px){ .notes .n{border-right:0; border-bottom:1px solid var(--line)} .notes .n:last-child{border-bottom:0} }
-.notes h3{font-size:14px; margin-bottom:10px}
-.notes ul{margin:0; padding-left:17px; font-size:12.5px; color:var(--muted); line-height:1.6}
-.notes li{margin-bottom:6px}
-.notes li b{color:var(--ink-2); font-weight:500}
-.colophon{margin-top:34px; padding-top:20px; border-top:1px solid var(--line); font-size:11.5px; color:var(--muted); font-family:var(--f-mono); line-height:1.7}
+.empty{padding:76px 30px; text-align:center}
+.empty h2{font-size:22px} .empty p{margin:10px auto 0; max-width:38ch; color:var(--mut); font-size:15px}
 
-@media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important} }
+footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); line-height:1.8}
+@media (prefers-reduced-motion:reduce){ *{transition:none!important; animation:none!important} }
 </style>
 
-<div class="shell">
+<div class="wrap">
 
-  <header class="masthead">
-    <div class="eyebrow">
-      <span>Owner-occupied</span><span class="dot"></span><span>California</span>
-      <span class="dot"></span><span>2026 federal &middot; 2025 state</span>
-    </div>
-    <h1>What the house <em>actually</em> costs each month</h1>
-    <p class="lede">
-      Most spreadsheets multiply deductions by a blended marginal rate. This one computes your federal and
-      California tax twice &mdash; once owning, once not &mdash; and reports the difference. That difference is the
-      refund. It also runs the §280A waterfall if you rent rooms to housemates. Every figure shows the formula
-      behind it and why it is written that way.
-    </p>
+  <header>
+    <p class="eyebrow">2026 Federal &middot; 2025 California</p>
+    <h1>What the house<br>actually costs</h1>
+    <p class="sub">Your tax computed twice — owning and not. The difference is the refund.</p>
   </header>
 
-  <div class="work">
+  <section class="card empty" id="empty" hidden>
+    <h2>Add a purchase price</h2>
+    <p>Nothing is filled in but the usual loan terms.</p>
+  </section>
 
-    <!-- ══════════════ CONTROLS ══════════════ -->
-    <form class="rail" id="rail" autocomplete="off">
+  <section class="card" id="figCard" hidden>
+    <div class="fig">
+      <span class="eyebrow">Net cost per month · Year <span id="heroYear" class="n">1</span></span>
+      <div class="v n" id="netMo">$0</div>
+      <p class="note" id="netNote"></p>
+    </div>
+  </section>
 
-      <fieldset class="grp">
-        <legend>The property</legend>
-        <div class="fields">
-          <div class="f wide"><label for="price">Purchase price</label>
-            <div class="inp"><span class="pre">$</span><input class="pad-l" type="number" id="price" value="" placeholder="0" step="10000" min="0"></div></div>
-          <div class="f"><label for="down">Down payment</label>
-            <div class="inp"><input class="pad-r" type="number" id="down" value="20" step="1" min="0" max="100"><span class="suf">%</span></div></div>
-          <div class="f"><label for="rate">Note rate</label>
-            <div class="inp"><input class="pad-r" type="number" id="rate" value="5.25" step="0.125" min="0"><span class="suf">%</span></div></div>
-          <div class="f"><label for="term">Term</label>
-            <div class="inp"><input class="pad-r-wide" type="number" id="term" value="30" step="5" min="1" max="40"><span class="suf">yrs</span></div></div>
-          <div class="f"><label for="ptax">Property tax rate</label>
-            <div class="inp"><input class="pad-r" type="number" id="ptax" value="1.18" step="0.01" min="0"><span class="suf">%</span></div></div>
-          <div class="f"><label for="hoa">HOA / month</label>
-            <div class="inp"><span class="pre">$</span><input class="pad-l" type="number" id="hoa" value="" placeholder="0" step="25" min="0"></div></div>
-          <div class="f"><label for="ins">Insurance / year</label>
-            <div class="inp"><span class="pre">$</span><input class="pad-l" type="number" id="ins" value="" placeholder="0" step="100" min="0"></div></div>
-          <div class="f"><label for="parcel">Parcel taxes / year</label>
-            <div class="inp"><span class="pre">$</span><input class="pad-l" type="number" id="parcel" value="" placeholder="0" step="50" min="0"></div></div>
-          <div class="f wide"><label for="maint">Maintenance &amp; repairs / month</label>
-            <div class="inp"><span class="pre">$</span><input class="pad-l" type="number" id="maint" value="" placeholder="0" step="50" min="0"></div></div>
-        </div>
-        <p class="hint" id="insHint"></p>
-      </fieldset>
-
-      <fieldset class="grp">
-        <legend>Your tax picture</legend>
-        <div class="fields">
-          <div class="f wide"><label for="filing">Filing status</label>
-            <select id="filing">
-              <option value="single" selected>Single</option>
-              <option value="mfj">Married filing jointly</option>
-              <option value="hoh">Head of household</option>
-            </select></div>
-          <div class="f wide"><label for="w2">Annual W-2 income</label>
-            <div class="inp"><span class="pre">$</span><input class="pad-l" type="number" id="w2" value="" placeholder="0" step="10000" min="0"></div></div>
-          <div class="f wide"><label for="other_inc">Other income &mdash; bonus, RSUs, interest</label>
-            <div class="inp"><span class="pre">$</span><input class="pad-l" type="number" id="other_inc" value="" placeholder="0" step="10000" min="0"></div></div>
-          <div class="f"><label for="charity">Charitable giving / yr</label>
-            <div class="inp"><span class="pre">$</span><input class="pad-l" type="number" id="charity" value="" placeholder="0" step="1000" min="0"></div></div>
-          <div class="f"><label for="other">Other itemized / yr</label>
-            <div class="inp"><span class="pre">$</span><input class="pad-l" type="number" id="other" value="" placeholder="0" step="1000" min="0"></div></div>
-        </div>
-        <p class="hint" id="rateHint"></p>
-      </fieldset>
-
-      <fieldset class="grp">
-        <legend>Housemates</legend>
-        <div class="fields">
-          <div class="f"><label for="rent1">Room 1 / month</label>
-            <div class="inp"><span class="pre">$</span><input class="pad-l" type="number" id="rent1" value="" placeholder="0" step="100" min="0"></div></div>
-          <div class="f"><label for="rent2">Room 2 / month</label>
-            <div class="inp"><span class="pre">$</span><input class="pad-l" type="number" id="rent2" value="" placeholder="0" step="100" min="0"></div></div>
-          <div class="f wide"><label>Tax treatment</label>
-            <div class="seg" role="group" aria-label="Housemate income tax treatment" id="rtSeg">
-              <button type="button" data-mode="schedE" aria-pressed="true">Schedule E</button>
-              <button type="button" data-mode="costshare" aria-pressed="false">Cost sharing</button>
-              <button type="button" data-mode="full" aria-pressed="false">Taxed in full</button>
-            </div></div>
-          <div class="f"><label for="share">Their share of the home</label>
-            <div class="inp"><input class="pad-r" type="number" id="share" value="" placeholder="0" step="0.1" min="0" max="100"><span class="suf">%</span></div></div>
-          <div class="f"><label for="land">Land share of price</label>
-            <div class="inp"><input class="pad-r" type="number" id="land" value="" placeholder="0" step="5" min="0" max="95"><span class="suf">%</span></div></div>
-        </div>
-        <p class="hint" id="rentHint"></p>
-      </fieldset>
-
-      <fieldset class="grp">
-        <legend>Timeline</legend>
-        <div class="fields">
-          <div class="f wide">
-            <label for="year">Year of ownership &mdash; <b id="yearLbl" class="num">1</b></label>
-            <input type="range" id="year" min="1" max="30" step="1" value="1">
-          </div>
-          <div class="f"><label for="apprec">Appreciation / yr</label>
-            <div class="inp"><input class="pad-r" type="number" id="apprec" value="4" step="0.5"><span class="suf">%</span></div></div>
-          <div class="f"><label for="comprent">Comparable rent / mo</label>
-            <div class="inp"><span class="pre">$</span><input class="pad-l" type="number" id="comprent" value="" placeholder="0" step="100" min="0"></div></div>
-        </div>
-      </fieldset>
-
-      <div class="grp saved">
-        <span class="grp-title" style="padding-bottom:8px">Saved on this device</span>
-        <p class="hint" id="saveHint" style="margin-top:0">Entries are kept in this browser only. Nothing is uploaded.</p>
-        <button type="button" id="resetBtn" class="btn">Clear saved entries</button>
+  <form class="panel" id="rail" autocomplete="off">
+    <div class="grp">
+      <span class="eyebrow">Property</span>
+      <div class="fields">
+        <div class="f w2"><label for="price">Purchase price</label>
+          <div class="ip"><span class="pre">$</span><input class="pl" type="number" id="price" value="" placeholder="0" step="10000" min="0"></div></div>
+        <div class="f"><label for="down">Down payment</label>
+          <div class="ip"><input class="pr" type="number" id="down" value="20" step="1" min="0" max="100"><span class="suf">%</span></div></div>
+        <div class="f"><label for="rate">Rate</label>
+          <div class="ip"><input class="pr" type="number" id="rate" value="5.25" step="0.125" min="0"><span class="suf">%</span></div></div>
+        <div class="f"><label for="term">Term</label>
+          <div class="ip"><input class="pr2" type="number" id="term" value="30" step="5" min="1" max="40"><span class="suf">yrs</span></div></div>
+        <div class="f"><label for="ptax">Property tax</label>
+          <div class="ip"><input class="pr" type="number" id="ptax" value="1.18" step="0.01" min="0"><span class="suf">%</span></div></div>
+        <div class="f"><label for="hoa">HOA / mo</label>
+          <div class="ip"><span class="pre">$</span><input class="pl" type="number" id="hoa" value="" placeholder="0" step="25" min="0"></div></div>
+        <div class="f"><label for="ins">Insurance / yr</label>
+          <div class="ip"><span class="pre">$</span><input class="pl" type="number" id="ins" value="" placeholder="0" step="100" min="0"></div></div>
+        <div class="f"><label for="parcel">Parcel taxes / yr</label>
+          <div class="ip"><span class="pre">$</span><input class="pl" type="number" id="parcel" value="" placeholder="0" step="50" min="0"></div></div>
+        <div class="f"><label for="maint">Upkeep / mo</label>
+          <div class="ip"><span class="pre">$</span><input class="pl" type="number" id="maint" value="" placeholder="0" step="50" min="0"></div></div>
       </div>
-    </form>
+      <p class="hint" id="hintProp"></p>
+    </div>
 
-    <!-- ══════════════ RESULTS ══════════════ -->
-    <main>
+    <div class="grp">
+      <span class="eyebrow">Income</span>
+      <div class="fields">
+        <div class="f w2"><label for="filing">Filing status</label>
+          <select id="filing">
+            <option value="single" selected>Single</option>
+            <option value="mfj">Married filing jointly</option>
+            <option value="hoh">Head of household</option>
+          </select></div>
+        <div class="f"><label for="w2">W-2 income</label>
+          <div class="ip"><span class="pre">$</span><input class="pl" type="number" id="w2" value="" placeholder="0" step="10000" min="0"></div></div>
+        <div class="f"><label for="other_inc">Other income</label>
+          <div class="ip"><span class="pre">$</span><input class="pl" type="number" id="other_inc" value="" placeholder="0" step="10000" min="0"></div></div>
+        <div class="f"><label for="charity">Charity / yr</label>
+          <div class="ip"><span class="pre">$</span><input class="pl" type="number" id="charity" value="" placeholder="0" step="1000" min="0"></div></div>
+        <div class="f"><label for="other">Other itemized / yr</label>
+          <div class="ip"><span class="pre">$</span><input class="pl" type="number" id="other" value="" placeholder="0" step="1000" min="0"></div></div>
+      </div>
+      <p class="hint" id="hintTax"></p>
+    </div>
 
-      <section class="card empty" id="empty" hidden>
-        <div class="mark">&#9634;</div>
-        <h2>Enter a purchase price to begin</h2>
-        <p>Nothing is filled in for you beyond the conventional loan terms. Your entries stay in this
-          browser &mdash; they are never sent anywhere.</p>
-      </section>
+    <div class="grp">
+      <span class="eyebrow">Housemates</span>
+      <div class="fields">
+        <div class="f"><label for="rent1">Room 1 / mo</label>
+          <div class="ip"><span class="pre">$</span><input class="pl" type="number" id="rent1" value="" placeholder="0" step="100" min="0"></div></div>
+        <div class="f"><label for="rent2">Room 2 / mo</label>
+          <div class="ip"><span class="pre">$</span><input class="pl" type="number" id="rent2" value="" placeholder="0" step="100" min="0"></div></div>
+        <div class="f"><label for="share">Their share</label>
+          <div class="ip"><input class="pr" type="number" id="share" value="" placeholder="0" step="0.1" min="0" max="100"><span class="suf">%</span></div></div>
+        <div class="f"><label for="land">Land share of price</label>
+          <div class="ip"><input class="pr" type="number" id="land" value="" placeholder="0" step="5" min="0" max="95"><span class="suf">%</span></div></div>
+        <div class="f w2"><label>Treatment</label>
+          <div class="seg" role="group" aria-label="Rent tax treatment" id="rtSeg">
+            <button type="button" data-mode="schedE" aria-pressed="true">Schedule E</button>
+            <button type="button" data-mode="costshare" aria-pressed="false">Cost sharing</button>
+            <button type="button" data-mode="full" aria-pressed="false">Taxed in full</button>
+          </div></div>
+      </div>
+      <p class="hint" id="hintRent"></p>
+    </div>
 
-      <div id="results">
+    <div class="grp">
+      <span class="eyebrow">Timeline</span>
+      <div class="fields">
+        <div class="f w2"><label for="year">Year of ownership — <b id="yearLbl" class="n">1</b></label>
+          <input type="range" id="year" min="1" max="30" step="1" value="1"></div>
+        <div class="f"><label for="apprec">Appreciation / yr</label>
+          <div class="ip"><input class="pr" type="number" id="apprec" value="4" step="0.5"><span class="suf">%</span></div></div>
+        <div class="f"><label for="comprent">Rent instead / mo</label>
+          <div class="ip"><span class="pre">$</span><input class="pl" type="number" id="comprent" value="" placeholder="0" step="100" min="0"></div></div>
+      </div>
+      <p class="hint">Saved in this browser only. <button type="button" id="resetBtn" class="btn" style="margin-left:8px">Clear</button></p>
+    </div>
+  </form>
 
-      <!-- HERO -->
-      <section class="hero">
-        <div class="hero-top">
-          <div class="hero-fig">
-            <div class="k">Net cost per month &middot; year <span id="heroYear" class="num">1</span></div>
-            <div class="v num" id="netMo">$0</div>
-            <p class="note" id="netNote"></p>
+  <div id="results">
+
+    <section class="card">
+      <div class="chain">
+        <div class="row"><span class="l">Cash out<s>P&amp;I, tax, insurance, HOA, upkeep</s></span><span class="v o n" id="cOut">$0</span></div>
+        <div class="row"><span class="l">Rent collected</span><span class="v i n" id="cRent">$0</span></div>
+        <div class="row"><span class="l">Tax on that rent</span><span class="v o n" id="cRentTax">$0</span></div>
+        <div class="row"><span class="l">Tax back<s>refund, not the write-off</s></span><span class="v i n" id="cBen">$0</span></div>
+        <div class="row tot"><span class="l">Net</span><span class="v n" id="cNet">$0</span></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="k">Gross outlay</div><div class="v n" id="tOut">$0</div><div class="m">per month</div></div>
+        <div class="tile"><div class="k">Refund</div><div class="v n" id="tBen">$0</div><div class="m" id="tBenM">—</div></div>
+        <div class="tile"><div class="k">Principal</div><div class="v n" id="tPrin">$0</div><div class="m">into equity</div></div>
+        <div class="tile"><div class="k">Money gone</div><div class="v n" id="tBurn">$0</div><div class="m">net less principal</div></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="hd"><h2>The refund fades</h2>
+        <p class="sub">Interest gives way to principal, so the deduction shrinks as the assessment climbs.</p></div>
+      <div class="bd">
+        <div class="legend">
+          <i><b style="background:var(--out)"></b> Gross outlay</i>
+          <i><b style="background:var(--acc)"></b> Net after tax</i>
+        </div>
+        <figure>
+          <div class="box" id="chartBox">
+            <svg class="ch" id="chart" viewBox="0 0 780 300" role="img" aria-labelledby="ct"><title id="ct">Monthly gross outlay and net cost by year</title></svg>
+            <div class="tip" id="tip"></div>
           </div>
-          <div class="chain">
-            <div class="chain-row">
-              <span class="lb">Cash out the door<small id="chainOutF"></small></span>
-              <span class="vl out num" id="chainOut">$0</span>
-            </div>
-            <div class="chain-row">
-              <span class="lb">Housemate rent<small>collected, before tax</small></span>
-              <span class="vl in num" id="chainRent">$0</span>
-            </div>
-            <div class="chain-row">
-              <span class="lb">Tax on that rent<small>federal + California</small></span>
-              <span class="vl out num" id="chainRentTax">$0</span>
-            </div>
-            <div class="chain-row">
-              <span class="lb">Tax you get back<small>refund from owning, not the write-off</small></span>
-              <span class="vl in num" id="chainBen">$0</span>
-            </div>
-            <div class="chain-row total">
-              <span class="lb">Net cost per month</span>
-              <span class="vl num" id="chainNet">$0</span>
-            </div>
-          </div>
-        </div>
-        <div class="stats">
-          <div class="stat"><div class="k">Gross outlay</div><div class="v num" id="sOutlay">$0</div><div class="m">per month, all in</div></div>
-          <div class="stat"><div class="k">Refund per month</div><div class="v num" id="sBen">$0</div><div class="m" id="sBenM">&mdash;</div></div>
-          <div class="stat"><div class="k">Principal built</div><div class="v num" id="sPrin">$0</div><div class="m">per month, into equity</div></div>
-          <div class="stat"><div class="k">Money that leaves</div><div class="v num" id="sBurn">$0</div><div class="m">net cost less principal</div></div>
-        </div>
-      </section>
+          <figcaption id="chartCap"></figcaption>
+        </figure>
+      </div>
+    </section>
 
-      <!-- CHART -->
-      <section class="card">
-        <div class="card-hd">
-          <h2>The benefit shrinks as the loan amortizes</h2>
-          <p class="sub">Gross outlay drifts up with the property tax assessment; the refund falls as interest gives
-            way to principal. Hover for any year. The marker shows the year selected on the left.</p>
-        </div>
-        <div class="card-bd">
-          <div class="chart-hd">
-            <div class="legend">
-              <span class="it"><span class="sw" style="background:var(--amber)"></span> Gross outlay</span>
-              <span class="it"><span class="sw" style="background:var(--accent)"></span> Net cost after tax</span>
-            </div>
-          </div>
-          <figure>
-            <div class="chart-box" id="chartBox">
-              <svg class="chart" id="chart" viewBox="0 0 780 300" role="img" aria-labelledby="chartTitle">
-                <title id="chartTitle">Monthly gross outlay and net cost after tax, by year of ownership</title>
-              </svg>
-              <div class="tip" id="tip"></div>
-            </div>
-            <figcaption id="chartCap"></figcaption>
-          </figure>
-        </div>
-      </section>
+    <section class="card">
+      <div class="hd"><h2>Where it goes</h2>
+        <p class="sub">Monthly, averaged across year <span id="ledgYear" class="n">1</span>.</p></div>
+      <div class="bd scroll">
+        <table><thead><tr><th style="width:54%">Line</th><th class="r">Month</th><th class="r">Year</th></tr></thead>
+        <tbody id="ledger"></tbody></table>
+      </div>
+    </section>
 
-      <!-- MONTHLY LEDGER -->
-      <section class="card">
-        <div class="card-hd">
-          <h2>Where the money goes</h2>
-          <p class="sub">Monthly, averaged across year <span id="ledgYear" class="num">1</span>. Principal and interest
-            split changes every month, so this is the twelve-month average rather than a single month's snapshot.</p>
-        </div>
-        <div class="card-bd tbl-wrap">
-          <table>
-            <thead><tr><th style="width:52%">Line</th><th class="r">Per month</th><th class="r">Per year</th></tr></thead>
-            <tbody id="ledger"></tbody>
-          </table>
-        </div>
-      </section>
+    <section class="card">
+      <div class="hd"><h2>What comes back</h2>
+        <p class="sub">The two disagree on every cap, so they are computed apart.</p></div>
+      <div class="two">
+        <div class="col"><h3>Federal <span class="pill" id="fedPill">2026</span></h3><div id="fedDrv"></div></div>
+        <div class="col"><h3>California <span class="pill" id="caPill">2025</span></h3><div id="caDrv"></div></div>
+      </div>
+    </section>
 
-      </div><!-- /#results -->
-      </main>
-    </div><!-- /.work -->
+    <section class="card" id="rentCard" hidden>
+      <div class="hd"><h2>Renting rooms</h2><p class="sub" id="rentSub"></p></div>
+      <div class="bd scroll">
+        <table><thead><tr><th style="width:54%">§280A(c)(5) — order fixed by statute</th><th class="r">Year</th><th class="r">Carried fwd</th></tr></thead>
+        <tbody id="waterfall"></tbody></table>
+      </div>
+      <div class="two">
+        <div class="col"><h3>Depreciation <span class="pill" id="depPill">—</span></h3><div id="depDrv"></div></div>
+        <div class="col"><h3>Off Schedule A</h3><div id="allocDrv"></div></div>
+      </div>
+    </section>
 
-    <div id="results2">
+    <section class="card">
+      <div class="hd"><h2>After <span id="posYear" class="n">1</span> <span id="posWord">year</span></h2>
+        <p class="sub">Summed month by month across the real schedule.</p></div>
+      <div class="bd scroll">
+        <table><thead><tr><th style="width:54%">Line</th><th class="r">Total</th><th class="r">Per month</th></tr></thead>
+        <tbody id="position"></tbody></table>
+      </div>
+    </section>
 
-      <!-- TAX DERIVATION -->
-      <section class="card">
-        <div class="card-hd">
-          <h2>How much actually comes back</h2>
-          <p class="sub">Federal and California are computed separately, because they do not agree on the mortgage cap,
-            they do not agree on the property tax cap, and California does not let you deduct California income tax.
-            Both columns are the same question: your tax bill without the house, minus your tax bill with it.</p>
-        </div>
-        <div class="drv-grid">
-          <div class="drv-col">
-            <h3>Federal <span class="pill" id="fedPill">2026</span></h3>
-            <div id="fedDrv"></div>
-          </div>
-          <div class="drv-col">
-            <h3>California <span class="pill" id="caPill">2025</span></h3>
-            <div id="caDrv"></div>
-          </div>
-        </div>
-      </section>
+    <section class="card">
+      <div class="hd"><h2>Fine print</h2></div>
+      <div class="notes">
+        <div class="c"><h3>Assumed</h3><ul>
+          <li><b>2026 federal</b>, 2025 California — the latest FTB has published.</li>
+          <li><b>State income tax</b> estimated from your AGI, not your actual withholding.</li>
+          <li><b>Income flat</b> in nominal terms; the assessment grows 2% a year.</li>
+          <li><b>Average balance</b> is the year's open and close, per Pub. 936.</li>
+        </ul></div>
+        <div class="c"><h3>Not modelled</h3><ul>
+          <li><b>AMT</b>, the 3.8% NIIT on rent, capital gains stacking.</li>
+          <li><b>Closing costs</b>, points, transfer tax, and selling.</li>
+          <li><b>Opportunity cost</b> of the down payment.</li>
+          <li><b>Suspended losses</b> across years — the §469 allowance phases out well below these incomes anyway.</li>
+        </ul></div>
+      </div>
+    </section>
 
-      <!-- ROOMMATES / §280A -->
-      <section class="card" id="rentCard" hidden>
-        <div class="card-hd">
-          <h2>Renting rooms in a house you live in</h2>
-          <p class="sub" id="rentSub"></p>
-        </div>
-        <div class="card-bd tbl-wrap">
-          <table>
-            <thead><tr><th style="width:56%">§280A(c)(5) waterfall &mdash; order is fixed by statute</th><th class="r">Per year</th><th class="r">Carried forward</th></tr></thead>
-            <tbody id="waterfall"></tbody>
-          </table>
-        </div>
-        <div class="drv-grid">
-          <div class="drv-col">
-            <h3>Depreciation <span class="pill" id="depPill">&mdash;</span></h3>
-            <div id="depDrv"></div>
-          </div>
-          <div class="drv-col">
-            <h3>What moves off Schedule A</h3>
-            <div id="allocDrv"></div>
-          </div>
-        </div>
-      </section>
+  </div>
 
-      <!-- POSITION -->
-      <section class="card">
-        <div class="card-hd">
-          <h2>Position after <span id="posYear" class="num">1</span> <span id="posYearWord">year</span></h2>
-          <p class="sub">Cumulative through the end of the selected year, summed month by month across the real
-            amortization schedule rather than by multiplying one month's figure.</p>
-        </div>
-        <div class="card-bd tbl-wrap">
-          <table>
-            <thead><tr><th style="width:52%">Line</th><th class="r">Cumulative</th><th class="r">Per month</th></tr></thead>
-            <tbody id="position"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- CORRECTIONS -->
-      <section class="card">
-        <div class="card-hd">
-          <h2>What was wrong in the old sheet</h2>
-          <p class="sub">Two of these pulled hard in opposite directions and nearly cancelled at the original inputs,
-            which is why the old number looked plausible. Change any input and they stop cancelling.</p>
-        </div>
-        <div class="card-bd">
-          <div class="fixes">
-
-            <div class="fix">
-              <span class="tag material">Material</span>
-              <div>
-                <h4>The standard deduction was counted twice</h4>
-                <p>The net-payment line subtracted the gross benefits, not the delta the sheet itself computed one
-                  row above. Deducting
-                  mortgage interest only helps to the extent it beats the deduction you would get for free.</p>
-                <div class="was"><b>outlay − rent − gross benefits</b> <span>→</span>
-                  <i>tax without the house − tax with it</i></div>
-              </div>
-            </div>
-
-            <div class="fix">
-              <span class="tag material">Material</span>
-              <div>
-                <h4>The SALT cap is $40,400, not $10,000 &mdash; and it is shared</h4>
-                <p>The One Big Beautiful Bill Act raised the cap for 2025–2029. But the cap covers property tax
-                  <em>and</em> state income tax together, and California income tax fills most of it before property
-                  tax gets a turn. The old sheet gave property tax a clean $10,000 of headroom it never had.</p>
-                <div class="was"><b>rate × MIN(house tax, 10000)</b> <span>→</span>
-                  <i>MIN(property tax + CA income tax, cap)</i></div>
-              </div>
-            </div>
-
-            <div class="fix">
-              <span class="tag material">Material</span>
-              <div>
-                <h4>California was never modelled</h4>
-                <p>A single blended rate applied to federally-capped numbers. California allows mortgage
-                  interest on $1,000,000 of debt, not $750,000; allows property tax with no cap at all; disallows
-                  California income tax entirely; and trims itemized deductions by 6% of AGI over the threshold. None
-                  of that survives a blended rate.</p>
-                <div class="was"><b>one rate, one calculation</b> <span>→</span>
-                  <i>two returns, two sets of rules</i></div>
-              </div>
-            </div>
-
-            <div class="fix">
-              <span class="tag material">Material</span>
-              <div>
-                <h4>A flat marginal rate over-credits large deductions</h4>
-                <p>Multiplying by a blended rate assumes every deducted dollar falls in the top bracket. A large deduction
-                  walks down through brackets as it goes. This model runs the bracket table twice and takes the
-                  difference, which is what the refund actually is.</p>
-                <div class="was"><b>deduction × blended rate</b> <span>→</span>
-                  <i>tax(income − ded<sub>A</sub>) − tax(income − ded<sub>B</sub>)</i></div>
-              </div>
-            </div>
-
-            <div class="fix">
-              <span class="tag material">Material</span>
-              <div>
-                <h4>Roommate rent was subtracted before tax</h4>
-                <p>The net-payment line subtracted the full rent. The sheet had a post-tax row that
-                  applied <code>(1 − rate)</code> &mdash; it just was not wired into anything. And even wired up it
-                  would have been wrong, because it taxed the rent without deducting the roommates' share of the
-                  costs. The §280A waterfall above does both halves.</p>
-                <div class="was"><b>an unreferenced post-tax row</b> <span>→</span> <i>Schedule E, tiered, capped at rent</i></div>
-              </div>
-            </div>
-
-            <div class="fix">
-              <span class="tag minor">Stale</span>
-              <div>
-                <h4>Standard deduction still read $13,850</h4>
-                <p>That is the 2023 single figure. For 2026 it is $16,100 single, $32,200 joint, $24,150 head of
-                  household.</p>
-                <div class="was"><b>F12 = 13,850</b> <span>→</span> <i>16,100 / 32,200 / 24,150</i></div>
-              </div>
-            </div>
-
-            <div class="fix">
-              <span class="tag minor">Method</span>
-              <div>
-                <h4>One month of interest, multiplied by twelve</h4>
-                <p>Multiplying month 12's interest by twelve takes it as typical of the whole year. Interest falls
-                  every month, so month 12 is below the year's average &mdash; and the gap widens the further out you
-                  look. This model sums the twelve actual months.</p>
-                <div class="was"><b>IPMT(month 12) × 12</b> <span>→</span> <i>Σ interest, months 1–12 of the year</i></div>
-              </div>
-            </div>
-
-            <div class="fix">
-              <span class="tag minor">Method</span>
-              <div>
-                <h4>The $750k cap was modelled as a second loan</h4>
-                <p><code>IPMT(…, −MIN(loan, 750000))</code> amortizes an imaginary $750,000 loan. Publication 936 asks
-                  for the ratio of $750,000 to the average balance of the real loan, applied to the real interest.
-                  The two are close in year one and drift apart later.</p>
-                <div class="was"><b>IPMT on a 750k loan</b> <span>→</span>
-                  <i>interest × 750,000 ÷ average balance</i></div>
-              </div>
-            </div>
-
-            <div class="fix">
-              <span class="tag minor">Bug</span>
-              <div>
-                <h4><code>IPMT(…, TRUE)</code> put TRUE in the wrong slot</h4>
-                <p>The fifth argument of <code>IPMT</code> is future value, not the when-due flag. <code>TRUE</code>
-                  coerced to a $1 balloon. Harmless at this scale, but it was not doing what it looked like it was
-                  doing &mdash; and the cell right beside it omitted the argument entirely, so the two interest
-                  figures were not computed the same way.</p>
-              </div>
-            </div>
-
-            <div class="fix">
-              <span class="tag minor">Method</span>
-              <div>
-                <h4>Property tax was frozen at the purchase price forever</h4>
-                <p>Proposition 13 lets the assessed value rise up to 2% a year. Over thirty years that is a 45%
-                  increase in the tax bill, and the old sheet showed year 1 for all thirty.</p>
-                <div class="was"><b>rate × price</b> <span>→</span> <i>rate × price × 1.02<sup>year − 1</sup></i></div>
-              </div>
-            </div>
-
-            <div class="fix">
-              <span class="tag minor">Method</span>
-              <div>
-                <h4>Cumulative totals multiplied a snapshot by the month count</h4>
-                <p>Multiplying a single month's figure by the month count assumes month 12 repeats. Every cumulative
-                  figure here is summed across the schedule instead.</p>
-              </div>
-            </div>
-
-            <div class="fix">
-              <span class="tag minor">Dead</span>
-              <div>
-                <h4>Six scenario columns, all identical</h4>
-                <p>Six columns labelled "No Roommate" through "2 Roommates", every rent input left at zero, so all
-                  six returned an identical number. The two housemate fields on the left do the job.</p>
-              </div>
-            </div>
-
-            <div class="fix">
-              <span class="tag minor">Check</span>
-              <div>
-                <h4>Insurance and parcel taxes get eyeballed</h4>
-                <p>Two lines people routinely under-enter. California homeowner policies typically run $1,500–$3,000,
-                  more on an older building. And the flat school and district charges on a property tax bill are
-                  payable but not deductible &mdash; they belong in outlay, not in SALT.</p>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      <!-- NOTES -->
-      <section class="card">
-        <div class="card-hd"><h2>Assumptions and limits</h2></div>
-        <div class="notes">
-          <div class="n">
-            <h3>What this model assumes</h3>
-            <ul>
-              <li><b>Tax years.</b> Federal parameters are 2026 (Rev. Proc. 2025-32 and the OBBBA amendments).
-                California uses the 2025 schedules, the most recent the FTB has published; the 2026 figures index up
-                a few percent.</li>
-              <li><b>State income tax paid</b> is estimated by running your AGI through the California brackets. If
-                you know your actual withholding, the SALT line is the one it feeds.</li>
-              <li><b>AGI stays flat</b> in nominal terms across all thirty years, while the property tax assessment
-                grows 2% a year. Real incomes usually rise, which would push the refund up.</li>
-              <li><b>Average balance</b> for both mortgage caps is the average of the year's opening and closing
-                balance, the Publication 936 method.</li>
-              <li><b>Comparable rent is flat.</b> No rent inflation, matching the original sheet.</li>
-            </ul>
-          </div>
-          <div class="n">
-            <h3>What it deliberately leaves out</h3>
-            <ul>
-              <li><b>The allocation percentage.</b> "Their share" is a judgment call, not a fact. Two of three
-                bedrooms is one defensible read; square footage including a per-head split of shared space is
-                another, and they can differ by ten points. Pick a method, write down why, and keep it consistent
-                year to year.</li>
-              <li><b>Rental-share interest and the $750k cap.</b> This model treats the Schedule E share as a
-                business expense outside §163(h), so the cap only trims the personal share. That is the common
-                reading, not a settled one &mdash; worth raising with a preparer before you rely on it.</li>
-              <li><b>Suspended losses.</b> Carryforwards are shown but not tracked across years; at your income the
-                §469 passive-loss allowance is fully phased out anyway, so they would sit unused either way.</li>
-              <li><b>AMT</b>, the 3.8% net investment income tax on rental income, and capital gains stacking.</li>
-              <li><b>Closing costs, points, PMI, and transfer tax.</b> At 20% down there is no PMI, but closing costs
-                are real and one-time.</li>
-              <li><b>Selling.</b> No agent commission, no transfer tax, no §121 exclusion on the way out.</li>
-              <li><b>The opportunity cost of the down payment</b> &mdash; $240,000 invested elsewhere.</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-    </div><!-- /#results2 -->
-
-    <p class="colophon">
-        A rebuild of a homeowner's carrying-cost spreadsheet, with the tax side done properly.<br>
-        Sources: IRS Rev. Proc. 2025-32 &middot; IRC §163(h)(3), §164(b)(6) and §68 as amended by the OBBBA &middot;
-        IRS Pub. 936 &middot; FTB 2025 Form 540 tax rate schedules &middot; R&amp;TC §17024.5 (mortgage non-conformity)<br>
-        Estimates only. Not tax advice &mdash; check it against a return before you sign anything.
-      </p>
-
+  <footer>
+    Rev. Proc. 2025-32 · IRC §163(h)(3), §164(b)(6), §68, §280A · Pub. 936 &amp; 527 · FTB 2025 Schedules X/Y/Z<br>
+    Estimates, not tax advice.
+  </footer>
 </div>
 
 <script>
 "use strict";
-
 /* ═══════════════════ statutory parameters ═══════════════════
    Federal: 2026, IRS Rev. Proc. 2025-32 tables 1–3.
    California: 2025, FTB Form 540 tax rate schedules X / Y / Z.        */
@@ -914,15 +590,15 @@ function model(I, year, sched) {
   };
 }
 
+
 /* ═══════════════════ formatting ═══════════════════ */
 const $ = id => document.getElementById(id);
 const money  = v => (v < 0 ? "−$" : "$") + Math.abs(Math.round(v)).toLocaleString("en-US");
-const money2 = v => (v < 0 ? "−$" : "$") + Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const pct    = (v, d = 1) => (v * 100).toFixed(d) + "%";
 const esc    = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
 
 /* ═══════════════════ inputs ═══════════════════ */
-let rentMode = "schedE";   // schedE | costshare | full
+let rentMode = "schedE";
 const num = id => { const v = parseFloat($(id).value); return isFinite(v) ? v : 0; };
 
 function readInputs() {
@@ -940,32 +616,23 @@ function readInputs() {
   };
 }
 
-/* ═══════════════════ derivation rows ═══════════════════ */
-function drv(label, value, formula, why, emph) {
-  return `<div class="drv${emph ? " emph" : ""}">
-    <div class="drv-hd"><span class="l">${label}</span><span class="v num">${value}</span></div>
-    ${formula ? `<code class="drv-f">${esc(formula)}</code>` : ""}
-    <p class="drv-why">${why}</p>
-  </div>`;
-}
+const d = (label, value, formula, why, key) =>
+  `<div class="d${key ? " key" : ""}"><div class="t"><span class="l">${label}</span><span class="v n">${value}</span></div>` +
+  `${formula ? `<code>${esc(formula)}</code>` : ""}${why ? `<p class="w">${why}</p>` : ""}</div>`;
 
 /* ═══════════════════ render ═══════════════════ */
 let chartData = [];
 
 function render() {
   const I = readInputs();
-
-  // Nothing is baked in, so the page opens empty rather than showing a wall of $0.
   const ready = I.price > 0 && I.term >= 1;
   $("empty").hidden = ready;
   $("results").hidden = !ready;
-  $("results2").hidden = !ready;
-  if (!ready) return;
+  $("figCard").hidden = !ready;
+  if (!ready) { $("hintProp").innerHTML = ""; $("hintTax").innerHTML = ""; $("hintRent").innerHTML = ""; return; }
 
-  const loan = I.price * (1 - I.downPct);
-  const sched = schedule(loan, I.rate, I.term);
+  const sched = schedule(I.price * (1 - I.downPct), I.rate, I.term);
   const maxYear = Math.round(I.term);
-
   const yr = $("year");
   if (+yr.max !== maxYear) { yr.max = maxYear; if (+yr.value > maxYear) yr.value = maxYear; }
   I.year = Math.min(I.year, maxYear);
@@ -974,484 +641,307 @@ function render() {
   for (let y = 1; y <= maxYear; y++) chartData.push(model(I, y, sched));
   const R = chartData[I.year - 1];
 
-  /* ── hero ── */
   $("yearLbl").textContent = I.year;
   $("heroYear").textContent = I.year;
   $("ledgYear").textContent = I.year;
-  $("posYear").textContent  = I.year;
-  $("posYearWord").textContent = I.year === 1 ? "year" : "years";
+  $("posYear").textContent = I.year;
+  $("posWord").textContent = I.year === 1 ? "year" : "years";
 
-  const netMo = R.net / 12;
-  const netParts = Math.abs(netMo).toFixed(2).split(".");
-  $("netMo").innerHTML = `${netMo < 0 ? "−$" : "$"}${(+netParts[0]).toLocaleString("en-US")}<span class="cents">.${netParts[1]}</span>`;
-  $("netNote").textContent =
-    `Of that, ${money(R.annualPrincipal / 12)} a month is principal — it moves from your bank account into your equity rather than leaving.`;
+  const netMo = R.net / 12, parts = Math.abs(netMo).toFixed(2).split(".");
+  $("netMo").innerHTML = `${netMo < 0 ? "−$" : "$"}${(+parts[0]).toLocaleString("en-US")}<span class="c">.${parts[1]}</span>`;
+  $("netNote").textContent = `${money(R.annualPrincipal / 12)} of that is principal — it moves to equity rather than leaving.`;
 
-  $("chainOut").textContent     = money(R.outlay / 12);
-  $("chainOutF").textContent    = "P&I + tax + insurance + HOA + upkeep";
-  $("chainRent").textContent    = R.annualRent ? "−" + money(R.annualRent / 12) : "$0";
-  $("chainRentTax").textContent = R.rentTax ? money(R.rentTax / 12) : "$0";
-  $("chainBen").textContent     = "−" + money(R.benefit / 12);
-  $("chainNet").textContent     = money2(netMo);
+  $("cOut").textContent     = money(R.outlay / 12);
+  $("cRent").textContent    = R.annualRent ? "−" + money(R.annualRent / 12) : "$0";
+  $("cRentTax").textContent = money(R.rentTax / 12);
+  $("cBen").textContent     = "−" + money(R.benefit / 12);
+  $("cNet").textContent     = "$" + (netMo).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  $("sOutlay").textContent = money(R.outlay / 12);
-  $("sBen").textContent    = money(R.benefit / 12);
-  $("sBenM").textContent   = `${money(R.fedBenefit / 12)} federal · ${money(R.caBenefit / 12)} California`;
-  $("sPrin").textContent   = money(R.annualPrincipal / 12);
-  $("sBurn").textContent   = money(R.net / 12 - R.annualPrincipal / 12);
+  $("tOut").textContent  = money(R.outlay / 12);
+  $("tBen").textContent  = money(R.benefit / 12);
+  $("tBenM").textContent = `${money(R.fedBenefit / 12)} fed · ${money(R.caBenefit / 12)} CA`;
+  $("tPrin").textContent = money(R.annualPrincipal / 12);
+  $("tBurn").textContent = money(R.net / 12 - R.annualPrincipal / 12);
 
-  /* ── hints ── */
-  $("rateHint").innerHTML =
-    `W-2 plus other income gives an AGI of <b>${money(R.agi)}</b>${R.taxableRental > 0
-      ? `, ${money(R.taxableRental)} of it taxable rental income` : ""}. That puts you in the <b>${pct(R.fedMarginal, 0)}</b>
-     federal and <b>${pct(R.caMarginal, 1)}</b> California brackets — a combined <b>${pct(R.fedMarginal + R.caMarginal, 1)}</b>
-     on the last dollar. Shown for orientation only: nothing on this page is computed by multiplying a deduction
-     by a blended rate, which is what a spreadsheet built on one flat percentage does.`;
-  $("insHint").innerHTML = I.ins > 0 && I.ins < 1200
-    ? `<b style="color:var(--flag)">${money(I.ins)}/yr looks low</b> for a California homeowner policy — $1,500–$3,000 is
-       typical, more on an older building. Worth checking against an actual quote.`
-    : `Property tax is ad valorem only; the assessment grows up to 2% a year under Proposition 13, so year ${I.year}
-       bills ${money(R.propertyTax)}. Put the flat school and district charges from your tax bill in parcel taxes —
-       they are payable but not deductible.`;
-  $("rentHint").innerHTML = {
-    schedE: `Reported on Schedule E with their ${pct(I.share, 1)} share of interest, property tax, insurance, HOA,
-             upkeep and depreciation deducted against it — the treatment the IRS expects. The rest stays on
-             Schedule A. Land is carved out of the depreciable basis because land does not wear out.`,
-    costshare: `Rent is left out of income entirely. This is only defensible as genuine cost-sharing with no profit
-             motive — the test is whether they pay less than their share of what the house actually costs you.
-             See the housemate panel below for that comparison at your numbers.`,
-    full: `Rent taxed in full with no expense allocation. Not a real filing position — it is here as the worst-case
-             bound, and it is what the original sheet's unused <code>Post Tax</code> row was reaching for.`
+  /* hints */
+  $("hintProp").innerHTML = I.ins > 0 && I.ins < 1200
+    ? `<b style="color:var(--flag)">${money(I.ins)}/yr looks low</b> — California policies run $1,500–3,000.`
+    : `Year ${I.year} property tax is <b>${money(R.propertyTax)}</b>. Parcel taxes are payable but not deductible — keep them separate.`;
+  $("hintTax").innerHTML =
+    `AGI <b>${money(R.agi)}</b> puts you in the <b>${pct(R.fedMarginal, 0)}</b> federal and <b>${pct(R.caMarginal, 1)}</b>
+     California brackets. Shown for orientation — no figure here is a deduction times a blended rate.`;
+  $("hintRent").innerHTML = {
+    schedE: `Their share of interest, tax, insurance, HOA, upkeep and depreciation offsets the rent. Land is excluded from the depreciable basis.`,
+    costshare: `Left out of income. Only defensible with no profit — see the comparison below.`,
+    full: `Taxed with no offsetting expenses. An upper bound, not a filing position.`
   }[rentMode];
 
-  /* ── ledger ── */
-  const rows = [
-    ["Principal", R.annualPrincipal / 12, R.annualPrincipal,
-      "The part of the payment that buys the house. Not a cost — it changes which account holds your money."],
-    ["Interest", R.annualInterest / 12, R.annualInterest,
-      "Summed across the twelve actual months of year " + I.year + ", not one month multiplied by twelve."],
-    ["Property tax", R.propertyTax / 12, R.propertyTax,
-      `${pct(I.ptax, 2)} of an assessed value of ${money(R.assessed)} — the purchase price grown 2% a year under Prop 13.`],
-    ["Parcel taxes &amp; assessments", I.parcel / 12, I.parcel,
-      "Flat per-parcel levies on the tax bill — school and district charges. Not ad valorem, so they are <em>not</em> deductible real property tax on Schedule A, even though you pay them with the property tax bill."],
-    ["Insurance", I.ins / 12, I.ins, "Straight from your input, spread evenly."],
-    ["HOA", I.hoa, I.hoa * 12, "Fixed monthly. Not deductible on a primary residence, federally or in California."],
-    ["Maintenance &amp; repairs", I.maint, I.maint * 12,
-      "Not deductible on a primary residence either. A common rule of thumb is 1% of value a year, which would be " + money(I.price * .01 / 12) + " a month."]
+  /* ledger */
+  const L = [
+    ["Principal", R.annualPrincipal / 12, R.annualPrincipal, "Not a cost — it changes which account holds your money."],
+    ["Interest", R.annualInterest / 12, R.annualInterest, `Summed across the twelve actual months of year ${I.year}.`],
+    ["Property tax", R.propertyTax / 12, R.propertyTax, `${pct(I.ptax, 2)} of ${money(R.assessed)} assessed, grown 2% a year under Prop 13.`],
+    ["Parcel taxes", I.parcel / 12, I.parcel, "Flat levies, not ad valorem — payable but not deductible."],
+    ["Insurance", I.ins / 12, I.ins, ""],
+    ["HOA", I.hoa, I.hoa * 12, "Not deductible on a residence."],
+    ["Upkeep", I.maint, I.maint * 12, "Also not deductible."]
   ];
-  let html = rows.map(([l, m, y, w]) =>
-    `<tr><td>${l}<span class="why">${w}</span></td><td class="r">${money(m)}</td><td class="r">${money(y)}</td></tr>`).join("");
-  html += `<tr class="sum"><td>Gross outlay</td><td class="r">${money(R.outlay / 12)}</td><td class="r">${money(R.outlay)}</td></tr>`;
+  let h = L.map(([l, m, y, w]) =>
+    `<tr><td>${l}${w ? `<span class="w">${w}</span>` : ""}</td><td class="r">${money(m)}</td><td class="r">${money(y)}</td></tr>`).join("");
+  h += `<tr class="tot"><td>Gross outlay</td><td class="r">${money(R.outlay / 12)}</td><td class="r">${money(R.outlay)}</td></tr>`;
   if (R.annualRent) {
-    html += `<tr><td style="padding-top:12px">Housemate rent collected<span class="why">${I.rent1 ? money(I.rent1) : "$0"} + ${I.rent2 ? money(I.rent2) : "$0"} a month.</span></td><td class="r">−${money(R.annualRent / 12)}</td><td class="r">−${money(R.annualRent)}</td></tr>`;
-    html += `<tr><td>Tax on that rent<span class="why">${
-      rentMode === "schedE"
-        ? `Taxable rental income after the §280A waterfall is ${money(R.taxableRental)}. Their share of interest, tax and upkeep absorbed the rest.`
-        : rentMode === "costshare" ? "Treated as cost-sharing, so no tax."
-        : "Added to AGI and taxed with no offsetting expenses."
-      }</span></td><td class="r">${money(R.rentTax / 12)}</td><td class="r">${money(R.rentTax)}</td></tr>`;
+    h += `<tr><td>Rent collected</td><td class="r">−${money(R.annualRent / 12)}</td><td class="r">−${money(R.annualRent)}</td></tr>`;
+    h += `<tr><td>Tax on rent<span class="w">${rentMode === "schedE"
+      ? `Taxable rent after the waterfall is ${money(R.taxableRental)}.`
+      : rentMode === "costshare" ? "Treated as cost sharing." : "No offsetting expenses claimed."}</span></td>` +
+      `<td class="r">${money(R.rentTax / 12)}</td><td class="r">${money(R.rentTax)}</td></tr>`;
   }
-  html += `<tr><td style="padding-top:12px">Tax refunded because you own<span class="why">Federal ${money(R.fedBenefit)} + California ${money(R.caBenefit)} a year. Derived below.</span></td><td class="r">−${money(R.benefit / 12)}</td><td class="r">−${money(R.benefit)}</td></tr>`;
-  html += `<tr class="sum"><td>Net cost</td><td class="r">${money2(R.net / 12)}</td><td class="r">${money(R.net)}</td></tr>`;
-  $("ledger").innerHTML = html;
+  h += `<tr><td>Tax back<span class="w">${money(R.fedBenefit)} federal + ${money(R.caBenefit)} California.</span></td>` +
+       `<td class="r">−${money(R.benefit / 12)}</td><td class="r">−${money(R.benefit)}</td></tr>`;
+  h += `<tr class="tot"><td>Net</td><td class="r">${money(R.net / 12)}</td><td class="r">${money(R.net)}</td></tr>`;
+  $("ledger").innerHTML = h;
 
-  /* ── federal derivation ── */
+  /* federal */
   const f = R.fOwn, fn = R.fNot;
-  const capBinds = R.avgBalance > FED_MORT_CAP;
-  const saltBinds = f.saltRaw > R.saltCap;
-  $("fedPill").textContent = f.itemizing ? "Itemizing" : "Standard deduction";
-  $("fedPill").className = "pill" + (f.itemizing ? " on" : "");
-
-  let fh = "";
   const allocated = R.schedAInterest < R.annualInterest - 0.005;
-  fh += drv("Deductible mortgage interest", money(R.fedInterest),
-    "Schedule A interest × min(1, 750,000 ÷ average balance)\n= " + money(R.schedAInterest) + " × " + R.fedRatio.toFixed(4),
-    (capBinds
-      ? `Your average balance this year is ${money(R.avgBalance)}, above the $750,000 acquisition-debt ceiling, so
-         ${pct(R.fedRatio, 1)} of it survives. The $750,000 limit applies to loans taken after 15 Dec 2017 and was made
-         permanent by the OBBBA — the $1,000,000 grandfather only covers older loans. Pub. 936 wants the ratio applied
-         to real interest, not a second amortization schedule.`
-      : `Your average balance of ${money(R.avgBalance)} is under the $750,000 ceiling, so none of it is trimmed.`) +
-    (allocated
-      ? ` Note the base: of ${money(R.annualInterest)} total interest, only the ${money(R.schedAInterest)} left on
-          Schedule A is subject to this cap — the rest went to Schedule E, where the cap does not reach.`
-      : ""));
-
-  fh += drv("California income tax paid", money(R.stateIncomeTax),
-    "CA tax on (AGI − CA standard deduction)",
-    `This is the other claimant on the SALT bucket, and it gets there first. Estimated by running your AGI through
-     the California brackets; if you know your actual withholding, substitute it here mentally.`);
-
-  fh += drv("SALT deduction", money(f.salt),
+  $("fedPill").textContent = f.itemizing ? "Itemizing" : "Standard";
+  $("fedPill").className = "pill" + (f.itemizing ? " on" : "");
+  let fh = "";
+  fh += d("Mortgage interest", money(R.fedInterest),
+    "Sch A interest × min(1, 750,000 ÷ avg balance)\n= " + money(R.schedAInterest) + " × " + R.fedRatio.toFixed(4),
+    R.avgBalance > FED_MORT_CAP
+      ? `Average balance ${money(R.avgBalance)} is over the $750k ceiling, so ${pct(R.fedRatio, 1)} survives. Made permanent by the OBBBA.`
+      : `Under the $750k ceiling — nothing trimmed.`);
+  fh += d("California income tax", money(R.stateIncomeTax), null,
+    "The other claimant on the SALT bucket, and it gets there first.");
+  fh += d("SALT", money(f.salt),
     "min(property tax + state income tax, cap)\n= min(" + money(f.saltRaw) + ", " + money(R.saltCap) + ")",
-    saltBinds
-      ? `Property tax and state income tax together come to ${money(f.saltRaw)}, over the cap, so ${money(f.saltRaw - f.salt)}
-         of it is simply lost. Only ${money(Math.max(0, f.salt - R.stateIncomeTax))} of your ${money(R.propertyTax)}
-         property tax bill does any federal work${f.salt - R.stateIncomeTax <= 0 ? " — none of it, in fact, because California income tax alone fills the cap" : ""}.`
-      : `Under the cap, so all of it deducts. The cap is ${money(R.saltCap)}${R.saltCap < SALT_CAP
-          ? ` — reduced from $40,400 because AGI of ${money(R.agi)} is above the $505,000 phase-down threshold, at 30¢ per dollar over`
-          : " for 2026, raised from $10,000 by the OBBBA through 2029"}.`);
-
-  if (R.charity > 0 || I.charity > 0)
-    fh += drv("Charitable giving", money(R.charity),
-      "max(0, giving − 0.5% × AGI)\n= max(0, " + money(I.charity) + " − " + money(CHARITY_FLOOR * R.agi) + ")",
-      `New for 2026: the first 0.5% of AGI in charitable gifts is not deductible at all. On ${money(R.agi)} of AGI
-       that floor eats ${money(Math.min(I.charity, CHARITY_FLOOR * R.agi))}.`);
-
-  if (f.cut > 0)
-    fh += drv("§68 haircut", "−" + money(f.cut),
-      "−(2 ÷ 37) × min(itemized, AGI − " + money(TOP_START[I.fs]) + ")",
-      `The OBBBA replaced Pease with this: in the 37% bracket, itemized deductions are shaved by 2/37, which
-       caps their value at 35¢ on the dollar. It applies from 2026.`);
-
-  fh += drv("Itemized total, owning", money(f.itemized), null,
-    `Against a ${money(FED_STD[I.fs])} standard deduction, so you ${f.itemizing ? "itemize" : "still take the standard deduction"}.`);
-
-  fh += drv("Itemized total, not owning", money(fn.itemized), null,
-    `Without the house you would deduct ${money(fn.ded)} — ${fn.itemizing
-      ? "you would still itemize, on state income tax alone. This is the baseline the house has to beat, and it is much higher than the standard deduction the old sheet used."
-      : "the standard deduction, since state income tax alone does not clear it."}`);
-
-  fh += drv("Federal refund from owning", money(R.fedBenefit),
-    "tax(AGI − " + money(fn.ded) + ") − tax(AGI − " + money(f.ded) + ")\n= " + money(fn.tax) + " − " + money(f.tax),
-    `Both figures run the full 2026 bracket table, so a deduction that spans brackets is credited at the rates it
-     actually crosses rather than at a single top rate. This is the number that shows up in your refund.`, true);
+    f.saltRaw > R.saltCap
+      ? `${money(f.saltRaw - f.salt)} is lost above the cap.`
+      : `Under the ${money(R.saltCap)} cap — the OBBBA raised it from $10k through 2029.`);
+  if (I.charity > 0) fh += d("Charity", money(R.charity), "max(0, giving − 0.5% × AGI)",
+    "New for 2026: the first 0.5% of AGI does not count.");
+  if (f.cut > 0) fh += d("§68 haircut", "−" + money(f.cut), "−(2 ÷ 37) × min(itemized, AGI − " + money(TOP_START[I.fs]) + ")",
+    "Caps the value of itemizing at 35¢ in the top bracket.");
+  fh += d("Itemized, owning", money(f.itemized), null, `Against a ${money(FED_STD[I.fs])} standard deduction.`);
+  fh += d("Itemized, renting", money(fn.itemized), null,
+    fn.itemizing ? "You would itemize anyway on state income tax. This is the bar the house must clear." : "Below the standard deduction.");
+  fh += d("Federal refund", money(R.fedBenefit),
+    "tax(AGI − " + money(fn.ded) + ") − tax(AGI − " + money(f.ded) + ")",
+    "Both run the full bracket table, so a deduction spanning brackets is credited at the rates it crosses.", true);
   $("fedDrv").innerHTML = fh;
 
-  /* ── california derivation ── */
+  /* california */
   const c = R.cOwn, cn = R.cNot;
-  $("caPill").textContent = c.itemizing ? "Itemizing" : "Standard deduction";
+  $("caPill").textContent = c.itemizing ? "Itemizing" : "Standard";
   $("caPill").className = "pill" + (c.itemizing ? " on" : "");
-
   let ch = "";
-  ch += drv("Deductible mortgage interest", money(R.caInterest),
-    "Schedule A interest × min(1, 1,000,000 ÷ average balance)\n= " + money(R.schedAInterest) + " × " + R.caRatio.toFixed(4),
-    `California never conformed to the federal $750,000 limit and still allows $1,000,000 of acquisition debt
-     (R&amp;TC §17024.5). ${R.caInterest > R.fedInterest
-       ? `That is ${money(R.caInterest - R.fedInterest)} more interest than the federal return allows — deductible in Sacramento, not in Washington.`
-       : "At this balance both caps are slack, so the two agree."}`);
-
-  ch += drv("Property tax", money(R.schedAPropTax),
-    "Schedule A property tax, uncapped",
-    `California has no SALT cap, so whatever reaches Schedule A deducts in full — no competition with income tax for
-     headroom. What California does <em>not</em> allow is a deduction for California income tax, which is why the
-     ${money(R.stateIncomeTax)} in the federal column has no counterpart here.` +
-    (allocated
-      ? ` Of the ${money(R.propertyTax)} billed, ${money(R.propertyTax - R.schedAPropTax)} is deducted on Schedule E instead.`
-      : ""));
-
-  ch += drv("Itemized phase-down", c.cut > 0 ? "−" + money(c.cut) : "$0",
+  ch += d("Mortgage interest", money(R.caInterest),
+    "Sch A interest × min(1, 1,000,000 ÷ avg balance)",
+    `California never conformed to $750k — it still allows $1m (R&amp;TC §17024.5)${R.caInterest > R.fedInterest
+      ? `, ${money(R.caInterest - R.fedInterest)} more than the federal return` : ""}.`);
+  ch += d("Property tax", money(R.schedAPropTax), "uncapped",
+    `No SALT cap here. But California income tax is not deductible on a California return.` +
+    (allocated ? ` ${money(R.propertyTax - R.schedAPropTax)} went to Schedule E.` : ""));
+  ch += d("Phase-down", c.cut > 0 ? "−" + money(c.cut) : "$0",
     "−min(6% × (AGI − " + money(CA_ITEM_T[I.fs]) + "), 80% × itemized)",
-    c.cut > 0
-      ? `California trims itemized deductions above ${money(CA_ITEM_T[I.fs])} of AGI at 6¢ per dollar over, stopping at
-         80% of the total. Your AGI of ${money(R.agi)} costs you ${money(c.cut)} of deductions. This has no federal
-         equivalent and the old sheet had no way to express it.`
-      : `Your AGI is below the ${money(CA_ITEM_T[I.fs])} threshold, so nothing is trimmed.`);
-
-  ch += drv("Itemized total, owning", money(c.itemized), null,
-    `Against California's ${money(CA_STD[I.fs])} standard deduction — far smaller than the federal one, which is why
-     owning almost always tips you into itemizing here.`);
-
-  ch += drv("Itemized total, not owning", money(cn.itemized), null,
-    `Without the house you would deduct ${money(cn.ded)}. California income tax is not deductible on a California
-     return, so there is nothing to fall back on.`);
-
-  ch += drv("California refund from owning", money(R.caBenefit),
+    c.cut > 0 ? "Six cents per dollar of AGI over the threshold. No federal equivalent." : "Below the threshold.");
+  ch += d("Itemized, owning", money(c.itemized), null, `Against a ${money(CA_STD[I.fs])} standard deduction.`);
+  ch += d("Itemized, renting", money(cn.itemized), null, "Nothing to fall back on — state tax is not deductible here.");
+  ch += d("California refund", money(R.caBenefit),
     "CAtax(AGI − " + money(cn.ded) + ") − CAtax(AGI − " + money(c.ded) + ")",
-    `Run through the 2025 Schedule ${I.fs === "single" ? "X" : I.fs === "mfj" ? "Y" : "Z"} brackets, including the 1%
-     behavioral health surcharge above $1,000,000. A single blended rate folds this away and loses it.`, true);
+    `2025 Schedule ${I.fs === "single" ? "X" : I.fs === "mfj" ? "Y" : "Z"}, including the 1% surcharge above $1m.`, true);
   $("caDrv").innerHTML = ch;
 
-  /* ── roommates / §280A ── */
-  const rentCard = $("rentCard");
-  rentCard.hidden = !(R.annualRent > 0);
+  /* rooms */
+  $("rentCard").hidden = !(R.annualRent > 0);
   if (R.annualRent > 0) {
     const theirCost = I.share * (R.annualInterest + R.propertyTax + R.opExpenses);
     const profit = R.annualRent - theirCost;
+    $("rentSub").innerHTML = rentMode === "costshare"
+      ? `They pay ${money(R.annualRent)} against ${money(theirCost)} of costs for their ${pct(I.share, 1)} —
+         <b>${profit > 0 ? money(profit) + " more" : money(-profit) + " less"}</b> than their share.
+         ${profit > 0 ? "That is profit, and profit is rent." : "No profit is the whole argument — but it is a position, not a safe harbour."}`
+      : `You live there, so §280A(c)(5) caps rental deductions at the rent. They can zero the income, never make a loss.`;
 
-    $("rentSub").innerHTML = rentMode === "schedE"
-      ? `You occupy ${pct(1 - I.share, 1)} of the house and they occupy ${pct(I.share, 1)}, so ${pct(I.share, 1)} of
-         every housing cost is a rental expense. But because you live in the same dwelling unit, §280A(c)(5) caps
-         those deductions at the rent collected — they can zero out the rental income, never create a loss. The order
-         below is not optional.`
-      : rentMode === "costshare"
-      ? `Not reported as income. The test that matters: at ${money(R.annualRent)} of rent against ${money(theirCost)}
-         of costs attributable to their ${pct(I.share, 1)} of the house, they are paying
-         <b>${profit > 0 ? money(profit) + " more" : money(-profit) + " less"}</b> than their share of what the house
-         costs you. ${profit > 0
-           ? "That is a profit, and profit makes it rent. This position is hard to defend at these numbers."
-           : "No profit, which is the crux of the cost-sharing argument — but it is a position, not a safe harbour."}
-         The waterfall below shows what a Schedule E filing would look like instead.`
-      : `Taxed in full with no allocation. Shown as an upper bound; the waterfall below is what you would actually file.`;
-
-    const wf = [
-      ["Gross rent collected", R.annualRent, null,
-        `${money(I.rent1)} + ${money(I.rent2)} a month. Reportable under §61 — there is no housemate exemption. The only
-         non-reporting rule is §280A(g), which needs fewer than 15 rental days in the year.`],
-      [`Tier 1 &mdash; ${pct(I.share, 1)} of interest and property tax`, -R.e1, null,
-        `${money(R.tier1)} allocated. These come first because they are deductible whether or not you rent. Deducted
-         here they escape both the $750,000 mortgage cap and the SALT cap — that is the real prize, not depreciation.`],
-      [`Tier 2 &mdash; ${pct(I.share, 1)} of insurance, HOA and upkeep`, -R.e2, R.cfOp,
-        `${money(R.tier2)} allocated, allowed only against rent left after tier 1. HOA and insurance are not deductible
-         on a personal residence at all, so this share is genuinely new.`],
-      ["Tier 3 &mdash; depreciation", -R.e3, R.cfDep,
-        `${money(R.depFull)} available, allowed only against whatever rent survives tiers 1 and 2. It is last in line
-         by statute, which at these rents is why it is worth ${money(R.e3)}.`],
-      ["Taxable rental income", R.taxableRental, null,
-        R.taxableRental <= 0
-          ? "Zero. Declaring the rent costs you no tax on the rent itself — the cost is the deductions that moved off Schedule A, shown to the right."
-          : "What lands in AGI after the waterfall."]
+    const W = [
+      ["Gross rent", R.annualRent, null, "Reportable under §61. The only exemption needs fewer than 15 rental days."],
+      [`Tier 1 — ${pct(I.share, 1)} interest and property tax`, -R.e1, null,
+        `${money(R.tier1)} allocated. First in line, and here it escapes both the $750k and SALT caps.`],
+      [`Tier 2 — ${pct(I.share, 1)} insurance, HOA, upkeep`, -R.e2, R.cfOp,
+        `${money(R.tier2)} allocated. None of this is deductible on a residence otherwise.`],
+      ["Tier 3 — depreciation", -R.e3, R.cfDep, `${money(R.depFull)} available. Last by statute.`],
+      ["Taxable rent", R.taxableRental, null,
+        R.taxableRental <= 0 ? "Zero. Declaring costs no tax on the rent — the cost is what left Schedule A." : ""]
     ];
-    $("waterfall").innerHTML = wf.map(([l, v, cf, w], i) =>
-      `<tr${i === wf.length - 1 ? ' class="sum"' : ""}><td>${l}<span class="why">${w}</span></td>` +
-      `<td class="r">${money(v)}</td><td class="r">${cf ? money(cf) : "&mdash;"}</td></tr>`).join("");
+    $("waterfall").innerHTML = W.map(([l, v, cf, w], i) =>
+      `<tr${i === W.length - 1 ? ' class="tot"' : ""}><td>${l}${w ? `<span class="w">${w}</span>` : ""}</td>` +
+      `<td class="r">${money(v)}</td><td class="r">${cf ? money(cf) : "—"}</td></tr>`).join("");
 
-    $("depPill").textContent = R.e3 > 0 ? money(R.e3) + " usable" : "fully suspended";
+    $("depPill").textContent = R.e3 > 0 ? money(R.e3) + " usable" : "suspended";
     $("depPill").className = "pill" + (R.e3 > 0 ? " on" : "");
-
     let dh = "";
-    dh += drv("Depreciable basis", money(R.buildingBasis * I.share),
-      "price × (1 − land share) × their share\n= " + money(I.price) + " × " + (1 - I.landShare).toFixed(2) + " × " + I.share.toFixed(3),
+    dh += d("Basis", money(R.buildingBasis * I.share),
+      "price × (1 − land) × their share",
       I.landShare > 0
-        ? `Land is never depreciable, and in expensive cities land is often most of the value. Take the
-           land/improvement split straight off your assessor's notice rather than guessing — it moves this number
-           more than any other input on the page.`
-        : `<b style="color:var(--flag)">Land share is 0, so this basis is overstated.</b> Land cannot be depreciated.
-           Your annual property tax bill breaks the assessment into land and structure — divide land by the gross
-           assessed value and enter that percentage. In dense California cities it is frequently 50–70%.`);
-
-    dh += drv("Annual depreciation", money(R.depFull),
-      "basis ÷ 27.5",
-      `Residential rental property is straight-line over 27.5 years, mid-month convention, under MACRS GDS.`);
-
-    dh += drv("Actually deductible this year", money(R.e3),
-      "min(depreciation, rent left after tiers 1 and 2)",
+        ? "Land never depreciates. Take the split off your assessor's notice — it moves this more than anything else."
+        : `<b style="color:var(--flag)">Land share is 0, so this is overstated.</b> Divide land by gross assessed value on your tax bill.`);
+    dh += d("Per year", money(R.depFull), "basis ÷ 27.5", "Straight line, mid-month, MACRS GDS.");
+    dh += d("Deductible now", money(R.e3), "min(depreciation, rent left after tiers 1 and 2)",
       R.e3 < R.depFull
-        ? `Tier 1 alone absorbed ${money(R.e1)} of ${money(R.annualRent)} in rent, so ${money(R.cfDep)} of depreciation is
-           suspended and carried forward. At these rents depreciation is worth ${R.e3 > 0 ? "only " + money(R.e3) : "nothing"} —
-           it is the answer to "what about depreciation" and the answer is mostly "not yet". Raise the rent or lower the
-           interest and it starts to bite.`
-        : `All of it fits under the rental income this year.`);
-
-    dh += drv("Recapture exposure on sale", money(R.e3) + " / yr",
-      "unrecaptured §1250 gain × up to 25% federal",
-      `Only depreciation <em>allowed or allowable</em> is recaptured. Amounts suspended by §280A(c)(5) were never
-       allowable, so the ${money(R.cfDep)} carried forward creates no recapture — you are not quietly accruing a
-       liability for depreciation you cannot use. California taxes recapture as ordinary income, with no 25% ceiling.`);
-
-    dh += drv("The §121 exclusion survives", "no gain allocation", null,
-      `Because the rented rooms are inside the same dwelling unit rather than a separate structure,
-       Reg. §1.121-1(e)(1) does not make you split the gain on sale. You keep the full $250,000 exclusion
-       (single) on everything except depreciation actually taken. Renting rooms is far gentler here than
-       renting a detached unit would be.`, true);
+        ? `Tier 1 took ${money(R.e1)} of ${money(R.annualRent)}, so ${money(R.cfDep)} carries forward. Raise the rent and it starts to bite.`
+        : "All of it fits.");
+    dh += d("Recapture", money(R.e3) + " / yr", "unrecaptured §1250 × up to 25%",
+      `Only depreciation allowed or allowable is recaptured, so the ${money(R.cfDep)} suspended creates none.`);
+    dh += d("§121 survives", "no allocation", null,
+      "Same dwelling unit, so Reg. §1.121-1(e)(1) does not split the gain on sale.", true);
     $("depDrv").innerHTML = dh;
 
     let ah = "";
-    ah += drv("Mortgage interest left on Schedule A", money(R.schedAInterest),
-      "(1 − their share) × interest + tier-1 spillover",
-      `Of ${money(R.annualInterest)} total interest, ${money(R.annualInterest - R.schedAInterest)} moved to Schedule E.
-       ${rentMode === "schedE"
-        ? `Only the ${money(R.schedAInterest)} that stays behind is trimmed by the $750,000 cap
-           (to ${money(R.fedInterest)} at this year's ${pct(R.fedRatio, 1)} ratio). The Schedule E share is a
-           business expense, so the cap never touches it.`
-        : `In this mode nothing is allocated, so the whole amount stays on Schedule A and takes the full cap haircut.`}`);
-
-    ah += drv("Property tax left on Schedule A", money(R.schedAPropTax),
-      "(1 − their share) × property tax + tier-1 spillover",
-      `${rentMode === "schedE"
-        ? `${money(R.propertyTax - R.schedAPropTax)} moved to Schedule E, where the SALT cap does not apply.
-           That is a real win if your SALT bucket is full — and it means the answer to "does renting affect my
-           property tax deduction" is yes, it splits it, mostly in your favour.`
-        : `Nothing allocated, so the whole bill competes for room under the ${money(R.saltCap)} SALT cap.`}
-       The property tax <em>bill</em> does not change: Proposition 13 has no reassessment for taking in housemates, and
-       you keep the homeowner's exemption as long as you still occupy the place.`);
-
-    ah += drv("Net effect of declaring", money(R.net / 12) + " / mo", null,
-      `Compared with treating it as cost-sharing, filing Schedule E moves ${pct(I.share, 1)} of your two largest
-       deductions off Schedule A. The rent itself becomes tax-free, but the deductions it consumes were doing work
-       elsewhere. Toggle the three modes on the left to see the spread at your numbers.`, true);
-
-    ah += drv("Outside the tax code", "check these", null,
-      `Many cities treat a residential lessor as a business. San Francisco, for one, expects registration; its Gross
-       Receipts Tax exempts lessors of fewer than four units in a building, but registration and filing can still
-       apply. Local rent-ordinance just-cause rules and your insurer's stance on non-family occupants are both worth
-       a call — a homeowner's policy is not a landlord's policy.`);
+    ah += d("Interest on Sch A", money(R.schedAInterest), null,
+      `${money(R.annualInterest - R.schedAInterest)} of ${money(R.annualInterest)} moved to Schedule E, where the $750k cap cannot reach.`);
+    ah += d("Property tax on Sch A", money(R.schedAPropTax), null,
+      `${money(R.propertyTax - R.schedAPropTax)} moved to Schedule E, outside the SALT cap. The bill itself does not change — no reassessment for housemates.`);
+    ah += d("Cost of declaring", money(R.net / 12) + " / mo", null,
+      "Rent becomes tax-free, but the deductions it consumes were working elsewhere. Toggle the three modes to see the spread.", true);
+    ah += d("Outside tax", "check", null,
+      "Many cities treat a lessor as a business. Your insurer may too — a homeowner's policy is not a landlord's.");
     $("allocDrv").innerHTML = ah;
   }
 
-  /* ── position ── */
-  let cumInt = 0, cumPrin = 0, cumOutlay = 0, cumBen = 0, cumNet = 0, cumRent = 0;
+  /* position */
+  let cInt = 0, cPrin = 0, cOut = 0, cBen = 0, cNet = 0;
   for (let y = 0; y < I.year; y++) {
-    const d = chartData[y];
-    cumInt += d.annualInterest; cumPrin += d.annualPrincipal; cumOutlay += d.outlay;
-    cumBen += d.benefit; cumNet += d.net; cumRent += d.annualRent;
+    const x = chartData[y];
+    cInt += x.annualInterest; cPrin += x.annualPrincipal; cOut += x.outlay; cBen += x.benefit; cNet += x.net;
   }
   const months = I.year * 12;
-  const value  = I.price * Math.pow(1 + I.apprec, I.year);
-  const equity = value - R.balEnd;
+  const value = I.price * Math.pow(1 + I.apprec, I.year);
   const rentAlt = I.comprent * months;
-
-  const prows = [
-    ["Cash out the door", cumOutlay, "Every payment, tax bill, premium and HOA cheque through year " + I.year + "."],
-    ["Tax refunded", -cumBen, "Federal plus California, summed year by year — each year re-run with its own interest, assessment and cap."],
-    ["Net cost of owning", cumNet, "What ownership actually took out of your pocket, rent and refunds included."],
-    ["— of which interest", cumInt, "Gone. This is the true rent-equivalent on the borrowed money."],
-    ["— of which principal", cumPrin, "Still yours. Moved into equity rather than spent."],
-    ["Home value", value, `${pct(I.apprec, 1)} a year compounded on ${money(I.price)}. Appreciation is the assumption doing the most work on this page.`],
-    ["Loan balance", R.balEnd, "What you still owe at the end of year " + I.year + "."],
-    ["Equity", equity, `Value less balance. ${money(value - I.price)} of it is appreciation, ${money(I.price * I.downPct)} the down payment, ${money(cumPrin)} paydown.`],
-    ["Renting instead, at " + money(I.comprent) + "/mo", rentAlt, "Held flat, matching the usual spreadsheet shortcut. Real rent would rise, which flatters owning."]
+  const P = [
+    ["Cash out", cOut, ""],
+    ["Tax back", -cBen, ""],
+    ["Net cost of owning", cNet, "What ownership actually took."],
+    ["— interest", cInt, "Gone. The rent-equivalent on borrowed money."],
+    ["— principal", cPrin, "Still yours."],
+    ["Home value", value, `${pct(I.apprec, 1)} a year — the assumption doing the most work here.`],
+    ["Loan balance", R.balEnd, ""],
+    ["Equity", value - R.balEnd, `${money(value - I.price)} appreciation, ${money(I.price * I.downPct)} down, ${money(cPrin)} paydown.`],
+    ["Renting instead", rentAlt, "Held flat. Real rent would rise, which flatters owning."]
   ];
-  $("position").innerHTML = prows.map(([l, v, w]) =>
-    `<tr><td>${l}<span class="why">${w}</span></td><td class="r">${money(v)}</td><td class="r">${money(v / months)}</td></tr>`
-  ).join("") +
-    `<tr class="sum"><td>Net cost of owning, less rent avoided</td><td class="r">${money(cumNet - rentAlt)}</td><td class="r">${money((cumNet - rentAlt) / months)}</td></tr>`;
+  $("position").innerHTML = P.map(([l, v, w]) =>
+    `<tr><td>${l}${w ? `<span class="w">${w}</span>` : ""}</td><td class="r">${money(v)}</td><td class="r">${money(v / months)}</td></tr>`).join("") +
+    `<tr class="tot"><td>Net of rent avoided</td><td class="r">${money(cNet - rentAlt)}</td><td class="r">${money((cNet - rentAlt) / months)}</td></tr>`;
 
   drawChart(I);
 }
 
 /* ═══════════════════ chart ═══════════════════ */
-const CH = { w: 780, h: 300, l: 56, r: 74, t: 16, b: 34 };
+const CH = { w: 780, h: 300, l: 58, r: 76, t: 18, b: 36 };
 
 function drawChart(I) {
-  const svg = $("chart");
-  const pts = chartData;
+  const svg = $("chart"), pts = chartData;
   if (!pts.length) return;
   const iw = CH.w - CH.l - CH.r, ih = CH.h - CH.t - CH.b;
-
-  const ys = pts.flatMap(d => [d.outlay / 12, d.net / 12]);
-  const dataLo = Math.min(...ys), dataHi = Math.max(...ys);
-  const span = (dataHi - dataLo) || 100;
-  // Asymmetric padding, and the floor is not snapped down to a gridline — snapping
-  // both ends to "nice" numbers is what leaves a band of empty plot under the data.
-  let lo = Math.max(0, dataLo - span * .10), hi = dataHi + span * .16;
+  const ys = pts.flatMap(p => [p.outlay / 12, p.net / 12]);
+  const dLo = Math.min(...ys), dHi = Math.max(...ys), span = (dHi - dLo) || 100;
+  let lo = Math.max(0, dLo - span * .10), hi = dHi + span * .08;
   const step = Math.pow(10, Math.floor(Math.log10((hi - lo) / 5)));
-  const nice = [1, 2, 2.5, 5, 10].map(m => m * step).find(s => (hi - lo) / s <= 6) || step * 10;
+  const nice = [1, 1.5, 2, 2.5, 5, 10].map(m => m * step).find(s => (hi - lo) / s <= 7) || step * 10;
   hi = Math.ceil(hi / nice) * nice;
   const tick0 = Math.ceil(lo / nice) * nice;
 
   const X = i => CH.l + (pts.length === 1 ? iw / 2 : (i / (pts.length - 1)) * iw);
   const Y = v => CH.t + ih - ((v - lo) / (hi - lo)) * ih;
+  const path = fn => pts.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(fn(p)).toFixed(1)}`).join("");
+  const area = fn => path(fn) + `L${X(pts.length - 1).toFixed(1)},${(CH.t + ih).toFixed(1)}L${X(0).toFixed(1)},${(CH.t + ih).toFixed(1)}Z`;
 
-  const path = f => pts.map((d, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(f(d)).toFixed(1)}`).join("");
-  const area = f => path(f) + `L${X(pts.length - 1).toFixed(1)},${(CH.t + ih).toFixed(1)}L${X(0).toFixed(1)},${(CH.t + ih).toFixed(1)}Z`;
-
-  let g = "";
-  g += `<defs>
-    <linearGradient id="gNet" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="var(--accent)" stop-opacity=".16"/>
-      <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
-    </linearGradient></defs>`;
+  let g = `<defs><linearGradient id="gn" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="var(--acc)" stop-opacity=".18"/>
+    <stop offset="100%" stop-color="var(--acc)" stop-opacity="0"/></linearGradient></defs>`;
 
   for (let v = tick0; v <= hi + 1e-6; v += nice) {
     const y = Y(v);
-    g += `<line x1="${CH.l}" y1="${y.toFixed(1)}" x2="${CH.l + iw}" y2="${y.toFixed(1)}"
-            stroke="var(--line)" stroke-width="1"/>`;
-    g += `<text x="${CH.l - 10}" y="${(y + 4).toFixed(1)}" text-anchor="end"
-            font-family="var(--f-mono)" font-size="10" fill="var(--muted)">$${Math.round(v).toLocaleString("en-US")}</text>`;
+    g += `<line x1="${CH.l}" y1="${y.toFixed(1)}" x2="${CH.l + iw}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>`;
+    g += `<text x="${CH.l - 12}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-family="var(--f)" font-size="11" fill="var(--mut)">$${Math.round(v).toLocaleString("en-US")}</text>`;
   }
-
-  const ticks = pts.length > 20 ? [1, 5, 10, 15, 20, 25, 30] : [1, 5, 10, 15, 20, 25, 30];
-  ticks.filter(t => t <= pts.length).forEach(t => {
-    g += `<text x="${X(t - 1).toFixed(1)}" y="${CH.t + ih + 20}" text-anchor="middle"
-            font-family="var(--f-mono)" font-size="10" fill="var(--muted)">${t}</text>`;
+  [1, 5, 10, 15, 20, 25, 30].filter(t => t <= pts.length).forEach(t => {
+    g += `<text x="${X(t - 1).toFixed(1)}" y="${CH.t + ih + 22}" text-anchor="middle" font-family="var(--f)" font-size="11" fill="var(--mut)">${t}</text>`;
   });
-  g += `<text x="${CH.l + iw / 2}" y="${CH.h - 2}" text-anchor="middle"
-          font-family="var(--f-mono)" font-size="9.5" fill="var(--muted)"
-          letter-spacing="1.4">YEAR OF OWNERSHIP</text>`;
 
-  g += `<path d="${area(d => d.net / 12)}" fill="url(#gNet)"/>`;
-  g += `<path d="${path(d => d.outlay / 12)}" fill="none" stroke="var(--amber)" stroke-width="2"
-          stroke-linejoin="round" stroke-linecap="round"/>`;
-  g += `<path d="${path(d => d.net / 12)}" fill="none" stroke="var(--accent)" stroke-width="2"
-          stroke-linejoin="round" stroke-linecap="round"/>`;
+  g += `<path d="${area(p => p.net / 12)}" fill="url(#gn)"/>`;
+  g += `<path d="${path(p => p.outlay / 12)}" fill="none" stroke="var(--out)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  g += `<path d="${path(p => p.net / 12)}" fill="none" stroke="var(--acc)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
 
   const last = pts.length - 1;
-  g += `<text x="${X(last) + 8}" y="${(Y(pts[last].outlay / 12) + 4).toFixed(1)}"
-          font-family="var(--f-mono)" font-size="10.5" fill="var(--amber-ink)">${money(pts[last].outlay / 12)}</text>`;
-  g += `<text x="${X(last) + 8}" y="${(Y(pts[last].net / 12) + 4).toFixed(1)}"
-          font-family="var(--f-mono)" font-size="10.5" fill="var(--accent-ink)">${money(pts[last].net / 12)}</text>`;
+  g += `<text x="${X(last) + 10}" y="${(Y(pts[last].outlay / 12) + 4).toFixed(1)}" font-family="var(--f)" font-size="12" font-weight="600" fill="var(--out-ink)">${money(pts[last].outlay / 12)}</text>`;
+  g += `<text x="${X(last) + 10}" y="${(Y(pts[last].net / 12) + 4).toFixed(1)}" font-family="var(--f)" font-size="12" font-weight="600" fill="var(--acc-ink)">${money(pts[last].net / 12)}</text>`;
 
   const si = Math.min(I.year, pts.length) - 1;
-  g += `<line x1="${X(si).toFixed(1)}" y1="${CH.t}" x2="${X(si).toFixed(1)}" y2="${CH.t + ih}"
-          stroke="var(--line-strong)" stroke-width="1" stroke-dasharray="3 3"/>`;
-  g += `<circle cx="${X(si).toFixed(1)}" cy="${Y(pts[si].outlay / 12).toFixed(1)}" r="5"
-          fill="var(--amber)" stroke="var(--chart-surface)" stroke-width="2"/>`;
-  g += `<circle cx="${X(si).toFixed(1)}" cy="${Y(pts[si].net / 12).toFixed(1)}" r="5"
-          fill="var(--accent)" stroke="var(--chart-surface)" stroke-width="2"/>`;
+  g += `<line x1="${X(si).toFixed(1)}" y1="${CH.t}" x2="${X(si).toFixed(1)}" y2="${CH.t + ih}" stroke="var(--line-2)" stroke-width="1" stroke-dasharray="3 4"/>`;
+  g += `<circle cx="${X(si).toFixed(1)}" cy="${Y(pts[si].outlay / 12).toFixed(1)}" r="5.5" fill="var(--out)" stroke="var(--plot)" stroke-width="2.5"/>`;
+  g += `<circle cx="${X(si).toFixed(1)}" cy="${Y(pts[si].net / 12).toFixed(1)}" r="5.5" fill="var(--acc)" stroke="var(--plot)" stroke-width="2.5"/>`;
+  g += `<g id="hov"></g>`;
+  svg.innerHTML = `<title id="ct">Monthly gross outlay and net cost by year</title>` + g;
 
-  g += `<g id="hoverLayer"></g>`;
-  svg.innerHTML = `<title id="chartTitle">Monthly gross outlay and net cost after tax, by year of ownership</title>` + g;
+  $("chartCap").innerHTML = `The gap is the monthly refund — ${money(pts[0].outlay / 12 - pts[0].net / 12)} in year 1,
+    ${money(pts[last].outlay / 12 - pts[last].net / 12)} by year ${pts.length}.`;
 
-  const gap = pts[0].outlay / 12 - pts[0].net / 12, gapEnd = pts[last].outlay / 12 - pts[last].net / 12;
-  $("chartCap").innerHTML =
-    `The gap between the lines is the monthly refund: ${money(gap)} in year 1, ${money(gapEnd)} by year ${pts.length}.
-     Gross outlay rises because the assessment does; net cost rises faster because the interest deduction is draining away.`;
-
-  /* hover */
-  const box = $("chartBox"), tip = $("tip"), layer = svg.querySelector("#hoverLayer");
+  const box = $("chartBox"), tip = $("tip"), layer = svg.querySelector("#hov");
   const move = ev => {
     const rect = svg.getBoundingClientRect();
     const cx = ev.touches ? ev.touches[0].clientX : ev.clientX;
     const px = (cx - rect.left) / rect.width * CH.w;
     let i = Math.round((px - CH.l) / (iw / Math.max(1, pts.length - 1)));
     i = Math.max(0, Math.min(pts.length - 1, i));
-    const d = pts[i];
+    const p = pts[i];
     layer.innerHTML =
-      `<line x1="${X(i).toFixed(1)}" y1="${CH.t}" x2="${X(i).toFixed(1)}" y2="${CH.t + ih}" stroke="var(--line-strong)" stroke-width="1"/>
-       <circle cx="${X(i).toFixed(1)}" cy="${Y(d.outlay / 12).toFixed(1)}" r="4.5" fill="var(--amber)" stroke="var(--chart-surface)" stroke-width="2"/>
-       <circle cx="${X(i).toFixed(1)}" cy="${Y(d.net / 12).toFixed(1)}" r="4.5" fill="var(--accent)" stroke="var(--chart-surface)" stroke-width="2"/>`;
-    tip.innerHTML =
-      `<div class="ty">Year ${d.year}</div>
-       <div class="tr"><span><span class="tsw" style="background:var(--amber)"></span>Gross</span><span class="n">${money(d.outlay / 12)}</span></div>
-       <div class="tr"><span><span class="tsw" style="background:var(--accent)"></span>Net</span><span class="n">${money(d.net / 12)}</span></div>
-       <div class="tr"><span>Refund</span><span class="n">${money(d.benefit / 12)}</span></div>
-       <div class="tr"><span>Principal</span><span class="n">${money(d.annualPrincipal / 12)}</span></div>`;
-    const bw = box.clientWidth, tw = 190;
+      `<line x1="${X(i).toFixed(1)}" y1="${CH.t}" x2="${X(i).toFixed(1)}" y2="${CH.t + ih}" stroke="var(--line-2)" stroke-width="1"/>
+       <circle cx="${X(i).toFixed(1)}" cy="${Y(p.outlay / 12).toFixed(1)}" r="5" fill="var(--out)" stroke="var(--plot)" stroke-width="2.5"/>
+       <circle cx="${X(i).toFixed(1)}" cy="${Y(p.net / 12).toFixed(1)}" r="5" fill="var(--acc)" stroke="var(--plot)" stroke-width="2.5"/>`;
+    tip.innerHTML = `<div class="y">Year ${p.year}</div>
+      <div class="r"><span><em style="background:var(--out)"></em>Gross</span><span>${money(p.outlay / 12)}</span></div>
+      <div class="r"><span><em style="background:var(--acc)"></em>Net</span><span>${money(p.net / 12)}</span></div>
+      <div class="r"><span>Refund</span><span>${money(p.benefit / 12)}</span></div>`;
+    const bw = box.clientWidth, tw = 196;
     tip.style.left = Math.max(4, Math.min(bw - tw - 4, X(i) / CH.w * bw - tw / 2)) + "px";
-    tip.style.top  = "8px";
+    tip.style.top = "10px";
     tip.style.opacity = "1";
   };
-  const leave = () => { tip.style.opacity = "0"; layer.innerHTML = ""; };
   svg.addEventListener("pointermove", move);
-  svg.addEventListener("pointerleave", leave);
+  svg.addEventListener("pointerleave", () => { tip.style.opacity = "0"; layer.innerHTML = ""; });
   svg.addEventListener("touchmove", move, { passive: true });
 }
 
-/* ═══════════════════ local persistence ═══════════════════
-   localStorage first; a cookie is the fallback for contexts that block it.
-   Nothing leaves the browser either way.                                  */
+/* ═══════════════════ persistence ═══════════════════ */
 const STORE = "carrying-cost.v1";
 const fields = () => Array.from(document.querySelectorAll("#rail input, #rail select"));
-
 const jar = {
   read() {
-    try { const v = localStorage.getItem(STORE); if (v) return v; } catch (e) { /* blocked */ }
-    const m = document.cookie.match(new RegExp("(?:^|; )" + STORE.replace(".", "\\.") + "=([^;]*)"));
+    try { const v = localStorage.getItem(STORE); if (v) return v; } catch (e) {}
+    const m = document.cookie.match(new RegExp("(?:^|; )carrying-cost\\.v1=([^;]*)"));
     return m ? decodeURIComponent(m[1]) : null;
   },
   write(v) {
-    try { localStorage.setItem(STORE, v); return; } catch (e) { /* blocked */ }
+    try { localStorage.setItem(STORE, v); return; } catch (e) {}
     document.cookie = `${STORE}=${encodeURIComponent(v)}; path=/; max-age=31536000; SameSite=Lax`;
   },
   clear() {
-    try { localStorage.removeItem(STORE); } catch (e) { /* blocked */ }
+    try { localStorage.removeItem(STORE); } catch (e) {}
     document.cookie = `${STORE}=; path=/; max-age=0; SameSite=Lax`;
   }
 };
-
 function save() {
-  const d = { __mode: rentMode };
-  fields().forEach(el => { d[el.id] = el.value; });
-  jar.write(JSON.stringify(d));
+  const o = { __mode: rentMode };
+  fields().forEach(el => { o[el.id] = el.value; });
+  jar.write(JSON.stringify(o));
 }
 function restore() {
-  let d;
-  try { d = JSON.parse(jar.read() || "{}"); } catch (e) { return; }
-  if (!d || typeof d !== "object") return;
-  fields().forEach(el => { if (typeof d[el.id] === "string") el.value = d[el.id]; });
-  if (["schedE", "costshare", "full"].includes(d.__mode)) {
-    rentMode = d.__mode;
+  let o; try { o = JSON.parse(jar.read() || "{}"); } catch (e) { return; }
+  if (!o || typeof o !== "object") return;
+  fields().forEach(el => { if (typeof o[el.id] === "string") el.value = o[el.id]; });
+  if (["schedE", "costshare", "full"].includes(o.__mode)) {
+    rentMode = o.__mode;
     $("rtSeg").querySelectorAll("button").forEach(b =>
       b.setAttribute("aria-pressed", b.dataset.mode === rentMode ? "true" : "false"));
   }
@@ -1461,16 +951,13 @@ function restore() {
 const onEdit = () => { save(); render(); };
 $("rail").addEventListener("input", onEdit);
 $("rail").addEventListener("change", onEdit);
-$("resetBtn").addEventListener("click", () => {
-  jar.clear();
-  location.reload();
-});
+$("resetBtn").addEventListener("click", () => { jar.clear(); location.reload(); });
 $("rtSeg").addEventListener("click", ev => {
-  const btn = ev.target.closest("button[data-mode]");
-  if (!btn) return;
-  rentMode = btn.dataset.mode;
-  $("rtSeg").querySelectorAll("button").forEach(b =>
-    b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+  const b = ev.target.closest("button[data-mode]");
+  if (!b) return;
+  rentMode = b.dataset.mode;
+  $("rtSeg").querySelectorAll("button").forEach(x =>
+    x.setAttribute("aria-pressed", x === b ? "true" : "false"));
   onEdit();
 });
 window.addEventListener("resize", () => { if (!$("results").hidden) drawChart(readInputs()); });
