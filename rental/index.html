@@ -14,6 +14,7 @@
   --acc:#0071E3; --acc-ink:#0062C4; --acc-wash:rgba(0,113,227,.09);
   --out:#C2570A; --out-ink:#9E4A00;
   --flag:#C0342B;
+  --wm1:#0B3B8C; --wm2:#1C7DF0; --wm3:#8FD8FF;
   --sh:0 1px 2px rgba(0,0,0,.04), 0 8px 28px -14px rgba(0,0,0,.18);
   --sh-2:0 2px 6px rgba(0,0,0,.06), 0 18px 44px -18px rgba(0,0,0,.24);
   --plot:#FFFFFF;
@@ -28,6 +29,7 @@
   --acc:#4490FE; --acc-ink:#7FB4FF; --acc-wash:rgba(68,144,254,.14);
   --out:#D6760C; --out-ink:#E8A15A;
   --flag:#FF6F61;
+  --wm1:#123166; --wm2:#3E86F5; --wm3:#A9E2FF;
   --sh:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -16px rgba(0,0,0,.9);
   --sh-2:0 2px 8px rgba(0,0,0,.6), 0 20px 48px -20px rgba(0,0,0,1);
   --plot:#1D1D1F;
@@ -39,6 +41,7 @@
   --acc:#4490FE; --acc-ink:#7FB4FF; --acc-wash:rgba(68,144,254,.14);
   --out:#D6760C; --out-ink:#E8A15A;
   --flag:#FF6F61;
+  --wm1:#123166; --wm2:#3E86F5; --wm3:#A9E2FF;
   --sh:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -16px rgba(0,0,0,.9);
   --sh-2:0 2px 8px rgba(0,0,0,.6), 0 20px 48px -20px rgba(0,0,0,1);
   --plot:#1D1D1F;
@@ -273,21 +276,71 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
 
   <header>
     <h1 class="wm">
-      <svg class="wm-splash" viewBox="0 0 640 360" preserveAspectRatio="none" aria-hidden="true">
+      <svg class="wm-splash" id="wmSvg" viewBox="0 0 640 360" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="wmGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" style="stop-color:var(--acc)"></stop>
-            <stop offset="1" style="stop-color:var(--out)"></stop>
+            <stop offset="0" style="stop-color:var(--wm1)"></stop>
+            <stop offset="55%" style="stop-color:var(--wm2)"></stop>
+            <stop offset="1" style="stop-color:var(--wm3)"></stop>
           </linearGradient>
         </defs>
-        <path fill="url(#wmGrad)" d="M260,10 C380,-6 520,14 578,92 C630,164 612,254 538,308 C460,360 340,360 230,338 C120,316 26,256 20,168 C14,86 96,34 178,18 C205,13 232,11 260,10 Z"/>
-        <ellipse cx="210" cy="86" rx="140" ry="56" fill="#fff" opacity=".1" transform="rotate(-16 210 86)"/>
+        <path id="wmPath" fill="url(#wmGrad)" d="M260,10 C380,-6 520,14 578,92 C630,164 612,254 538,308 C460,360 340,360 230,338 C120,316 26,256 20,168 C14,86 96,34 178,18 C205,13 232,11 260,10 Z"/>
+        <ellipse id="wmGloss" cx="210" cy="86" rx="140" ry="56" fill="#fff" opacity=".14" transform="rotate(-16 210 86)"/>
       </svg>
       <span class="wm-rental">Rental</span>
       <span class="wm-math">Math</span>
     </h1>
     <p class="sub">What the house actually costs, after the tax you actually get back.</p>
   </header>
+
+  <script>
+  (() => {
+    const path = document.getElementById("wmPath"), gloss = document.getElementById("wmGloss");
+    if (!path || !gloss || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    /* A ring of point-masses, each on a damped spring toward a slowly drifting
+       target radius. Two detuned sine terms per point stand in for a forcing
+       function, so the ring settles the way a lightly damped membrane does —
+       never still, never chaotic — rather than pulsing in and out as one. */
+    const N = 10, cx = 320, cy = 180, RX = 300, RY = 168;
+    const baseM = [1.05, .92, 1.1, .95, 1.08, .9, 1.06, .94, 1.09, .93];
+    const STIFF = .02, DAMP = .9, AMP = .05;
+    const pts = baseM.map((m, i) => ({
+      angle: -Math.PI / 2 + (i / N) * Math.PI * 2, rest: m, r: m, v: 0,
+      w1: .16 * (1 + i * .031), p1: i * 1.7,
+      w2: .27 * (1 + i * .021), p2: i * 2.3 + 1
+    }));
+    const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    const at = p => [cx + RX * p.r * Math.cos(p.angle), cy + RY * p.r * Math.sin(p.angle)];
+
+    const t0 = performance.now();
+    (function frame(now) {
+      const t = (now - t0) / 1000;
+      for (const p of pts) {
+        const target = p.rest + AMP * (Math.sin(t * p.w1 + p.p1) * .6 + Math.sin(t * p.w2 + p.p2) * .4);
+        p.v = (p.v + (target - p.r) * STIFF) * DAMP;
+        p.r += p.v;
+      }
+      const xy = pts.map(at);
+      let d = "M" + mid(xy[xy.length - 1], xy[0]).map(n => n.toFixed(1)).join(",") + " ";
+      xy.forEach((pt, i) => {
+        const m = mid(pt, xy[(i + 1) % xy.length]);
+        d += "Q" + pt.map(n => n.toFixed(1)).join(",") + " " + m.map(n => n.toFixed(1)).join(",") + " ";
+      });
+      path.setAttribute("d", d + "Z");
+
+      /* Gloss traces a slow ellipse — simple harmonic motion in two axes,
+         90° out of phase — like a highlight riding a gently rocking surface. */
+      const gx = 205 + Math.sin(t * .11) * 26, gy = 88 + Math.cos(t * .11) * 14;
+      const rot = -16 + Math.sin(t * .09) * 7;
+      gloss.setAttribute("cx", gx.toFixed(1));
+      gloss.setAttribute("cy", gy.toFixed(1));
+      gloss.setAttribute("transform", `rotate(${rot.toFixed(1)} ${gx.toFixed(1)} ${gy.toFixed(1)})`);
+
+      requestAnimationFrame(frame);
+    })(t0);
+  })();
+  </script>
 
   <section class="card empty" id="empty" hidden>
     <h2>Add a purchase price</h2>
