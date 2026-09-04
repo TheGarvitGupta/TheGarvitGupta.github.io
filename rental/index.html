@@ -60,8 +60,32 @@ p{margin:0}
 
 /* hero */
 header{padding:96px 0 56px; text-align:center}
-header h1{font-size:clamp(38px,6.4vw,64px)}
-header .sub{margin:18px auto 0; max-width:34ch; color:var(--mut); font-size:19px; letter-spacing:-.012em}
+header .sub{margin:26px auto 0; max-width:34ch; color:var(--mut); font-size:19px; letter-spacing:-.012em}
+
+/* ── word mark ── */
+.wm{position:relative; isolation:isolate; display:flex; flex-direction:column; align-items:center}
+.wm-rental{
+  position:relative; z-index:1; margin-bottom:-.32em; transform:rotate(-4deg); transform-origin:50% 100%;
+  font-family:Georgia,"New York",ui-serif,serif; font-style:italic; font-weight:500;
+  font-size:clamp(20px,3.6vw,30px); color:var(--acc-ink); letter-spacing:.01em;
+}
+.wm-math{
+  font-family:var(--f); font-weight:700; font-size:clamp(64px,14vw,150px);
+  letter-spacing:-.05em; line-height:.94; font-variant-numeric:tabular-nums;
+  background:linear-gradient(120deg, var(--acc) 0%, var(--acc) 35%, var(--out) 100%);
+  background-size:220% auto; -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:wmShift 9s ease-in-out infinite;
+}
+.wm-decor{position:absolute; inset:-8% -6%; z-index:-1; pointer-events:none}
+.wm-decor i{position:absolute; font-style:normal; font-family:var(--fm); font-weight:600; animation:wmFloat 6s ease-in-out infinite}
+.wm-decor i:nth-child(1){top:2%; left:1%; font-size:clamp(16px,2.6vw,26px); color:var(--acc); opacity:.26; animation-delay:0s}
+.wm-decor i:nth-child(2){top:68%; left:-1%; font-size:clamp(13px,1.9vw,19px); color:var(--out); opacity:.24; animation-delay:1.2s}
+.wm-decor i:nth-child(3){top:-2%; right:1%; font-size:clamp(19px,3vw,32px); color:var(--out); opacity:.22; animation-delay:.5s}
+.wm-decor i:nth-child(4){top:62%; right:-1%; font-size:clamp(13px,1.9vw,19px); color:var(--acc); opacity:.26; animation-delay:1.8s}
+.wm-decor i:nth-child(5){bottom:-4%; left:30%; font-size:clamp(11px,1.5vw,15px); color:var(--mut); opacity:.3; animation-delay:.9s}
+@keyframes wmShift{ 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+@keyframes wmFloat{ 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-9px) rotate(-6deg)} }
+@media (max-width:480px){ .wm-decor{display:none} }
 
 /* card */
 .card{background:var(--card); border-radius:var(--r); box-shadow:var(--sh); margin-bottom:22px; overflow:hidden}
@@ -256,7 +280,11 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
 
   <header>
     <p class="eyebrow">2026 Federal &middot; 2025 California</p>
-    <h1>Rental&nbsp;Math</h1>
+    <h1 class="wm">
+      <span class="wm-decor" aria-hidden="true"><i>&divide;</i><i>%</i><i>=</i><i>+</i><i>&minus;</i></span>
+      <span class="wm-rental">Rental</span>
+      <span class="wm-math">Math</span>
+    </h1>
     <p class="sub">What the house actually costs, after the tax you actually get back.</p>
   </header>
 
