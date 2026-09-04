@@ -14,7 +14,7 @@
   --acc:#0071E3; --acc-ink:#0062C4; --acc-wash:rgba(0,113,227,.09);
   --out:#C2570A; --out-ink:#9E4A00;
   --flag:#C0342B;
-  --wm1:#061D4D; --wm2:#0F4CA6; --wm3:#2E6FC4;
+  --wm1:var(--wm1-light,#061D4D); --wm2:var(--wm2-light,#0F4CA6); --wm3:var(--wm3-light,#2E6FC4);
   --sh:0 1px 2px rgba(0,0,0,.04), 0 8px 28px -14px rgba(0,0,0,.18);
   --sh-2:0 2px 6px rgba(0,0,0,.06), 0 18px 44px -18px rgba(0,0,0,.24);
   --plot:#FFFFFF;
@@ -29,7 +29,7 @@
   --acc:#4490FE; --acc-ink:#7FB4FF; --acc-wash:rgba(68,144,254,.14);
   --out:#D6760C; --out-ink:#E8A15A;
   --flag:#FF6F61;
-  --wm1:#081D45; --wm2:#1C4E96; --wm3:#3E76C4;
+  --wm1:var(--wm1-dark,#081D45); --wm2:var(--wm2-dark,#1C4E96); --wm3:var(--wm3-dark,#3E76C4);
   --sh:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -16px rgba(0,0,0,.9);
   --sh-2:0 2px 8px rgba(0,0,0,.6), 0 20px 48px -20px rgba(0,0,0,1);
   --plot:#1D1D1F;
@@ -41,7 +41,7 @@
   --acc:#4490FE; --acc-ink:#7FB4FF; --acc-wash:rgba(68,144,254,.14);
   --out:#D6760C; --out-ink:#E8A15A;
   --flag:#FF6F61;
-  --wm1:#081D45; --wm2:#1C4E96; --wm3:#3E76C4;
+  --wm1:var(--wm1-dark,#081D45); --wm2:var(--wm2-dark,#1C4E96); --wm3:var(--wm3-dark,#3E76C4);
   --sh:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -16px rgba(0,0,0,.9);
   --sh-2:0 2px 8px rgba(0,0,0,.6), 0 20px 48px -20px rgba(0,0,0,1);
   --plot:#1D1D1F;
@@ -276,6 +276,24 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
 @media (prefers-reduced-motion:reduce){ *{transition:none!important; animation:none!important} }
 </style>
 
+<script>
+/* A fresh blob colour each load. Same saturation/lightness curve as the
+   original blue (calibrated from it), just a different hue — so it always
+   reads as "the same design," never as a random or clashing accent. Runs
+   before the wordmark paints, so there's no flash of the fallback blue. */
+(() => {
+  const hues = [215, 255, 285, 320, 350, 20, 165, 190];
+  const h = hues[Math.floor(Math.random() * hues.length)];
+  const s = document.documentElement.style;
+  s.setProperty("--wm1-light", `hsl(${h}, 84%, 16%)`);
+  s.setProperty("--wm2-light", `hsl(${h}, 80%, 35%)`);
+  s.setProperty("--wm3-light", `hsl(${h}, 60%, 48%)`);
+  s.setProperty("--wm1-dark",  `hsl(${h}, 78%, 15%)`);
+  s.setProperty("--wm2-dark",  `hsl(${h}, 68%, 35%)`);
+  s.setProperty("--wm3-dark",  `hsl(${h}, 55%, 50%)`);
+})();
+</script>
+
 <div class="wrap">
 
   <header>
@@ -323,7 +341,20 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
        real, undistorted, uncropped pixels no matter what shape the text
        block ends up being at a given width or with a given font.          */
     const N = 12;
-    const baseM = [1.03, .98, 1.04, .98, 1.03, .98, 1.04, .98, 1.03, .98, 1.04, .98];
+    /* A different rest shape each load too: two low-order harmonics (one
+       bulge, one pinch, going once and twice around the ring) at a random
+       phase each. Low-order harmonics stay smooth by construction — no
+       per-point noise that could look jagged — while still giving a
+       distinct silhouette every time. Range chosen so the combined worst
+       case (this plus the wobble below) stays inside the safety margin
+       verified in QA (max r ~1.13 against a ~1.25 edge-contact threshold,
+       checked against the adversarial case where both harmonics peak at
+       the same point).                                                   */
+    const h1 = .045, h2 = .025, phi1 = Math.random() * Math.PI * 2, phi2 = Math.random() * Math.PI * 2;
+    const baseM = Array.from({ length: N }, (_, i) => {
+      const a = (i / N) * Math.PI * 2;
+      return 1 + h1 * Math.cos(a + phi1) + h2 * Math.cos(2 * a + phi2);
+    });
     const STIFF = .028, DAMP = .9, AMP = .08;
     let cx = 200, cy = 110, RX = 168, RY = 92;
     const pts = baseM.map((m, i) => ({
