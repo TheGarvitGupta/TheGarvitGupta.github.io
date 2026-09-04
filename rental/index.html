@@ -62,26 +62,31 @@ p{margin:0}
 .eyebrow{font-family:var(--fm); font-size:11px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--mut)}
 
 /* hero */
-header{padding:96px 0 56px; text-align:center}
-header .sub{margin:26px auto 0; max-width:34ch; color:var(--mut); font-size:19px; letter-spacing:-.012em}
-header .privacy{margin-top:12px; font-size:13px; color:var(--mut); opacity:.8}
+header{margin-bottom:22px}
+.hero-row{display:flex; align-items:center; gap:22px; padding:20px 26px}
+.hero-row .sub{margin:0; max-width:40ch; color:var(--mut); font-size:16px; letter-spacing:-.012em}
+.hero-row .privacy{margin-top:7px; font-size:12px; color:var(--mut); opacity:.8}
+@media (max-width:560px){
+  .hero-row{flex-direction:column; text-align:center; gap:10px; padding:22px 20px}
+  .hero-row .sub, .hero-row .privacy{max-width:none}
+}
 
 /* ── word mark ── */
 .wm{
-  position:relative; isolation:isolate; display:inline-flex; flex-direction:column; align-items:center;
-  padding:clamp(26px,6vw,50px) clamp(38px,9vw,80px) clamp(30px,6.5vw,60px);
+  position:relative; isolation:isolate; display:inline-flex; flex:none; flex-direction:column; align-items:center;
+  padding:clamp(14px,2.6vw,20px) clamp(20px,4vw,32px) clamp(16px,2.8vw,22px);
 }
-.wm-splash{position:absolute; z-index:-1; top:-8%; left:-8%; width:116%; height:116%; filter:drop-shadow(0 20px 40px rgba(0,0,0,.18))}
+.wm-splash{position:absolute; z-index:-1; top:-8%; left:-8%; width:116%; height:116%; filter:drop-shadow(0 10px 20px rgba(0,0,0,.18))}
 .wm-rental{
   margin-bottom:-.3em; transform:rotate(-4deg); transform-origin:50% 100%;
   font-family:Georgia,"New York",ui-serif,serif; font-style:italic; font-weight:500;
-  font-size:clamp(19px,3.4vw,28px); color:#fff; letter-spacing:.01em;
+  font-size:clamp(11px,1.6vw,14px); color:#fff; letter-spacing:.01em;
   text-shadow:0 2px 10px rgba(0,0,0,.16);
 }
 .wm-math{
-  font-family:var(--f); font-weight:700; font-size:clamp(64px,14vw,150px);
-  letter-spacing:-.05em; line-height:.94; font-variant-numeric:tabular-nums;
-  color:#fff; text-shadow:0 8px 24px rgba(0,0,0,.2);
+  font-family:var(--f); font-weight:700; font-size:clamp(32px,6vw,44px);
+  letter-spacing:-.04em; line-height:.94; font-variant-numeric:tabular-nums;
+  color:#fff; text-shadow:0 4px 14px rgba(0,0,0,.2);
 }
 
 /* card */
@@ -248,8 +253,6 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
 @media (max-width:620px){
   body{font-size:15px}
   .wrap{padding:0 13px 76px}
-  header{padding:60px 0 34px}
-  header .sub{font-size:17px}
   .panel{padding:4px 17px 20px}
   .grp{padding-top:19px}
   .fields{gap:13px 12px}
@@ -276,23 +279,29 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
 <div class="wrap">
 
   <header>
-    <h1 class="wm">
-      <svg class="wm-splash" id="wmSvg" viewBox="0 0 400 220" aria-hidden="true">
-        <defs>
-          <linearGradient id="wmGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" style="stop-color:var(--wm1)"></stop>
-            <stop offset="55%" style="stop-color:var(--wm2)"></stop>
-            <stop offset="1" style="stop-color:var(--wm3)"></stop>
-          </linearGradient>
-        </defs>
-        <path id="wmPath" fill="url(#wmGrad)" d="M158.8,23.6 Q200.0,15.2 241.2,23.6 Q282.3,31.9 316.8,47.0 Q351.3,62.2 358.0,86.1 Q364.6,110.0 357.2,133.7 Q349.9,157.4 316.1,172.7 Q282.3,188.1 241.2,196.9 Q200.0,205.7 158.8,196.9 Q117.7,188.1 83.9,172.7 Q50.1,157.4 42.8,133.7 Q35.4,110.0 42.0,86.1 Q48.7,62.2 83.2,47.0 Q117.7,31.9 158.8,23.6 Z"/>
-        <ellipse id="wmGloss" cx="145.2" cy="79.7" rx="47.4" ry="18.5" fill="#fff" opacity=".16" transform="rotate(-22 145.2 79.7)"/>
-      </svg>
-      <span class="wm-rental">Rental</span>
-      <span class="wm-math">Math</span>
-    </h1>
-    <p class="sub">What the house actually costs, after the tax you actually get back.</p>
-    <p class="privacy">Runs entirely in your browser. Nothing you type here is sent anywhere.</p>
+    <section class="card">
+      <div class="hero-row">
+        <h1 class="wm">
+          <svg class="wm-splash" id="wmSvg" viewBox="0 0 400 220" aria-hidden="true">
+            <defs>
+              <linearGradient id="wmGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" style="stop-color:var(--wm1)"></stop>
+                <stop offset="55%" style="stop-color:var(--wm2)"></stop>
+                <stop offset="1" style="stop-color:var(--wm3)"></stop>
+              </linearGradient>
+            </defs>
+            <path id="wmPath" fill="url(#wmGrad)" d="M158.8,23.6 Q200.0,15.2 241.2,23.6 Q282.3,31.9 316.8,47.0 Q351.3,62.2 358.0,86.1 Q364.6,110.0 357.2,133.7 Q349.9,157.4 316.1,172.7 Q282.3,188.1 241.2,196.9 Q200.0,205.7 158.8,196.9 Q117.7,188.1 83.9,172.7 Q50.1,157.4 42.8,133.7 Q35.4,110.0 42.0,86.1 Q48.7,62.2 83.2,47.0 Q117.7,31.9 158.8,23.6 Z"/>
+            <ellipse id="wmGloss" cx="145.2" cy="79.7" rx="47.4" ry="18.5" fill="#fff" opacity=".16" transform="rotate(-22 145.2 79.7)"/>
+          </svg>
+          <span class="wm-rental">Rental</span>
+          <span class="wm-math">Math</span>
+        </h1>
+        <div>
+          <p class="sub">What the house actually costs, after the tax you actually get back.</p>
+          <p class="privacy">Runs entirely in your browser. Nothing you type here is sent anywhere.</p>
+        </div>
+      </div>
+    </section>
   </header>
 
   <script>
@@ -315,7 +324,7 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
        block ends up being at a given width or with a given font.          */
     const N = 12;
     const baseM = [1.03, .98, 1.04, .98, 1.03, .98, 1.04, .98, 1.03, .98, 1.04, .98];
-    const STIFF = .02, DAMP = .9, AMP = .018;
+    const STIFF = .028, DAMP = .9, AMP = .08;
     let cx = 200, cy = 110, RX = 168, RY = 92;
     const pts = baseM.map((m, i) => ({
       angle: -Math.PI / 2 + (i / N) * Math.PI * 2, rest: m, r: m, v: 0,
@@ -324,14 +333,14 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
     }));
     const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
     const at = p => [cx + RX * p.r * Math.cos(p.angle), cy + RY * p.r * Math.sin(p.angle)];
-    const glossIdx = [9, 10, 11, 0];   // the upper-left arc of the ring
+    const glossPt = 10;   // a single point on the upper-left of the ring
 
     function layout() {
       const r = svg.getBoundingClientRect();
       const w = Math.max(1, r.width), h = Math.max(1, r.height);
       svg.setAttribute("viewBox", `0 0 ${w.toFixed(0)} ${h.toFixed(0)}`);
       cx = w / 2; cy = h / 2;
-      RX = w * .42; RY = h * .42;   // margin so the wobble never reaches the edge
+      RX = w * .4; RY = h * .4;   // margin so the wobble never reaches the edge
     }
 
     function draw(t) {
@@ -343,17 +352,16 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
       });
       path.setAttribute("d", d + "Z");
 
-      /* The gloss is derived from the ring's own points rather than an
-         independent orbit, so it is geometrically pinned inside the blob —
-         it rides at 55% of the way from the centre out to the upper-left
-         arc's midpoint, and resizes with that arc's own current radius,
-         instead of drifting on a path that could ever clear the edge. */
-      const arc = glossIdx.map(i => xy[i]);
-      const arcCx = arc.reduce((s, p) => s + p[0], 0) / arc.length;
-      const arcCy = arc.reduce((s, p) => s + p[1], 0) / arc.length;
-      const gx = cx + (arcCx - cx) * .55, gy = cy + (arcCy - cy) * .55;
-      const localR = glossIdx.reduce((s, i) => s + pts[i].r, 0) / glossIdx.length;
-      const grx = RX * .28 * localR, gry = RY * .2 * localR;
+      /* The gloss rides on one point of the ring rather than an independent
+         orbit, so it is geometrically pinned inside the blob and moves with
+         the same spring physics as the shape itself — 65% of the way from
+         centre to that point, a fraction verified (by sampling the gloss
+         boundary against the live path across a full simulated run) to
+         never clear the edge, even at this point's most extreme swing. */
+      const p10 = xy[glossPt];
+      const gx = cx + (p10[0] - cx) * .65, gy = cy + (p10[1] - cy) * .65;
+      const localR = pts[glossPt].r;
+      const grx = RX * .3 * localR, gry = RY * .21 * localR;
       const rot = -22 + Math.sin(t * .09) * 5;
       gloss.setAttribute("cx", gx.toFixed(1));
       gloss.setAttribute("cy", gy.toFixed(1));
