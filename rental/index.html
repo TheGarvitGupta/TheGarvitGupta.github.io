@@ -64,6 +64,7 @@ p{margin:0}
 /* hero */
 header{padding:96px 0 56px; text-align:center}
 header .sub{margin:26px auto 0; max-width:34ch; color:var(--mut); font-size:19px; letter-spacing:-.012em}
+header .privacy{margin-top:12px; font-size:13px; color:var(--mut); opacity:.8}
 
 /* ── word mark ── */
 .wm{
@@ -291,6 +292,7 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
       <span class="wm-math">Math</span>
     </h1>
     <p class="sub">What the house actually costs, after the tax you actually get back.</p>
+    <p class="privacy">Runs entirely in your browser. Nothing you type here is sent anywhere.</p>
   </header>
 
   <script>
@@ -369,7 +371,7 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
     </div>
   </section>
 
-  <form class="panel" id="rail" autocomplete="off">
+  <div class="panel" id="rail">
     <div class="grp">
       <span class="eyebrow">Property</span>
       <div class="fields">
@@ -455,7 +457,7 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
       </div>
       <p class="hint">Saved in this browser only. <button type="button" id="resetBtn" class="btn" style="margin-left:8px">Clear</button></p>
     </div>
-  </form>
+  </div>
 
   <div id="results">
 
@@ -477,7 +479,7 @@ footer{margin-top:44px; text-align:center; font-size:12.5px; color:var(--mut); l
 
     <section class="card">
       <div class="hd"><h2>The refund fades</h2>
-        <p class="sub">Interest gives way to principal, so the deduction shrinks as the assessment climbs.</p></div>
+        <p class="sub">Interest gives way to principal, so the deduction shrinks — that's equity growing, not money wasted.</p></div>
       <div class="bd">
         <div class="legend">
           <i><b style="background:var(--out)"></b> Gross outlay</i>
@@ -752,7 +754,7 @@ function buildRentFields(n) {
   let h = "";
   for (let i = 1; i <= n; i++) {
     h += `<div class="f"><label for="rent${i}">Room ${i} / mo<button type="button" class="inf" data-tip="What housemate ${i} pays you each month." aria-label="What this means">i</button></label>` +
-      `<div class="ip"><span class="pre">$</span><input class="pl" type="number" id="rent${i}" value="${esc(existing["rent" + i] || "")}" placeholder="0" step="100" min="0"></div></div>`;
+      `<div class="ip"><span class="pre">$</span><input class="pl" type="number" id="rent${i}" value="${esc(existing["rent" + i] || "")}" placeholder="0" step="100" min="0" autocomplete="off"></div></div>`;
   }
   slot.innerHTML = h;
   slot.querySelectorAll(".inf").forEach(wireTip);
@@ -1044,8 +1046,10 @@ function drawChart(I) {
   g += `<g id="hov"></g>`;
   svg.innerHTML = `<title id="ct">Monthly gross outlay and net cost by year</title>` + g;
 
-  $("chartCap").innerHTML = `The gap is the monthly refund — ${money(pts[0].outlay / 12 - pts[0].net / 12)} in year 1,
-    ${money(pts[last].outlay / 12 - pts[last].net / 12)} by year ${pts.length}.`;
+  $("chartCap").innerHTML = `The gap between the lines is the monthly refund — ${money(pts[0].outlay / 12 - pts[0].net / 12)} in year 1,
+    narrowing to ${money(pts[last].outlay / 12 - pts[last].net / 12)} by year ${pts.length}. It narrows because more of that
+    outlay is principal by then (${money(pts[0].annualPrincipal / 12)} vs ${money(pts[last].annualPrincipal / 12)} a month) —
+    equity you keep, not money spent.`;
 
   const box = $("chartBox"), tip = $("tip"), layer = svg.querySelector("#hov");
   const move = ev => {
@@ -1191,6 +1195,12 @@ document.addEventListener("click", () => { if (tipFor) hideTip(); });
 document.addEventListener("keydown", ev => { if (ev.key === "Escape") hideTip(); });
 window.addEventListener("scroll", () => { if (tipFor) hideTip(); }, { passive: true });
 window.addEventListener("resize", () => { if (tipFor) hideTip(); });
+
+// #rail is a plain div, not a <form> — no submit-on-Enter, and no native
+// "leave site? changes may not be saved" prompt some browsers show for a
+// form with edited fields. Autocomplete has to be set per-field instead
+// of inherited from a form's own attribute.
+fields().forEach(el => el.setAttribute("autocomplete", "off"));
 
 restore();
 render();
