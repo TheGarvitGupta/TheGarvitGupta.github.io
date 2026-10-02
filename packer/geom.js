@@ -245,7 +245,8 @@ var PackerGeom = (function () {
     return ((d % 360) + 540) % 360 - 180;
   }
 
-  function magnet(pieces, i, C) {
+  // keep: stay lined up even when the snapped spot is not clean.
+  function magnet(pieces, i, C, keep) {
     var p = pieces[i];
     if (!pointInside(C, p.x, p.y)) return false;
     var x0 = p.x, y0 = p.y, a0 = p.angle, targets = [], others = [], j, k;
@@ -301,8 +302,30 @@ var PackerGeom = (function () {
     var ok = (p.x - x0) * (p.x - x0) + (p.y - y0) * (p.y - y0) <= MAX_SLIDE * MAX_SLIDE;
     for (k = 0; k < C.walls.length && ok; k++) if (excess(V, C.walls[k]) > EPS) ok = false;
     for (k = 0; k < others.length && ok; k++) { var o = overlap(V, others[k]); if (o && o.depth > EPS) ok = false; }
-    if (!ok) { p.x = x0; p.y = y0; p.angle = a0; }
-    return ok;
+    if (!ok && !keep) { p.x = x0; p.y = y0; p.angle = a0; }
+    return keep ? true : ok;
+  }
+
+  // Everything that happens to a piece as it is dragged to (x, y), in order of
+  // preference: snap it to a nearby edge if that is a clean fit; nudge it out
+  // of shallow overlaps; let the neighbours shuffle over to make room; and
+  // failing all that, still line it up with the nearest edge so a slightly
+  // crooked piece is at least straight (it stays red). Returns 'snap', 'fit'
+  // or 'bad'.
+  function place(pieces, i, C) {
+    var p = pieces[i], x = p.x, y = p.y, a = p.angle;
+    if (magnet(pieces, i, C)) return 'snap';
+    if (pointInside(C, x, y) && settle(pieces, i, C)) return 'fit';
+    if (shuffle(pieces, i, C)) return 'fit';
+    p.x = x; p.y = y;
+    if (magnet(pieces, i, C, true)) {
+      settle(pieces, i, C);
+      if (shuffle(pieces, i, C)) return 'snap';
+      if (p.angle !== a) return 'bad';
+    }
+    p.x = x; p.y = y; p.angle = a;
+    settle(pieces, i, C);
+    return 'bad';
   }
 
   function bounds(poly) {
@@ -317,6 +340,6 @@ var PackerGeom = (function () {
   return {
     H: H, EPS: EPS, SHAPES: SHAPES,
     verts: verts, overlap: overlap, makeContainer: makeContainer, excess: excess,
-    pointInside: pointInside, zone: zone, evaluate: evaluate, settle: settle, magnet: magnet, shuffle: shuffle, bounds: bounds
+    pointInside: pointInside, zone: zone, evaluate: evaluate, settle: settle, magnet: magnet, shuffle: shuffle, place: place, bounds: bounds
   };
 })();

@@ -24,12 +24,14 @@
     }
     return d + 'Z';
   }
-  // Pieces are drawn a hair smaller than they really are, so neighbours that
-  // touch still show a sliver of table between them. Collisions use the true shape.
-  var GAP = 0.045;
+  // Pieces are drawn a few pixels smaller than they really are, so neighbours
+  // that touch still show a sliver of table between them; collisions use the
+  // true shape. Gap and corner rounding are in screen pixels, so they look the
+  // same at any zoom.
   function drawn(type) {
-    var base = G.SHAPES[type], inr = type === 'square' ? 0.5 : G.H / 3, k = (inr - GAP) / inr;
-    return rounded(base.map(function (p) { return [p[0] * k, p[1] * k]; }), type === 'square' ? 0.1 : 0.075);
+    var px = 1 / view.scale, gap = 2.6 * px;
+    var base = G.SHAPES[type], inr = type === 'square' ? 0.5 : G.H / 3, k = (inr - gap) / inr;
+    return rounded(base.map(function (p) { return [p[0] * k, p[1] * k]; }), Math.min(6 * px, 0.12));
   }
   function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
   function norm(a) { return ((a % 360) + 360) % 360; }
@@ -114,6 +116,9 @@
     view.w = vw; view.h = vh; view.scale = W / vw;
     board.setAttribute('viewBox', view.x + ' ' + view.y + ' ' + vw + ' ' + vh);
     var px = 1 / view.scale;
+    board.style.setProperty('--u', px);   // one screen pixel, in board units, for stroke widths
+    bin.firstElementChild.setAttribute('d', rounded(lv.container, Math.min(7 * px, 0.14)));
+    pieces.forEach(function (p) { if (p.fill) p.fill.setAttribute('d', drawn(p.type)); });
     $('knob').setAttribute('r', 11 * px);
     $('knob-hit').setAttribute('r', 22 * px);
     $('knob-dot').setAttribute('r', 4 * px);
@@ -165,7 +170,6 @@
     g.dataset.i = i;
     g.style.setProperty('--c', p.color);
     g.style.setProperty('--d', (60 + i * 28) + 'ms');
-    g.style.setProperty('--b', (-Math.random() * 4.6).toFixed(2) + 's');
     fill.setAttribute('d', drawn(p.type));
     if (p.type === 'triangle') face.setAttribute('transform', 'translate(0 0.03) scale(0.74)');
     var eyes = el('g', 'eyes');
@@ -182,15 +186,15 @@
     face.appendChild(idle); face.appendChild(good); face.appendChild(bad);
     body.appendChild(fill); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
-    p.el = g; p.pop = pop; p.body = body;
+    p.el = g; p.pop = pop; p.body = body; p.fill = fill; p.tf = p.rot = '';
     layer.appendChild(g);
     setTimeout(function () { g.classList.remove('fresh'); }, 620 + i * 28);
   }
 
   function render(i) {
-    var p = pieces[i];
-    p.el.style.transform = 'translate(' + p.x.toFixed(4) + 'px,' + p.y.toFixed(4) + 'px)';
-    p.body.style.transform = 'rotate(' + p.angle + 'deg)';
+    var p = pieces[i], tf = 'translate(' + p.x.toFixed(4) + 'px,' + p.y.toFixed(4) + 'px)', rot = 'rotate(' + p.angle + 'deg)';
+    if (tf !== p.tf) { p.el.style.transform = p.tf = tf; }
+    if (rot !== p.rot) { p.body.style.transform = p.rot = rot; }
   }
 
   function knobPos(p) {
@@ -303,8 +307,19 @@
     e.preventDefault();
   });
 
+  // Pointer moves can arrive faster than the screen redraws; only the latest
+  // one per frame is worth working out.
+  var pending = null, frame = 0;
   board.addEventListener('pointermove', function (e) {
     if (!drag || e.pointerId !== drag.id) return;
+    pending = { clientX: e.clientX, clientY: e.clientY };
+    if (!frame) frame = requestAnimationFrame(moveTo);
+  });
+
+  function moveTo() {
+    frame = 0;
+    var e = pending; pending = null;
+    if (!e || !drag) return;
     var w = world(e), p;
     if (drag.mode === 'spin') {
       p = pieces[sel];
@@ -322,17 +337,16 @@
     pieces.forEach(function (q, k) { if (k !== drag.i) { q.x = drag.home[k][0]; q.y = drag.home[k][1]; } });
     p.x = w.x + drag.ox; p.y = w.y + drag.oy; p.angle = drag.a0;
     keepInView(p);
-    var stuck = G.magnet(pieces, drag.i, C);
-    if (!stuck) G.settle(pieces, drag.i, C);
-    if (!G.evaluate(pieces, C).states[drag.i].good) G.shuffle(pieces, drag.i, C);
+    var stuck = G.place(pieces, drag.i, C) === 'snap';
     if (stuck && !drag.stuck) sfx.snap();
     drag.stuck = stuck;
     for (var k = 0; k < pieces.length; k++) render(k);
     judge(); showAngle();
-  });
+  }
 
   function release(e) {
     if (!drag || e.pointerId !== drag.id) return;
+    if (frame) { cancelAnimationFrame(frame); moveTo(); }
     var d = drag; drag = null;
     try { board.releasePointerCapture(e.pointerId); } catch (err) {}
     if (d.mode === 'spin') {
@@ -438,7 +452,6 @@
     title.classList.remove('swap'); void title.offsetWidth; title.classList.add('swap');
 
     bin.setAttribute('class', '');
-    bin.firstElementChild.setAttribute('d', rounded(lv.container, 0.1));
     bin.style.transformOrigin = ((cb.minX + cb.maxX) / 2) + 'px ' + ((cb.minY + cb.maxY) / 2) + 'px';
     bin.style.animation = 'none'; void bin.getBoundingClientRect(); bin.style.animation = '';
 
@@ -592,6 +605,14 @@
   }
 
   /* ---------- go ---------- */
+
+  setInterval(function () {
+    if (!pieces.length || document.hidden) return;
+    var p = pieces[Math.floor(Math.random() * pieces.length)];
+    if (!p.el) return;
+    p.el.classList.add('blink');
+    setTimeout(function () { p.el.classList.remove('blink'); }, 220);
+  }, 900);
 
   // The page is a game board, not a document: no pinch or double-tap zoom.
   // iOS Safari ignores user-scalable=no, so its gesture events are cancelled too.
