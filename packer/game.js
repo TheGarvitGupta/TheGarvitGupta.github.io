@@ -82,8 +82,11 @@
       view.x = (cb.minX + cb.maxX) / 2 - vw / 2;
       view.y = (cb.minY + cb.maxY) / 2 - vh / 2;
     } else {
-      vw = Math.max(cw + 2 * pad, 3.8);
-      vh = ch + 2 * pad + Math.max(1.7, room / (vw - 0.6));
+      // On a phone the box should be as big as it can be, so the tray stays a
+      // shallow strip and the loose pieces are allowed to pile up in it.
+      pad = 0.3;
+      vw = Math.max(cw + 2 * pad, 3.4);
+      vh = ch + 2 * pad + clamp(room / (vw - 0.6), 1.9, 2.3);
       if (vw / vh < W / Hp) vw = vh * W / Hp; else vh = vw * Hp / W;
       view.x = (cb.minX + cb.maxX) / 2 - vw / 2;
       view.y = cb.minY - pad;
@@ -105,12 +108,12 @@
 
   // Deal the pieces out around the box.
   function scatter() {
-    var m = 0.85, gap = 0.85, zones = [];
+    var m = view.land ? 0.85 : 0.7, gap = view.land ? 0.85 : 0.75, zones = [];
     if (view.land) {
       zones.push([view.x + m, view.y + m, cb.minX - gap, view.y + view.h - m]);
       zones.push([cb.maxX + gap, view.y + m, view.x + view.w - m, view.y + view.h - m]);
     } else {
-      zones.push([view.x + m, cb.maxY + gap + 0.1, view.x + view.w - m, view.y + view.h - m]);
+      zones.push([view.x + m, cb.maxY + gap, view.x + view.w - m, view.y + view.h - m]);
     }
     var cell = 1.3, slots = [];
     while (cell > 0.3) {
@@ -568,6 +571,13 @@
   }
 
   /* ---------- go ---------- */
+
+  // The page is a game board, not a document: no pinch or double-tap zoom.
+  // iOS Safari ignores user-scalable=no, so its gesture events are cancelled too.
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (n) {
+    document.addEventListener(n, function (e) { e.preventDefault(); }, { passive: false });
+  });
+  document.addEventListener('touchmove', function (e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 
   if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
   else window.addEventListener('resize', layout);
