@@ -206,6 +206,105 @@ var PackerGeom = (function () {
     return ok;
   }
 
+  // The magnet. While a piece is dragged near a wall or another piece, turn it
+  // the last few degrees to line up with that edge and pull it flush; near a
+  // corner, also slide it along until it meets the second side. Returns false
+  // (and leaves the piece alone) when nothing is close enough or the snapped
+  // spot would not be clean.
+  var MAG_TURN = 7;      // degrees the magnet may turn a piece
+  var MAG_REACH = 0.2;   // how far away an edge starts to pull
+  var MAG_CORNER = 0.2;  // how far the magnet slides a piece along to meet a second side
+
+  function edgeList(V) {
+    var cx = 0, cy = 0, out = [], i;
+    for (i = 0; i < V.length; i++) { cx += V[i][0] / V.length; cy += V[i][1] / V.length; }
+    var ns = normals(V);
+    for (i = 0; i < V.length; i++) {
+      var a = V[i], b = V[(i + 1) % V.length], nx = ns[i][0], ny = ns[i][1];
+      if ((a[0] + b[0]) / 2 * nx + (a[1] + b[1]) / 2 * ny < cx * nx + cy * ny) { nx = -nx; ny = -ny; }
+      out.push({ a: a, b: b, nx: nx, ny: ny });
+    }
+    return out;
+  }
+
+  // Each target is a line the piece may rest against: contact is when the
+  // piece's furthest point along (ux, uy) reaches d.
+  function reach(V, t) {
+    var m = -Infinity;
+    for (var i = 0; i < V.length; i++) { var v = V[i][0] * t.ux + V[i][1] * t.uy; if (v > m) m = v; }
+    return t.d - m;
+  }
+  function shared(e, t) {
+    var tx = -t.uy, ty = t.ux;
+    var p1 = e.a[0] * tx + e.a[1] * ty, p2 = e.b[0] * tx + e.b[1] * ty;
+    var q1 = t.a[0] * tx + t.a[1] * ty, q2 = t.b[0] * tx + t.b[1] * ty;
+    return Math.min(Math.max(p1, p2), Math.max(q1, q2)) - Math.max(Math.min(p1, p2), Math.min(q1, q2));
+  }
+  function turnTo(e, t) {
+    var d = (Math.atan2(t.uy, t.ux) - Math.atan2(e.ny, e.nx)) * 180 / Math.PI;
+    return ((d % 360) + 540) % 360 - 180;
+  }
+
+  function magnet(pieces, i, C) {
+    var p = pieces[i];
+    if (!pointInside(C, p.x, p.y)) return false;
+    var x0 = p.x, y0 = p.y, a0 = p.angle, targets = [], others = [], j, k;
+    for (k = 0; k < C.walls.length; k++) {
+      var w = C.walls[k];
+      targets.push({ ux: w.nx, uy: w.ny, d: w.d, a: C.poly[k], b: C.poly[(k + 1) % C.poly.length] });
+    }
+    for (j = 0; j < pieces.length; j++) {
+      if (j === i) continue;
+      var B = verts(pieces[j]);
+      if (zone(B, C) === 'out') continue;
+      others.push(B);
+      edgeList(B).forEach(function (e) {
+        targets.push({ ux: -e.nx, uy: -e.ny, d: -(e.nx * e.a[0] + e.ny * e.a[1]), a: e.a, b: e.b });
+      });
+    }
+
+    // first contact: the nearest edge that is almost parallel to one of ours
+    var best = null, E = edgeList(verts(p)), V;
+    E.forEach(function (e) {
+      targets.forEach(function (t) {
+        var turn = turnTo(e, t);
+        if (Math.abs(turn) > MAG_TURN + 1e-9) return;
+        var gap = reach(verts(p), t);
+        if (gap < -SNAP || gap > MAG_REACH || shared(e, t) < 0.15) return;
+        var score = Math.abs(gap) + Math.abs(turn) * 0.02;
+        if (!best || score < best.score) best = { t: t, turn: turn, score: score };
+      });
+    });
+    if (!best) return false;
+    var t1 = best.t;
+    p.angle = a0 + Math.round(best.turn);
+    var g = reach(verts(p), t1);
+    p.x += t1.ux * g; p.y += t1.uy * g;
+
+    // second contact, for corners: slide along the first edge to meet another
+    var tx = -t1.uy, ty = t1.ux, second = null;
+    E = edgeList(verts(p));
+    E.forEach(function (e) {
+      targets.forEach(function (t) {
+        if (Math.abs(t.ux * t1.ux + t.uy * t1.uy) > 0.95 || Math.abs(turnTo(e, t)) > 0.5) return;
+        var along = tx * t.ux + ty * t.uy;
+        if (Math.abs(along) < 0.3) return;
+        var gap = reach(verts(p), t);
+        if (gap < -SNAP || gap > MAG_CORNER || shared(e, t) < 0.1) return;
+        if (!second || Math.abs(gap) < Math.abs(second.gap)) second = { gap: gap, along: along };
+      });
+    });
+    if (second) { var s = second.gap / second.along; p.x += tx * s; p.y += ty * s; }
+
+    settle(pieces, i, C);
+    V = verts(p);
+    var ok = (p.x - x0) * (p.x - x0) + (p.y - y0) * (p.y - y0) <= MAX_SLIDE * MAX_SLIDE;
+    for (k = 0; k < C.walls.length && ok; k++) if (excess(V, C.walls[k]) > EPS) ok = false;
+    for (k = 0; k < others.length && ok; k++) { var o = overlap(V, others[k]); if (o && o.depth > EPS) ok = false; }
+    if (!ok) { p.x = x0; p.y = y0; p.angle = a0; }
+    return ok;
+  }
+
   function bounds(poly) {
     var b = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
     for (var i = 0; i < poly.length; i++) {
@@ -218,6 +317,6 @@ var PackerGeom = (function () {
   return {
     H: H, EPS: EPS, SHAPES: SHAPES,
     verts: verts, overlap: overlap, makeContainer: makeContainer, excess: excess,
-    pointInside: pointInside, zone: zone, evaluate: evaluate, settle: settle, shuffle: shuffle, bounds: bounds
+    pointInside: pointInside, zone: zone, evaluate: evaluate, settle: settle, magnet: magnet, shuffle: shuffle, bounds: bounds
   };
 })();

@@ -66,8 +66,8 @@ button{font:inherit; color:inherit; cursor:pointer}
 .sky i:nth-child(4){width:70px; height:70px; left:12%; bottom:6%; background:var(--mint); animation-duration:22s; animation-delay:-4s}
 .sky i:nth-child(5){width:56px; height:50px; left:44%; top:4%; background:var(--grape); animation-duration:28s; animation-delay:-19s}
 @keyframes drift{
-  from{transform:translate(0,0) rotate(-14deg)}
-  to{transform:translate(38px,-46px) rotate(22deg)}
+  from{transform:translate(0,0)}
+  to{transform:translate(38px,-46px)}
 }
 
 #app{position:relative; z-index:1; height:100vh; height:100dvh; display:flex; flex-direction:column;
@@ -77,28 +77,27 @@ button{font:inherit; color:inherit; cursor:pointer}
 .top{display:flex; align-items:center; justify-content:space-between; gap:10px; flex:none}
 .logo{display:flex; align-items:center; gap:9px; text-decoration:none; color:inherit}
 .logo svg{width:38px; height:38px; flex:none; animation:bob 3.2s ease-in-out infinite}
-@keyframes bob{50%{transform:translateY(-3px) rotate(-5deg)}}
+@keyframes bob{50%{transform:translateY(-3px)}}
 .word{display:flex; font-weight:700; font-size:30px; letter-spacing:.5px; line-height:1}
 .word b{display:inline-block; font-weight:700; animation:hop .7s var(--pop) both; animation-delay:calc(var(--n) * 70ms + 150ms)}
 .word b:nth-child(1){color:var(--coral)} .word b:nth-child(2){color:var(--tang)} .word b:nth-child(3){color:var(--sun)}
 .word b:nth-child(4){color:var(--mint)} .word b:nth-child(5){color:var(--sky)} .word b:nth-child(6){color:var(--grape)}
-.word b{-webkit-text-stroke:var(--bw) var(--ink); paint-order:stroke fill; text-shadow:0 3px 0 var(--ink)}
+.word b{-webkit-text-stroke:var(--bw) var(--ink); paint-order:stroke fill}
 .logo:hover .word b{animation:wave .55s var(--pop) both; animation-delay:calc(var(--n) * 50ms)}
-@keyframes hop{from{transform:translateY(-34px) rotate(-18deg); opacity:0} to{transform:none; opacity:1}}
-@keyframes wave{40%{transform:translateY(-9px) rotate(-8deg)}}
+@keyframes hop{from{transform:translateY(-24px); opacity:0} to{transform:none; opacity:1}}
+@keyframes wave{40%{transform:translateY(-7px)}}
 
 .tools{display:flex; gap:8px}
 .ib{width:42px; height:42px; display:grid; place-items:center; padding:0; background:var(--card);
-  border:var(--bw) solid var(--ink); border-radius:14px; box-shadow:0 3px 0 var(--ink);
-  transition:transform .12s var(--pop), box-shadow .12s}
+  border:var(--bw) solid var(--ink); border-radius:14px; transition:transform .12s var(--pop)}
 .ib svg{width:21px; height:21px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round}
-.ib:hover{transform:translateY(-2px) rotate(-4deg); box-shadow:0 5px 0 var(--ink)}
-.ib:active{transform:translateY(3px); box-shadow:0 0 0 var(--ink)}
+.ib:hover{transform:translateY(-2px)}
+.ib:active{transform:translateY(1px)}
 .ib.off{color:var(--mut)}
 .ib.sure{position:relative; background:var(--coral); color:#2B2140; animation:wiggle .45s var(--pop)}
 .ib.sure::after{content:"Again to start over"; position:absolute; top:calc(100% + 10px); right:-6px; padding:5px 11px 6px; white-space:nowrap;
   font-weight:600; font-size:14px; color:#FFF4DE; background:#2B2140; border-radius:10px; z-index:5; animation:hop .3s var(--pop) both}
-@keyframes wiggle{25%{transform:rotate(-12deg)} 60%{transform:rotate(9deg)}}
+@keyframes wiggle{25%{transform:translateX(-4px)} 60%{transform:translateX(3px)}}
 .ib.off .on-only{display:none}
 .ib:not(.off) .off-only{display:none}
 :focus-visible{outline:3px solid var(--sky); outline-offset:2px}
@@ -106,10 +105,10 @@ button{font:inherit; color:inherit; cursor:pointer}
 /* level strip */
 .hud{display:flex; align-items:center; gap:12px; margin-top:12px; flex:none; min-height:50px}
 .chip{flex:none; padding:7px 13px 8px; font-weight:600; font-size:15px; white-space:nowrap;
-  background:var(--sun); color:#2B2140; border:var(--bw) solid var(--ink); border-radius:999px; box-shadow:0 3px 0 var(--ink);
-  transition:transform .12s var(--pop), box-shadow .12s}
-.chip:hover{transform:translateY(-2px) rotate(-2deg); box-shadow:0 5px 0 var(--ink)}
-.chip:active{transform:translateY(3px); box-shadow:none}
+  background:var(--sun); color:#2B2140; border:var(--bw) solid var(--ink); border-radius:999px;
+  transition:transform .12s var(--pop)}
+.chip:hover{transform:translateY(-2px)}
+.chip:active{transform:translateY(1px)}
 .chip b{font-weight:700; font-size:17px}
 .title{flex:1; min-width:0}
 .title h1{margin:0; font-size:21px; font-weight:700; line-height:1.15}
@@ -126,40 +125,35 @@ button{font:inherit; color:inherit; cursor:pointer}
 #pips i.on{background:var(--mint); animation:pip .4s var(--pop)}
 #pips i.t.on{background:var(--ink)}
 #pips i.t.on::after{background:var(--mint)}
-@keyframes pip{50%{transform:scale(1.6) rotate(12deg)}}
+@keyframes pip{50%{transform:translateY(-4px)}}
 #stats{margin-top:4px; font-size:13.5px; font-weight:500; color:var(--mut); font-variant-numeric:tabular-nums; white-space:nowrap}
 
 /* board */
 #stage{position:relative; flex:1; min-height:0; margin:8px 0}
 #board{position:absolute; inset:0; width:100%; height:100%; touch-action:none; overflow:visible; display:block}
 #board *{vector-effect:non-scaling-stroke}
-.bin-shadow{fill:var(--ink); opacity:.9}
 .bin-fill{fill:var(--bin); stroke:var(--ink); stroke-width:4px; stroke-linejoin:round; transition:fill .35s}
 #bin{animation:land .6s var(--pop) both}
 #bin.win .bin-fill{fill:var(--win)}
 #bin.win{animation:cheer .7s var(--pop)}
-@keyframes land{from{transform:scale(.6) rotate(-6deg); opacity:0}}
-@keyframes cheer{30%{transform:scale(1.05) rotate(1.5deg)} 60%{transform:scale(.98) rotate(-1deg)}}
+@keyframes land{from{transform:translateY(.4px); opacity:0}}
+@keyframes cheer{30%{transform:translateY(-.12px)} 60%{transform:translateY(.03px)}}
 
 .piece{cursor:grab}
-#pieces.glide .piece{transition:transform .22s var(--pop)}
+#pieces.dragging .piece:not(.held){transition:transform .12s ease-out}
 .pop{transition:transform .14s var(--pop)}
 .piece.fresh .pop{animation:popin .5s var(--pop) both; animation-delay:var(--d)}
-@keyframes popin{from{transform:scale(0) rotate(-40deg)}}
-.piece.held{cursor:grabbing}
-.piece.held .pop{transform:scale(1.07)}
-.sh{transform:translate(.05px,.07px); transition:transform .14s}
-.piece.held .sh{transform:translate(.11px,.15px)}
-.sh polygon{fill:var(--ink); opacity:.85}
+@keyframes popin{from{transform:translateY(-.5px); opacity:0}}
+.piece.held{cursor:grabbing; transition:transform .06s ease-out}
 .body{transition:transform .1s ease-out}
 .fill{fill:var(--c); stroke:var(--ink); stroke-width:2.5px; stroke-linejoin:round}
 .piece.sel .fill{stroke-width:4px}
 .piece.bad .fill{stroke:var(--bad); stroke-width:3.5px; stroke-dasharray:7 5; animation:ants .5s linear infinite}
 @keyframes ants{to{stroke-dashoffset:-12}}
 .piece.boing .pop{animation:boing .38s var(--pop)}
-@keyframes boing{40%{transform:scale(1.16)}}
+@keyframes boing{40%{transform:translateY(-.08px)}}
 .piece.party .pop{animation:party .7s var(--pop) both; animation-delay:var(--d)}
-@keyframes party{30%{transform:translateY(-.22px) scale(1.12) rotate(8deg)} 60%{transform:translateY(.03px) scale(.95) rotate(-4deg)}}
+@keyframes party{30%{transform:translateY(-.22px)} 60%{transform:translateY(.03px)}}
 
 .face{pointer-events:none}
 .eye{fill:var(--face)}
@@ -183,15 +177,15 @@ button{font:inherit; color:inherit; cursor:pointer}
 /* rotate dock */
 .dock{flex:none; display:flex; align-items:center; justify-content:center; gap:8px; height:56px; position:relative}
 .dock .rb{height:46px; min-width:52px; padding:0 10px; font-weight:600; font-size:16px; background:var(--card);
-  border:var(--bw) solid var(--ink); border-radius:15px; box-shadow:0 3px 0 var(--ink); transition:transform .2s var(--pop), box-shadow .1s, opacity .2s}
-.dock .rb:active{transform:translateY(3px); box-shadow:none}
+  border:var(--bw) solid var(--ink); border-radius:15px; transition:transform .2s var(--pop), opacity .2s}
+.dock .rb:active{transform:translateY(1px)}
 .dock .rb.big{background:var(--sky); color:#2B2140}
 .angle{display:flex; align-items:center; height:46px; padding:0 12px 0 6px; background:var(--card);
-  border:var(--bw) solid var(--ink); border-radius:15px; box-shadow:inset 0 3px 0 var(--wash); font-weight:700; font-size:20px; transition:opacity .2s, transform .2s var(--pop)}
+  border:var(--bw) solid var(--ink); border-radius:15px; font-weight:700; font-size:20px; transition:opacity .2s, transform .2s var(--pop)}
 .angle input{width:52px; border:0; background:none; font:inherit; color:inherit; text-align:right; padding:0; outline:0;
   font-variant-numeric:tabular-nums; -moz-appearance:textfield; appearance:textfield; user-select:text; -webkit-user-select:text}
 .angle input::-webkit-outer-spin-button,.angle input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0}
-.dock.idle .rb,.dock.idle .angle{opacity:0; transform:scale(.8); pointer-events:none}
+.dock.idle .rb,.dock.idle .angle{opacity:0; transform:translateY(8px); pointer-events:none}
 .dock .tip{position:absolute; inset:0; display:grid; place-items:center; font-size:15px; font-weight:500; color:var(--mut); pointer-events:none;
   opacity:0; transition:opacity .2s}
 .dock.idle .tip{opacity:1}
@@ -201,21 +195,21 @@ button{font:inherit; color:inherit; cursor:pointer}
   background:rgba(27,20,45,.55); opacity:0; visibility:hidden; transition:opacity .2s, visibility .2s}
 .sheet.open{opacity:1; visibility:visible}
 .card{width:min(440px,100%); max-height:100%; overflow:auto; touch-action:pan-y; padding:24px 22px 22px; text-align:center; background:var(--card);
-  border:3px solid var(--ink); border-radius:26px; box-shadow:0 8px 0 var(--ink); transform:scale(.7) rotate(-4deg); transition:transform .35s var(--pop)}
+  border:3px solid var(--ink); border-radius:26px; transform:translateY(30px); transition:transform .35s var(--pop)}
 .sheet.open .card{transform:none}
 .card h2{margin:0 0 6px; font-size:32px; font-weight:700; line-height:1.1}
 .card p{margin:8px 0; font-size:16.5px; line-height:1.4}
 .card .sub{color:var(--mut)}
 .card .fact{margin-top:14px; padding:11px 14px; text-align:left; font-size:15px; background:var(--wash); border-radius:14px}
 .btn{display:inline-block; margin:14px 4px 0; padding:11px 22px 12px; font-weight:700; font-size:18px; background:var(--mint); color:#2B2140;
-  border:var(--bw) solid var(--ink); border-radius:16px; box-shadow:0 4px 0 var(--ink); transition:transform .12s var(--pop), box-shadow .12s}
-.btn:hover{transform:translateY(-2px) rotate(-1.5deg); box-shadow:0 6px 0 var(--ink)}
-.btn:active{transform:translateY(4px); box-shadow:none}
+  border:var(--bw) solid var(--ink); border-radius:16px; transition:transform .12s var(--pop)}
+.btn:hover{transform:translateY(-2px)}
+.btn:active{transform:translateY(1px)}
 .btn.plain{background:var(--card); color:var(--text); font-weight:600; font-size:16px; padding:9px 16px 10px}
 .how{list-style:none; margin:14px 0 4px; padding:0; text-align:left}
 .how li{display:flex; align-items:center; gap:12px; padding:7px 0; font-size:16px; line-height:1.3}
 .how li > span{flex:none; width:40px; height:40px; display:grid; place-items:center; font-weight:700; font-size:15px; color:#2B2140;
-  border:var(--bw) solid var(--ink); border-radius:12px; box-shadow:0 3px 0 var(--ink)}
+  border:var(--bw) solid var(--ink); border-radius:12px}
 .how li:nth-child(1) > span{background:var(--coral)} .how li:nth-child(2) > span{background:var(--sun)}
 .how li:nth-child(3) > span{background:var(--mint)} .how li:nth-child(4) > span{background:var(--sky)}
 .taps{display:none}
@@ -228,18 +222,18 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .stats div{min-width:92px; padding:8px 10px 9px; border:var(--bw) solid var(--ink); border-radius:14px; background:var(--wash)}
 .stats b{display:block; font-size:22px; font-variant-numeric:tabular-nums}
 .stats small{font-size:13px; color:var(--mut)}
-#win-title{font-size:40px; color:var(--coral); -webkit-text-stroke:2.5px var(--ink); paint-order:stroke fill; text-shadow:0 4px 0 var(--ink)}
+#win-title{font-size:40px; color:var(--coral); -webkit-text-stroke:2.5px var(--ink); paint-order:stroke fill}
 .sheet.open #win-title{animation:stamp .6s var(--pop) .1s both}
-@keyframes stamp{from{transform:scale(2.4) rotate(-14deg); opacity:0}}
+@keyframes stamp{from{transform:translateY(-22px); opacity:0}}
 
 .grid{display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:14px}
 .lv{position:relative; aspect-ratio:1; padding:4px 0 0; background:var(--card); border:var(--bw) solid var(--ink); border-radius:16px;
-  box-shadow:0 4px 0 var(--ink); font-weight:700; font-size:17px; transition:transform .12s var(--pop), box-shadow .12s;
+  font-weight:700; font-size:17px; transition:transform .12s var(--pop);
   animation:popgrid .4s var(--pop) both; animation-delay:calc(var(--n) * 35ms)}
 .sheet:not(.open) .lv{animation:none}
-@keyframes popgrid{from{transform:scale(.3); opacity:0}}
-.lv:hover{transform:translateY(-3px) rotate(-3deg); box-shadow:0 7px 0 var(--ink)}
-.lv:active{transform:translateY(4px); box-shadow:none}
+@keyframes popgrid{from{transform:translateY(12px); opacity:0}}
+.lv:hover{transform:translateY(-3px)}
+.lv:active{transform:translateY(1px)}
 .lv svg{display:block; width:56%; height:46%; margin:0 auto 1px; overflow:visible}
 .lv svg polygon{fill:var(--wash); stroke:var(--ink); stroke-width:2.5px; stroke-linejoin:round; vector-effect:non-scaling-stroke}
 .lv.done{background:var(--mint); color:#2B2140}
@@ -323,7 +317,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 
   <main id="stage">
     <svg id="board" role="application" aria-label="Puzzle board">
-      <g id="bin"><polygon class="bin-shadow"/><polygon class="bin-fill"/></g>
+      <g id="bin"><path class="bin-fill"/></g>
       <g id="pieces"></g>
       <g id="handle" hidden><line/><circle id="knob-hit"/><circle id="knob"/><circle id="knob-dot"/></g>
     </svg>
@@ -353,7 +347,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <li><span>4</span><div>Dashed red means it overlaps or pokes out. A big smile means it fits.</div></li>
     </ul>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.2</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.3</span></div>
   </div>
 </div>
 
@@ -390,8 +384,8 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.2"></script>
-<script src="levels.js?v=1.2"></script>
-<script src="game.js?v=1.2"></script>
+<script src="geom.js?v=1.3"></script>
+<script src="levels.js?v=1.3"></script>
+<script src="game.js?v=1.3"></script>
 </body>
 </html>

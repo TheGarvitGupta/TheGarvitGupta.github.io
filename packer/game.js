@@ -12,6 +12,25 @@
   function $(id) { return document.getElementById(id); }
   function el(name, cls) { var e = document.createElementNS(NS, name); if (cls) e.setAttribute('class', cls); return e; }
   function pts(poly) { return poly.map(function (p) { return p[0].toFixed(4) + ',' + p[1].toFixed(4); }).join(' '); }
+  // A polygon as a path with its corners rounded off by r.
+  function rounded(poly, r) {
+    var n = poly.length, d = '';
+    for (var i = 0; i < n; i++) {
+      var p = poly[i], a = poly[(i + n - 1) % n], b = poly[(i + 1) % n];
+      var la = Math.hypot(a[0] - p[0], a[1] - p[1]), lb = Math.hypot(b[0] - p[0], b[1] - p[1]);
+      var s = Math.min(r, la / 2, lb / 2);
+      d += (i ? 'L' : 'M') + (p[0] + (a[0] - p[0]) * s / la).toFixed(4) + ' ' + (p[1] + (a[1] - p[1]) * s / la).toFixed(4) +
+           'Q' + p[0].toFixed(4) + ' ' + p[1].toFixed(4) + ' ' + (p[0] + (b[0] - p[0]) * s / lb).toFixed(4) + ' ' + (p[1] + (b[1] - p[1]) * s / lb).toFixed(4);
+    }
+    return d + 'Z';
+  }
+  // Pieces are drawn a hair smaller than they really are, so neighbours that
+  // touch still show a sliver of table between them. Collisions use the true shape.
+  var GAP = 0.045;
+  function drawn(type) {
+    var base = G.SHAPES[type], inr = type === 'square' ? 0.5 : G.H / 3, k = (inr - GAP) / inr;
+    return rounded(base.map(function (p) { return [p[0] * k, p[1] * k]; }), type === 'square' ? 0.1 : 0.075);
+  }
   function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
   function norm(a) { return ((a % 360) + 360) % 360; }
   function clock(sec) { sec = Math.round(sec); return Math.floor(sec / 60) + ':' + ('0' + sec % 60).slice(-2); }
@@ -59,6 +78,7 @@
     drop: function () { tone(210, 0.11, { to: 120, vol: 0.14 }); },
     fit: function () { tone(660, 0.09, { vol: 0.1 }); tone(990, 0.14, { at: 0.07, vol: 0.1 }); },
     bad: function () { tone(160, 0.12, { type: 'triangle', to: 110, vol: 0.1 }); },
+    snap: function () { tone(880, 0.05, { type: 'triangle', to: 1320, vol: 0.06 }); },
     tick: function () { tone(1250, 0.025, { type: 'triangle', vol: 0.035 }); },
     win: function () { [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone(f, 0.22, { at: i * 0.09, type: 'triangle', vol: 0.13 }); }); }
   };
@@ -141,14 +161,12 @@
   /* ---------- drawing ---------- */
 
   function buildPiece(p, i) {
-    var base = G.SHAPES[p.type], g = el('g', 'piece fresh'), pop = el('g', 'pop'), sh = el('g', 'sh'),
-        shadow = el('polygon'), body = el('g', 'body'), fill = el('polygon', 'fill'), face = el('g', 'face');
+    var g = el('g', 'piece fresh'), pop = el('g', 'pop'), body = el('g', 'body'), fill = el('path', 'fill'), face = el('g', 'face');
     g.dataset.i = i;
     g.style.setProperty('--c', p.color);
     g.style.setProperty('--d', (60 + i * 28) + 'ms');
     g.style.setProperty('--b', (-Math.random() * 4.6).toFixed(2) + 's');
-    shadow.setAttribute('points', pts(base));
-    fill.setAttribute('points', pts(base));
+    fill.setAttribute('d', drawn(p.type));
     if (p.type === 'triangle') face.setAttribute('transform', 'translate(0 0.03) scale(0.74)');
     var eyes = el('g', 'eyes');
     [-0.13, 0.13].forEach(function (x) {
@@ -162,9 +180,9 @@
     good.setAttribute('d', 'M-0.12 0.07 Q0 0.24 0.12 0.07');
     bad.setAttribute('cx', 0); bad.setAttribute('cy', 0.13); bad.setAttribute('r', 0.045);
     face.appendChild(idle); face.appendChild(good); face.appendChild(bad);
-    sh.appendChild(shadow); body.appendChild(fill); body.appendChild(face);
-    pop.appendChild(sh); pop.appendChild(body); g.appendChild(pop);
-    p.el = g; p.pop = pop; p.shadow = shadow; p.body = body;
+    body.appendChild(fill); body.appendChild(face);
+    pop.appendChild(body); g.appendChild(pop);
+    p.el = g; p.pop = pop; p.body = body;
     layer.appendChild(g);
     setTimeout(function () { g.classList.remove('fresh'); }, 620 + i * 28);
   }
@@ -172,13 +190,7 @@
   function render(i) {
     var p = pieces[i];
     p.el.style.transform = 'translate(' + p.x.toFixed(4) + 'px,' + p.y.toFixed(4) + 'px)';
-    p.body.style.transform = p.shadow.style.transform = 'rotate(' + p.angle + 'deg)';
-  }
-
-  function glide() {
-    layer.classList.add('glide');
-    clearTimeout(glide.t);
-    glide.t = setTimeout(function () { layer.classList.remove('glide'); }, 260);
+    p.body.style.transform = 'rotate(' + p.angle + 'deg)';
   }
 
   function knobPos(p) {
@@ -281,7 +293,9 @@
     } else if (pe) {
       var i = +pe.dataset.i, p = pieces[i];
       select(i);
-      drag = { mode: 'move', id: e.pointerId, i: i, ox: p.x - w.x, oy: p.y - w.y, sx: e.clientX, sy: e.clientY, moved: false, flush: false };
+      drag = { mode: 'move', id: e.pointerId, i: i, ox: p.x - w.x, oy: p.y - w.y, sx: e.clientX, sy: e.clientY, moved: false, a0: p.angle, stuck: false,
+        home: pieces.map(function (q) { return [q.x, q.y]; }) };
+      layer.classList.add('dragging');
       p.el.classList.add('held');
       placeHandle(); sfx.pick();
     } else { select(-1); return; }
@@ -301,10 +315,20 @@
     if (!drag.moved && Math.abs(e.clientX - drag.sx) + Math.abs(e.clientY - drag.sy) < 4) return;
     drag.moved = true; startClock();
     p = pieces[drag.i];
-    p.x = w.x + drag.ox; p.y = w.y + drag.oy;
+    // Work out the whole board from where it was when this drag began, so
+    // what you see while dragging is exactly what you get when you let go:
+    // the magnet lines the piece up, and if it still overlaps a little, the
+    // neighbours visibly scoot over to make room (or it stays red).
+    pieces.forEach(function (q, k) { if (k !== drag.i) { q.x = drag.home[k][0]; q.y = drag.home[k][1]; } });
+    p.x = w.x + drag.ox; p.y = w.y + drag.oy; p.angle = drag.a0;
     keepInView(p);
-    drag.flush = G.settle(pieces, drag.i, C);
-    render(drag.i); judge();
+    var stuck = G.magnet(pieces, drag.i, C);
+    if (!stuck) G.settle(pieces, drag.i, C);
+    if (!G.evaluate(pieces, C).states[drag.i].good) G.shuffle(pieces, drag.i, C);
+    if (stuck && !drag.stuck) sfx.snap();
+    drag.stuck = stuck;
+    for (var k = 0; k < pieces.length; k++) render(k);
+    judge(); showAngle();
   });
 
   function release(e) {
@@ -318,10 +342,8 @@
     }
     var p = pieces[d.i];
     p.el.classList.remove('held');
-    if (d.moved) {
-      if (!d.flush && G.shuffle(pieces, d.i, C)) { glide(); for (var k = 0; k < pieces.length; k++) render(k); }
-      commit();
-    }
+    layer.classList.remove('dragging');
+    if (d.moved) commit();
     placeHandle();
   }
   board.addEventListener('pointerup', release);
@@ -416,8 +438,7 @@
     title.classList.remove('swap'); void title.offsetWidth; title.classList.add('swap');
 
     bin.setAttribute('class', '');
-    bin.children[0].setAttribute('points', pts(lv.container.map(function (p) { return [p[0] + 0.07, p[1] + 0.09]; })));
-    bin.children[1].setAttribute('points', pts(lv.container));
+    bin.firstElementChild.setAttribute('d', rounded(lv.container, 0.1));
     bin.style.transformOrigin = ((cb.minX + cb.maxX) / 2) + 'px ' + ((cb.minY + cb.maxY) / 2) + 'px';
     bin.style.animation = 'none'; void bin.getBoundingClientRect(); bin.style.animation = '';
 
