@@ -899,7 +899,7 @@
     var sum = all ? 'All seventeen: ' + clock(total.t) + ' · ' + total.m + ' moves' : 'Every box, packed.';
     $('finale-sum').textContent = sum;
     if (finale) party();
-    $('win-all').hidden = !(all && level === MAIN - 1);
+    $('win-all').hidden = !(all && level === MAIN - 1); $('win-one').hidden = !$('win-all').hidden;   // the last win shows the totals alone
     $('win-prize').hidden = !(PRIZE_FORM && all && level === MAIN - 1);
     $('prize-link').href = PRIZE_FORM || '#';
     $('all-time').textContent = clock(total.t);
@@ -952,7 +952,7 @@
     $('win-sub').textContent = 'You packed all seventeen. Take a bow.';
     $('win-best').parentNode.classList.remove('new');
     $('win-time').textContent = clock(last.t); $('win-moves').textContent = last.m; $('win-best').textContent = clock(last.t);
-    $('win-all').hidden = false; $('all-time').textContent = clock(total.t); $('all-moves').textContent = total.m;
+    $('win-all').hidden = false; $('win-one').hidden = true; $('all-time').textContent = clock(total.t); $('all-moves').textContent = total.m;
     $('win-prize').hidden = !PRIZE_FORM; $('prize-link').href = PRIZE_FORM || '#';
     $('win-fact').hidden = true; $('win-next').hidden = true;
     party(true); confetti(220);
@@ -1066,7 +1066,7 @@
         gift.style.setProperty('--n', n);
         gift.innerHTML = GIFT;
         gift.appendChild(document.createTextNode(claimed ? 'Won!' : 'Prize'));
-        gift.title = claimed ? 'You packed all seventeen' : 'Pack all seventeen to win a real gift, shipped to you';
+        gift.title = claimed ? 'You packed all seventeen' : 'Pack all seventeen to win a prize, shipped to you';
         grid.appendChild(gift);
       }
       if (n === MAIN) { var more = document.createElement('div'); more.className = 'more'; more.textContent = 'Bonus: new shapes and tilings'; grid.appendChild(more); }
@@ -1115,12 +1115,13 @@
   });
   $('win-next').addEventListener('click', function () { closeSheet($('m-win')); startLevel(Math.min(level + 1, LEVELS.length - 1)); });
   $('prize-link').addEventListener('click', function () { save.claimed = true; persist(); });
+  $('prize-gift').innerHTML = GIFT;
   $('go-next').addEventListener('click', function () { startLevel(Math.min(level + 1, LEVELS.length - 1)); });
   $('win-again').addEventListener('click', function () { closeSheet($('m-win')); startLevel(level, true); });
   $('win-levels').addEventListener('click', function () { closeSheet($('m-win')); showLevels(); });
   // Share sheet on a phone; elsewhere the brag and the link go on the clipboard.
   $('win-share').addEventListener('click', function () {
-    var b = this, url = location.href.split(/[?#]/)[0] + '?level=' + (level + 1);
+    var b = this.lastChild, url = location.href.split(/[?#]/)[0] + '?level=' + (level + 1);
     var text = 'I packed ' + lv.name + ', ' + label(level).toLowerCase() + ' of Packman, in ' + clock(elapsed) + '. Can you beat that?';
     if (navigator.share) { navigator.share({ title: 'Packman', text: text, url: url }).catch(function () {}); return; }
     navigator.clipboard.writeText(text + ' ' + url).then(function () {
