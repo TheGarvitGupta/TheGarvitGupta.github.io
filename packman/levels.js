@@ -153,14 +153,6 @@ var PackmanLevels = (function () {
       solution: [[-0.1412, -0.4553, 60], [0.4361, 0.122, 30], [-0.3358, 0.3358, 105]]
     },
     {
-      name: 'Quartet',
-      intro: 'One more triangle. Nobody gets to sit up straight, except one.',
-      hint: 'One triangle sits upright on the floor in the bottom-left corner. Two lean at 45°, one on the right-hand wall and one in the top-left corner. The last, at 105°, fills the gap between them.',
-      container: box(1.68),
-      pieces: pieces(0, 4),
-      solution: [[0.4318, 0.2823, 45], [0.2823, -0.2754, 105], [-0.2735, -0.4318, 45], [-0.276, 0.5513, 0]]
-    },
-    {
       name: 'Ten Tight',
       intro: 'Ten squares. A 4×4 box would be easy, so this one is smaller.',
       hint: 'Three squares in one corner, three in the opposite corner, one in each of the other two. The last two turn 45° and run down the diagonal.',
