@@ -28,8 +28,9 @@
   // that touch still show a sliver of table between them; collisions use the
   // true shape. Gap and corner rounding are in screen pixels, so they look the
   // same at any zoom.
-  function drawn(type) {
-    var px = 1 / view.scale, gap = 2.6 * px;
+  function drawn(type, px) {
+    px = px || 1 / view.scale;
+    var gap = 2.6 * px;
     var base = G.SHAPES[type], inr = type === 'square' ? 0.5 : G.H / 3, k = (inr - gap) / inr;
     return rounded(base.map(function (p) { return [p[0] * k, p[1] * k]; }), Math.min(6 * px, 0.12));
   }
@@ -65,6 +66,7 @@
   var view = { x: 0, y: 0, w: 10, h: 10, scale: 50, land: true };
   var moves = 0, t0 = 0, elapsed = 0, carried = 0, ticker = 0;
   var shakeTo = null, shakeTimer = 0, shaking = false;
+  var STUCK = 180, stuck = false;      // seconds on one level before the hint lights up and offers the solution
 
   /* ---------- sound ---------- */
 
@@ -294,7 +296,15 @@
   function startClock() {
     if (t0 || won) return;
     t0 = performance.now() - carried * 1000;
-    ticker = setInterval(function () { $('clock').textContent = clock((performance.now() - t0) / 1000); }, 500);
+    ticker = setInterval(function () { $('clock').textContent = clock((performance.now() - t0) / 1000); nag(); }, 500);
+  }
+
+  // Three minutes into a level, the hint button lights up, and the hint sheet
+  // offers to show the solution.
+  function nag() {
+    if (stuck || won || (t0 ? (performance.now() - t0) / 1000 : carried) < STUCK) return;
+    stuck = true;
+    $('b-hint').classList.add('nag');
   }
 
   /* ---------- selecting, moving, spinning ---------- */
@@ -524,6 +534,7 @@
     C = G.makeContainer(lv.container); cb = G.bounds(lv.container);
     won = false; drag = null; sel = -1; moves = 0; t0 = 0; elapsed = 0; carried = 0;
     clearInterval(ticker);
+    stuck = false; $('b-hint').classList.remove('nag');
     save.last = i; persist();
 
     $('lv-num').textContent = i + 1;
@@ -554,7 +565,7 @@
       $('clock').textContent = clock(carried);
     } else scatter();
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
-    judge(); showAngle(); placeHandle();
+    judge(); showAngle(); placeHandle(); nag();
     offerShake(null); lookForShake();
   }
 
@@ -615,6 +626,7 @@
   function win() {
     won = true;
     offerShake(null);
+    $('b-hint').classList.remove('nag');
     clearInterval(ticker);
     elapsed = t0 ? (performance.now() - t0) / 1000 : 0;
     $('clock').textContent = clock(elapsed);
@@ -656,7 +668,33 @@
     $('hint-text').textContent = lv.hint;
     $('hint-fact').hidden = !lv.fact;
     $('hint-fact').textContent = lv.fact || '';
+    $('b-hint').classList.remove('nag');
+    $('hint-sol').setAttribute('hidden', '');
+    $('hint-show').hidden = !stuck || won;
     openSheet($('m-hint'));
+  }
+
+  // The solution is a snapshot of the board: a copy of each real piece, in its
+  // own colour, sitting where it goes.
+  function showSolution() {
+    var s = $('hint-sol'), pad = 0.15, w = cb.maxX - cb.minX + 2 * pad, h = cb.maxY - cb.minY + 2 * pad;
+    $('hint-show').hidden = true; s.removeAttribute('hidden');
+    s.textContent = '';
+    s.setAttribute('viewBox', (cb.minX - pad) + ' ' + (cb.minY - pad) + ' ' + w + ' ' + h);
+    s.style.aspectRatio = w + ' / ' + h;
+    var px = w / (s.clientWidth || 260);
+    s.style.setProperty('--u', px);
+    var box = el('path', 'bin-fill');
+    box.setAttribute('d', rounded(grown(C, 3.4 * px), Math.min(9 * px, 0.16)));
+    s.appendChild(box);
+    lv.solution.forEach(function (to, i) {
+      var g = pieces[i].el.cloneNode(true);
+      g.setAttribute('class', 'piece good');
+      g.style.transform = 'translate(' + to[0] + 'px,' + to[1] + 'px)';
+      g.querySelector('.body').style.transform = 'rotate(' + to[2] + 'deg)';
+      g.querySelector('.fill').setAttribute('d', drawn(pieces[i].type, px));
+      s.appendChild(g);
+    });
   }
 
   function showLevels() {
@@ -683,6 +721,7 @@
 
   $('chip').addEventListener('click', showLevels);
   $('b-hint').addEventListener('click', showHint);
+  $('hint-show').addEventListener('click', showSolution);
   $('b-help').addEventListener('click', function () { openSheet($('m-help')); });
   var armed = 0;
   function disarm() { clearTimeout(armed); armed = 0; $('b-reset').classList.remove('sure'); }

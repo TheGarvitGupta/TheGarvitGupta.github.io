@@ -1,5 +1,6 @@
 // Packman levels. Containers are convex polygons centred on the origin, in the
-// same units as the pieces (every piece has side 1).
+// same units as the pieces (every piece has side 1). Each solution is one packed
+// [x, y, angle] per piece, in the order the pieces are listed.
 var PackmanLevels = (function () {
   'use strict';
 
@@ -37,14 +38,16 @@ var PackmanLevels = (function () {
       intro: 'Drag every shape into the box.',
       hint: 'No tricks here. Two on top, two below.',
       container: box(2.004),
-      pieces: pieces(4, 0)
+      pieces: pieces(4, 0),
+      solution: [[-0.5, -0.5, 0], [0.5, -0.5, 0], [-0.5, 0.5, 0], [0.5, 0.5, 0]]
     },
     {
       name: 'Flip',
       intro: 'Shapes can spin. Pick one up, then drag its knob.',
       hint: 'Three triangles sit in the corners. The fourth goes upside-down in the middle.',
       container: loosen([[0, -4 * H / 3], [1, 2 * H / 3], [-1, 2 * H / 3]], 1.002),
-      pieces: pieces(0, 4)
+      pieces: pieces(0, 4),
+      solution: [[0, -0.5774, 0], [-0.5, 0.2887, 0], [0.5, 0.2887, 0], [0, 0, 180]]
     },
     {
       name: 'Honeycomb',
@@ -52,7 +55,8 @@ var PackmanLevels = (function () {
       hint: 'Point every triangle at the centre, like a pizza. They sit 60° apart.',
       container: loosen(ngon(6, 1, 0), 1.002),
       pieces: pieces(0, 6),
-      scramble: true
+      scramble: true,
+      solution: [[0.5, 0.2887, 300], [0, 0.5774, 0], [-0.5, 0.2887, 60], [-0.5, -0.2887, 120], [0, -0.5774, 180], [0.5, -0.2887, 240]]
     },
     {
       name: 'Home',
@@ -60,14 +64,16 @@ var PackmanLevels = (function () {
       hint: 'Squares build the walls, triangles build the roof.',
       container: loosen([[-1, roofY + 2], [1, roofY + 2], [1, roofY], [0, roofY - 2 * H], [-1, roofY]], 1.004),
       pieces: pieces(4, 4),
-      scramble: true
+      scramble: true,
+      solution: [[-0.5, 0.366, 0], [0.5, 0.366, 0], [-0.5, 1.366, 0], [0.5, 1.366, 0], [0, -1.2887, 0], [-0.5, -0.4226, 0], [0.5, -0.4226, 0], [0, -0.7113, 180]]
     },
     {
       name: 'Tilt',
       intro: 'One triangle. One box. The box is narrower than the triangle.',
       hint: 'Lean it 15° and tuck one corner of the triangle into a corner of the box.',
       container: box(0.972),
-      pieces: pieces(0, 1)
+      pieces: pieces(0, 1),
+      solution: [[0.0717, 0.0717, 15]]
     },
     {
       name: 'Five Alive',
@@ -75,7 +81,8 @@ var PackmanLevels = (function () {
       hint: 'One square in each corner. The fifth sits in the middle, turned 45°.',
       fact: 'The smallest box that holds five unit squares has side 2 + 1/√2 ≈ 2.707. This one is 2.713.',
       container: box(2.713),
-      pieces: pieces(5, 0)
+      pieces: pieces(5, 0),
+      solution: [[-0.8565, -0.8565, 0], [0.8565, -0.8565, 0], [-0.8565, 0.8565, 0], [0.8565, 0.8565, 0], [0, 0, 45]]
     },
     {
       name: 'Dozen',
@@ -83,7 +90,8 @@ var PackmanLevels = (function () {
       hint: 'Six triangles make a hexagon in the middle. Put a square on each of its sides, then a triangle in every gap. Everything sits on a multiple of 30°.',
       container: loosen(ngon(12, 1 / (2 * Math.sin(Math.PI / 12)), 15), 1.004),
       pieces: pieces(6, 12),
-      scramble: true
+      scramble: true,
+      solution: [[1.183, 0.683, 30], [0, 1.366, 0], [-1.183, 0.683, 60], [-1.183, -0.683, 30], [0, -1.366, 0], [1.183, -0.683, 60], [0.5, 0.2887, 300], [0, 0.5774, 0], [-0.5, 0.2887, 60], [-0.5, -0.2887, 120], [0, -0.5774, 180], [0.5, -0.2887, 240], [1.5774, 0, 270], [0.7887, 1.366, 330], [-0.7887, 1.366, 30], [-1.5774, 0, 90], [-0.7887, -1.366, 150], [0.7887, -1.366, 210]]
     },
     {
       name: 'Ten Tight',
@@ -91,7 +99,8 @@ var PackmanLevels = (function () {
       hint: 'Three squares in one corner, three in the opposite corner, one in each of the other two. The last two turn 45° and run down the diagonal.',
       fact: 'Best possible is 3 + 1/√2 ≈ 3.707, found by Frits Göbel in 1979 and proved in 2003. This box is 3.713.',
       container: box(3.713),
-      pieces: pieces(10, 0)
+      pieces: pieces(10, 0),
+      solution: [[-1.3565, -1.3565, 0], [-0.3565, -1.3565, 0], [-1.3565, -0.3565, 0], [1.3565, 1.3565, 0], [0.3565, 1.3565, 0], [1.3565, 0.3565, 0], [1.3565, -1.3565, 0], [-1.3565, 1.3565, 0], [-0.2071, 0.2012, 45], [0.5, -0.5059, 45]]
     },
     {
       name: 'Eleven',
@@ -99,7 +108,8 @@ var PackmanLevels = (function () {
       hint: 'Six squares stay straight: one in each of two neighbouring corners, an L of three in a third corner, and one more further along that wall. The other five lean 40° in a clump.',
       fact: 'Walter Trump found this packing in 1979. The record box is 3.8771 across; this one is 3.885.',
       container: box(3.885),
-      pieces: pieces(11, 0)
+      pieces: pieces(11, 0),
+      solution: [[-1.4431, -1.443, 0], [1.4431, -1.4432, 0], [-1.4425, 1.4425, 0], [-0.4425, 1.4425, 0], [-1.4425, 0.4425, 0], [0.5575, 1.4436, 0], [-0.675, -0.4857, 40], [0.0212, 0.2403, 40], [1.2381, 0.4424, 40], [0.7116, -0.4858, 40], [0.0154, -1.2118, 40]]
     },
     {
       name: 'Seventeen',
@@ -107,7 +117,8 @@ var PackmanLevels = (function () {
       hint: 'Ten squares stay straight: an L of three in each bottom corner, one in each top corner, one on the top wall and one on a side wall. Six lean 40° in a 2\u00D73 block through the middle. The last one leans 37° the other way, tucked in near the top on that same side.',
       fact: 'John Bidwell found this packing in 1998. Nobody has beaten it, and nobody has proved it is the best. His box is 4.6755 across; this one is 4.68.',
       container: box(4.68),
-      pieces: pieces(17, 0)
+      pieces: pieces(17, 0),
+      solution: [[-1.84, 1.8406, 0], [-0.84, 1.84, 0], [-1.8405, 0.8412, 0], [1.84, 1.84, 0], [0.84, 1.84, 0], [1.84, 0.84, 0], [-1.8401, -1.8401, 0], [1.8406, -1.8405, 0], [0.0628, -1.84, 0], [1.84, -0.16, 0], [-0.9056, -1.0803, 40], [-1.6074, -0.3638, 40], [-0.0561, -0.5373, 40], [-0.6953, 0.2308, 40], [0.6356, 0.2005, 40], [-0.0026, 0.9704, 40], [0.9613, -1.0143, 323]]
     }
   ];
 })();
