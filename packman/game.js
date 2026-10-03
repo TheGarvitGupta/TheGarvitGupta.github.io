@@ -245,7 +245,7 @@
     var p = pieces[sel], k = knobPos(p), line = handle.firstElementChild;
     line.setAttribute('x1', p.x); line.setAttribute('y1', p.y); line.setAttribute('x2', k[0]); line.setAttribute('y2', k[1]);
     ['knob', 'knob-hit', 'knob-dot'].forEach(function (id) { $(id).setAttribute('cx', k[0]); $(id).setAttribute('cy', k[1]); });
-    if (drag && drag.mode === 'spin') {
+    if (drag && drag.mode !== 'move') {
       bubble.textContent = norm(p.angle) + '°';
       var bx = (k[0] - view.x) * view.scale, by = (k[1] - view.y) * view.scale;
       bubble.style.transform = 'translate(' + (bx - bubble.offsetWidth / 2) + 'px,' + Math.max(by - 54, 0) + 'px)';
@@ -333,8 +333,34 @@
     return { x: view.x + (e.clientX - r.left) / view.scale, y: view.y + (e.clientY - r.top) / view.scale };
   }
 
+  // Two fingers on the board turn the selected shape, wherever they land: the
+  // shapes are too small on a phone to fit two fingertips on one.
+  var fingers = {}, blank = null;
+  function fingerAngle(a, b) {
+    return Math.atan2(fingers[b].y - fingers[a].y, fingers[b].x - fingers[a].x) * 180 / Math.PI;
+  }
+
+  function twist(e) {
+    var a = drag ? drag.id : blank;
+    if (e.pointerType !== 'touch' || (drag && drag.mode !== 'move') || a === e.pointerId || !fingers[a] || sel < 0) return;
+    if (frame) { cancelAnimationFrame(frame); moveTo(); }
+    var p = pieces[sel];
+    p.el.classList.remove('held');
+    drag = { mode: 'twist', id: a, id2: e.pointerId, from: drag ? drag.a0 : p.angle, a0: p.angle, last: fingerAngle(a, e.pointerId), turn: 0, moved: !!(drag && drag.moved) };
+    blank = null;
+    handle.classList.add('spin'); bubble.classList.add('show');
+    placeHandle();
+    try { board.setPointerCapture(e.pointerId); } catch (err) {}
+    e.preventDefault();
+  }
+
   board.addEventListener('pointerdown', function (e) {
-    if (won || drag || shaking || e.button > 0) return;
+    if (won || shaking || e.button > 0) return;
+    if (e.pointerType === 'touch') {
+      if (!drag && blank === null) fingers = {};
+      fingers[e.pointerId] = { x: e.clientX, y: e.clientY };
+    }
+    if (drag || blank !== null) { twist(e); return; }
     wake();
     if (document.activeElement === ang) ang.blur();
     var w = world(e), t = e.target, pe = t.closest ? t.closest('.piece') : null;
@@ -348,6 +374,8 @@
       drag = { mode: 'move', id: e.pointerId, i: i, ox: p.x - w.x, oy: p.y - w.y, sx: e.clientX, sy: e.clientY, moved: false, a0: p.angle, stuck: false };
       p.el.classList.add('held');
       placeHandle(); sfx.pick();
+    } else if (e.pointerType === 'touch' && sel >= 0) {
+      blank = e.pointerId;   // a second finger may be on its way; deselect on lift instead
     } else { select(-1); return; }
     try { board.setPointerCapture(e.pointerId); } catch (err) {}
     e.preventDefault();
@@ -357,7 +385,9 @@
   // one per frame is worth working out.
   var pending = null, frame = 0;
   board.addEventListener('pointermove', function (e) {
-    if (!drag || e.pointerId !== drag.id) return;
+    var f = fingers[e.pointerId];
+    if (f) { f.x = e.clientX; f.y = e.clientY; }
+    if (!drag || (e.pointerId !== drag.id && e.pointerId !== drag.id2)) return;
     pending = { clientX: e.clientX, clientY: e.clientY };
     if (!frame) frame = requestAnimationFrame(moveTo);
   });
@@ -367,6 +397,13 @@
     var e = pending; pending = null;
     if (!e || !drag) return;
     var w = world(e), p;
+    if (drag.mode === 'twist') {
+      var a = fingerAngle(drag.id, drag.id2);
+      drag.turn += ((a - drag.last) % 360 + 540) % 360 - 180; drag.last = a;
+      spinTo(sel, notched(drag.a0 + drag.turn));
+      judge();
+      return;
+    }
     if (drag.mode === 'spin') {
       p = pieces[sel];
       spinTo(sel, notched(Math.atan2(w.y - p.y, w.x - p.x) * 180 / Math.PI + 90));
@@ -389,13 +426,15 @@
   }
 
   function release(e) {
-    if (!drag || e.pointerId !== drag.id) return;
-    if (frame) { cancelAnimationFrame(frame); moveTo(); }
+    delete fingers[e.pointerId];
+    if (blank === e.pointerId) { blank = null; select(-1); return; }
+    if (!drag || (e.pointerId !== drag.id && e.pointerId !== drag.id2)) return;
+    if (frame) { cancelAnimationFrame(frame); if (drag.mode === 'twist') { frame = 0; pending = null; } else moveTo(); }
     var d = drag; drag = null;
     try { board.releasePointerCapture(e.pointerId); } catch (err) {}
-    if (d.mode === 'spin') {
+    if (d.mode !== 'move') {
       handle.classList.remove('spin'); bubble.classList.remove('show');
-      if (pieces[sel].angle !== d.from) commit(); else { placeHandle(); lookForShake(); }
+      if (pieces[sel].angle !== d.from || d.moved) commit(); else { placeHandle(); lookForShake(); }
       return;
     }
     var p = pieces[d.i];
