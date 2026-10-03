@@ -63,6 +63,7 @@
   var pieces = [], sel = -1, drag = null, won = false;
   var view = { x: 0, y: 0, w: 10, h: 10, scale: 50, land: true };
   var moves = 0, t0 = 0, elapsed = 0, carried = 0, ticker = 0;
+  var shakeTo = null, shakeTimer = 0, shaking = false;
 
   /* ---------- sound ---------- */
 
@@ -91,9 +92,30 @@
     fit: function () { tone(660, 0.09, { vol: 0.1 }); tone(990, 0.14, { at: 0.07, vol: 0.1 }); },
     bad: function () { tone(160, 0.12, { type: 'triangle', to: 110, vol: 0.1 }); },
     snap: function () { tone(880, 0.05, { type: 'triangle', to: 1320, vol: 0.06 }); },
+    rattle: function () { for (var k = 0; k < 7; k++) tone(260 + Math.random() * 260, 0.04, { at: k * 0.085, type: 'square', vol: 0.045 }); },
     tick: function () { tone(1250, 0.025, { type: 'triangle', vol: 0.035 }); },
     win: function () { [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone(f, 0.22, { at: i * 0.09, type: 'triangle', vol: 0.13 }); }); }
   };
+  // A tiny tap under the finger. Android has the Vibration API; iPhones have
+  // none, but Safari (iOS 18+) gives a haptic tick when a switch-style
+  // checkbox toggles, so a hidden one is flipped instead. Touch screens only.
+  var touchy = window.matchMedia && matchMedia('(pointer: coarse)').matches, tapper = null, lastTap = 0;
+  function haptic() {
+    var n = performance.now();
+    if (!touchy || n - lastTap < 40) return;
+    lastTap = n;
+    if (navigator.vibrate) { try { navigator.vibrate(10); } catch (e) {} return; }
+    if (!tapper) {
+      tapper = document.createElement('label');
+      tapper.setAttribute('aria-hidden', 'true');
+      tapper.style.cssText = 'position:fixed;left:-99px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden';
+      var box = document.createElement('input');
+      box.type = 'checkbox'; box.setAttribute('switch', ''); box.tabIndex = -1;
+      tapper.appendChild(box); document.body.appendChild(tapper);
+    }
+    tapper.click();
+  }
+
   var lastTick = 0;
   function tick() { var n = performance.now(); if (n - lastTick > 28) { lastTick = n; sfx.tick(); } }
 
@@ -258,6 +280,7 @@
     var ev = judge();
     moves++;
     if (ev.solved) { win(); return; }
+    lookForShake();
     save.board = {
       l: level, m: moves, t: t0 ? Math.round((performance.now() - t0) / 1000) : carried,
       p: pieces.map(function (p) { return [+p.x.toFixed(4), +p.y.toFixed(4), p.angle]; })
@@ -289,6 +312,7 @@
     p.angle += by;
     G.settle(pieces, i, C);
     render(i); placeHandle(); showAngle(); tick();
+    if (norm(p.angle) % 15 === 0) haptic();
   }
   function spinTo(i, deg) { spin(i, ((deg - pieces[i].angle) % 360 + 540) % 360 - 180); }
 
@@ -308,8 +332,9 @@
   }
 
   board.addEventListener('pointerdown', function (e) {
-    if (won || drag || e.button > 0) return;
+    if (won || drag || shaking || e.button > 0) return;
     wake();
+    offerShake(null);
     if (document.activeElement === ang) ang.blur();
     var w = world(e), t = e.target, pe = t.closest ? t.closest('.piece') : null;
     if ((t.id === 'knob' || t.id === 'knob-hit') && sel >= 0) {
@@ -319,9 +344,7 @@
     } else if (pe) {
       var i = +pe.dataset.i, p = pieces[i];
       select(i);
-      drag = { mode: 'move', id: e.pointerId, i: i, ox: p.x - w.x, oy: p.y - w.y, sx: e.clientX, sy: e.clientY, moved: false, a0: p.angle, stuck: false,
-        home: pieces.map(function (q) { return [q.x, q.y]; }) };
-      layer.classList.add('dragging');
+      drag = { mode: 'move', id: e.pointerId, i: i, ox: p.x - w.x, oy: p.y - w.y, sx: e.clientX, sy: e.clientY, moved: false, a0: p.angle, stuck: false };
       p.el.classList.add('held');
       placeHandle(); sfx.pick();
     } else { select(-1); return; }
@@ -352,17 +375,14 @@
     if (!drag.moved && Math.abs(e.clientX - drag.sx) + Math.abs(e.clientY - drag.sy) < 4) return;
     drag.moved = true; startClock();
     p = pieces[drag.i];
-    // Work out the whole board from where it was when this drag began, so
-    // what you see while dragging is exactly what you get when you let go:
-    // the magnet lines the piece up, and if it still overlaps a little, the
-    // neighbours visibly scoot over to make room (or it stays red).
-    pieces.forEach(function (q, k) { if (k !== drag.i) { q.x = drag.home[k][0]; q.y = drag.home[k][1]; } });
+    // Only the dragged piece moves, and what you see while dragging is exactly
+    // what you get when you let go.
     p.x = w.x + drag.ox; p.y = w.y + drag.oy; p.angle = drag.a0;
     keepInView(p);
     var stuck = G.place(pieces, drag.i, C) === 'snap';
-    if (stuck && !drag.stuck) sfx.snap();
+    if (stuck && !drag.stuck) { sfx.snap(); haptic(); }
     drag.stuck = stuck;
-    for (var k = 0; k < pieces.length; k++) render(k);
+    render(drag.i);
     judge(); showAngle();
   }
 
@@ -378,7 +398,6 @@
     }
     var p = pieces[d.i];
     p.el.classList.remove('held');
-    layer.classList.remove('dragging');
     if (d.moved) commit();
     placeHandle();
   }
@@ -431,7 +450,7 @@
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     var open = document.querySelector('.sheet.open');
     if (e.key === 'Escape') { if (open) closeSheet(open); else select(-1); return; }
-    if (open || won) return;
+    if (open || won || shaking) return;
     var k = e.key.toLowerCase(), big = e.shiftKey;
     if (k === 'tab' && pieces.length) {
       e.preventDefault();
@@ -495,10 +514,54 @@
     } else scatter();
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
     judge(); showAngle(); placeHandle();
+    offerShake(null); lookForShake();
   }
+
+  /* ---------- shake ---------- */
+
+  // After each move, quietly check whether a shake would finish the board
+  // (every piece within a hair and a degree of a solved spot). The button only
+  // shows up when it would.
+  function offerShake(to) { shakeTo = to; $('shake').hidden = !to; }
+  function lookForShake() {
+    clearTimeout(shakeTimer);
+    shakeTimer = setTimeout(function () {
+      if (won || drag || shaking) return;
+      offerShake(G.evaluate(pieces, C).solved ? null : G.shake(pieces, C, 150));
+    }, 120);
+  }
+
+  function shake() {
+    if (!shakeTo || shaking || won) return;
+    var to = shakeTo, from = pieces.map(function (p) { return { x: p.x, y: p.y, a: p.angle }; }), t0s = performance.now();
+    shaking = true; offerShake(null); select(-1);
+    wake(); sfx.rattle();
+    if (navigator.vibrate && touchy) { try { navigator.vibrate([18, 50, 18, 50, 18, 50, 18]); } catch (e) {} } else haptic();
+    (function frame(t) {
+      var k = (t - t0s) / 650;
+      if (k < 1) {
+        // rattle the box and everything in it, dying down, while drifting home
+        var amp = 0.07 * (1 - k), ease = k * k;
+        bin.style.transform = 'translate(' + ((Math.random() - 0.5) * amp).toFixed(4) + 'px,' + ((Math.random() - 0.5) * amp).toFixed(4) + 'px)';
+        pieces.forEach(function (p, i) {
+          p.x = from[i].x + (to[i].x - from[i].x) * ease + (Math.random() - 0.5) * amp;
+          p.y = from[i].y + (to[i].y - from[i].y) * ease + (Math.random() - 0.5) * amp;
+          render(i);
+        });
+        requestAnimationFrame(frame);
+        return;
+      }
+      bin.style.transform = '';
+      pieces.forEach(function (p, i) { p.x = to[i].x; p.y = to[i].y; p.angle = to[i].angle; render(i); });
+      shaking = false;
+      commit();
+    })(t0s);
+  }
+  $('shake').addEventListener('click', shake);
 
   function win() {
     won = true;
+    offerShake(null);
     clearInterval(ticker);
     elapsed = t0 ? (performance.now() - t0) / 1000 : 0;
     $('clock').textContent = clock(elapsed);

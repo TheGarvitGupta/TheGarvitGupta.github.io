@@ -15,7 +15,6 @@ var PackerGeom = (function () {
   var EPS = 0.002;
   var SNAP = 0.22;      // deepest overlap the settle will push out of
   var MAX_SLIDE = 0.5;  // furthest a settle may move a piece from where it was dropped
-  var MAX_BUDGE = 0.2; // furthest a drop may shove any other piece aside
 
   function verts(p) {
     var base = SHAPES[p.type], s = p.size || 1;
@@ -153,67 +152,13 @@ var PackerGeom = (function () {
     return ok;
   }
 
-  // The drop fallback: let every piece in the container shuffle over a little,
-  // the way real blocks would, so piece i can squeeze in. All or nothing: if the
-  // shuffle does not leave piece i clean, or spoils a piece that was fine, undo it.
-  function shuffle(pieces, i, C) {
-    var n = pieces.length, before = evaluate(pieces, C), saved = [], movers = [], fixed = [], j, k, a, b, o;
-    if (!pointInside(C, pieces[i].x, pieces[i].y)) return false;
-    for (j = 0; j < n; j++) {
-      saved.push([pieces[j].x, pieces[j].y]);
-      if (pointInside(C, pieces[j].x, pieces[j].y)) movers.push(j);
-      else if (before.states[j].zone !== 'out') fixed.push(verts(pieces[j]));
-    }
-    var ok = true;
-    for (var it = 0; it < 200 && ok; it++) {
-      var worst = 0;
-      for (a = 0; a < movers.length && ok; a++) {
-        var p = pieces[movers[a]];
-        for (k = 0; k < C.walls.length; k++) {
-          var w = C.walls[k], e = excess(verts(p), w);
-          if (e > 1e-10) { if (e > SNAP) { ok = false; break; } worst = Math.max(worst, e); p.x -= w.nx * e; p.y -= w.ny * e; }
-        }
-        for (k = 0; k < fixed.length && ok; k++) {
-          o = overlap(verts(p), fixed[k]);
-          if (o && o.depth > 1e-10) { if (o.depth > SNAP) { ok = false; break; } worst = Math.max(worst, o.depth); p.x += o.nx * o.depth; p.y += o.ny * o.depth; }
-        }
-        for (b = a + 1; b < movers.length && ok; b++) {
-          var q = pieces[movers[b]];
-          o = overlap(verts(p), verts(q));
-          if (o && o.depth > 1e-10) {
-            if (o.depth > SNAP) { ok = false; break; }
-            worst = Math.max(worst, o.depth);
-            var h = o.depth / 2;
-            p.x += o.nx * h; p.y += o.ny * h; q.x -= o.nx * h; q.y -= o.ny * h;
-          }
-        }
-      }
-      if (worst < EPS / 4) break;
-    }
-    if (ok) {
-      for (j = 0; j < n; j++) {
-        var dx = pieces[j].x - saved[j][0], dy = pieces[j].y - saved[j][1];
-        var lim = j === i ? MAX_SLIDE : MAX_BUDGE;
-        if (dx * dx + dy * dy > lim * lim) ok = false;
-      }
-    }
-    if (ok) {
-      var after = evaluate(pieces, C);
-      if (!after.states[i].good) ok = false;
-      for (j = 0; j < n; j++) if (before.states[j].good && !after.states[j].good) ok = false;
-    }
-    if (!ok) for (j = 0; j < n; j++) { pieces[j].x = saved[j][0]; pieces[j].y = saved[j][1]; }
-    return ok;
-  }
-
-  // The magnet. While a piece is dragged near a wall or another piece, turn it
-  // the last few degrees to line up with that edge and pull it flush; near a
-  // corner, also slide it along until it meets the second side. Returns false
-  // (and leaves the piece alone) when nothing is close enough or the snapped
-  // spot would not be clean.
+  // The magnet. A piece dropped near others turns the last few degrees to line
+  // up with a nearby edge, then slides into contact with whatever is closest
+  // and along that contact until it meets a second neighbour, so it seats
+  // itself in the nook it was dropped beside. Only this piece moves.
   var MAG_TURN = 7;      // degrees the magnet may turn a piece
-  var MAG_REACH = 0.2;   // how far away an edge starts to pull
-  var MAG_CORNER = 0.2;  // how far the magnet slides a piece along to meet a second side
+  var MAG_REACH = 0.2;   // how far the magnet may pull a piece towards its nearest neighbour
+  var MAG_SLIDE = 0.2;   // and then along that neighbour to meet a second one
 
   function edgeList(V) {
     var cx = 0, cy = 0, out = [], i;
@@ -227,8 +172,8 @@ var PackerGeom = (function () {
     return out;
   }
 
-  // Each target is a line the piece may rest against: contact is when the
-  // piece's furthest point along (ux, uy) reaches d.
+  // A line the piece may rest against: contact is when the piece's furthest
+  // point along (ux, uy) reaches d.
   function reach(V, t) {
     var m = -Infinity;
     for (var i = 0; i < V.length; i++) { var v = V[i][0] * t.ux + V[i][1] * t.uy; if (v > m) m = v; }
@@ -245,7 +190,70 @@ var PackerGeom = (function () {
     return ((d % 360) + 540) % 360 - 180;
   }
 
-  // keep: stay lined up even when the snapped spot is not clean.
+  function span(V, nx, ny) {
+    var lo = Infinity, hi = -Infinity;
+    for (var i = 0; i < V.length; i++) { var d = V[i][0] * nx + V[i][1] * ny; if (d < lo) lo = d; if (d > hi) hi = d; }
+    return [lo, hi];
+  }
+  // How far outline A can slide along unit direction (dx, dy) before it
+  // touches convex B: 0 if already touching or overlapping, Infinity if never.
+  function sweep(A, B, dx, dy) {
+    var axes = normals(A).concat(normals(B)), enter = -Infinity, exit = Infinity;
+    for (var k = 0; k < axes.length; k++) {
+      var nx = axes[k][0], ny = axes[k][1], a = span(A, nx, ny), b = span(B, nx, ny), v = dx * nx + dy * ny;
+      if (Math.abs(v) < 1e-9) {
+        if (a[1] <= b[0] + 1e-9 || b[1] <= a[0] + 1e-9) return Infinity;
+        continue;
+      }
+      var t1 = (b[0] - a[1]) / v, t2 = (b[1] - a[0]) / v;
+      enter = Math.max(enter, Math.min(t1, t2)); exit = Math.min(exit, Math.max(t1, t2));
+    }
+    if (enter > exit - 1e-9 || exit <= 1e-9) return Infinity;
+    return Math.max(enter, 0);
+  }
+  // How far A can slide before anything stops it: a neighbour or a wall.
+  function travel(A, others, C, dx, dy) {
+    var best = Infinity, k;
+    for (k = 0; k < others.length; k++) best = Math.min(best, sweep(A, others[k], dx, dy));
+    for (k = 0; k < C.walls.length; k++) {
+      var w = C.walls[k], v = dx * w.nx + dy * w.ny;
+      if (v > 1e-9) best = Math.min(best, Math.max(0, -excess(A, w) / v));
+    }
+    return best;
+  }
+
+  // Slide piece p into contact with the nearest thing, then along that
+  // contact into a second one. Returns true if it moved.
+  function seat(p, others, C) {
+    var V = verts(p), dirs = [], k, best = null;
+    for (k = 0; k < C.walls.length; k++) dirs.push([C.walls[k].nx, C.walls[k].ny]);
+    others.forEach(function (B) {
+      // head for B along the axis that separates the two the most
+      var axes = normals(V).concat(normals(B)), pick = null;
+      axes.forEach(function (n) {
+        var a = span(V, n[0], n[1]), b = span(B, n[0], n[1]);
+        if (b[0] - a[1] > (pick ? pick.gap : -Infinity)) pick = { gap: b[0] - a[1], x: n[0], y: n[1] };
+        if (a[0] - b[1] > pick.gap) pick = { gap: a[0] - b[1], x: -n[0], y: -n[1] };
+      });
+      if (pick && pick.gap > 1e-9 && pick.gap <= MAG_REACH) dirs.push([pick.x, pick.y]);
+    });
+    dirs.forEach(function (d) {
+      var t = travel(V, others, C, d[0], d[1]);
+      if (t > 1e-9 && t <= MAG_REACH && (!best || t < best.t)) best = { t: t, x: d[0], y: d[1] };
+    });
+    if (!best) return false;
+    p.x += best.x * best.t; p.y += best.y * best.t;
+    V = verts(p);
+    var tx = -best.y, ty = best.x, f = travel(V, others, C, tx, ty), r = travel(V, others, C, -tx, -ty);
+    if (Math.min(f, r) <= MAG_SLIDE) {
+      var s = f <= r ? f : -r;
+      p.x += tx * s; p.y += ty * s;
+    }
+    return true;
+  }
+
+  // Returns true when the piece snapped somewhere clean. With keep, it stays
+  // lined up even when the spot is not clean (and returns true).
   function magnet(pieces, i, C, keep) {
     var p = pieces[i];
     if (!pointInside(C, p.x, p.y)) return false;
@@ -264,41 +272,25 @@ var PackerGeom = (function () {
       });
     }
 
-    // first contact: the nearest edge that is almost parallel to one of ours
-    var best = null, E = edgeList(verts(p)), V;
-    E.forEach(function (e) {
+    // turn to match the nearest almost-parallel edge
+    var best = null;
+    edgeList(verts(p)).forEach(function (e) {
       targets.forEach(function (t) {
         var turn = turnTo(e, t);
         if (Math.abs(turn) > MAG_TURN + 1e-9) return;
         var gap = reach(verts(p), t);
         if (gap < -SNAP || gap > MAG_REACH || shared(e, t) < 0.15) return;
         var score = Math.abs(gap) + Math.abs(turn) * 0.02;
-        if (!best || score < best.score) best = { t: t, turn: turn, score: score };
+        if (!best || score < best.score) best = { turn: turn, score: score };
       });
     });
-    if (!best) return false;
-    var t1 = best.t;
-    p.angle = a0 + Math.round(best.turn);
-    var g = reach(verts(p), t1);
-    p.x += t1.ux * g; p.y += t1.uy * g;
+    if (best) p.angle = a0 + Math.round(best.turn);
 
-    // second contact, for corners: slide along the first edge to meet another
-    var tx = -t1.uy, ty = t1.ux, second = null;
-    E = edgeList(verts(p));
-    E.forEach(function (e) {
-      targets.forEach(function (t) {
-        if (Math.abs(t.ux * t1.ux + t.uy * t1.uy) > 0.95 || Math.abs(turnTo(e, t)) > 0.5) return;
-        var along = tx * t.ux + ty * t.uy;
-        if (Math.abs(along) < 0.3) return;
-        var gap = reach(verts(p), t);
-        if (gap < -SNAP || gap > MAG_CORNER || shared(e, t) < 0.1) return;
-        if (!second || Math.abs(gap) < Math.abs(second.gap)) second = { gap: gap, along: along };
-      });
-    });
-    if (second) { var s = second.gap / second.along; p.x += tx * s; p.y += ty * s; }
+    settle(pieces, i, C);              // out of any shallow overlap first
+    var moved = seat(p, others, C);
+    if (!best && !moved && p.x === x0 && p.y === y0) return false;
 
-    settle(pieces, i, C);
-    V = verts(p);
+    var V = verts(p);
     var ok = (p.x - x0) * (p.x - x0) + (p.y - y0) * (p.y - y0) <= MAX_SLIDE * MAX_SLIDE;
     for (k = 0; k < C.walls.length && ok; k++) if (excess(V, C.walls[k]) > EPS) ok = false;
     for (k = 0; k < others.length && ok; k++) { var o = overlap(V, others[k]); if (o && o.depth > EPS) ok = false; }
@@ -306,26 +298,96 @@ var PackerGeom = (function () {
     return keep ? true : ok;
   }
 
-  // Everything that happens to a piece as it is dragged to (x, y), in order of
-  // preference: snap it to a nearby edge if that is a clean fit; nudge it out
-  // of shallow overlaps; let the neighbours shuffle over to make room; and
-  // failing all that, still line it up with the nearest edge so a slightly
-  // crooked piece is at least straight (it stays red). Returns 'snap', 'fit'
-  // or 'bad'.
+  // Everything that happens to a piece as it is dragged to (x, y). Only that
+  // piece ever moves: snap it to a nearby edge if that is a clean fit; else
+  // nudge it out of shallow overlaps; else still line it up with the nearest
+  // edge so a slightly crooked piece is at least straight (it stays red).
+  // Returns 'snap', 'fit' or 'bad'.
   function place(pieces, i, C) {
     var p = pieces[i], x = p.x, y = p.y, a = p.angle;
     if (magnet(pieces, i, C)) return 'snap';
     if (pointInside(C, x, y) && settle(pieces, i, C)) return 'fit';
-    if (shuffle(pieces, i, C)) return 'fit';
     p.x = x; p.y = y;
-    if (magnet(pieces, i, C, true)) {
-      settle(pieces, i, C);
-      if (shuffle(pieces, i, C)) return 'snap';
-      if (p.angle !== a) return 'bad';
-    }
+    if (magnet(pieces, i, C, true) && p.angle !== a) { settle(pieces, i, C); return 'bad'; }
     p.x = x; p.y = y; p.angle = a;
     settle(pieces, i, C);
     return 'bad';
+  }
+
+  // The shake. If every piece is in the box and each is within a hair of a
+  // spot that would finish the board (SHAKE_MOVE away, SHAKE_TURN degrees),
+  // return those spots; otherwise null. All pieces may move here, but only
+  // when the player asks for a shake.
+  var SHAKE_MOVE = 0.08, SHAKE_TURN = 1;
+
+  function relaxAll(Q, home, C, iters) {
+    var n = Q.length, V = Q.map(verts), worst = 0, i, j, k;
+    function shift(i, dx, dy) {
+      Q[i].x += dx; Q[i].y += dy;
+      for (var m = 0; m < V[i].length; m++) { V[i][m][0] += dx; V[i][m][1] += dy; }
+    }
+    for (var it = 0; it < iters; it++) {
+      worst = 0;
+      for (i = 0; i < n; i++) {
+        for (k = 0; k < C.walls.length; k++) {
+          var e = excess(V[i], C.walls[k]);
+          if (e > 0) { worst = Math.max(worst, e); shift(i, -C.walls[k].nx * e, -C.walls[k].ny * e); }
+        }
+        for (j = i + 1; j < n; j++) {
+          var o = overlap(V[i], V[j]);
+          if (o && o.depth > 0) {
+            worst = Math.max(worst, o.depth);
+            var h = o.depth / 2;
+            shift(i, o.nx * h, o.ny * h); shift(j, -o.nx * h, -o.ny * h);
+          }
+        }
+      }
+      for (i = 0; i < n; i++) {   // nobody wanders further than a hair from where it was
+        var dx = Q[i].x - home[i].x, dy = Q[i].y - home[i].y, d = Math.sqrt(dx * dx + dy * dy);
+        if (d > SHAKE_MOVE) { var f = SHAKE_MOVE / d; shift(i, home[i].x + dx * f - Q[i].x, home[i].y + dy * f - Q[i].y); }
+      }
+      if (worst < EPS / 4) break;
+    }
+    // how much overlap is left, in total
+    var left = 0;
+    for (i = 0; i < n; i++) {
+      for (k = 0; k < C.walls.length; k++) left += Math.max(0, excess(V[i], C.walls[k]));
+      for (j = i + 1; j < n; j++) { var q = overlap(V[i], V[j]); if (q) left += q.depth; }
+    }
+    return { worst: worst, left: left };
+  }
+
+  function shake(pieces, C, budgetMs) {
+    var n = pieces.length, i;
+    for (i = 0; i < n; i++) if (!pointInside(C, pieces[i].x, pieces[i].y)) return null;
+    var home = pieces.map(function (p) { return { x: p.x, y: p.y }; }), base = pieces.map(function (p) { return p.angle; });
+    var until = Date.now() + (budgetMs || 150);
+    function attempt(angles) {
+      var Q = pieces.map(function (p, k) { return { type: p.type, size: p.size, x: p.x, y: p.y, angle: angles[k] }; });
+      var r = relaxAll(Q, home, C, 250);
+      return { Q: Q, r: r.left, solved: r.worst < EPS && evaluate(Q, C).solved };
+    }
+    var angles = base.slice(), cur = attempt(angles);
+    // pieces meant to sit at a round angle are usually a degree off it, so try that first
+    var round = base.map(function (a) { var r = Math.round(a / 5) * 5; return Math.abs(r - a) <= SHAKE_TURN ? r : a; });
+    if (!cur.solved && round.some(function (a, k) { return a !== base[k]; })) {
+      var rr = attempt(round);
+      if (rr.solved || rr.r < cur.r) { cur = rr; angles = round; }
+    }
+    // then try turning single pieces by a degree, keeping whatever helps
+    for (var pass = 0; pass < 3 && !cur.solved && Date.now() < until; pass++) {
+      var st = evaluate(cur.Q, C).states;
+      for (i = 0; i < n && !cur.solved && Date.now() < until; i++) {
+        if (st[i].good && pass === 0) continue;   // the culprits first, then anyone
+        for (var d = -SHAKE_TURN; d <= SHAKE_TURN && !cur.solved; d++) {
+          var trial = angles.slice(); trial[i] = base[i] + d;
+          if (trial[i] === angles[i]) continue;
+          var r = attempt(trial);
+          if (r.solved || r.r < cur.r - 1e-6) { cur = r; angles = trial; }
+        }
+      }
+    }
+    return cur.solved ? cur.Q.map(function (q) { return { x: q.x, y: q.y, angle: q.angle }; }) : null;
   }
 
   function bounds(poly) {
@@ -340,6 +402,6 @@ var PackerGeom = (function () {
   return {
     H: H, EPS: EPS, SHAPES: SHAPES,
     verts: verts, overlap: overlap, makeContainer: makeContainer, excess: excess,
-    pointInside: pointInside, zone: zone, evaluate: evaluate, settle: settle, magnet: magnet, shuffle: shuffle, place: place, bounds: bounds
+    pointInside: pointInside, zone: zone, evaluate: evaluate, settle: settle, magnet: magnet, place: place, shake: shake, bounds: bounds
   };
 })();

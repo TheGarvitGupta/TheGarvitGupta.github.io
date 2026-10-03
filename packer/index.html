@@ -139,7 +139,6 @@ button{font:inherit; color:inherit; cursor:pointer}
 @keyframes fadein{from{opacity:0}}
 
 .piece{cursor:grab}
-#pieces.dragging .piece:not(.held){transition:transform .12s ease-out}
 .piece.fresh .pop{animation:fadein .4s both; animation-delay:var(--d)}
 .piece.held{cursor:grabbing}
 .body{transition:transform .1s ease-out}
@@ -165,6 +164,13 @@ button{font:inherit; color:inherit; cursor:pointer}
 #bubble{position:absolute; left:0; top:0; padding:3px 10px 4px; font-weight:700; font-size:16px; font-variant-numeric:tabular-nums;
   background:var(--ink); color:#FFF4DE; border-radius:999px; pointer-events:none; opacity:0; transition:opacity .15s; will-change:transform}
 #bubble.show{opacity:1}
+.shake{position:absolute; left:50%; bottom:6px; display:flex; align-items:center; gap:7px; padding:9px 18px 10px; font-weight:700; font-size:18px;
+  color:#2B2140; background:var(--sun); border:var(--bw) solid var(--ink); border-radius:999px; transform:translateX(-50%);
+  animation:shakein .35s var(--pop) both, nudge 1.6s ease-in-out .4s infinite; z-index:3}
+.shake svg{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round}
+.shake:active{transform:translate(-50%, 1px)}
+@keyframes shakein{from{opacity:0; transform:translate(-50%, 14px)}}
+@keyframes nudge{0%,70%,100%{transform:translateX(-50%)} 76%{transform:translateX(calc(-50% - 4px))} 82%{transform:translateX(calc(-50% + 4px))} 88%{transform:translateX(calc(-50% - 2px))}}
 
 /* rotate dock */
 .dock{flex:none; display:flex; align-items:center; justify-content:center; gap:8px; height:56px; position:relative}
@@ -314,6 +320,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <g id="handle" hidden><line/><circle id="knob-hit"/><circle id="knob"/><circle id="knob-dot"/></g>
     </svg>
     <div id="bubble"></div>
+    <button id="shake" class="shake" hidden aria-label="Shake the box: everything is close enough to fall into place">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l-3 3 3 3M17 14l3 3-3 3M4 7h11a4 4 0 0 1 4 4M20 17H9a4 4 0 0 1-4-4"/></svg>Shake it!
+    </button>
   </main>
 
   <footer class="dock idle" id="dock">
@@ -333,13 +342,13 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     <h2 id="help-h">How to pack</h2>
     <p class="sub">Get every shape inside the box, with nothing overlapping.</p>
     <ul class="how">
-      <li><span>1</span><div><b>Drag</b> shapes in and out of the box. Drop one close and it snuggles up to its neighbours.</div></li>
+      <li><span>1</span><div><b>Drag</b> shapes in and out of the box. Near an edge it snaps flush and straightens up.</div></li>
       <li><span>2</span><div><b>Spin</b> a shape by dragging its knob<span class="keys">, scrolling, or pressing <kbd>Q</kbd> <kbd>E</kbd>. One degree at a time; hold <kbd>Shift</kbd> for 15</span><span class="taps">, one degree at a time</span>.</div></li>
       <li><span>3</span><div><span class="keys"><b>Nudge</b> with the arrow keys, or type an exact angle at the bottom.</span><span class="taps"><b>Fine-tune</b> with the ±1° buttons, or type an exact angle.</span></div></li>
       <li><span>4</span><div>Dashed red means it overlaps or pokes out. A big smile means it fits.</div></li>
     </ul>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.5</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.7</span></div>
   </div>
 </div>
 
@@ -376,8 +385,8 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.5"></script>
-<script src="levels.js?v=1.5"></script>
-<script src="game.js?v=1.5"></script>
+<script src="geom.js?v=1.7"></script>
+<script src="levels.js?v=1.7"></script>
+<script src="game.js?v=1.7"></script>
 </body>
 </html>
