@@ -479,6 +479,11 @@ window.Coins = (function () {
     li.dataset.id = coin.id;
     li.dataset.sig = tileSignature(coin);
     li.dataset.pos = String(index);
+    // Coins are dealt onto the page one after another rather than all at once.
+    // Past the first screenful, tiles arrive by scrolling, so the wave restarts
+    // along each row instead of keeping a coin far down the page waiting.
+    var beat = index < 12 ? index : index % 6;
+    li.style.setProperty("--deal", beat * 45 + "ms");
 
     var btn = document.createElement("button");
     btn.type = "button";
@@ -498,7 +503,19 @@ window.Coins = (function () {
       img.addEventListener("load", arrived);
       img.addEventListener("error", arrived);   // a broken file must not hold the tile back
       if (img.complete) arrived();
-      disc.appendChild(img);
+
+      // The coin and the light on it move as one, so they share a wrapper. The
+      // glint is masked by the photograph itself, so it lands only on metal and
+      // never on the transparent corners around a round coin.
+      var body = document.createElement("span");
+      body.className = "coin-body";
+      var glint = document.createElement("span");
+      glint.className = "coin-glint";
+      glint.setAttribute("aria-hidden", "true");
+      glint.style.setProperty("--mask", 'url("' + img.src + '")');
+      body.appendChild(img);
+      body.appendChild(glint);
+      disc.appendChild(body);
     } else {
       li.dataset.shot = "1";   // nothing to wait for
       var ph = document.createElement("div");

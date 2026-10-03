@@ -166,6 +166,12 @@ window.Viewer = (function () {
     renderDetail(coin);
     updateNav();
 
+    // Each coin turns in to face you as it arrives, including on Next and
+    // Previous. Taking the class off and reading layout restarts the animation.
+    el.flipper.classList.remove("is-arriving");
+    void el.flipper.offsetWidth;
+    el.flipper.classList.add("is-arriving");
+
     el.root.hidden = false;
     document.body.style.overflow = "hidden";
     paint(false);

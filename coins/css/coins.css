@@ -792,10 +792,22 @@ body.filters-open .drawer { transform: none; }
 .coin {
   position: relative;
   opacity: 0;
-  transform: translateY(9px);
-  transition: opacity 0.42s var(--ease), transform 0.42s var(--ease);
+  transform: translateY(14px);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+  transition-delay: var(--deal, 0ms);
 }
 .coin.is-in { opacity: 1; transform: none; }
+
+/* Dealt onto the page: each coin lands spinning down to rest. Only the first
+   time — flair.js marks it dealt once the turn is done, since re-ordering the
+   grid re-inserts tiles and would otherwise spin every coin on every filter. */
+.coin.is-in:not(.is-dealt) .coin-body {
+  animation: coin-deal 0.8s var(--ease) var(--deal, 0ms) backwards;
+}
+@keyframes coin-deal {
+  from { transform: perspective(700px) rotateY(-120deg) scale(0.86); }
+  to   { transform: perspective(700px) rotateY(0deg) scale(1); }
+}
 
 /* Landed somewhere new. An animation rather than a transition, because it has
    to replay on demand — and re-inserting the element is what replays it. */
@@ -844,13 +856,55 @@ body.filters-open .drawer { transform: none; }
   height: 100%;
   object-fit: contain;
   filter: var(--coin-shadow);
-  transition: transform 0.45s var(--ease), filter 0.45s var(--ease);
+  transition: filter 0.45s var(--ease);
 }
 .coin-btn:hover .coin-disc img,
 .coin-btn:focus-visible .coin-disc img {
-  transform: scale(1.06) translateY(-2px);
   filter: var(--coin-shadow-hover);
 }
+
+/* The coin and its glint, moved together. Under a mouse it leans toward the
+   pointer (flair.js writes --rx and --ry); otherwise it simply lifts. */
+.coin-body {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.55s var(--ease);
+}
+.coin-btn:hover .coin-body,
+.coin-btn:focus-visible .coin-body {
+  transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))
+             scale(1.07) translateY(-3px);
+}
+/* Following the pointer has to be nearly immediate, or the coin lags behind
+   the hand like something on a string. */
+.coin-btn.is-tilting .coin-body { transition-duration: 0.12s; }
+
+/* Light catching the metal: a hot spot where the pointer is, and a softer band
+   sweeping through it. Masked by the photograph, so it falls only on the coin. */
+.coin-glint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  -webkit-mask: var(--mask) center / contain no-repeat;
+          mask: var(--mask) center / contain no-repeat;
+  background:
+    radial-gradient(circle at var(--gx, 35%) var(--gy, 25%),
+      rgba(255, 252, 240, 0.85), rgba(255, 252, 240, 0.2) 22%, rgba(255, 252, 240, 0) 46%),
+    linear-gradient(115deg,
+      transparent calc(var(--gx, 50%) - 30%),
+      rgba(255, 248, 225, 0.3) var(--gx, 50%),
+      transparent calc(var(--gx, 50%) + 30%));
+  /* Screen only ever brightens, so it reads as light on the metal rather than
+     as a white film laid over the photograph. */
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.35s var(--ease);
+}
+.coin-btn:hover .coin-glint,
+.coin-btn:focus-visible .coin-glint { opacity: 1; }
 
 /* The photograph has no fade of its own. The tile carries one reveal for the
    whole thing — rise and fade together — held until the picture has arrived,
@@ -1187,6 +1241,7 @@ body.filters-open .drawer { transform: none; }
   .flipper.is-flipped .face-rev { opacity: 1; }
   .coin { opacity: 1; transform: none; }
   .coin.is-shifting { animation: none; }
+  .coin-glint { display: none; }
 }
 
 /* ── Both sides at once ───────────────────────────────────────────────────── */
@@ -1339,4 +1394,103 @@ body.filters-open .drawer { transform: none; }
   .topbar-inner { gap: 0.5rem; }
   .eb span { display: none; }        /* icons alone once space is tight */
   .eb { padding: 0.4rem 0.6rem; }
+}
+
+/* ── The coin in the wordmark ─────────────────────────────────────────────── */
+/*
+   flair.js swaps the "o" of Coins for a coin from the collection, chosen at
+   random on each visit. It sits in the letter's place at the letter's size,
+   centred on the x-height, so the word still reads as a word. Until both faces
+   have loaded — or without JavaScript — the letter stays.
+*/
+
+.masthead-o.has-coin .masthead-letter { display: none; }
+
+.masthead-coin {
+  position: relative;
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin: 0 0.035em;
+  /* Bottom just under the baseline, top just over the x-height, as the
+     round letters overshoot both. */
+  vertical-align: -0.06em;
+  perspective: 6em;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.4) rotate(-90deg);
+  transition: opacity 0.6s var(--ease), transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.masthead-coin.is-in { opacity: 1; transform: none; }
+.masthead-coin.is-in:hover:not(.is-tossing) { transform: scale(1.12); transition-duration: 0.3s; }
+
+.mc-toss, .mc-tumble, .mc-spin {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.mc-toss.is-flying { animation: mc-arc 1.15s cubic-bezier(0.33, 0, 0.67, 1); }
+@keyframes mc-arc {
+  0%   { transform: translateY(0)       scale(1); }
+  45%  { transform: translateY(-0.95em) scale(1.25); }
+  88%  { transform: translateY(0.02em)  scale(1); }
+  94%  { transform: translateY(-0.05em); }
+  100% { transform: translateY(0); }
+}
+
+.mc-tumble { transition: transform 1.15s cubic-bezier(0.2, 0.7, 0.3, 1); }
+
+/* Every so often it turns over on its own, so it is noticed as a coin. */
+.mc-spin { animation: mc-idle 9s var(--ease-in-out) 2.5s infinite; }
+.masthead-coin.is-tossing .mc-spin { animation-play-state: paused; }
+@keyframes mc-idle {
+  0%, 84% { transform: rotateY(0deg); }
+  100%    { transform: rotateY(360deg); }
+}
+
+.mc-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.mc-rev { transform: rotateY(180deg); }
+.mc-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0.03em 0.05em rgba(0, 0, 0, 0.35));
+}
+
+/* The call, under the coin once it lands. */
+.mc-call {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  left: 50%;
+  font-family: var(--sans);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--gold);
+  -webkit-text-fill-color: var(--gold);
+  opacity: 0;
+  transform: translate(-50%, -0.3rem);
+  transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+  pointer-events: none;
+}
+.mc-call.is-shown { opacity: 1; transform: translate(-50%, 0); }
+
+/* ── The viewer, arriving ─────────────────────────────────────────────────── */
+/* Both faces turn in to meet you, the reverse a beat behind the obverse. */
+
+.viewer.is-spread .flipper.is-arriving .face {
+  animation: face-in 0.75s var(--ease) backwards;
+}
+.viewer.is-spread .flipper.is-arriving .face-rev { animation-delay: 0.09s; }
+@keyframes face-in {
+  from { opacity: 0; transform: perspective(1200px) rotateY(-70deg) scale(0.9); }
+  to   { opacity: 1; transform: perspective(1200px) rotateY(0deg) scale(1); }
 }
