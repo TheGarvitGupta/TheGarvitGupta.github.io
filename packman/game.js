@@ -10,6 +10,20 @@
   var MAIN = LEVELS.filter(function (l) { return !l.bonus; }).length;   // the bonus levels follow these
   var TURN = { square: 90, triangle: 120, domino: 180, hexagon: 60 };   // degrees before a shape looks the same again
   var KNOB = { square: 0.72, triangle: 0.6, domino: 0.72, hexagon: 1.08 };
+  // What a piece wears. Everything is in face units and stays well inside the
+  // body, so no outfit changes the shape the player has to pack.
+  var OUTFITS = [
+    {},
+    { wear: [['circle', 'wear', { cx: -0.13, cy: -0.06, r: 0.088 }], ['circle', 'wear', { cx: 0.13, cy: -0.06, r: 0.088 }], ['path', 'wear', { d: 'M-0.042 -0.07Q0 -0.09 0.042 -0.07' }]] },
+    { wear: [['ellipse', 'blush', { cx: -0.215, cy: 0.045, rx: 0.05, ry: 0.034 }], ['ellipse', 'blush', { cx: 0.215, cy: 0.045, rx: 0.05, ry: 0.034 }],
+             ['path', 'wear thin', { d: 'M-0.17 -0.1L-0.205 -0.13M-0.14 -0.115L-0.15 -0.155M0.17 -0.1L0.205 -0.13M0.14 -0.115L0.15 -0.155' }]] },
+    { wear: [['path', 'wear solid', { d: 'M0 0.27L-0.1 0.215V0.325ZM0 0.27L0.1 0.215V0.325Z' }], ['circle', 'wear solid', { cx: 0, cy: 0.27, r: 0.022 }]] },
+    { wear: [['path', 'wear solid', { d: 'M0 0.035C-0.04 0 -0.11 0.01 -0.15 0.065C-0.1 0.08 -0.04 0.075 0 0.045C0.04 0.075 0.1 0.08 0.15 0.065C0.11 0.01 0.04 0 0 0.035Z' }]] },
+    { idle: 'M-0.06 0.125H0.06', wear: [['path', 'wear', { d: 'M-0.2 -0.175L-0.08 -0.135M0.2 -0.175L0.08 -0.135' }]] },
+    { still: true, eye: 0.036, eyeY: -0.045, idle: 'M-0.035 0.115Q0 0.13 0.035 0.115', wear: [['path', 'wear', { d: 'M-0.185 -0.078H-0.075M0.075 -0.078H0.185' }]] },
+    { wear: [-0.24, -0.2, -0.22, 0.2, 0.24, 0.22].map(function (x, n) { return ['circle', 'wear solid', { cx: x, cy: n % 3 === 2 ? 0.07 : 0.03, r: 0.012 }]; }) },
+    { eye: 0.062, idle: 'M-0.04 0.115Q0 0.14 0.04 0.115' }
+  ];
   var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function $(id) { return document.getElementById(id); }
@@ -37,6 +51,7 @@
   }
   // The box's outline is drawn just outside the real walls, so a piece resting
   // against a wall shows the same sliver of gap as two pieces side by side.
+  function binPath(px) { return rounded(grown(C, 3.4 * px), Math.min(9 * px, 0.16)); }
   function grown(Cn, by) {
     var w = Cn.walls, n = w.length, out = [];
     for (var k = 0; k < n; k++) {
@@ -168,8 +183,8 @@
     board.setAttribute('viewBox', view.x + ' ' + view.y + ' ' + vw + ' ' + vh);
     var px = 1 / view.scale;
     board.style.setProperty('--u', px);   // one screen pixel, in board units, for stroke widths
-    bin.firstElementChild.setAttribute('d', rounded(grown(C, 3.4 * px), Math.min(9 * px, 0.16)));
-    pieces.forEach(function (p) { if (p.fill) p.fill.setAttribute('d', drawn(p.type)); });
+    bin.firstElementChild.setAttribute('d', binPath(px));
+    pieces.forEach(function (p) { if (p.fill) outline(p); });
     if (ghost) $('ghost').setAttribute('d', drawn(ghost.type));
     $('knob').setAttribute('r', 11 * px);
     $('knob-hit').setAttribute('r', 22 * px);
@@ -222,13 +237,14 @@
     g.dataset.i = i;
     g.style.setProperty('--c', p.color);
     g.style.setProperty('--d', (60 + i * 28) + 'ms');
-    fill.setAttribute('d', drawn(p.type));
+    var kit = p.kit || OUTFITS[0];
     if (p.type === 'triangle') face.setAttribute('transform', 'translate(0 0.03) scale(0.74)');
     if (p.type === 'hexagon') face.setAttribute('transform', 'scale(1.3)');
     var eyes = el('g', 'eyes');
     [-0.13, 0.13].forEach(function (x) {
       var e = el('circle', 'eye');
-      e.setAttribute('cx', x); e.setAttribute('cy', -0.06); e.setAttribute('r', 0.048);
+      e.setAttribute('cx', x); e.setAttribute('cy', kit.eyeY || -0.06); e.setAttribute('r', kit.eye || 0.048);
+      e.setAttribute('data-x', x); e.setAttribute('data-y', kit.eyeY || -0.06);
       eyes.appendChild(e);
     });
     var shut = el('path', 'shut');
@@ -239,21 +255,49 @@
     eyes.appendChild(wince);
     face.appendChild(eyes);
     var idle = el('path', 'mouth m-idle'), good = el('path', 'mouth m-good'), bad = el('circle', 'mouth m-bad');
-    idle.setAttribute('d', 'M-0.07 0.1 Q0 0.15 0.07 0.1');
+    idle.setAttribute('d', kit.idle || 'M-0.07 0.1 Q0 0.15 0.07 0.1');
     good.setAttribute('d', 'M-0.12 0.07 Q0 0.24 0.12 0.07');
     bad.setAttribute('cx', 0); bad.setAttribute('cy', 0.13); bad.setAttribute('r', 0.045);
     face.appendChild(idle); face.appendChild(good); face.appendChild(bad);
-    body.appendChild(fill); body.appendChild(face);
+    (kit.wear || []).forEach(function (w) {
+      var e = el(w[0], w[1]);
+      for (var k in w[2]) e.setAttribute(k, w[2][k]);
+      face.appendChild(e);
+    });
+    // A patch of the piece's own colour lies behind the face. Safari repaints
+    // only part of a face that changes; redrawing this patch along with it
+    // makes the whole face get painted, over colour and never over a gap.
+    var back = el('rect', 'back'), k = p.type === 'triangle' ? 0.74 : p.type === 'hexagon' ? 1.3 : 1, dy = p.type === 'triangle' ? 0.03 : 0;
+    back.setAttribute('x', -0.28 * k); back.setAttribute('y', -0.21 * k + dy);
+    back.setAttribute('width', 0.56 * k); back.setAttribute('height', 0.54 * k);
+    body.appendChild(fill); body.appendChild(back); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
+    p.back = back;
     p.el = g; p.pop = pop; p.body = body; p.fill = fill; p.eyes = eyes; p.tf = p.rot = p.look = '';
+    outline(p);
     layer.appendChild(g);
     setTimeout(function () { g.classList.remove('fresh'); }, 620 + i * 28);
   }
 
+  function repaint(p) {
+    if (!p.back) return;
+    p.flip = !p.flip;
+    p.back.setAttribute('rx', p.flip ? 0.0001 : 0);
+  }
+
+  function outline(p) {
+    var d = drawn(p.type);
+    p.fill.setAttribute('d', d);
+  }
+
+  // Pieces are moved with transform attributes, not CSS transforms: Safari
+  // repaints the wrong patch of a piece whose parents are moved by CSS.
   function render(i) {
-    var p = pieces[i], tf = 'translate(' + p.x.toFixed(4) + 'px,' + p.y.toFixed(4) + 'px)', rot = 'rotate(' + p.angle + 'deg)';
-    if (tf !== p.tf) { p.el.style.transform = p.tf = tf; }
-    if (rot !== p.rot) { p.body.style.transform = p.rot = rot; }
+    var p = pieces[i], tf = 'translate(' + p.x.toFixed(4) + ' ' + p.y.toFixed(4) + ')', rot = 'rotate(' + p.angle + ')';
+    if (tf === p.tf && rot === p.rot) return;
+    if (rot !== p.rot) p.body.setAttribute('transform', rot);
+    if (tf !== p.tf) p.el.setAttribute('transform', tf);
+    p.tf = tf; p.rot = rot;
   }
 
   function knobPos(p) {
@@ -288,6 +332,7 @@
       var s = ev.states[i];
       p.el.classList.toggle('good', s.good);
       p.el.classList.toggle('bad', s.zone === 'edge' || s.hit);
+      repaint(p);
       if (s.good && !p.good) {
         fitted = true;
       }
@@ -365,7 +410,7 @@
   /* ---------- selecting, moving, spinning ---------- */
 
   function select(i) {
-    if (sel >= 0 && pieces[sel]) pieces[sel].el.classList.remove('sel');
+    if (sel >= 0 && pieces[sel]) { pieces[sel].el.classList.remove('sel'); }
     sel = i;
     if (i >= 0) { pieces[i].el.classList.add('sel'); layer.appendChild(pieces[i].el); }
     showAngle(); placeHandle();
@@ -511,23 +556,29 @@
   board.addEventListener('pointerup', release);
   board.addEventListener('pointercancel', release);
 
-  // Every face watches the pointer, and so whatever it is carrying.
+  // Every face watches the pointer, and so whatever it is carrying. Only the
+  // two dots move: nothing in a face is ever shifted as a group or taken out
+  // of the page, because Safari then repaints the wrong patch of the piece.
   var gazeAt = null, gazeFrame = 0;
   function gaze() {
     gazeFrame = 0;
     var w = gazeAt && world(gazeAt);
     pieces.forEach(function (p) {
       var tf = '';
-      if (w) {
+      if (w && !p.kit.still) {   // the sleepy one cannot be bothered to look
         var dx = w.x - p.x, dy = w.y - p.y, d = Math.hypot(dx, dy);
         if (d > 0.3) {
           var r = -p.angle * Math.PI / 180, k = Math.min(0.04, d * 0.03) / d;
-          tf = 'translate(' + ((dx * Math.cos(r) - dy * Math.sin(r)) * k).toFixed(3) + ' ' + ((dx * Math.sin(r) + dy * Math.cos(r)) * k).toFixed(3) + ')';
+          tf = ((dx * Math.cos(r) - dy * Math.sin(r)) * k).toFixed(3) + ' ' + ((dx * Math.sin(r) + dy * Math.cos(r)) * k).toFixed(3);
         }
       }
       if (tf === p.look || !p.eyes) return;
       p.look = tf;
-      if (tf) p.eyes.setAttribute('transform', tf); else p.eyes.removeAttribute('transform');
+      var by = tf ? tf.split(' ') : [0, 0];
+      Array.prototype.forEach.call(p.eyes.querySelectorAll('.eye'), function (e) {
+        e.setAttribute('cx', +e.getAttribute('data-x') + +by[0]); e.setAttribute('cy', +e.getAttribute('data-y') + +by[1]);
+      });
+      repaint(p);
     });
   }
   function watch(e) {
@@ -634,17 +685,16 @@
     title.classList.remove('swap'); void title.offsetWidth; title.classList.add('swap');
 
     bin.setAttribute('class', '');
-    bin.style.transformOrigin = ((cb.minX + cb.maxX) / 2) + 'px ' + ((cb.minY + cb.maxY) / 2) + 'px';
     bin.style.animation = 'none'; void bin.getBoundingClientRect(); bin.style.animation = '';
 
     layer.textContent = '';
-    var colors = shuffled(COLORS), pips = $('pips');
+    var colors = shuffled(COLORS), kits = shuffled(OUTFITS), pips = $('pips');
     pips.textContent = '';
     pieces = lv.pieces.map(function (type, n) {
       var pip = document.createElement('i');
       if (type !== 'square') pip.className = type.charAt(0);
       pips.appendChild(pip);
-      return { type: type, size: 1, x: 0, y: 0, angle: 0, color: colors[n % colors.length], good: false };
+      return { type: type, size: 1, x: 0, y: 0, angle: 0, color: colors[n % colors.length], kit: kits[n % kits.length], good: false };
     });
     layout();
     var kept = save.board;
@@ -684,7 +734,7 @@
       if (k < 1) {
         // rattle the box and everything in it, dying down, while drifting home
         var amp = 0.07 * (1 - k), ease = k * k;
-        bin.style.transform = 'translate(' + ((Math.random() - 0.5) * amp).toFixed(4) + 'px,' + ((Math.random() - 0.5) * amp).toFixed(4) + 'px)';
+        bin.setAttribute('transform', 'translate(' + ((Math.random() - 0.5) * amp).toFixed(4) + ' ' + ((Math.random() - 0.5) * amp).toFixed(4) + ')');
         pieces.forEach(function (p, i) {
           p.x = from[i].x + (to[i].x - from[i].x) * ease + (Math.random() - 0.5) * amp;
           p.y = from[i].y + (to[i].y - from[i].y) * ease + (Math.random() - 0.5) * amp;
@@ -693,7 +743,7 @@
         requestAnimationFrame(frame);
         return;
       }
-      bin.style.transform = '';
+      bin.removeAttribute('transform');
       pieces.forEach(function (p, i) { p.x = to[i].x; p.y = to[i].y; p.angle = to[i].angle; render(i); });
       shaking = false;
       commit();
@@ -845,7 +895,7 @@
         var k = (t - start) / 1000 - 0.1 - (p.x - cb.minX) / wide * 0.5, hop = 0;
         if (k < 1) live = true;
         if (k > 0 && k < 1) hop = Math.abs(Math.sin(k * 2 * Math.PI)) * 0.14 * (1 - k * 0.6);
-        p.pop.style.transform = hop ? 'translate(0px,' + (-hop).toFixed(4) + 'px)' : '';
+        if (hop) p.pop.setAttribute('transform', 'translate(0 ' + (-hop).toFixed(4) + ')'); else p.pop.removeAttribute('transform');
       });
       if (live) requestAnimationFrame(frame);
     })(start);
@@ -882,16 +932,16 @@
     var px = w / (s.clientWidth || 260);
     s.style.setProperty('--u', px);
     var box = el('path', 'bin-fill');
-    box.setAttribute('d', rounded(grown(C, 3.4 * px), Math.min(9 * px, 0.16)));
+    box.setAttribute('d', binPath(px));
     s.appendChild(box);
     lv.solution.forEach(function (to, i) {
       var g = pieces[i].el.cloneNode(true);
       g.setAttribute('class', 'piece good');
-      g.style.transform = 'translate(' + to[0] + 'px,' + to[1] + 'px)';
-      g.querySelector('.body').style.transform = 'rotate(' + to[2] + 'deg)';
+      g.setAttribute('transform', 'translate(' + to[0] + ' ' + to[1] + ')');
+      g.querySelector('.body').setAttribute('transform', 'rotate(' + to[2] + ')');
       g.querySelector('.fill').setAttribute('d', drawn(pieces[i].type, px));
-      g.querySelector('.eyes').removeAttribute('transform');
-      g.querySelector('.pop').style.transform = '';
+      Array.prototype.forEach.call(g.querySelectorAll('.eye'), function (e) { e.setAttribute('cx', e.getAttribute('data-x')); e.setAttribute('cy', e.getAttribute('data-y')); });
+      g.querySelector('.pop').removeAttribute('transform');
       s.appendChild(g);
     });
   }
@@ -996,8 +1046,8 @@
     if (!pieces.length || document.hidden) return;
     var p = pieces[Math.floor(Math.random() * pieces.length)];
     if (!p.el) return;
-    p.el.classList.add('blink');
-    setTimeout(function () { p.el.classList.remove('blink'); }, 220);
+    p.el.classList.add('blink'); repaint(p);
+    setTimeout(function () { p.el.classList.remove('blink'); repaint(p); }, 220);
   }, 900);
 
   // The page is a game board, not a document: no pinch or double-tap zoom.

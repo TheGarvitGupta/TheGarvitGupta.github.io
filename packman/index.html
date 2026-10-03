@@ -146,20 +146,23 @@ button{font:inherit; color:inherit; cursor:pointer}
 .piece{cursor:grab}
 .piece.fresh .pop{animation:fadein .4s both; animation-delay:var(--d)}
 .piece.held{cursor:grabbing}
-.body{transition:transform .1s ease-out}
 .fill{fill:var(--c); stroke:var(--ink); stroke-width:calc(2.5px * var(--u)); stroke-linejoin:round}
 .piece.sel .fill{stroke-width:calc(4px * var(--u))}
 .piece.bad .fill{stroke:var(--bad); stroke-width:calc(3.5px * var(--u)); stroke-dasharray:calc(7px * var(--u)) calc(5px * var(--u))}
 
-.face{pointer-events:none}
+.face,.back{pointer-events:none} .back{fill:var(--c)}
 .eye{fill:var(--face)}
-.shut,.wince{display:none; fill:none; stroke:var(--face); stroke-width:calc(2.6px * var(--u)); stroke-linecap:round; stroke-linejoin:round}
-.piece.blink .eye,.piece.bad .eye{display:none} .piece.blink .shut,.piece.bad .wince{display:inline}
-.piece.bad.blink .shut{display:none}
+/* Faces change by visibility, never display: taking a shape out of the page leaves marks in Safari */
+.shut,.wince{visibility:hidden; fill:none; stroke:var(--face); stroke-width:calc(2.6px * var(--u)); stroke-linecap:round; stroke-linejoin:round}
+.piece.blink .eye,.piece.bad .eye{visibility:hidden} .piece.blink .shut,.piece.bad .wince{visibility:visible}
+.piece.bad.blink .shut{visibility:hidden}
 .mouth{fill:none; stroke:var(--face); stroke-width:calc(2px * var(--u)); stroke-linecap:round}
-.m-good,.m-bad{display:none}
-.piece.good .m-good{display:inline} .piece.good .m-idle{display:none}
-.piece.bad .m-bad{display:inline; fill:var(--face)} .piece.bad .m-idle{display:none}
+.m-good,.m-bad{visibility:hidden}
+.piece.good .m-good{visibility:visible} .piece.good .m-idle{visibility:hidden}
+.piece.bad .m-bad{visibility:visible; fill:var(--face)} .piece.bad .m-idle{visibility:hidden}
+.wear{fill:none; stroke:var(--face); stroke-width:calc(2px * var(--u)); stroke-linecap:round; stroke-linejoin:round}
+.wear.thin{stroke-width:calc(1.5px * var(--u))} .wear.solid{fill:var(--face); stroke-width:calc(1px * var(--u))}
+.blush{fill:#D6305F; fill-opacity:.32}
 
 .ghost{pointer-events:none; fill:var(--sun); fill-opacity:.3; stroke:var(--text); stroke-width:calc(2.5px * var(--u)); stroke-linejoin:round;
   stroke-dasharray:calc(6px * var(--u)) calc(5px * var(--u)); animation:beckon 1.2s ease-in-out infinite alternate}
@@ -365,7 +368,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <li><span>4</span><div>Dashed red means it overlaps or pokes out. A big smile means it fits.</div></li>
     </ul>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.14</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.24</span></div>
   </div>
 </div>
 
@@ -404,8 +407,8 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.14"></script>
-<script src="levels.js?v=1.14"></script>
-<script src="game.js?v=1.14"></script>
+<script src="geom.js?v=1.24"></script>
+<script src="levels.js?v=1.24"></script>
+<script src="game.js?v=1.24"></script>
 </body>
 </html>
