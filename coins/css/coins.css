@@ -1398,31 +1398,52 @@ body.filters-open .drawer { transform: none; }
 
 /* ── The coin in the wordmark ─────────────────────────────────────────────── */
 /*
-   flair.js swaps the "o" of Coins for a coin from the collection, chosen at
-   random on each visit. It sits in the letter's place at the letter's size,
-   centred on the x-height, so the word still reads as a word. Until both faces
-   have loaded — or without JavaScript — the letter stays.
+   The "o" of Coins is a letter until it is tapped. Then it turns into a coin
+   from the collection, which is tossed, lands heads or tails, and turns back
+   into the letter. The coin sits over the letter rather than replacing it in
+   the line, so the word never reflows while this happens.
 */
 
-.masthead-o.has-coin .masthead-letter { display: none; }
+/* The letter stays plain, unpositioned inline text. The wordmark's sheen is a
+   background clipped to its glyphs, and Chrome leaves the text of anything
+   positioned or inline-block out of that clip — the letter simply vanished. So
+   it cannot be moved or turned; it is swapped out at the moment the coin covers
+   it, and back as the coin leaves.
 
-.masthead-coin {
+   The coin hangs instead from an empty anchor just before the letter: no text
+   of its own to lose, zero width so the word is not respaced, and sitting on
+   the baseline, which gives the coin a fixed line to measure from. */
+.masthead-o.has-coin { cursor: pointer; }
+
+.mc-anchor {
   position: relative;
   display: inline-block;
-  width: 0.5em;
-  height: 0.5em;
-  margin: 0 0.035em;
-  /* Bottom just under the baseline, top just over the x-height, as the
-     round letters overshoot both. */
-  vertical-align: -0.06em;
-  perspective: 6em;
-  cursor: pointer;
-  opacity: 0;
-  transform: scale(0.4) rotate(-90deg);
-  transition: opacity 0.6s var(--ease), transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: 0;
+  height: 0;
 }
-.masthead-coin.is-in { opacity: 1; transform: none; }
-.masthead-coin.is-in:hover:not(.is-tossing) { transform: scale(1.12); transition-duration: 0.3s; }
+
+.masthead-letter { transition: opacity 0s linear 0.2s; }
+.masthead-o.is-coin .masthead-letter {
+  opacity: 0;
+  transition-delay: 0.12s;
+}
+
+.masthead-coin {
+  position: absolute;
+  /* Half the letter's width along (flair.js measures it), and centred on the
+     x-height, where the bowl of the "o" was. */
+  left: calc(var(--o-w, 0.5em) / 2);
+  bottom: -0.067em;
+  width: 0.52em;
+  height: 0.52em;
+  margin-left: -0.26em;
+  perspective: 6em;
+  pointer-events: none;
+  opacity: 0;
+  transform: perspective(4em) rotateY(-80deg) scale(0.75);
+  transition: opacity 0.25s var(--ease), transform 0.4s var(--ease);
+}
+.masthead-o.is-coin .masthead-coin { opacity: 1; transform: none; }
 
 .mc-toss, .mc-tumble, .mc-spin {
   position: absolute;
@@ -1439,14 +1460,7 @@ body.filters-open .drawer { transform: none; }
 }
 
 .mc-tumble { transition: transform 1.15s cubic-bezier(0.2, 0.7, 0.3, 1); }
-
-/* Every so often it turns over on its own, so it is noticed as a coin. */
-.mc-spin { animation: mc-idle 9s var(--ease-in-out) 2.5s infinite; }
-.masthead-coin.is-tossing .mc-spin { animation-play-state: paused; }
-@keyframes mc-idle {
-  0%, 84% { transform: rotateY(0deg); }
-  100%    { transform: rotateY(360deg); }
-}
+.mc-tumble.no-transition { transition: none; }
 
 .mc-face {
   position: absolute;

@@ -5,11 +5,11 @@
 
    - In the grid, a coin tilts toward the pointer and a highlight slides across
      it, the way metal catches the light as you turn it in your hand.
-   - The "o" in the wordmark is a coin from the collection. It turns over now
-     and then on its own, and a click tosses it.
+   - Tapping the "o" in the wordmark turns it into a coin from the
+     collection, tosses it, and turns it back into the letter.
 
-   Purely decorative. Nothing here is needed to use the page, and all of it
-   stands down under prefers-reduced-motion.
+   Purely decorative. Nothing here is needed to use the page. Under
+   prefers-reduced-motion the tilt is off and the toss lands without flying.
    ========================================================================= */
 
 (function () {
@@ -67,107 +67,138 @@
 
   /* ── The coin in the wordmark ───────────────────────────────────────────── */
 
-  function pickCoin() {
+  function tossable() {
     var C = window.Coins;
-    var both = C.state.all.filter(function (c) {
+    return C.state.all.filter(function (c) {
       return c.status !== "draft" && C.hasImage(c, "obv") && C.hasImage(c, "rev");
     });
-    if (!both.length) return null;
-    return both[Math.floor(Math.random() * both.length)];
   }
 
-  function face(cls, src) {
+  function face(cls) {
     var f = document.createElement("span");
     f.className = "mc-face " + cls;
     var img = document.createElement("img");
-    img.src = src;
     img.alt = "";
     img.draggable = false;
     f.appendChild(img);
     return f;
   }
 
+  /** Resolves once both faces of a coin have loaded, so a toss never shows half a coin. */
+  function preload(coin) {
+    var C = window.Coins;
+    return Promise.all(["obv", "rev"].map(function (which) {
+      return new Promise(function (done) {
+        var probe = new Image();
+        probe.onload = probe.onerror = done;
+        probe.src = C.imgSrc(coin, which, "thumbs");
+      });
+    })).then(function () { return coin; });
+  }
+
   function buildWordmarkCoin() {
     var slot = document.getElementById("masthead-o");
     if (!slot) return;
-    var coin = pickCoin();
-    if (!coin) return;
-
+    var pool = tossable();
+    if (!pool.length) return;
     var C = window.Coins;
-    var obv = C.imgSrc(coin, "obv", "thumbs");
-    var rev = C.imgSrc(coin, "rev", "thumbs");
 
-    // Wait for both faces, so the letter is never swapped for half a coin.
-    var pending = 2;
-    [obv, rev].forEach(function (src) {
-      var probe = new Image();
-      probe.onload = probe.onerror = function () { if (--pending === 0) mount(); };
-      probe.src = src;
-    });
+    var toss = document.createElement("span");
+    toss.className = "mc-toss";
+    var tumble = document.createElement("span");
+    tumble.className = "mc-tumble";
+    var spin = document.createElement("span");
+    spin.className = "mc-spin";
+    var obvFace = face("mc-obv"), revFace = face("mc-rev");
+    spin.appendChild(obvFace);
+    spin.appendChild(revFace);
+    tumble.appendChild(spin);
+    toss.appendChild(tumble);
 
-    function mount() {
-      var toss = document.createElement("span");
-      toss.className = "mc-toss";
-      var tumble = document.createElement("span");
-      tumble.className = "mc-tumble";
-      var spin = document.createElement("span");
-      spin.className = "mc-spin";
-      spin.appendChild(face("mc-obv", obv));
-      spin.appendChild(face("mc-rev", rev));
-      tumble.appendChild(spin);
-      toss.appendChild(tumble);
+    var call = document.createElement("span");
+    call.className = "mc-call";
 
-      var call = document.createElement("span");
-      call.className = "mc-call";
-      call.setAttribute("aria-hidden", "true");
+    var coinEl = document.createElement("span");
+    coinEl.className = "masthead-coin";
+    coinEl.setAttribute("aria-hidden", "true");
+    coinEl.appendChild(toss);
+    coinEl.appendChild(call);
+    var anchor = document.createElement("span");
+    anchor.className = "mc-anchor";
+    anchor.setAttribute("aria-hidden", "true");
+    anchor.appendChild(coinEl);
+    slot.insertBefore(anchor, slot.firstChild);
 
-      var coinEl = document.createElement("span");
-      coinEl.className = "masthead-coin";
-      coinEl.setAttribute("aria-hidden", "true");
-      coinEl.title = C.title(coin) + (C.year(coin) ? ", " + C.year(coin) : "") + " — click to toss";
-      coinEl.appendChild(toss);
-      coinEl.appendChild(call);
+    // A different coin each time, never the same one twice running.
+    var order = pool.slice().sort(function () { return Math.random() - 0.5; });
+    var next = 0;
+    var ready = null;   // promise of the coin the next tap will toss
+    function queue() { ready = preload(order[next++ % order.length]); }
 
-      slot.appendChild(coinEl);
-      slot.classList.add("has-coin");
-      requestAnimationFrame(function () { coinEl.classList.add("is-in"); });
-
-      if (!reduced) bindToss(coinEl, toss, tumble, call);
+    function dress(coin) {
+      obvFace.firstChild.src = C.imgSrc(coin, "obv", "thumbs");
+      revFace.firstChild.src = C.imgSrc(coin, "rev", "thumbs");
+      slot.title = C.title(coin) + (C.year(coin) ? ", " + C.year(coin) : "");
     }
-  }
 
-  function bindToss(coinEl, toss, tumble, call) {
-    var x = 0, z = 0, tails = false, busy = false, hideCall = 0;
+    var busy = false;
+    function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
-    coinEl.addEventListener("click", function () {
+    slot.addEventListener("click", function () {
       if (busy) return;
       busy = true;
-      clearTimeout(hideCall);
-      call.classList.remove("is-shown");
+      ready.then(function (coin) {
+        dress(coin);
+        queue();
 
-      var land = Math.random() < 0.5;
-      var turns = 4 + Math.floor(Math.random() * 2);
-      x += turns * 360;
-      // A turn about the horizontal axis leaves the reverse upside down, since
-      // it is mounted for turning about the vertical one. Rolling half a turn
-      // in the plane as well lands it the right way up — and mid-air, the
-      // extra roll just reads as the coin tumbling.
-      if (land !== tails) { x += 180; z += 180; tails = land; }
+        // Measured now rather than once, so the web font has had time to load.
+        var size = parseFloat(getComputedStyle(slot).fontSize) || 1;
+        anchor.style.setProperty("--o-w", slot.getBoundingClientRect().width / size + "em");
 
-      coinEl.classList.add("is-tossing");
-      toss.classList.remove("is-flying");
-      void toss.offsetWidth;
-      toss.classList.add("is-flying");
-      tumble.style.transform = "rotateX(" + x + "deg) rotateZ(" + z + "deg)";
+        // Always starts heads up; the toss decides how it lands.
+        tumble.classList.add("no-transition");
+        tumble.style.transform = "";
+        void tumble.offsetWidth;
+        tumble.classList.remove("no-transition");
 
-      setTimeout(function () {
-        busy = false;
-        coinEl.classList.remove("is-tossing");
-        call.textContent = tails ? "Tails" : "Heads";
-        call.classList.add("is-shown");
-        hideCall = setTimeout(function () { call.classList.remove("is-shown"); }, 1600);
-      }, 1150);
+        slot.classList.add("is-coin");
+        if (reduced) {
+          // No flight: the letter becomes the coin, which shows its call.
+          var still = Math.random() < 0.5;
+          if (still) tumble.style.transform = "rotateY(180deg)";
+          call.textContent = still ? "Tails" : "Heads";
+          call.classList.add("is-shown");
+          return wait(1600);
+        }
+
+        return wait(380).then(function () {
+          var tails = Math.random() < 0.5;
+          var turns = 4 + Math.floor(Math.random() * 2);
+          // A turn about the horizontal axis leaves the reverse upside down,
+          // since it is mounted for turning about the vertical one. Rolling
+          // half a turn in the plane as well lands it the right way up — and
+          // mid-air, the extra roll just reads as the coin tumbling.
+          var x = turns * 360 + (tails ? 180 : 0);
+          var z = tails ? 180 : 0;
+          toss.classList.remove("is-flying");
+          void toss.offsetWidth;
+          toss.classList.add("is-flying");
+          tumble.style.transform = "rotateX(" + x + "deg) rotateZ(" + z + "deg)";
+          return wait(1150).then(function () {
+            call.textContent = tails ? "Tails" : "Heads";
+            call.classList.add("is-shown");
+            return wait(1300);
+          });
+        });
+      }).then(function () {
+        call.classList.remove("is-shown");
+        slot.classList.remove("is-coin");
+        return wait(450);
+      }).then(function () { busy = false; });
     });
+
+    queue();
+    slot.classList.add("has-coin");
   }
 
   /* ── Setup ──────────────────────────────────────────────────────────────── */
