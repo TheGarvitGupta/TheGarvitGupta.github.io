@@ -1,6 +1,7 @@
 // Packman levels. Containers are convex polygons centred on the origin, in the
 // same units as the pieces (every piece has side 1). Each solution is one packed
-// [x, y, angle] per piece, in the order the pieces are listed.
+// [x, y, angle] per piece, in the order the pieces are listed. The levels run
+// from easiest to hardest; saved progress goes by name, so they can be reordered.
 var PackmanLevels = (function () {
   'use strict';
 
@@ -68,12 +69,29 @@ var PackmanLevels = (function () {
       solution: [[-0.5, 0.366, 0], [0.5, 0.366, 0], [-0.5, 1.366, 0], [0.5, 1.366, 0], [0, -1.2887, 0], [-0.5, -0.4226, 0], [0.5, -0.4226, 0], [0, -0.7113, 180]]
     },
     {
+      name: 'Lantern',
+      intro: 'A honeycomb, stretched, with two squares across the middle.',
+      hint: 'Two squares side by side across the middle. Three triangles above them and three below: point, flip, point.',
+      container: loosen([[-1, -0.5], [-0.5, -0.5 - H], [0.5, -0.5 - H], [1, -0.5], [1, 0.5], [0.5, 0.5 + H], [-0.5, 0.5 + H], [-1, 0.5]], 1.004),
+      pieces: pieces(2, 6),
+      scramble: true,
+      solution: [[-0.5, 0, 0], [0.5, 0, 0], [-0.5, -0.7887, 0], [0.5, -0.7887, 0], [0, -1.0774, 180], [-0.5, 0.7887, 180], [0.5, 0.7887, 180], [0, 1.0774, 0]]
+    },
+    {
       name: 'Tilt',
       intro: 'One triangle. One box. The box is narrower than the triangle.',
       hint: 'Lean it 15° and tuck one corner of the triangle into a corner of the box.',
       container: box(0.972),
       pieces: pieces(0, 1),
       solution: [[0.0717, 0.0717, 15]]
+    },
+    {
+      name: 'Squeeze',
+      intro: 'Three shapes. Side by side they would need a bigger box.',
+      hint: 'Nothing leans. The square sits against the middle of one wall. One triangle rests flat on the floor, the other hangs flat from the ceiling, and their points meet beside the square.',
+      container: box(1.783),
+      pieces: pieces(1, 2),
+      solution: [[0.388, 0, 0], [-0.388, 0.599, 0], [-0.388, -0.599, 180]]
     },
     {
       name: 'Five Alive',
@@ -94,23 +112,6 @@ var PackmanLevels = (function () {
       solution: [[1.183, 0.683, 30], [0, 1.366, 0], [-1.183, 0.683, 60], [-1.183, -0.683, 30], [0, -1.366, 0], [1.183, -0.683, 60], [0.5, 0.2887, 300], [0, 0.5774, 0], [-0.5, 0.2887, 60], [-0.5, -0.2887, 120], [0, -0.5774, 180], [0.5, -0.2887, 240], [1.5774, 0, 270], [0.7887, 1.366, 330], [-0.7887, 1.366, 30], [-1.5774, 0, 90], [-0.7887, -1.366, 150], [0.7887, -1.366, 210]]
     },
     {
-      name: 'Lantern',
-      intro: 'A honeycomb, stretched. Only eight shapes this time.',
-      hint: 'Two squares side by side across the middle. Three triangles above them and three below: point, flip, point.',
-      container: loosen([[-1, -0.5], [-0.5, -0.5 - H], [0.5, -0.5 - H], [1, -0.5], [1, 0.5], [0.5, 0.5 + H], [-0.5, 0.5 + H], [-1, 0.5]], 1.004),
-      pieces: pieces(2, 6),
-      scramble: true,
-      solution: [[-0.5, 0, 0], [0.5, 0, 0], [-0.5, -0.7887, 0], [0.5, -0.7887, 0], [0, -1.0774, 180], [-0.5, 0.7887, 180], [0.5, 0.7887, 180], [0, 1.0774, 0]]
-    },
-    {
-      name: 'Squeeze',
-      intro: 'Three shapes. Side by side they would need a bigger box.',
-      hint: 'Nothing leans. The square sits against the middle of one wall. One triangle rests flat on the floor, the other hangs flat from the ceiling, and their points meet beside the square.',
-      container: box(1.783),
-      pieces: pieces(1, 2),
-      solution: [[0.388, 0, 0], [-0.388, 0.599, 0], [-0.388, -0.599, 180]]
-    },
-    {
       name: 'Diamond',
       intro: 'Two triangles, and a box that looks too small for them.',
       hint: 'Join them edge to edge to make a diamond. Then lay the diamond corner to corner across the box: one triangle at 15°, the other at 75°.',
@@ -118,6 +119,46 @@ var PackmanLevels = (function () {
       container: box(1.232),
       pieces: pieces(0, 2),
       solution: [[0.204, 0.204, 15], [-0.204, -0.204, 75]]
+    },
+    {
+      name: 'Odd Couple',
+      intro: 'One square, one triangle. Stacked up they would poke out of the top.',
+      hint: 'The square goes snug in a corner. The triangle goes in the opposite corner, turned to 75°, so one of its edges slants across the square\u2019s free corner.',
+      container: box(1.619),
+      pieces: pieces(1, 1),
+      solution: [[0.3095, 0.3095, 0], [-0.4013, -0.388, 75]]
+    },
+    {
+      name: 'Tripod',
+      intro: 'A triangle with barely room for two squares side by side. Fit three.',
+      hint: 'Give each square its own wall. One sits flat on the floor, and the other two lie flat against the sloping sides, at 30° and 60°.',
+      container: loosen([[0, -2 * H / 3], [0.5, H / 3], [-0.5, H / 3]], 3.245),
+      pieces: pieces(3, 0),
+      solution: [[0.6482, 0.2493, 60], [-0.1057, -0.6905, 30], [-0.5387, 0.4255, 0]]
+    },
+    {
+      name: 'Pinwheel',
+      intro: 'Three squares in a honeycomb cell. A neat row will not fit.',
+      hint: 'Each square lies flat against a wall, with an empty wall between each pair. They sit at 0°, 30° and 60°, like the blades of a pinwheel.',
+      container: ngon(6, 1.372, 0),
+      pieces: pieces(3, 0),
+      solution: [[-0.1895, 0.6822, 0], [-0.503, -0.5052, 30], [0.6795, -0.1872, 60]]
+    },
+    {
+      name: 'Trio',
+      intro: 'Three triangles, and a box that only looks big enough for two.',
+      hint: 'One triangle hangs flat from the ceiling, at 60°. One stands flat against the right-hand wall, at 30°. The third tucks into the bottom-left corner at 105°.',
+      container: box(1.488),
+      pieces: pieces(0, 3),
+      solution: [[-0.1412, -0.4553, 60], [0.4361, 0.122, 30], [-0.3358, 0.3358, 105]]
+    },
+    {
+      name: 'Quartet',
+      intro: 'One more triangle. Nobody gets to sit up straight, except one.',
+      hint: 'One triangle sits upright on the floor in the bottom-left corner. Two lean at 45°, one on the right-hand wall and one in the top-left corner. The last, at 105°, fills the gap between them.',
+      container: box(1.68),
+      pieces: pieces(0, 4),
+      solution: [[0.4318, 0.2823, 45], [0.2823, -0.2754, 105], [-0.2735, -0.4318, 45], [-0.276, 0.5513, 0]]
     },
     {
       name: 'Ten Tight',

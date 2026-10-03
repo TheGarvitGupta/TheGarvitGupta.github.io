@@ -56,17 +56,19 @@
   var board = $('board'), stage = $('stage'), layer = $('pieces'), bin = $('bin'), handle = $('handle'),
       bubble = $('bubble'), dock = $('dock'), ang = $('ang');
 
-  var save = { v: 2, done: {}, last: 0, mute: false, seen: false };
+  var save = { v: 3, done: {}, last: '', mute: false, seen: false };
   // progress saved back when the game was called Packer carries over
   try { var raw = JSON.parse(localStorage.getItem(STORE) || localStorage.getItem('packer.v1')); if (raw && raw.done) save = raw; } catch (e) {}
-  // v2 put three new levels in after level 7; older progress moves along to match
-  if (!save.v) {
-    var kept = {};
-    Object.keys(save.done).forEach(function (k) { kept[+k > 6 ? +k + 3 : k] = save.done[k]; });
+  // Progress used to be kept by level number: ten levels at first, then
+  // thirteen. It is kept by name now, so levels can be added and reordered.
+  if (save.v !== 3) {
+    var old = ['Four Square', 'Flip', 'Honeycomb', 'Home', 'Tilt', 'Five Alive', 'Dozen'].concat(
+      save.v === 2 ? ['Lantern', 'Squeeze', 'Diamond'] : [], ['Ten Tight', 'Eleven', 'Seventeen']), kept = {};
+    Object.keys(save.done).forEach(function (k) { if (old[k]) kept[old[k]] = save.done[k]; });
     save.done = kept;
-    if (save.last > 6) save.last += 3;
-    if (save.board && save.board.l > 6) save.board.l += 3;
-    save.v = 2;
+    save.last = old[save.last] || '';
+    if (save.board) save.board.l = old[save.board.l];
+    save.v = 3;
   }
   function persist() { try { localStorage.setItem(STORE, JSON.stringify(save)); } catch (e) {} }
 
@@ -308,7 +310,7 @@
 
   function saveBoard() {
     save.board = {
-      l: level, m: moves, t: t0 ? Math.round((performance.now() - t0) / 1000) : carried,
+      l: lv.name, m: moves, t: t0 ? Math.round((performance.now() - t0) / 1000) : carried,
       p: pieces.map(function (p) { return [+p.x.toFixed(4), +p.y.toFixed(4), p.angle]; })
     };
     persist();
@@ -615,7 +617,7 @@
     clearInterval(ticker);
     stuck = false; $('b-hint').classList.remove('nag');
     syms = symmetries(lv.container); showGhost(null);
-    save.last = i; persist();
+    save.last = lv.name; persist();
 
     $('lv-num').textContent = i + 1;
     $('lv-name').textContent = lv.name;
@@ -639,7 +641,7 @@
     });
     layout();
     var kept = save.board;
-    if (!fresh && kept && kept.l === i && kept.p && kept.p.length === pieces.length) {
+    if (!fresh && kept && kept.l === lv.name && kept.p && kept.p.length === pieces.length) {
       pieces.forEach(function (p, n) { p.x = kept.p[n][0]; p.y = kept.p[n][1]; p.angle = kept.p[n][2]; keepInView(p); });
       moves = kept.m || 0; carried = kept.t || 0;
       $('clock').textContent = clock(carried);
@@ -762,9 +764,9 @@
     clearInterval(ticker);
     elapsed = t0 ? (performance.now() - t0) / 1000 : 0;
     $('clock').textContent = clock(elapsed);
-    var prev = save.done[level], best = prev ? Math.min(prev.t, elapsed) : elapsed;
-    save.done[level] = { t: best, m: prev ? Math.min(prev.m, moves) : moves };
-    if (save.board && save.board.l === level) save.board = null;
+    var prev = save.done[lv.name], best = prev ? Math.min(prev.t, elapsed) : elapsed;
+    save.done[lv.name] = { t: best, m: prev ? Math.min(prev.m, moves) : moves };
+    if (save.board && save.board.l === lv.name) save.board = null;
     persist();
 
     select(-1);
@@ -774,7 +776,7 @@
     var last = level === LEVELS.length - 1;
     confetti(last ? 320 : 150);
 
-    var all = LEVELS.every(function (_, n) { return save.done[n]; });
+    var all = LEVELS.every(function (l) { return save.done[l.name]; });
     $('win-title').textContent = last ? 'Seventeen!' : PRAISE[Math.floor(Math.random() * PRAISE.length)];
     $('win-sub').textContent = last
       ? (all ? 'That was the hard one, and you have now packed every box. Take a bow.' : 'That was the hard one. Take a bow.')
@@ -854,7 +856,7 @@
     var grid = $('grid'), count = 0;
     grid.textContent = '';
     LEVELS.forEach(function (l, n) {
-      var b = document.createElement('button'), s = el('svg'), poly = el('polygon'), bb = G.bounds(l.container), done = save.done[n];
+      var b = document.createElement('button'), s = el('svg'), poly = el('polygon'), bb = G.bounds(l.container), done = save.done[l.name];
       if (done) count++;
       b.className = 'lv' + (done ? ' done' : '') + (n === level ? ' here' : '');
       b.style.setProperty('--n', n);
@@ -980,7 +982,7 @@
   $('b-sound').classList.toggle('off', !!save.mute);
   $('lv-of').textContent = LEVELS.length;
   var asked = /[?&#]level=(\d+)/.exec(location.search + location.hash);
-  var first = asked ? +asked[1] - 1 : save.last || 0;
+  var first = asked ? +asked[1] - 1 : LEVELS.map(function (l) { return l.name; }).indexOf(save.last);
   startLevel(clamp(first, 0, LEVELS.length - 1));
   if (!save.seen) { save.seen = true; persist(); openSheet($('m-help')); }
 
