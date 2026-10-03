@@ -93,7 +93,8 @@
     if (save.board) save.board.l = old[save.board.l];
     save.v = 3;
   }
-  function persist() { try { localStorage.setItem(STORE, JSON.stringify(save)); } catch (e) {} }
+  var wiped = false;   // set by the hard reset, so nothing is written back before the page reloads
+  function persist() { if (wiped) return; try { localStorage.setItem(STORE, JSON.stringify(save)); } catch (e) {} }
 
   var level = 0, lv, C, cb;            // current level, its container, the container's bounds
   var pieces = [], sel = -1, drag = null, won = false;
@@ -1199,6 +1200,29 @@
   if (/[?&]finale\b/.test(location.search)) setTimeout(function () { lateParty(true); }, 600);   // a look at the last level's party, whatever has been packed
   else if (!save.partied && LEVELS.every(function (l) { return l.bonus || save.done[l.name]; })) setTimeout(lateParty, 700);
   if (!save.seen) { save.seen = true; persist(); openSheet($('m-help')); }
+
+  // Developer tools, only when the game is served from this machine.
+  if (/^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname)) {
+    var dev = document.createElement('div');
+    dev.className = 'dev';
+    [['Solver', function () {
+      if (won) return;
+      select(-1);
+      pieces.forEach(function (p, i) { p.x = lv.solution[i][0]; p.y = lv.solution[i][1]; p.angle = lv.solution[i][2]; render(i); });
+      startClock(); commit(true);
+    }], ['Hard reset', function () {
+      if (!window.confirm('Clear all Packman progress on this browser?')) return;
+      wiped = true;
+      clearInterval(ticker); clearTimeout(shakeTimer); clearTimeout(partyTimer);
+      try { localStorage.removeItem(STORE); } catch (e) {}
+      location.replace(location.pathname + '?reset=' + Date.now());   // a new address, so the browser cannot hand back the old page
+    }]].forEach(function (b) {
+      var btn = document.createElement('button');
+      btn.textContent = b[0]; btn.addEventListener('click', b[1]);
+      dev.appendChild(btn);
+    });
+    document.body.appendChild(dev);
+  }
 
   window.Packman = { pieces: function () { return pieces; } };   // for poking at the board from the console
 })();
