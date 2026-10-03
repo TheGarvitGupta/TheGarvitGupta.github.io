@@ -175,7 +175,7 @@ var PackmanLevels = (function () {
     },
     {
       name: 'Seventeen',
-      intro: 'The famously ugly one, and yes, it is hard. Pack it and a prize is yours.',
+      intro: 'The famously ugly one, and yes, it is hard. Pack it and a real gift ships to you.',
       hint: 'Ten squares stay straight: an L of three in each bottom corner, one in each top corner, one on the top wall and one on a side wall. Six lean 40° in a 2\u00D73 block through the middle. The last one leans 37° the other way, tucked in near the top on that same side.',
       fact: 'John Bidwell found this packing in 1998. Nobody has beaten it, and nobody has proved it is the best. His box is 4.6755 across; this one is 4.68.',
       container: box(4.68),

@@ -1008,7 +1008,8 @@
   /* ---------- sheets ---------- */
 
   function openSheet(s) { s.classList.add('open'); var b = s.querySelector('.btn:not([hidden])'); if (b) setTimeout(function () { b.focus({ preventScroll: true }); }, 60); }
-  function closeSheet(s) { s.classList.remove('open'); }
+  // 'How to pack' counts as seen only once it is closed, so a load nobody looked at does not use it up
+  function closeSheet(s) { s.classList.remove('open'); if (s.id === 'm-help' && !save.seen) { save.seen = true; persist(); } }
   Array.prototype.forEach.call(document.querySelectorAll('.sheet'), function (s) {
     s.addEventListener('click', function (e) { if (e.target === s || e.target.hasAttribute('data-close')) closeSheet(s); });
   });
@@ -1065,7 +1066,7 @@
         gift.style.setProperty('--n', n);
         gift.innerHTML = GIFT;
         gift.appendChild(document.createTextNode(claimed ? 'Won!' : 'Prize'));
-        gift.title = claimed ? 'You packed all seventeen' : 'Pack all seventeen to win a prize';
+        gift.title = claimed ? 'You packed all seventeen' : 'Pack all seventeen to win a real gift, shipped to you';
         grid.appendChild(gift);
       }
       if (n === MAIN) { var more = document.createElement('div'); more.className = 'more'; more.textContent = 'Bonus: new shapes and tilings'; grid.appendChild(more); }
@@ -1224,7 +1225,7 @@
   startLevel(first);
   if (/[?&]finale\b/.test(location.search)) setTimeout(function () { lateParty(true); }, 600);   // a look at the last level's party, whatever has been packed
   else if (!save.claimed && LEVELS.every(function (l) { return l.bonus || save.done[l.name]; })) setTimeout(lateParty, 700);
-  if (!save.seen) { save.seen = true; persist(); openSheet($('m-help')); }
+  if (!save.seen) openSheet($('m-help'));
 
   // Developer tools, only when the game is served from this machine.
   if (/^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname)) {
