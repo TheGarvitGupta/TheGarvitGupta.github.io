@@ -118,6 +118,18 @@ button{font:inherit; color:inherit; cursor:pointer}
 .title h1{margin:0; font-size:21px; font-weight:700; line-height:1.15}
 .title p{margin:1px 0 0; font-size:14.5px; color:var(--mut); line-height:1.25;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+/* level 17: a little piece runs along a rail towards the prize as the box fills */
+#prize-track{display:flex; align-items:center; gap:8px; margin-top:6px; max-width:420px}
+#prize-track[hidden]{display:none}
+#prize-track .rail{position:relative; flex:1; height:12px; border:var(--bw) solid var(--ink); border-radius:999px; background:var(--card)}
+#rail-fill{position:absolute; left:0; top:0; bottom:0; width:0; border-radius:999px; background:linear-gradient(90deg,var(--mint),var(--sun)); transition:width .35s var(--pop)}
+#rail-run{position:absolute; top:50%; left:0; width:22px; height:22px; margin:-11px 0 0 -11px; transition:left .35s var(--pop)}
+#rail-run svg{display:block; width:100%; height:100%; animation:bob 1.6s ease-in-out infinite}
+#prize-track .goal{flex:none; width:34px; height:34px; animation:tempt 1.8s ease-in-out infinite}
+#prize-track .goal svg{display:block; width:100%; height:100%}
+#prize-track.near .goal{animation:tempt .55s ease-in-out infinite}
+#prize-track.won .goal{animation:hop .6s var(--pop) both}
+@keyframes tempt{0%,100%{transform:rotate(-7deg) scale(1)} 50%{transform:rotate(7deg) scale(1.12)}}
 .title.swap h1,.title.swap p{animation:slidein .45s var(--pop) both}
 .title.swap p{animation-delay:60ms}
 @keyframes slidein{from{transform:translateX(-18px); opacity:0}}
@@ -202,8 +214,7 @@ button{font:inherit; color:inherit; cursor:pointer}
   opacity:0; transition:opacity .2s}
 .dock.idle .tip{opacity:1}
 .dock.won .tip{opacity:0}
-.dock .onward{position:absolute; left:50%; top:50%; margin:0; transform:translate(-50%,-50%); padding:8px 20px 9px; font-size:17px; white-space:nowrap; animation:beckon 1s ease-in-out infinite alternate}
-.dock .onward:active{transform:translate(-50%,calc(-50% + 1px))}
+.dock .onward{position:absolute; inset:0; margin:auto; width:max-content; height:max-content; padding:8px 20px 9px; font-size:17px; white-space:nowrap; animation:beckon 1s ease-in-out infinite alternate}
 
 /* sheets */
 .sheet{position:fixed; inset:0; z-index:20; display:grid; place-items:center; padding:18px;
@@ -297,6 +308,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   .hud{display:grid; grid-template-columns:auto 1fr auto; gap:5px 9px; margin-top:10px; min-height:0}
   .title{display:contents} .title h1{font-size:18px}
   .title p{grid-column:1 / -1; grid-row:2; font-size:13.5px; margin:0; min-height:2.5em}
+  #prize-track{grid-column:1 / -1; grid-row:3; margin:0; max-width:none}
   .chip{padding:6px 10px 7px; font-size:13.5px} .chip b{font-size:15px}
   #pips{max-width:86px} #pips i{width:10px; height:10px; border-radius:3px} #pips i.t{width:12px} #pips i.d{width:18px} #pips i.h{border-radius:50%}
   #pips i.t::after{inset:3.5px 3px 2px}
@@ -306,7 +318,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   .card{padding:20px 16px 18px}
 }
 @media (max-width:400px){ .word{font-size:22px} .logo{gap:6px} .tools{gap:5px} .ib{width:35px; height:35px} }
-@media (max-height:520px){ .hud{min-height:0} .title p{display:none} .dock{height:50px} }
+@media (max-height:520px){ .hud{min-height:0} .title p,#prize-track{display:none} .dock{height:50px} }
 /* a phone on its side: one slim bar on top, the spin buttons stacked down the right */
 @media (max-height:480px) and (orientation:landscape){
   #app{display:grid; grid-template-columns:auto 1fr auto; grid-template-rows:auto 1fr; gap:4px 12px}
@@ -361,7 +373,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 
   <section class="hud">
     <button class="chip" id="chip" aria-label="Choose a level"><span id="lv-word">Level</span> <b id="lv-num">1</b> / <span id="lv-of">17</span></button>
-    <div class="title" id="title"><h1 id="lv-name"></h1><p id="lv-intro"></p></div>
+    <div class="title" id="title"><h1 id="lv-name"></h1><p id="lv-intro"></p><div id="prize-track" hidden aria-hidden="true"><div class="rail"><i id="rail-fill"></i><b id="rail-run"><svg viewBox="0 0 20 20"><rect x="1.5" y="1.5" width="17" height="17" rx="4" fill="#FF6B6B" stroke="#2B2140" stroke-width="2"/><circle cx="7.3" cy="8.6" r="1.4" fill="#2B2140"/><circle cx="12.7" cy="8.6" r="1.4" fill="#2B2140"/><path d="M7 12.4q3 2.8 6 0" fill="none" stroke="#2B2140" stroke-width="1.5" stroke-linecap="round"/></svg></b></div><span class="goal"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg></span></div></div>
     <div class="meter"><div id="pips" aria-hidden="true"></div><div id="stats"><span id="count" aria-live="polite"></span> · <span id="clock">0:00</span></div><div id="best" hidden></div></div>
   </section>
 
@@ -402,7 +414,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b> from Garvit.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.34</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.37</span></div>
   </div>
 </div>
 
@@ -456,8 +468,8 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.34"></script>
-<script src="levels.js?v=1.34"></script>
-<script src="game.js?v=1.34"></script>
+<script src="geom.js?v=1.37"></script>
+<script src="levels.js?v=1.37"></script>
+<script src="game.js?v=1.37"></script>
 </body>
 </html>

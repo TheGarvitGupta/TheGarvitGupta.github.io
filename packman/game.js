@@ -369,6 +369,12 @@
     });
     for (var k = 0; k < pips.length; k++) pips[k].classList.toggle('on', k < ev.packed);
     $('count').textContent = ev.packed + ' of ' + pieces.length + ' packed';
+    if (level === MAIN - 1) {
+      var along = ev.packed / pieces.length * 100, track = $('prize-track');
+      $('rail-fill').style.width = along + '%'; $('rail-run').style.left = along + '%';
+      track.classList.toggle('near', ev.packed >= pieces.length - 3 && !ev.solved);
+      track.classList.toggle('won', !!ev.solved);
+    }
     ev.fitted = fitted;
     return ev;
   }
@@ -703,6 +709,7 @@
   // fresh: deal the pieces out again even if a half-packed board was saved.
   function startLevel(i, fresh) {
     level = i; lv = LEVELS[i];
+    $('prize-track').hidden = level !== MAIN - 1;
     var was = save.done[lv.name];
     $('best').hidden = !was;
     if (was) $('best').textContent = 'Your best: ' + clock(was.t) + ' · ' + was.m + (was.m === 1 ? ' move' : ' moves');
@@ -892,7 +899,6 @@
     var sum = all ? 'All seventeen: ' + clock(total.t) + ' · ' + total.m + ' moves' : 'Every box, packed.';
     $('finale-sum').textContent = sum;
     if (finale) party();
-    if (all && !save.partied) { save.partied = true; persist(); }
     $('win-all').hidden = !(all && level === MAIN - 1);
     $('win-prize').hidden = !(PRIZE_FORM && all && level === MAIN - 1);
     $('prize-link').href = PRIZE_FORM || '#';
@@ -936,12 +942,11 @@
     })();
   }
 
-  // Someone who packed all seventeen before the party existed gets it, once,
-  // the next time they open the game, along with the totals and the prize.
+  // Anyone who has packed all seventeen gets the party, the totals and the
+  // prize every time they open the game, until they follow the prize link.
   function lateParty(preview) {
     var total = { t: 0, m: 0 }, last = save.done[LEVELS[MAIN - 1].name] || { t: 0, m: 0 };
     LEVELS.forEach(function (l) { var d = save.done[l.name]; if (!l.bonus && d) { total.t += d.t; total.m += d.m; } });
-    if (!preview) { save.partied = true; persist(); }
     $('finale-sum').textContent = 'All seventeen: ' + clock(total.t) + ' · ' + total.m + ' moves';
     $('win-title').textContent = 'Seventeen!';
     $('win-sub').textContent = 'You packed all seventeen. Take a bow.';
@@ -1108,6 +1113,7 @@
     if (!save.mute) { wake(); sfx.fit(); }
   });
   $('win-next').addEventListener('click', function () { closeSheet($('m-win')); startLevel(Math.min(level + 1, LEVELS.length - 1)); });
+  $('prize-link').addEventListener('click', function () { save.claimed = true; persist(); });
   $('go-next').addEventListener('click', function () { startLevel(Math.min(level + 1, LEVELS.length - 1)); });
   $('win-again').addEventListener('click', function () { closeSheet($('m-win')); startLevel(level, true); });
   $('win-levels').addEventListener('click', function () { closeSheet($('m-win')); showLevels(); });
@@ -1217,7 +1223,7 @@
   while (!unlocked(first)) first--;   // a link to a level not reached yet opens the furthest one that is
   startLevel(first);
   if (/[?&]finale\b/.test(location.search)) setTimeout(function () { lateParty(true); }, 600);   // a look at the last level's party, whatever has been packed
-  else if (!save.partied && LEVELS.every(function (l) { return l.bonus || save.done[l.name]; })) setTimeout(lateParty, 700);
+  else if (!save.claimed && LEVELS.every(function (l) { return l.bonus || save.done[l.name]; })) setTimeout(lateParty, 700);
   if (!save.seen) { save.seen = true; persist(); openSheet($('m-help')); }
 
   // Developer tools, only when the game is served from this machine.
