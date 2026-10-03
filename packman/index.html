@@ -201,6 +201,9 @@ button{font:inherit; color:inherit; cursor:pointer}
 .dock .tip{position:absolute; inset:0; display:grid; place-items:center; font-size:15px; font-weight:500; color:var(--mut); pointer-events:none;
   opacity:0; transition:opacity .2s}
 .dock.idle .tip{opacity:1}
+.dock.won .tip{opacity:0}
+.dock .onward{position:absolute; left:50%; top:50%; margin:0; transform:translate(-50%,-50%); padding:8px 20px 9px; font-size:17px; white-space:nowrap; animation:beckon 1s ease-in-out infinite alternate}
+.dock .onward:active{transform:translate(-50%,calc(-50% + 1px))}
 
 /* sheets */
 .sheet{position:fixed; inset:0; z-index:20; display:grid; place-items:center; padding:18px;
@@ -283,7 +286,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 #finale .big b:nth-child(7n+1){color:var(--coral)} #finale .big b:nth-child(7n+2){color:var(--tang)} #finale .big b:nth-child(7n+3){color:var(--sun)}
 #finale .big b:nth-child(7n+4){color:var(--mint)} #finale .big b:nth-child(7n+5){color:var(--sky)} #finale .big b:nth-child(7n+6){color:var(--grape)} #finale .big b:nth-child(7n){color:var(--pink)}
 #finale p{margin:4px 0 0; font-size:clamp(17px,5vw,26px); font-weight:600; color:var(--text)}
-.dev{position:fixed; left:8px; bottom:8px; z-index:40; display:flex; gap:6px}
+.dev{position:fixed; left:8px; bottom:72px; z-index:40; display:flex; gap:6px}
 .dev button{padding:5px 10px 6px; font:600 13px var(--f); color:#FFF4DE; background:#2B2140; border:0; border-radius:9px; cursor:pointer; opacity:.8}
 .dev button:hover{opacity:1}
 #fx{position:fixed; inset:0; width:100%; height:100%; z-index:30; pointer-events:none}
@@ -381,6 +384,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <button class="rb big" data-r="1" aria-label="Rotate 1 degree right">+1°</button>
       <button class="rb" data-r="15" aria-label="Rotate 15 degrees right">+15°</button>
       <div class="tip">Pick up a shape to spin it</div>
+      <button class="btn onward" id="go-next" hidden>Next level <span aria-hidden="true">→</span></button>
     </div>
   </footer>
 </div>
@@ -390,16 +394,15 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 <div class="sheet" id="m-help" role="dialog" aria-modal="true" aria-labelledby="help-h">
   <div class="card">
     <h2 id="help-h">How to pack</h2>
-    <p class="sub">Get every shape inside the box, with nothing overlapping.</p>
+    <p class="sub">Fit every shape inside the box.</p>
     <ul class="how">
-      <li><span>1</span><div><b>Drag</b> shapes in and out of the box. Near an edge it snaps flush and straightens up.</div></li>
-      <li><span>2</span><div><b>Spin</b> a shape by dragging its knob<span class="keys">, scrolling, or pressing <kbd>Q</kbd> <kbd>E</kbd>. One degree at a time; hold <kbd>Shift</kbd> for 15</span><span class="taps"> or twisting two fingers anywhere on the board, one degree at a time</span>.</div></li>
-      <li><span>3</span><div><span class="keys"><b>Nudge</b> with the arrow keys, or type an exact angle at the bottom.</span><span class="taps"><b>Fine-tune</b> with the ±1° buttons, or type an exact angle.</span></div></li>
-      <li><span>4</span><div>Dashed red means it overlaps or pokes out. A big smile means it fits.</div></li>
+      <li><span>1</span><div><b>Drag</b> a shape into the box.</div></li>
+      <li><span>2</span><div><b>Spin</b> it with its knob<span class="keys"> or <kbd>Q</kbd> <kbd>E</kbd></span><span class="taps"> or two fingers</span>.</div></li>
+      <li><span>3</span><div><b>Red dashes</b> mean it doesn’t fit. A <b>smile</b> means it does.</div></li>
     </ul>
-    <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all seventeen boxes and you get a <b>prize</b>, sent by Garvit personally.</span></p>
+    <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b> from Garvit.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.31</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.34</span></div>
   </div>
 </div>
 
@@ -453,8 +456,8 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.31"></script>
-<script src="levels.js?v=1.31"></script>
-<script src="game.js?v=1.31"></script>
+<script src="geom.js?v=1.34"></script>
+<script src="levels.js?v=1.34"></script>
+<script src="game.js?v=1.34"></script>
 </body>
 </html>

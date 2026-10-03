@@ -108,13 +108,28 @@
   /* ---------- sound ---------- */
 
   var actx = null;
+  // Browsers put the sound to sleep whenever they like: after a spell in
+  // another tab, a phone call, the screen locking (Safari calls that state
+  // "interrupted", not "suspended"). It can only be woken from a tap or a key
+  // press, so every one of those tries, and a context that will not wake is replaced.
   function wake() {
-    if (save.mute || actx) { if (actx && actx.state === 'suspended') actx.resume(); return; }
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if (AC) try { actx = new AC(); } catch (e) {}
+    if (save.mute) return;
+    if (actx && actx.state === 'closed') actx = null;
+    if (!actx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) try { actx = new AC(); } catch (e) {}
+      return;
+    }
+    if (actx.state === 'running') return;
+    var stale = actx, r;
+    try { r = stale.resume(); } catch (e) { actx = null; return; }
+    if (r && r.catch) r.catch(function () { if (actx === stale) { try { stale.close(); } catch (e) {} actx = null; } });
   }
+  ['pointerdown', 'touchend', 'keydown'].forEach(function (n) { document.addEventListener(n, wake, true); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && actx) wake(); });
   function tone(freq, dur, opts) {
     if (save.mute || !actx) return;
+    if (actx.state !== 'running') { wake(); return; }   // asleep: a note queued now would only blurt out late
     opts = opts || {};
     var t = actx.currentTime + (opts.at || 0), o = actx.createOscillator(), g = actx.createGain();
     o.type = opts.type || 'sine';
@@ -693,6 +708,7 @@
     if (was) $('best').textContent = 'Your best: ' + clock(was.t) + ' · ' + was.m + (was.m === 1 ? ' move' : ' moves');
     C = G.makeContainer(lv.container); cb = G.bounds(lv.container);
     clearTimeout(partyTimer); $('finale').classList.remove('show');
+    $('go-next').hidden = true; dock.classList.remove('won');
     won = false; drag = null; sel = -1; dirty = false; spots = 3; moves = 0; t0 = 0; elapsed = 0; carried = 0;
     clearInterval(ticker);
     stuck = false; $('b-hint').classList.remove('nag');
@@ -895,6 +911,8 @@
     $('win-fact').hidden = !lv.fact;
     $('win-fact').textContent = lv.fact || '';
     $('win-next').hidden = level === LEVELS.length - 1;
+    // once the win sheet is put away, the way on stays in the bar at the bottom
+    $('go-next').hidden = level === LEVELS.length - 1; dock.classList.add('won');
     setTimeout(function () { if (won) openSheet($('m-win')); }, calm ? 200 : finale ? 4600 : again ? 1250 : 1700);
   }
 
@@ -1090,6 +1108,7 @@
     if (!save.mute) { wake(); sfx.fit(); }
   });
   $('win-next').addEventListener('click', function () { closeSheet($('m-win')); startLevel(Math.min(level + 1, LEVELS.length - 1)); });
+  $('go-next').addEventListener('click', function () { startLevel(Math.min(level + 1, LEVELS.length - 1)); });
   $('win-again').addEventListener('click', function () { closeSheet($('m-win')); startLevel(level, true); });
   $('win-levels').addEventListener('click', function () { closeSheet($('m-win')); showLevels(); });
   // Share sheet on a phone; elsewhere the brag and the link go on the clipboard.
