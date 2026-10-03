@@ -1413,7 +1413,16 @@ body.filters-open .drawer { transform: none; }
    The coin hangs instead from an empty anchor just before the letter: no text
    of its own to lose, zero width so the word is not respaced, and sitting on
    the baseline, which gives the coin a fixed line to measure from. */
-.masthead-o.has-coin { cursor: pointer; }
+/* It is a toy, not text to copy: a phone otherwise paints its grey tap box
+   over the letter, and a quick second tap selects it. */
+.masthead-o.has-coin {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;   /* and a quick double tap does not zoom */
+}
 
 .mc-anchor {
   position: relative;
