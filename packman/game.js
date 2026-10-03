@@ -7,6 +7,8 @@
   var COLORS = ['#FF6B6B', '#FFC93C', '#3DDBB4', '#4DA8FF', '#9B7BFF', '#FF8FCB', '#FF9F45'];
   var PRAISE = ['Packed!', 'Snug!', 'Tidy!', 'Nailed it!', 'So neat!', 'Boxed!'];
   var STORE = 'packman.v1';
+  // Where someone who packs all seventeen claims their prize. Left empty, the prize is not mentioned.
+  var PRIZE_FORM = 'https://forms.gle/gcz1YtH6nc9aiPvF7';
   var MAIN = LEVELS.filter(function (l) { return !l.bonus; }).length;   // the bonus levels follow these
   var TURN = { square: 90, triangle: 120, domino: 180, hexagon: 60 };   // degrees before a shape looks the same again
   var KNOB = { square: 0.72, triangle: 0.6, domino: 0.72, hexagon: 1.08 };
@@ -24,6 +26,7 @@
     { wear: [-0.24, -0.2, -0.22, 0.2, 0.24, 0.22].map(function (x, n) { return ['circle', 'wear solid', { cx: x, cy: n % 3 === 2 ? 0.07 : 0.03, r: 0.012 }]; }) },
     { eye: 0.062, idle: 'M-0.04 0.115Q0 0.14 0.04 0.115' }
   ];
+  var GIFT = '<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg>';
   var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function $(id) { return document.getElementById(id); }
@@ -62,6 +65,9 @@
   }
   function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
   function norm(a) { return ((a % 360) + 360) % 360; }
+  // A level opens once the one before it is packed. Anything already packed
+  // stays open, and the bonus levels are never locked.
+  function unlocked(n) { return n === 0 || !!LEVELS[n].bonus || !!save.done[LEVELS[n].name] || !!save.done[LEVELS[n - 1].name]; }
   function label(n) { return n < MAIN ? 'Level ' + (n + 1) : 'Bonus ' + (n - MAIN + 1); }
   function clock(sec) { sec = Math.round(sec); return Math.floor(sec / 60) + ':' + ('0' + sec % 60).slice(-2); }
   function shuffled(a) {
@@ -128,6 +134,13 @@
     rattle: function () { for (var k = 0; k < 7; k++) tone(260 + Math.random() * 260, 0.04, { at: k * 0.085, type: 'square', vol: 0.045 }); },
     tick: function () { tone(1250, 0.025, { type: 'triangle', vol: 0.035 }); },
     best: function () { tone(1568, 0.16, { at: 0.5, type: 'triangle', vol: 0.11 }); tone(2093, 0.3, { at: 0.62, type: 'triangle', vol: 0.11 }); },
+    pop: function () { tone(320 + Math.random() * 240, 0.09, { type: 'square', to: 70, vol: 0.05 }); tone(1500 + Math.random() * 900, 0.12, { at: 0.05, type: 'triangle', vol: 0.05 }); },
+    fanfare: function () {
+      [[523, 0], [523, 0.14], [523, 0.28], [698, 0.42], [880, 0.7], [784, 0.98], [1047, 1.12]].forEach(function (n, i) {
+        tone(n[0], i === 6 ? 0.7 : 0.2, { at: n[1], type: 'triangle', vol: 0.14 });
+        tone(n[0] / 2, i === 6 ? 0.7 : 0.2, { at: n[1], vol: 0.08 });
+      });
+    },
     win: function () { [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone(f, 0.22, { at: i * 0.09, type: 'triangle', vol: 0.13 }); }); }
   };
   // A tiny tap under the finger. Android has the Vibration API; iPhones have
@@ -269,7 +282,7 @@
     // makes the whole face get painted, over colour and never over a gap.
     var back = el('rect', 'back'), k = p.type === 'triangle' ? 0.74 : p.type === 'hexagon' ? 1.3 : 1, dy = p.type === 'triangle' ? 0.03 : 0;
     back.setAttribute('x', -0.28 * k); back.setAttribute('y', -0.21 * k + dy);
-    back.setAttribute('width', 0.56 * k); back.setAttribute('height', 0.54 * k);
+    back.setAttribute('width', 0.56 * k); back.setAttribute('height', (p.type === 'triangle' ? 0.45 : 0.54) * k);   // short of a triangle's base
     body.appendChild(fill); body.appendChild(back); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
     p.back = back;
@@ -344,12 +357,17 @@
     return ev;
   }
 
-  // After a move is finished: count it, make the right noise, maybe win.
+  // A move is one piece picked up, shifted and turned as much as you like, and
+  // let go of: it is counted when the piece is put down or another is picked up.
+  var dirty = false;
+  function countMove() { if (dirty) { moves++; dirty = false; } }
+
+  // After a piece has been shifted or turned: make the right noise, maybe win.
   function commit(quiet) {
     seatGhost();
     remember(quiet);
     var ev = judge();
-    moves++;
+    dirty = true;
     if (ev.solved) { win(); return; }
     lookForShake();
     saveBoard();
@@ -359,7 +377,7 @@
 
   function saveBoard() {
     save.board = {
-      l: lv.name, m: moves, t: t0 ? Math.round((performance.now() - t0) / 1000) : carried,
+      l: lv.name, m: moves, h: spots, t: t0 ? Math.round((performance.now() - t0) / 1000) : carried,
       p: pieces.map(function (p) { return [+p.x.toFixed(4), +p.y.toFixed(4), p.angle]; })
     };
     persist();
@@ -410,6 +428,7 @@
   /* ---------- selecting, moving, spinning ---------- */
 
   function select(i) {
+    if (i !== sel) countMove();
     if (sel >= 0 && pieces[sel]) { pieces[sel].el.classList.remove('sel'); }
     sel = i;
     if (i >= 0) { pieces[i].el.classList.add('sel'); layer.appendChild(pieces[i].el); }
@@ -529,6 +548,7 @@
     p.x = w.x + drag.ox; p.y = w.y + drag.oy; p.angle = drag.a0;
     keepInView(p);
     var stuck = G.place(pieces, drag.i, C) === 'snap';
+    if (intoGhost(drag.i)) stuck = true;
     if (stuck && !drag.stuck) { sfx.snap(); haptic(); }
     drag.stuck = stuck;
     render(drag.i);
@@ -667,8 +687,12 @@
   // fresh: deal the pieces out again even if a half-packed board was saved.
   function startLevel(i, fresh) {
     level = i; lv = LEVELS[i];
+    var was = save.done[lv.name];
+    $('best').hidden = !was;
+    if (was) $('best').textContent = 'Your best: ' + clock(was.t) + ' · ' + was.m + (was.m === 1 ? ' move' : ' moves');
     C = G.makeContainer(lv.container); cb = G.bounds(lv.container);
-    won = false; drag = null; sel = -1; moves = 0; t0 = 0; elapsed = 0; carried = 0;
+    clearTimeout(partyTimer); $('finale').classList.remove('show');
+    won = false; drag = null; sel = -1; dirty = false; spots = 3; moves = 0; t0 = 0; elapsed = 0; carried = 0;
     clearInterval(ticker);
     stuck = false; $('b-hint').classList.remove('nag');
     syms = symmetries(lv.container); showGhost(null);
@@ -700,7 +724,7 @@
     var kept = save.board;
     if (!fresh && kept && kept.l === lv.name && kept.p && kept.p.length === pieces.length) {
       pieces.forEach(function (p, n) { p.x = kept.p[n][0]; p.y = kept.p[n][1]; p.angle = kept.p[n][2]; keepInView(p); });
-      moves = kept.m || 0; carried = kept.t || 0;
+      moves = kept.m || 0; carried = kept.t || 0; spots = kept.h == null ? 3 : kept.h;
       $('clock').textContent = clock(carried);
     } else scatter();
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
@@ -800,21 +824,29 @@
     e.setAttribute('d', drawn(s.type));
     e.setAttribute('transform', 'translate(' + s.x.toFixed(4) + ' ' + s.y.toFixed(4) + ') rotate(' + s.angle + ')');
   }
-  // A piece let go on the ghost drops exactly into it.
+  // The hinted spot pulls the right kind of piece into it: carried anywhere
+  // near, at anything like the right angle, the piece jumps exactly into place.
+  function intoGhost(i) {
+    var p = pieces[i];
+    if (!ghost || !near(p, ghost, 0.34, 25)) return false;
+    var x = p.x, y = p.y, a = p.angle;
+    p.x = ghost.x; p.y = ghost.y; p.angle += off(ghost.angle, p.angle, p.type);
+    if (G.evaluate(pieces, C).states[i].good) return true;
+    p.x = x; p.y = y; p.angle = a;
+    return false;
+  }
+  // The hint stays up until a piece is sitting exactly in it. One lying over
+  // it crooked, or a little to one side, does not count.
   function seatGhost() {
     if (!ghost) return;
-    for (var i = 0; i < pieces.length; i++) {
-      var p = pieces[i];
-      if (!near(p, ghost, 0.22, 6)) continue;
-      var x = p.x, y = p.y, a = p.angle;
-      p.x = ghost.x; p.y = ghost.y; p.angle += off(ghost.angle, p.angle, p.type);
-      if (G.evaluate(pieces, C).states[i].good) { render(i); showGhost(null); showAngle(); placeHandle(); sfx.snap(); haptic(); return; }
-      p.x = x; p.y = y; p.angle = a;
-    }
+    if (sel >= 0 && intoGhost(sel)) { render(sel); showAngle(); placeHandle(); }
+    var ev = G.evaluate(pieces, C);
+    if (pieces.some(function (p, i) { return ev.states[i].good && near(p, ghost, 0.004, 0.5); })) showGhost(null);
   }
 
   function win() {
     won = true;
+    countMove();
     clearTimeout(shakeTimer);
     $('b-hint').classList.remove('nag');
     showGhost(null); showUndo(); watch(null);
@@ -838,10 +870,20 @@
     confetti(finale ? 320 : again && !faster ? 50 : 150);
     setTimeout(function () { if (won) tieRibbon(); }, calm ? 0 : 550);
 
-    var all = LEVELS.every(function (l) { return l.bonus || save.done[l.name]; });
+    var all = LEVELS.every(function (l) { return l.bonus || save.done[l.name]; }), total = { t: 0, m: 0 };
+    if (all) LEVELS.forEach(function (l) { if (!l.bonus) { total.t += save.done[l.name].t; total.m += save.done[l.name].m; } });
+    var sum = all ? 'All seventeen: ' + clock(total.t) + ' · ' + total.m + ' moves' : 'Every box, packed.';
+    $('finale-sum').textContent = sum;
+    if (finale) party();
+    if (all && !save.partied) { save.partied = true; persist(); }
+    $('win-all').hidden = !(all && level === MAIN - 1);
+    $('win-prize').hidden = !(PRIZE_FORM && all && level === MAIN - 1);
+    $('prize-link').href = PRIZE_FORM || '#';
+    $('all-time').textContent = clock(total.t);
+    $('all-moves').textContent = total.m;
     $('win-title').textContent = finale ? 'Seventeen!' : faster ? 'New best!' : PRAISE[Math.floor(Math.random() * PRAISE.length)];
     $('win-sub').textContent = finale
-      ? (all ? 'That was the hard one, and you have now packed every box. Take a bow.' : 'That was the hard one. Take a bow.')
+      ? (all ? 'That was the hard one, and that makes all seventeen. Take a bow.' : 'That was the hard one. Take a bow.')
       : faster ? lv.name + ', packed ' + clock(prev.t - elapsed) + ' faster than your best.'
       : again ? lv.name + ', packed again. Your best is still ' + clock(prev.t) + '.'
       : label(level) + ', ' + lv.name + ', is all packed up.';
@@ -852,7 +894,45 @@
     $('win-fact').hidden = !lv.fact;
     $('win-fact').textContent = lv.fact || '';
     $('win-next').hidden = level === LEVELS.length - 1;
-    setTimeout(function () { if (won) openSheet($('m-win')); }, calm ? 200 : again ? 1250 : 1700);
+    setTimeout(function () { if (won) openSheet($('m-win')); }, calm ? 200 : finale ? 4600 : again ? 1250 : 1700);
+  }
+
+  // The last box of the seventeen gets the works: a banner, a fanfare,
+  // fireworks going off all over the screen, and the pieces doing wave after wave.
+  var partyTimer = 0;
+  function party(preview) {
+    var banner = $('finale'), n = 0;
+    banner.classList.add('show');
+    setTimeout(function () { banner.classList.remove('show'); }, calm ? 2600 : 4200);
+    if (calm) return;
+    setTimeout(function () { if (won || preview) sfx.fanfare(); }, 500);
+    if (navigator.vibrate && touchy) { try { navigator.vibrate([30, 60, 30, 60, 30, 60, 120]); } catch (e) {} }
+    (function rocket() {
+      if (!(won || preview) || n >= 13) return;
+      burst(innerWidth * (0.12 + Math.random() * 0.76), innerHeight * (0.12 + Math.random() * 0.45), 44);
+      sfx.pop();
+      if (n % 4 === 3) { confetti(110); cheer(); }
+      n++;
+      partyTimer = setTimeout(rocket, 240 + Math.random() * 220);
+    })();
+  }
+
+  // Someone who packed all seventeen before the party existed gets it, once,
+  // the next time they open the game, along with the totals and the prize.
+  function lateParty(preview) {
+    var total = { t: 0, m: 0 }, last = save.done[LEVELS[MAIN - 1].name] || { t: 0, m: 0 };
+    LEVELS.forEach(function (l) { var d = save.done[l.name]; if (!l.bonus && d) { total.t += d.t; total.m += d.m; } });
+    if (!preview) { save.partied = true; persist(); }
+    $('finale-sum').textContent = 'All seventeen: ' + clock(total.t) + ' · ' + total.m + ' moves';
+    $('win-title').textContent = 'Seventeen!';
+    $('win-sub').textContent = 'You packed all seventeen. Take a bow.';
+    $('win-best').parentNode.classList.remove('new');
+    $('win-time').textContent = clock(last.t); $('win-moves').textContent = last.m; $('win-best').textContent = clock(last.t);
+    $('win-all').hidden = false; $('all-time').textContent = clock(total.t); $('all-moves').textContent = total.m;
+    $('win-prize').hidden = !PRIZE_FORM; $('prize-link').href = PRIZE_FORM || '#';
+    $('win-fact').hidden = true; $('win-next').hidden = true;
+    party(true); confetti(220);
+    setTimeout(function () { openSheet($('m-win')); }, calm ? 2800 : 4600);
   }
 
   // All packed up: a ribbon goes round the box, with a bow where it crosses.
@@ -909,6 +989,8 @@
     s.addEventListener('click', function (e) { if (e.target === s || e.target.hasAttribute('data-close')) closeSheet(s); });
   });
 
+  var spots = 3;   // how many times 'show me one spot' is still on offer in this level
+
   function showHint() {
     $('hint-h').textContent = lv.name;
     $('hint-text').textContent = lv.hint;
@@ -918,6 +1000,8 @@
     $('hint-sol').setAttribute('hidden', '');
     $('hint-show').hidden = !stuck || won;
     $('hint-spot').hidden = won;
+    $('hint-spot').disabled = !spots;
+    $('spots').textContent = spots;
     openSheet($('m-hint'));
   }
 
@@ -950,18 +1034,30 @@
     var grid = $('grid'), count = 0;
     grid.textContent = '';
     LEVELS.forEach(function (l, n) {
-      if (n === MAIN) { var more = document.createElement('div'); more.className = 'more'; more.textContent = 'Bonus: new shapes'; grid.appendChild(more); }
+      if (n === MAIN) {
+        // the prize sits straight after the seventeenth box, so it is plain what earns it
+        var gift = document.createElement('div'), claimed = LEVELS.every(function (x) { return x.bonus || save.done[x.name]; });
+        gift.className = 'lv prize-tile' + (claimed ? ' won' : '');
+        gift.style.setProperty('--n', n);
+        gift.innerHTML = GIFT;
+        gift.appendChild(document.createTextNode(claimed ? 'Won!' : 'Prize'));
+        gift.title = claimed ? 'You packed all seventeen' : 'Pack all seventeen to win a prize';
+        grid.appendChild(gift);
+      }
+      if (n === MAIN) { var more = document.createElement('div'); more.className = 'more'; more.textContent = 'Bonus: new shapes and tilings'; grid.appendChild(more); }
       var b = document.createElement('button'), s = el('svg'), poly = el('polygon'), bb = G.bounds(l.container), done = save.done[l.name];
       if (done) count++;
-      b.className = 'lv' + (done ? ' done' : '') + (n === level ? ' here' : '');
+      var shut = !unlocked(n);
+      b.className = 'lv' + (done ? ' done' : '') + (n === level ? ' here' : '') + (shut ? ' locked' : '');
+      b.disabled = shut;
       b.style.setProperty('--n', n);
-      b.setAttribute('aria-label', label(n) + ', ' + l.name + (done ? ', packed in ' + clock(done.t) : ''));
-      b.title = l.name + (done ? ' · best ' + clock(done.t) : '');
+      b.setAttribute('aria-label', label(n) + (shut ? ', locked until the one before it is packed' : ', ' + l.name + (done ? ', packed in ' + clock(done.t) : '')));
+      b.title = shut ? 'Pack the one before it first' : l.name + (done ? ' · best ' + clock(done.t) : '');
       s.setAttribute('viewBox', bb.minX + ' ' + bb.minY + ' ' + (bb.maxX - bb.minX) + ' ' + (bb.maxY - bb.minY));
       poly.setAttribute('points', pts(l.container));
       s.appendChild(poly); b.appendChild(s);
       b.appendChild(document.createTextNode(n < MAIN ? n + 1 : 'B' + (n - MAIN + 1)));
-      if (done) { var t = document.createElement('span'); t.className = 'tick'; t.textContent = '✓'; b.appendChild(t); }
+      if (done || shut) { var t = document.createElement('span'); t.className = 'tick'; t.textContent = done ? '✓' : '\uD83D\uDD12'; b.appendChild(t); }
       b.addEventListener('click', function () { closeSheet($('m-levels')); startLevel(n); });
       grid.appendChild(b);
     });
@@ -972,7 +1068,12 @@
   $('chip').addEventListener('click', showLevels);
   $('b-hint').addEventListener('click', showHint);
   $('hint-show').addEventListener('click', showSolution);
-  $('hint-spot').addEventListener('click', function () { closeSheet($('m-hint')); showGhost(pickSpot()); });
+  $('hint-spot').addEventListener('click', function () {
+    if (!spots) return;
+    var spot = pickSpot();
+    if (spot) { spots--; saveBoard(); }   // three to a level
+    closeSheet($('m-hint')); showGhost(spot);
+  });
   $('b-undo').addEventListener('click', undo);
   $('b-help').addEventListener('click', function () { openSheet($('m-help')); });
   var armed = 0;
@@ -1017,6 +1118,21 @@
         vx: Math.cos(a) * v * (W > 700 ? 1.5 : 1), vy: -Math.sin(a) * v,
         r: 6 + Math.random() * 8, a: Math.random() * 6.3, va: (Math.random() - 0.5) * 0.4,
         c: COLORS[i % COLORS.length], tri: Math.random() < 0.5, life: 150 + Math.random() * 70
+      });
+    }
+    if (!raf) raf = requestAnimationFrame(rain);
+  }
+  // A firework: bits flying out in every direction from one point.
+  function burst(x, y, n) {
+    if (calm) return;
+    if (!raf) { var dpr = Math.min(window.devicePixelRatio || 1, 2); fx.width = innerWidth * dpr; fx.height = innerHeight * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    var c = Math.floor(Math.random() * COLORS.length);
+    for (var i = 0; i < n; i++) {
+      var a = Math.random() * 6.3, v = 3 + Math.random() * 9;
+      bits.push({
+        x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 3,
+        r: 4 + Math.random() * 6, a: Math.random() * 6.3, va: (Math.random() - 0.5) * 0.5,
+        c: COLORS[(c + (i % 3 ? 0 : 1 + i % 2)) % COLORS.length], tri: Math.random() < 0.5, life: 60 + Math.random() * 50
       });
     }
     if (!raf) raf = requestAnimationFrame(rain);
@@ -1077,7 +1193,11 @@
   $('b-sound').classList.toggle('off', !!save.mute);
   var asked = /[?&#]level=(\d+)/.exec(location.search + location.hash);
   var first = asked ? +asked[1] - 1 : LEVELS.map(function (l) { return l.name; }).indexOf(save.last);
-  startLevel(clamp(first, 0, LEVELS.length - 1));
+  first = clamp(first, 0, LEVELS.length - 1);
+  while (!unlocked(first)) first--;   // a link to a level not reached yet opens the furthest one that is
+  startLevel(first);
+  if (/[?&]finale\b/.test(location.search)) setTimeout(function () { lateParty(true); }, 600);   // a look at the last level's party, whatever has been packed
+  else if (!save.partied && LEVELS.every(function (l) { return l.bonus || save.done[l.name]; })) setTimeout(lateParty, 700);
   if (!save.seen) { save.seen = true; persist(); openSheet($('m-help')); }
 
   window.Packman = { pieces: function () { return pieces; } };   // for poking at the board from the console

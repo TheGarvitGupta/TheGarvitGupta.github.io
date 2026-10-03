@@ -175,7 +175,7 @@ var PackmanLevels = (function () {
     },
     {
       name: 'Seventeen',
-      intro: 'The famously ugly one. Seventeen squares, and no pattern will save you.',
+      intro: 'The famously ugly one, and yes, it is hard. Pack it and a prize is yours.',
       hint: 'Ten squares stay straight: an L of three in each bottom corner, one in each top corner, one on the top wall and one on a side wall. Six lean 40° in a 2\u00D73 block through the middle. The last one leans 37° the other way, tucked in near the top on that same side.',
       fact: 'John Bidwell found this packing in 1998. Nobody has beaten it, and nobody has proved it is the best. His box is 4.6755 across; this one is 4.68.',
       container: box(4.68),
@@ -218,6 +218,53 @@ var PackmanLevels = (function () {
       container: box(2.321),
       pieces: pieces(0, 2, 0, 1),
       solution: [[-0.8281, 0.6605, 90], [-0.7523, -0.7523, 75], [0.2945, -0.0247, 30]]
+    },
+    {
+      name: 'Trefoil',
+      bonus: true,
+      intro: 'A tiling: three hexagons and six triangles fill this hexagon with nothing left over.',
+      hint: 'No hexagon goes in the middle. All three meet at the centre point, like a three-leaf clover, each one reaching out to a wall. That leaves three empty corners, and each takes a pair of triangles.',
+      fact: 'A hexagon of side 2 is exactly 24 small triangles. Three hexagons use 18 of them, and the six loose triangles are the rest.',
+      container: loosen(ngon(6, 2, 0), 1.004),
+      pieces: pieces(0, 6, 0, 3),
+      solution: [[-1.5, 0.2887, 180], [-1.5, -0.2887, 0], [0.5, 1.4434, 0], [1, 1.1547, 180], [0.5, -1.4434, 180], [1, -1.1547, 0], [1, 0, 0], [-0.5, 0.866, 0], [-0.5, -0.866, 0]]
+    },
+    {
+      name: 'Bricked In',
+      bonus: true,
+      intro: 'Two bricks, and a hexagon that looks a size too small.',
+      hint: 'Lay the bricks side by side to make a block, then turn the whole block to 15°. Its four corners each find a different wall.',
+      container: ngon(6, 1.547, 0),
+      pieces: pieces(0, 0, 2),
+      solution: [[-0.02, 0.5235, 15], [0.0088, -0.5041, 15]]
+    },
+    {
+      name: 'Twin Hex',
+      bonus: true,
+      intro: 'Two hexagons. Side by side they are four across; stacked they are too tall.',
+      hint: 'Turn both to 15°. Put one in the top-left corner and the other in the bottom-right, so they meet along a slanted edge in the middle.',
+      container: box(3.17),
+      pieces: pieces(0, 0, 0, 2),
+      solution: [[-0.6191, -0.6191, 15], [0.6191, 0.5923, 15]]
+    },
+    {
+      name: 'Off Centre',
+      bonus: true,
+      intro: 'A hexagon inside a hexagon, with two triangles to squeeze in beside it.',
+      hint: 'Keep the hexagon straight but push it into the top-left, off centre. That opens a crescent of room on the other side: one triangle goes on the right at 105°, the other at the bottom at 15°.',
+      container: ngon(6, 1.487, 0),
+      pieces: pieces(0, 2, 0, 1),
+      solution: [[0.9293, -0.1494, 105], [0.3702, 0.8113, 15], [-0.3425, -0.2502, 0]]
+    },
+    {
+      name: 'Rosette',
+      bonus: true,
+      intro: 'The big tiling: one hexagon, six squares and six triangles make a perfect twelve-sided ring.',
+      hint: 'The hexagon goes dead centre. A square sits flat against each of its six sides. The six gaps between the squares are each exactly one triangle, point inwards.',
+      fact: 'This is one patch of a pattern that can tile a whole floor: every corner is where a triangle, two squares and a hexagon meet.',
+      container: loosen(ngon(12, 1.9318517, 15), 1.004),
+      pieces: pieces(6, 6, 0, 1),
+      solution: [[1.183, 0.683, 30], [0, 1.366, 0], [-1.183, 0.683, 60], [-1.183, -0.683, 30], [0, -1.366, 0], [1.183, -0.683, 60], [1.5774, 0, 30], [0.7887, 1.366, 90], [-0.7887, 1.366, 30], [-1.5774, 0, 90], [-0.7887, -1.366, 30], [0.7887, -1.366, 90], [0, 0, 0]]
     }
   ];
 })();

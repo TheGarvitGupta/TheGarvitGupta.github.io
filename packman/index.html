@@ -14,13 +14,13 @@
 <meta property="og:url" content="https://www.garvitgupta.com/packman/">
 <meta property="og:title" content="Packman">
 <meta property="og:description" content="A packing puzzle. Fit every square and triangle inside the box. Seventeen levels, ending with the famously ugly 17 squares.">
-<meta property="og:image" content="https://www.garvitgupta.com/packman/og-image.png">
+<meta property="og:image" content="https://www.garvitgupta.com/packman/og-image.png?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Packman">
 <meta name="twitter:description" content="A packing puzzle. Fit every square and triangle inside the box.">
-<meta name="twitter:image" content="https://www.garvitgupta.com/packman/og-image.png">
+<meta name="twitter:image" content="https://www.garvitgupta.com/packman/og-image.png?v=2">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -131,6 +131,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 #pips i.t.on{background:var(--ink)}
 #pips i.t.on::after{background:var(--mint)}
 @keyframes pip{50%{transform:translateY(-4px)}}
+#best{font-size:12.5px; font-weight:500; color:var(--mut); font-variant-numeric:tabular-nums; white-space:nowrap}
 #stats{margin-top:4px; font-size:13.5px; font-weight:500; color:var(--mut); font-variant-numeric:tabular-nums; white-space:nowrap}
 
 /* board */
@@ -216,11 +217,15 @@ button{font:inherit; color:inherit; cursor:pointer}
   border:var(--bw) solid var(--ink); border-radius:16px; transition:transform .12s var(--pop)}
 .btn:hover{transform:translateY(-2px)}
 .btn:active{transform:translateY(1px)}
+.btn{position:relative}
+.badge{position:absolute; right:-9px; top:-10px; min-width:24px; height:24px; padding:0 6px; display:grid; place-items:center; font-size:13px; font-weight:700;
+  color:#2B2140; background:var(--sun); border:var(--bw) solid var(--ink); border-radius:999px}
+.btn:disabled{opacity:.5; cursor:default; transform:none} .btn:disabled .badge{background:var(--card)}
 .btn.plain{background:var(--card); color:var(--text); font-weight:600; font-size:16px; padding:9px 16px 10px}
 .snap{display:block; width:min(280px,100%); margin:14px auto 2px; overflow:visible; pointer-events:none}
-.how{list-style:none; margin:14px 0 4px; padding:0; text-align:left}
-.how li{display:flex; align-items:center; gap:12px; padding:7px 0; font-size:16px; line-height:1.3}
-.how li > span{flex:none; width:40px; height:40px; display:grid; place-items:center; font-weight:700; font-size:15px; color:#2B2140;
+.how{list-style:none; margin:10px 0 2px; padding:0; text-align:left}
+.how li{display:flex; align-items:center; gap:10px; padding:5px 0; font-size:14.5px; line-height:1.3}
+.how li > span{flex:none; width:32px; height:32px; display:grid; place-items:center; font-weight:700; font-size:15px; color:#2B2140;
   border:var(--bw) solid var(--ink); border-radius:12px}
 .how li:nth-child(1) > span{background:var(--coral)} .how li:nth-child(2) > span{background:var(--sun)}
 .how li:nth-child(3) > span{background:var(--mint)} .how li:nth-child(4) > span{background:var(--sky)}
@@ -235,6 +240,15 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .stats b{display:block; font-size:22px; font-variant-numeric:tabular-nums}
 .stats div.new{background:var(--sun); color:#2B2140} .stats div.new small{color:#2B2140}
 .stats small{font-size:13px; color:var(--mut)}
+.gift{display:flex; align-items:center; gap:10px; margin:10px 0 2px; padding:8px 12px; text-align:left; font-size:14.5px; line-height:1.3;
+  border:var(--bw) dashed var(--ink); border-radius:14px; background:var(--wash)}
+.gift svg{flex:none; width:34px; height:34px} .gift b{color:var(--coral)}
+.lv.prize-tile{display:grid; place-items:center; align-content:center; gap:1px; padding:0; border-style:dashed; background:var(--wash); font-size:12px; cursor:default}
+.lv.prize-tile svg{width:52%; height:auto; margin:0}
+.lv.prize-tile.won{background:var(--sun); color:#2B2140; border-style:solid}
+.stats.all{margin-top:8px} .stats.all div{background:var(--sun); color:#2B2140; min-width:142px} .stats.all small{color:#2B2140}
+.prize{margin:14px 0 2px; padding:12px 14px 14px; border:var(--bw) dashed var(--ink); border-radius:16px; background:var(--wash)}
+.prize b{font-size:20px; color:var(--coral)} .prize p{margin:4px 0 0; font-size:15px} .prize .btn{margin-top:10px; background:var(--sun); text-decoration:none}
 #win-title{font-size:40px; color:var(--coral); -webkit-text-stroke:2.5px var(--ink); paint-order:stroke fill}
 .sheet.open #win-title{animation:stamp .6s var(--pop) .1s both}
 @keyframes stamp{from{transform:translateY(-22px); opacity:0}}
@@ -253,9 +267,22 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .lv.done{background:var(--mint); color:#2B2140}
 .lv.done svg polygon{fill:#fff}
 .lv.here{outline:3px solid var(--coral); outline-offset:2px}
+.lv.locked{color:var(--mut); border-color:var(--mut); cursor:default; transform:none}
+.lv.locked svg{opacity:.35} .lv.locked .tick{background:var(--card); border-color:var(--mut); font-size:11px}
 .lv .tick{position:absolute; right:-7px; top:-8px; width:22px; height:22px; display:grid; place-items:center; font-size:13px; color:#2B2140;
   background:var(--sun); border:2px solid var(--ink); border-radius:50%}
 
+#finale{position:fixed; inset:0; z-index:25; display:grid; place-items:center; align-content:center; gap:2px; pointer-events:none; text-align:center;
+  opacity:0; visibility:hidden; transition:opacity .45s, visibility .45s;
+  background:radial-gradient(closest-side, var(--bg) 35%, transparent)}
+#finale.show{opacity:1; visibility:visible}
+#finale small{font-size:clamp(15px,4.4vw,22px); font-weight:600; color:var(--mut); letter-spacing:.14em; text-transform:uppercase}
+#finale .big{font-size:clamp(46px,15vw,124px); font-weight:700; line-height:1.05; white-space:nowrap}
+#finale .big b{display:inline-block; -webkit-text-stroke:clamp(2.5px,.6vw,5px) var(--ink); paint-order:stroke fill}
+#finale.show .big b{animation:hop .7s var(--pop) both, wave .7s var(--pop) 1.5s 3; animation-delay:calc(var(--n) * 60ms + 100ms), calc(var(--n) * 60ms + 1.5s)}
+#finale .big b:nth-child(7n+1){color:var(--coral)} #finale .big b:nth-child(7n+2){color:var(--tang)} #finale .big b:nth-child(7n+3){color:var(--sun)}
+#finale .big b:nth-child(7n+4){color:var(--mint)} #finale .big b:nth-child(7n+5){color:var(--sky)} #finale .big b:nth-child(7n+6){color:var(--grape)} #finale .big b:nth-child(7n){color:var(--pink)}
+#finale p{margin:4px 0 0; font-size:clamp(17px,5vw,26px); font-weight:600; color:var(--text)}
 #fx{position:fixed; inset:0; width:100%; height:100%; z-index:30; pointer-events:none}
 
 @media (max-width:560px){
@@ -329,7 +356,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   <section class="hud">
     <button class="chip" id="chip" aria-label="Choose a level"><span id="lv-word">Level</span> <b id="lv-num">1</b> / <span id="lv-of">17</span></button>
     <div class="title" id="title"><h1 id="lv-name"></h1><p id="lv-intro"></p></div>
-    <div class="meter"><div id="pips" aria-hidden="true"></div><div id="stats"><span id="count" aria-live="polite"></span> · <span id="clock">0:00</span></div></div>
+    <div class="meter"><div id="pips" aria-hidden="true"></div><div id="stats"><span id="count" aria-live="polite"></span> · <span id="clock">0:00</span></div><div id="best" hidden></div></div>
   </section>
 
   <main id="stage">
@@ -367,8 +394,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <li><span>3</span><div><span class="keys"><b>Nudge</b> with the arrow keys, or type an exact angle at the bottom.</span><span class="taps"><b>Fine-tune</b> with the ±1° buttons, or type an exact angle.</span></div></li>
       <li><span>4</span><div>Dashed red means it overlaps or pokes out. A big smile means it fits.</div></li>
     </ul>
+    <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all seventeen boxes and you get a <b>prize</b>, sent by Garvit personally.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.24</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.29</span></div>
   </div>
 </div>
 
@@ -379,7 +407,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     <svg id="hint-sol" class="snap" role="img" aria-label="The box, packed" hidden></svg>
     <p class="fact" id="hint-fact"></p>
     <button class="btn" data-close>Got it</button>
-    <div><button class="btn plain" id="hint-spot">Show me one spot</button><button class="btn plain" id="hint-show" hidden>Show the solution</button></div>
+    <div><button class="btn plain" id="hint-spot">Show me one spot<span class="badge" id="spots">3</span></button><button class="btn plain" id="hint-show" hidden>Show the solution</button></div>
   </div>
 </div>
 
@@ -392,6 +420,12 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
+<div id="finale" aria-hidden="true">
+  <small>17 of 17</small>
+  <div class="big"><b style="--n:0">S</b><b style="--n:1">e</b><b style="--n:2">v</b><b style="--n:3">e</b><b style="--n:4">n</b><b style="--n:5">t</b><b style="--n:6">e</b><b style="--n:7">e</b><b style="--n:8">n</b><b style="--n:9">!</b></div>
+  <p id="finale-sum">Every box, packed.</p>
+</div>
+
 <div class="sheet" id="m-win" role="dialog" aria-modal="true" aria-labelledby="win-title">
   <div class="card">
     <h2 id="win-title">Packed!</h2>
@@ -401,14 +435,23 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <div><b id="win-moves">0</b><small>moves</small></div>
       <div><b id="win-best">0:00</b><small>best</small></div>
     </div>
+    <div class="stats all" id="win-all" hidden>
+      <div><b id="all-time">0:00</b><small>all 17, total time</small></div>
+      <div><b id="all-moves">0</b><small>all 17, total moves</small></div>
+    </div>
+    <div class="prize" id="win-prize" hidden>
+      <b>You have won a prize!</b>
+      <p>Garvit, who made this game, will send it to you. Fill in the form so he knows where.</p>
+      <a class="btn" id="prize-link" target="_blank" rel="noopener">Claim your prize</a>
+    </div>
     <p class="fact" id="win-fact"></p>
     <button class="btn" id="win-next">Next level</button>
     <div><button class="btn plain" id="win-again">Play again</button><button class="btn plain" id="win-levels">Levels</button><button class="btn plain" id="win-share">Share</button></div>
   </div>
 </div>
 
-<script src="geom.js?v=1.24"></script>
-<script src="levels.js?v=1.24"></script>
-<script src="game.js?v=1.24"></script>
+<script src="geom.js?v=1.29"></script>
+<script src="levels.js?v=1.29"></script>
+<script src="game.js?v=1.29"></script>
 </body>
 </html>
