@@ -1,12 +1,12 @@
-// Packer: the board, the dragging and spinning, and the celebrations.
+// Packman: the board, the dragging and spinning, and the celebrations.
 (function () {
   'use strict';
 
-  var G = PackerGeom, LEVELS = PackerLevels;
+  var G = PackmanGeom, LEVELS = PackmanLevels;
   var NS = 'http://www.w3.org/2000/svg';
   var COLORS = ['#FF6B6B', '#FFC93C', '#3DDBB4', '#4DA8FF', '#9B7BFF', '#FF8FCB', '#FF9F45'];
   var PRAISE = ['Packed!', 'Snug!', 'Tidy!', 'Nailed it!', 'So neat!', 'Boxed!'];
-  var STORE = 'packer.v1';
+  var STORE = 'packman.v1';
   var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function $(id) { return document.getElementById(id); }
@@ -56,7 +56,8 @@
       bubble = $('bubble'), dock = $('dock'), ang = $('ang');
 
   var save = { done: {}, last: 0, mute: false, seen: false };
-  try { var raw = JSON.parse(localStorage.getItem(STORE)); if (raw && raw.done) save = raw; } catch (e) {}
+  // progress saved back when the game was called Packer carries over
+  try { var raw = JSON.parse(localStorage.getItem(STORE) || localStorage.getItem('packer.v1')); if (raw && raw.done) save = raw; } catch (e) {}
   function persist() { try { localStorage.setItem(STORE, JSON.stringify(save)); } catch (e) {} }
 
   var level = 0, lv, C, cb;            // current level, its container, the container's bounds
@@ -310,6 +311,7 @@
     var p = pieces[i];
     startClock();
     p.angle += by;
+    offerShake(null);
     G.settle(pieces, i, C);
     render(i); placeHandle(); showAngle(); tick();
     if (norm(p.angle) % 15 === 0) haptic();
@@ -334,7 +336,6 @@
   board.addEventListener('pointerdown', function (e) {
     if (won || drag || shaking || e.button > 0) return;
     wake();
-    offerShake(null);
     if (document.activeElement === ang) ang.blur();
     var w = world(e), t = e.target, pe = t.closest ? t.closest('.piece') : null;
     if ((t.id === 'knob' || t.id === 'knob-hit') && sel >= 0) {
@@ -373,6 +374,7 @@
       return;
     }
     if (!drag.moved && Math.abs(e.clientX - drag.sx) + Math.abs(e.clientY - drag.sy) < 4) return;
+    if (!drag.moved) offerShake(null);   // the board is changing now
     drag.moved = true; startClock();
     p = pieces[drag.i];
     // Only the dragged piece moves, and what you see while dragging is exactly
@@ -393,12 +395,12 @@
     try { board.releasePointerCapture(e.pointerId); } catch (err) {}
     if (d.mode === 'spin') {
       handle.classList.remove('spin'); bubble.classList.remove('show');
-      if (pieces[sel].angle !== d.from) commit(); else placeHandle();
+      if (pieces[sel].angle !== d.from) commit(); else { placeHandle(); lookForShake(); }
       return;
     }
     var p = pieces[d.i];
     p.el.classList.remove('held');
-    if (d.moved) commit();
+    if (d.moved) commit(); else lookForShake();
     placeHandle();
   }
   board.addEventListener('pointerup', release);
@@ -522,7 +524,18 @@
   // After each move, quietly check whether a shake would finish the board
   // (every piece within a hair and a degree of a solved spot). The button only
   // shows up when it would.
-  function offerShake(to) { shakeTo = to; $('shake').hidden = !to; }
+  function offerShake(to) {
+    shakeTo = to;
+    $('shake').classList.toggle('ready', !!to);
+    $('shake').setAttribute('aria-disabled', to ? 'false' : 'true');
+  }
+  var noteTimer = 0;
+  function shakeNote() {
+    var n = $('shake-note');
+    n.classList.add('show');
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(function () { n.classList.remove('show'); }, 2400);
+  }
   function lookForShake() {
     clearTimeout(shakeTimer);
     shakeTimer = setTimeout(function () {
@@ -533,6 +546,7 @@
 
   function shake() {
     if (!shakeTo || shaking || won) return;
+    $('shake-note').classList.remove('show');
     var to = shakeTo, from = pieces.map(function (p) { return { x: p.x, y: p.y, a: p.angle }; }), t0s = performance.now();
     shaking = true; offerShake(null); select(-1);
     wake(); sfx.rattle();
@@ -557,7 +571,7 @@
       commit();
     })(t0s);
   }
-  $('shake').addEventListener('click', shake);
+  $('shake').addEventListener('click', function () { if (shakeTo) shake(); else if (!won && !shaking) shakeNote(); });
 
   function win() {
     won = true;
@@ -711,5 +725,5 @@
   startLevel(clamp(first, 0, LEVELS.length - 1));
   if (!save.seen) { save.seen = true; persist(); openSheet($('m-help')); }
 
-  window.Packer = { pieces: function () { return pieces; } };   // for poking at the board from the console
+  window.Packman = { pieces: function () { return pieces; } };   // for poking at the board from the console
 })();

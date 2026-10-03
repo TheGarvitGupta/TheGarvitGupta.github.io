@@ -1,6 +1,6 @@
-// Packer levels. Containers are convex polygons centred on the origin, in the
+// Packman levels. Containers are convex polygons centred on the origin, in the
 // same units as the pieces (every piece has side 1).
-var PackerLevels = (function () {
+var PackmanLevels = (function () {
   'use strict';
 
   var H = Math.sqrt(3) / 2;

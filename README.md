@@ -40,7 +40,8 @@ aberlift/               Standalone project page — AberLift carpooling app
 status-tiles/           Standalone project page — Status Tiles Windows app
 panorama-demo/          Standalone 360° VR demo (Marzipano viewer)
 coins/                  Standalone sub-site — the coin collection (own README)
-packer/                 Standalone game — pack squares and triangles into a box
+packman/                Standalone game — pack squares and triangles into a box
+packer/                 Redirect to packman/ (the game's old name)
 demo/                   Unlinked dev preview pages for widgets
 tools/gallery.py        Local gallery manager (add/remove photos)
 start                   Local dev: preview server + gallery manager

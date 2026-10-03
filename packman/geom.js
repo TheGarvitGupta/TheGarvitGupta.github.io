@@ -1,6 +1,6 @@
-// Packer geometry: convex-polygon overlap, containment, and the drop "settle".
+// Packman geometry: convex-polygon overlap, containment, and the drop "settle".
 // World units: a size-1 square has side 1. Angles are whole degrees, y points down.
-var PackerGeom = (function () {
+var PackmanGeom = (function () {
   'use strict';
 
   var H = Math.sqrt(3) / 2;
@@ -156,7 +156,8 @@ var PackerGeom = (function () {
   // up with a nearby edge, then slides into contact with whatever is closest
   // and along that contact until it meets a second neighbour, so it seats
   // itself in the nook it was dropped beside. Only this piece moves.
-  var MAG_TURN = 7;      // degrees the magnet may turn a piece
+  var MAG_TURN = 7;      // degrees the magnet may turn a piece to match a nearby edge
+  var GRID_TURN = 3;     // and to line up with the box's own walls, anywhere inside it
   var MAG_REACH = 0.2;   // how far the magnet may pull a piece towards its nearest neighbour
   var MAG_SLIDE = 0.2;   // and then along that neighbour to meet a second one
 
@@ -284,6 +285,19 @@ var PackerGeom = (function () {
         if (!best || score < best.score) best = { turn: turn, score: score };
       });
     });
+    // The box's walls are the one thing that is never crooked, so a piece a
+    // few degrees off one of their directions straightens to it first; that
+    // stops a slightly crooked neighbour from passing its tilt along.
+    var grid = null;
+    edgeList(verts(p)).forEach(function (e) {
+      C.walls.forEach(function (w) {
+        [1, -1].forEach(function (sgn) {
+          var turn = turnTo(e, { ux: w.nx * sgn, uy: w.ny * sgn });
+          if (Math.abs(turn) <= GRID_TURN + 1e-9 && (!grid || Math.abs(turn) < Math.abs(grid))) grid = turn;
+        });
+      });
+    });
+    if (grid !== null) best = { turn: grid };
     if (best) p.angle = a0 + Math.round(best.turn);
 
     settle(pieces, i, C);              // out of any shallow overlap first
@@ -314,11 +328,11 @@ var PackerGeom = (function () {
     return 'bad';
   }
 
-  // The shake. If every piece is in the box and each is within a hair of a
-  // spot that would finish the board (SHAKE_MOVE away, SHAKE_TURN degrees),
+  // The shake. If every piece is in the box and each is close to a spot that
+  // would finish the board (within SHAKE_MOVE and SHAKE_TURN degrees),
   // return those spots; otherwise null. All pieces may move here, but only
   // when the player asks for a shake.
-  var SHAKE_MOVE = 0.08, SHAKE_TURN = 1;
+  var SHAKE_MOVE = 0.2, SHAKE_TURN = 3;   // same reach as the magnet, and a few degrees
 
   function relaxAll(Q, home, C, iters) {
     var n = Q.length, V = Q.map(verts), worst = 0, i, j, k;
@@ -364,16 +378,35 @@ var PackerGeom = (function () {
     var until = Date.now() + (budgetMs || 150);
     function attempt(angles) {
       var Q = pieces.map(function (p, k) { return { type: p.type, size: p.size, x: p.x, y: p.y, angle: angles[k] }; });
-      var r = relaxAll(Q, home, C, 250);
+      var r = relaxAll(Q, home, C, 150);
       return { Q: Q, r: r.left, solved: r.worst < EPS && evaluate(Q, C).solved };
     }
     var angles = base.slice(), cur = attempt(angles);
-    // pieces meant to sit at a round angle are usually a degree off it, so try that first
-    var round = base.map(function (a) { var r = Math.round(a / 5) * 5; return Math.abs(r - a) <= SHAKE_TURN ? r : a; });
-    if (!cur.solved && round.some(function (a, k) { return a !== base[k]; })) {
-      var rr = attempt(round);
-      if (rr.solved || rr.r < cur.r) { cur = rr; angles = round; }
+    // Good first guesses: pieces whose angles are a few degrees apart are
+    // probably meant to share one, and many are meant to sit on a round angle.
+    // Angles are compared modulo 30 degrees, which every shape here repeats in.
+    function cluster(nudge) {
+      var v = base.map(function (a, k) { return { k: k, m: ((a % 30) + 30) % 30 }; }).sort(function (p, q) { return p.m - q.m; });
+      var out = base.slice(), groups = [];
+      v.forEach(function (e) {
+        var g = groups[groups.length - 1];
+        if (g && e.m - g[g.length - 1].m <= SHAKE_TURN) g.push(e); else groups.push([e]);
+      });
+      if (groups.length > 1 && groups[0][0].m + 30 - groups[groups.length - 1][groups[groups.length - 1].length - 1].m <= SHAKE_TURN) {
+        groups[groups.length - 1].forEach(function (e) { e.m -= 30; }); groups[0] = groups.pop().concat(groups[0]);
+      }
+      groups.forEach(function (g) {
+        var mean = Math.round(g.reduce(function (t, e) { return t + e.m; }, 0) / g.length) + (g.length > 1 ? nudge : 0);
+        g.forEach(function (e) { var d = mean - e.m; if (Math.abs(d) <= SHAKE_TURN) out[e.k] = base[e.k] + d; });
+      });
+      return out;
     }
+    [cluster(0), cluster(-1), cluster(1), base.map(function (a) { var r = Math.round(a / 15) * 15; return Math.abs(r - a) <= SHAKE_TURN ? r : a; }),
+     base.map(function (a) { var r = Math.round(a / 5) * 5; return Math.abs(r - a) <= SHAKE_TURN ? r : a; })].forEach(function (guess) {
+      if (cur.solved || Date.now() > until || guess.every(function (a, k) { return a === angles[k]; })) return;
+      var g = attempt(guess);
+      if (g.solved || g.r < cur.r) { cur = g; angles = guess; }
+    });
     // then try turning single pieces by a degree, keeping whatever helps
     for (var pass = 0; pass < 3 && !cur.solved && Date.now() < until; pass++) {
       var st = evaluate(cur.Q, C).states;
