@@ -46,6 +46,8 @@
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html,body{height:100%; margin:0}
+*{touch-action:none}
+.card,.card *{touch-action:pan-y}
 body{
   font-family:var(--f); color:var(--text); background-color:var(--bg);
   background-image:radial-gradient(var(--dot) 1.6px, transparent 1.7px); background-size:26px 26px;

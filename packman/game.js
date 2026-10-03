@@ -753,7 +753,21 @@
   ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (n) {
     document.addEventListener(n, function (e) { e.preventDefault(); }, { passive: false });
   });
-  document.addEventListener('touchmove', function (e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  // A pinch has to be refused from its first touch: once Safari has started
+  // one, cancelling the moves is too late. Only the sheets scroll, one finger.
+  function scrolls(e) { return e.touches.length < 2 && e.target.closest && e.target.closest('.card'); }
+  document.addEventListener('touchstart', function (e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  document.addEventListener('touchmove', function (e) { if (!scrolls(e)) e.preventDefault(); }, { passive: false });
+  // Double-tap: swallow the second tap and deliver its click by hand. The dock
+  // buttons work on pointerdown and need no click.
+  var lastEnd = 0;
+  document.addEventListener('touchend', function (e) {
+    var n = performance.now(), t = e.target, fast = n - lastEnd < 350;
+    lastEnd = n;
+    if (!fast || e.touches.length || !t.closest || t.closest('input')) return;
+    e.preventDefault();
+    if (!t.closest('.rb') && !t.closest('#board')) t.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }));
+  }, { passive: false });
 
   if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
   else window.addEventListener('resize', layout);
