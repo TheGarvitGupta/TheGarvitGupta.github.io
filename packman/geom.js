@@ -6,7 +6,9 @@ var PackmanGeom = (function () {
   var H = Math.sqrt(3) / 2;
   var SHAPES = {
     square: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
-    triangle: [[0, -2 * H / 3], [0.5, H / 3], [-0.5, H / 3]]   // centroid at the origin
+    triangle: [[0, -2 * H / 3], [0.5, H / 3], [-0.5, H / 3]],   // centroid at the origin
+    domino: [[-1, -0.5], [1, -0.5], [1, 0.5], [-1, 0.5]],
+    hexagon: [[1, 0], [0.5, H], [-0.5, H], [-1, 0], [-0.5, -H], [0.5, -H]]
   };
 
   // How much pieces may sink into each other or a wall and still count as packed.

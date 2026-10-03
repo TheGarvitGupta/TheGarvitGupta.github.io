@@ -126,6 +126,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 #pips i{width:13px; height:13px; border:2px solid var(--ink); border-radius:4px; background:var(--wash); transition:background .15s}
 #pips i.t{border:0; width:15px; background:var(--ink); clip-path:polygon(50% 0,100% 100%,0 100%); position:relative}
 #pips i.t::after{content:""; position:absolute; inset:3.5px 3px 2px; background:var(--bg); clip-path:inherit; transition:background .15s}
+#pips i.d{width:24px} #pips i.h{border-radius:50%}
 #pips i.on{background:var(--mint); animation:pip .4s var(--pop)}
 #pips i.t.on{background:var(--ink)}
 #pips i.t.on::after{background:var(--mint)}
@@ -163,6 +164,13 @@ button{font:inherit; color:inherit; cursor:pointer}
 .ghost{pointer-events:none; fill:var(--sun); fill-opacity:.3; stroke:var(--text); stroke-width:calc(2.5px * var(--u)); stroke-linejoin:round;
   stroke-dasharray:calc(6px * var(--u)) calc(5px * var(--u)); animation:beckon 1.2s ease-in-out infinite alternate}
 @keyframes beckon{from{opacity:.45}}
+#ribbon{pointer-events:none}
+#ribbon .edge,#ribbon .band{fill:none; stroke-dasharray:1; animation:tie .4s ease-out both}
+#ribbon .edge{stroke:var(--ink); stroke-width:calc(.12px + 5px * var(--u))}
+#ribbon .band{stroke:var(--coral); stroke-width:.12px}
+.bow{animation:fadein .25s .55s both}
+.bow path,.bow circle{fill:var(--coral); stroke:var(--ink); stroke-width:calc(2.5px * var(--u)); stroke-linejoin:round}
+@keyframes tie{from{stroke-dashoffset:1}}
 #handle{pointer-events:none}
 #handle line{stroke:var(--text); stroke-width:calc(2.5px * var(--u)); stroke-dasharray:calc(1px * var(--u)) calc(5px * var(--u)); stroke-linecap:round}
 #knob{pointer-events:auto; cursor:grab; fill:var(--card); stroke:var(--ink); stroke-width:calc(2.5px * var(--u))}
@@ -222,6 +230,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .stats{display:flex; justify-content:center; gap:10px; margin:14px 0 2px}
 .stats div{min-width:92px; padding:8px 10px 9px; border:var(--bw) solid var(--ink); border-radius:14px; background:var(--wash)}
 .stats b{display:block; font-size:22px; font-variant-numeric:tabular-nums}
+.stats div.new{background:var(--sun); color:#2B2140} .stats div.new small{color:#2B2140}
 .stats small{font-size:13px; color:var(--mut)}
 #win-title{font-size:40px; color:var(--coral); -webkit-text-stroke:2.5px var(--ink); paint-order:stroke fill}
 .sheet.open #win-title{animation:stamp .6s var(--pop) .1s both}
@@ -233,6 +242,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   animation:popgrid .4s var(--pop) both; animation-delay:calc(var(--n) * 35ms)}
 .sheet:not(.open) .lv{animation:none}
 @keyframes popgrid{from{transform:translateY(12px); opacity:0}}
+.more{grid-column:1 / -1; margin-top:4px; font-size:14.5px; font-weight:600; color:var(--mut)}
 .lv:hover{transform:translateY(-3px)}
 .lv:active{transform:translateY(1px)}
 .lv svg{display:block; width:56%; height:46%; margin:0 auto 1px; overflow:visible}
@@ -252,7 +262,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   .title{display:contents} .title h1{font-size:18px}
   .title p{grid-column:1 / -1; grid-row:2; font-size:13.5px; margin:0; min-height:2.5em}
   .chip{padding:6px 10px 7px; font-size:13.5px} .chip b{font-size:15px}
-  #pips{max-width:86px} #pips i{width:10px; height:10px; border-radius:3px} #pips i.t{width:12px}
+  #pips{max-width:86px} #pips i{width:10px; height:10px; border-radius:3px} #pips i.t{width:12px} #pips i.d{width:18px} #pips i.h{border-radius:50%}
   #pips i.t::after{inset:3.5px 3px 2px}
   .dock{gap:6px} .spin{gap:5px} .dock .rb{min-width:44px; padding:0 5px; font-size:14.5px} .angle{padding:0 9px 0 4px} .angle input{width:44px}
   .dock .tip{font-size:14px}
@@ -314,7 +324,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </header>
 
   <section class="hud">
-    <button class="chip" id="chip" aria-label="Choose a level">Level <b id="lv-num">1</b> / <span id="lv-of">17</span></button>
+    <button class="chip" id="chip" aria-label="Choose a level"><span id="lv-word">Level</span> <b id="lv-num">1</b> / <span id="lv-of">17</span></button>
     <div class="title" id="title"><h1 id="lv-name"></h1><p id="lv-intro"></p></div>
     <div class="meter"><div id="pips" aria-hidden="true"></div><div id="stats"><span id="count" aria-live="polite"></span> · <span id="clock">0:00</span></div></div>
   </section>
@@ -323,6 +333,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     <svg id="board" role="application" aria-label="Puzzle board">
       <g id="bin"><path class="bin-fill"/></g>
       <g id="pieces"></g>
+      <g id="ribbon" hidden></g>
       <path id="ghost" class="ghost" hidden/>
       <g id="handle" hidden><line/><circle id="knob-hit"/><circle id="knob"/><circle id="knob-dot"/></g>
     </svg>
@@ -354,7 +365,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <li><span>4</span><div>Dashed red means it overlaps or pokes out. A big smile means it fits.</div></li>
     </ul>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.13</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.14</span></div>
   </div>
 </div>
 
@@ -393,8 +404,8 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.13"></script>
-<script src="levels.js?v=1.13"></script>
-<script src="game.js?v=1.13"></script>
+<script src="geom.js?v=1.14"></script>
+<script src="levels.js?v=1.14"></script>
+<script src="game.js?v=1.14"></script>
 </body>
 </html>

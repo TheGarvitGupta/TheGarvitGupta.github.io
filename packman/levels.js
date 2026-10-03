@@ -2,6 +2,7 @@
 // same units as the pieces (every piece has side 1). Each solution is one packed
 // [x, y, angle] per piece, in the order the pieces are listed. The levels run
 // from easiest to hardest; saved progress goes by name, so they can be reordered.
+// Bonus levels come last, after the seventeen, and are numbered on their own.
 var PackmanLevels = (function () {
   'use strict';
 
@@ -24,10 +25,12 @@ var PackmanLevels = (function () {
   function loosen(poly, k) {
     return poly.map(function (p) { return [p[0] * k, p[1] * k]; });
   }
-  function pieces(squares, triangles) {
+  function pieces(squares, triangles, dominoes, hexagons) {
     var out = [], i;
     for (i = 0; i < squares; i++) out.push('square');
     for (i = 0; i < triangles; i++) out.push('triangle');
+    for (i = 0; i < (dominoes || 0); i++) out.push('domino');
+    for (i = 0; i < (hexagons || 0); i++) out.push('hexagon');
     return out;
   }
 
@@ -178,6 +181,43 @@ var PackmanLevels = (function () {
       container: box(4.68),
       pieces: pieces(17, 0),
       solution: [[-1.84, 1.8406, 0], [-0.84, 1.84, 0], [-1.8405, 0.8412, 0], [1.84, 1.84, 0], [0.84, 1.84, 0], [1.84, 0.84, 0], [-1.8401, -1.8401, 0], [1.8406, -1.8405, 0], [0.0628, -1.84, 0], [1.84, -0.16, 0], [-0.9056, -1.0803, 40], [-1.6074, -0.3638, 40], [-0.0561, -0.5373, 40], [-0.6953, 0.2308, 40], [0.6356, 0.2005, 40], [-0.0026, 0.9704, 40], [0.9613, -1.0143, 323]]
+    },
+    {
+      name: 'Brickwork',
+      bonus: true,
+      intro: 'A new shape: the brick, two squares long.',
+      hint: 'The square goes dead centre. The four bricks chase each other round it, each one lying along a different wall.',
+      container: box(3.006),
+      pieces: pieces(1, 0, 4),
+      solution: [[0, 0, 0], [-0.5, -1, 0], [1, -0.5, 90], [0.5, 1, 0], [-1, 0.5, 90]]
+    },
+    {
+      name: 'Corners',
+      bonus: true,
+      intro: 'Another new shape: the hexagon. It takes up most of the room.',
+      hint: 'The hexagon sits in the middle with three of its sides against the walls. A triangle fills each corner.',
+      container: loosen([[0, -2 * H / 3], [0.5, H / 3], [-0.5, H / 3]], 3.012),
+      pieces: pieces(0, 3, 0, 1),
+      solution: [[0, -1.1547, 0], [-1, 0.5774, 0], [1, 0.5774, 0], [0, 0, 0]]
+    },
+    {
+      name: 'Wedged',
+      bonus: true,
+      intro: 'One hexagon. It is two across, and the box is not.',
+      hint: 'Turn it 15°. Two of its corners touch the side walls and two touch the floor and ceiling.',
+      fact: 'The smallest square that holds a hexagon of side 1 is 2 cos 15° \u2248 1.932 across. This one is 1.94.',
+      container: box(1.94),
+      pieces: pieces(0, 0, 0, 1),
+      solution: [[0, 0, 15]]
+    },
+    {
+      name: 'Snug',
+      bonus: true,
+      intro: 'A hexagon and two triangles, in a box that fits them like a glove.',
+      hint: 'Stand the hexagon on a point, at 30°, against the right-hand wall. Its sloping sides leave a notch at the top and the bottom on the left. One triangle goes in the bottom corner at 90°, pointing at the hexagon, and the other in the top corner at 75°.',
+      container: box(2.321),
+      pieces: pieces(0, 2, 0, 1),
+      solution: [[-0.8281, 0.6605, 90], [-0.7523, -0.7523, 75], [0.2945, -0.0247, 30]]
     }
   ];
 })();

@@ -7,6 +7,9 @@
   var COLORS = ['#FF6B6B', '#FFC93C', '#3DDBB4', '#4DA8FF', '#9B7BFF', '#FF8FCB', '#FF9F45'];
   var PRAISE = ['Packed!', 'Snug!', 'Tidy!', 'Nailed it!', 'So neat!', 'Boxed!'];
   var STORE = 'packman.v1';
+  var MAIN = LEVELS.filter(function (l) { return !l.bonus; }).length;   // the bonus levels follow these
+  var TURN = { square: 90, triangle: 120, domino: 180, hexagon: 60 };   // degrees before a shape looks the same again
+  var KNOB = { square: 0.72, triangle: 0.6, domino: 0.72, hexagon: 1.08 };
   var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function $(id) { return document.getElementById(id); }
@@ -30,9 +33,7 @@
   // same at any zoom.
   function drawn(type, px) {
     px = px || 1 / view.scale;
-    var gap = 2.6 * px;
-    var base = G.SHAPES[type], inr = type === 'square' ? 0.5 : G.H / 3, k = (inr - gap) / inr;
-    return rounded(base.map(function (p) { return [p[0] * k, p[1] * k]; }), Math.min(6 * px, 0.12));
+    return rounded(grown(G.makeContainer(G.SHAPES[type]), -2.6 * px), Math.min(6 * px, 0.12));
   }
   // The box's outline is drawn just outside the real walls, so a piece resting
   // against a wall shows the same sliver of gap as two pieces side by side.
@@ -46,6 +47,7 @@
   }
   function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
   function norm(a) { return ((a % 360) + 360) % 360; }
+  function label(n) { return n < MAIN ? 'Level ' + (n + 1) : 'Bonus ' + (n - MAIN + 1); }
   function clock(sec) { sec = Math.round(sec); return Math.floor(sec / 60) + ':' + ('0' + sec % 60).slice(-2); }
   function shuffled(a) {
     a = a.slice();
@@ -110,6 +112,7 @@
     snap: function () { tone(880, 0.05, { type: 'triangle', to: 1320, vol: 0.06 }); },
     rattle: function () { for (var k = 0; k < 7; k++) tone(260 + Math.random() * 260, 0.04, { at: k * 0.085, type: 'square', vol: 0.045 }); },
     tick: function () { tone(1250, 0.025, { type: 'triangle', vol: 0.035 }); },
+    best: function () { tone(1568, 0.16, { at: 0.5, type: 'triangle', vol: 0.11 }); tone(2093, 0.3, { at: 0.62, type: 'triangle', vol: 0.11 }); },
     win: function () { [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone(f, 0.22, { at: i * 0.09, type: 'triangle', vol: 0.13 }); }); }
   };
   // A tiny tap under the finger. Android has the Vibration API; iPhones have
@@ -207,7 +210,7 @@
       var s = slots[i % slots.length], j = Math.min(0.12, cell / 8);
       p.x = s[0] + (Math.random() - 0.5) * j;
       p.y = s[1] + (Math.random() - 0.5) * j;
-      p.angle = lv.scramble ? 15 * Math.floor(Math.random() * (p.type === 'square' ? 6 : 24)) : 0;
+      p.angle = lv.scramble ? 15 * Math.floor(Math.random() * (p.type === 'triangle' ? 24 : TURN[p.type] / 15)) : 0;
       keepInView(p);
     });
   }
@@ -221,6 +224,7 @@
     g.style.setProperty('--d', (60 + i * 28) + 'ms');
     fill.setAttribute('d', drawn(p.type));
     if (p.type === 'triangle') face.setAttribute('transform', 'translate(0 0.03) scale(0.74)');
+    if (p.type === 'hexagon') face.setAttribute('transform', 'scale(1.3)');
     var eyes = el('g', 'eyes');
     [-0.13, 0.13].forEach(function (x) {
       var e = el('circle', 'eye');
@@ -253,7 +257,7 @@
   }
 
   function knobPos(p) {
-    var r = (p.angle - 90) * Math.PI / 180, reach = (p.type === 'square' ? 0.72 : 0.6) + 30 / view.scale;
+    var r = (p.angle - 90) * Math.PI / 180, reach = KNOB[p.type] + 30 / view.scale;
     return [p.x + Math.cos(r) * reach, p.y + Math.sin(r) * reach];
   }
 
@@ -619,7 +623,10 @@
     syms = symmetries(lv.container); showGhost(null);
     save.last = lv.name; persist();
 
-    $('lv-num').textContent = i + 1;
+    $('lv-word').textContent = lv.bonus ? 'Bonus' : 'Level';
+    $('lv-num').textContent = lv.bonus ? i - MAIN + 1 : i + 1;
+    $('lv-of').textContent = lv.bonus ? LEVELS.length - MAIN : MAIN;
+    $('ribbon').setAttribute('hidden', '');
     $('lv-name').textContent = lv.name;
     $('lv-intro').textContent = lv.intro;
     $('clock').textContent = '0:00';
@@ -635,7 +642,7 @@
     pips.textContent = '';
     pieces = lv.pieces.map(function (type, n) {
       var pip = document.createElement('i');
-      if (type === 'triangle') pip.className = 't';
+      if (type !== 'square') pip.className = type.charAt(0);
       pips.appendChild(pip);
       return { type: type, size: 1, x: 0, y: 0, angle: 0, color: colors[n % colors.length], good: false };
     });
@@ -712,8 +719,8 @@
     return out;
   }
   // How far angle a is from b, given that a square looks the same every 90
-  // degrees and a triangle every 120.
-  function off(a, b, type) { var t = type === 'square' ? 90 : 120; return ((a - b) % t + t * 1.5) % t - t / 2; }
+  // degrees, a triangle every 120, and so on.
+  function off(a, b, type) { var t = TURN[type]; return ((a - b) % t + t * 1.5) % t - t / 2; }
   function near(p, s, reach, turn) {
     return p.type === s.type && Math.hypot(p.x - s.x, p.y - s.y) <= reach && Math.abs(off(s.angle, p.angle, p.type)) <= turn;
   }
@@ -765,29 +772,66 @@
     elapsed = t0 ? (performance.now() - t0) / 1000 : 0;
     $('clock').textContent = clock(elapsed);
     var prev = save.done[lv.name], best = prev ? Math.min(prev.t, elapsed) : elapsed;
+    var again = !!prev, faster = again && Math.round(elapsed) < Math.round(prev.t);
     save.done[lv.name] = { t: best, m: prev ? Math.min(prev.m, moves) : moves };
     if (save.board && save.board.l === lv.name) save.board = null;
     persist();
 
+    // A first win gets the full party. A replay gets a quieter one, unless it
+    // beat the old time.
     select(-1);
     bin.setAttribute('class', 'win');
     sfx.win();
+    if (faster) sfx.best();
     cheer();
-    var last = level === LEVELS.length - 1;
-    confetti(last ? 320 : 150);
+    var finale = level === MAIN - 1 && !again;
+    confetti(finale ? 320 : again && !faster ? 50 : 150);
+    setTimeout(function () { if (won) tieRibbon(); }, calm ? 0 : 550);
 
-    var all = LEVELS.every(function (l) { return save.done[l.name]; });
-    $('win-title').textContent = last ? 'Seventeen!' : PRAISE[Math.floor(Math.random() * PRAISE.length)];
-    $('win-sub').textContent = last
+    var all = LEVELS.every(function (l) { return l.bonus || save.done[l.name]; });
+    $('win-title').textContent = finale ? 'Seventeen!' : faster ? 'New best!' : PRAISE[Math.floor(Math.random() * PRAISE.length)];
+    $('win-sub').textContent = finale
       ? (all ? 'That was the hard one, and you have now packed every box. Take a bow.' : 'That was the hard one. Take a bow.')
-      : 'Level ' + (level + 1) + ', ' + lv.name + ', is all packed up.';
+      : faster ? lv.name + ', packed ' + clock(prev.t - elapsed) + ' faster than your best.'
+      : again ? lv.name + ', packed again. Your best is still ' + clock(prev.t) + '.'
+      : label(level) + ', ' + lv.name + ', is all packed up.';
+    $('win-best').parentNode.classList.toggle('new', faster);
     $('win-time').textContent = clock(elapsed);
     $('win-moves').textContent = moves;
     $('win-best').textContent = clock(best);
     $('win-fact').hidden = !lv.fact;
     $('win-fact').textContent = lv.fact || '';
-    $('win-next').hidden = last;
-    setTimeout(function () { if (won) openSheet($('m-win')); }, calm ? 200 : 1250);
+    $('win-next').hidden = level === LEVELS.length - 1;
+    setTimeout(function () { if (won) openSheet($('m-win')); }, calm ? 200 : again ? 1250 : 1700);
+  }
+
+  // All packed up: a ribbon goes round the box, with a bow where it crosses.
+  function tieRibbon() {
+    var r = $('ribbon'), cx = (cb.minX + cb.maxX) / 2, cy = (cb.minY + cb.maxY) / 2;
+    var k = clamp(Math.min(cb.maxX - cb.minX, cb.maxY - cb.minY) / 2.2, 0.7, 1.5);
+    var clip = el('clipPath'), shape = el('path'), bands = el('g'), bow = el('g', 'bow');
+    r.textContent = '';
+    clip.id = 'box-clip';
+    shape.setAttribute('d', bin.firstElementChild.getAttribute('d'));
+    clip.appendChild(shape); r.appendChild(clip);
+    bands.setAttribute('clip-path', 'url(#box-clip)');
+    ['M' + (cb.minX - 0.3) + ' ' + cy + 'H' + (cb.maxX + 0.3), 'M' + cx + ' ' + (cb.minY - 0.3) + 'V' + (cb.maxY + 0.3)].forEach(function (d, n) {
+      ['edge', 'band'].forEach(function (c) {
+        var p = el('path', c);
+        p.setAttribute('d', d); p.setAttribute('pathLength', 1);
+        p.style.animationDelay = n * 0.2 + 's';
+        bands.appendChild(p);
+      });
+    });
+    r.appendChild(bands);
+    bow.setAttribute('transform', 'translate(' + cx + ' ' + cy + ') scale(' + k + ')');
+    ['M0 0L-0.2 0.34L-0.05 0.3Z', 'M0 0L0.2 0.34L0.05 0.3Z',
+     'M0 0C-0.1 -0.3 -0.46 -0.3 -0.44 -0.06C-0.42 0.16 -0.12 0.1 0 0Z', 'M0 0C0.1 -0.3 0.46 -0.3 0.44 -0.06C0.42 0.16 0.12 0.1 0 0Z'].forEach(function (d) {
+      var p = el('path'); p.setAttribute('d', d); bow.appendChild(p);
+    });
+    var knot = el('circle'); knot.setAttribute('r', 0.085); bow.appendChild(knot);
+    r.appendChild(bow);
+    r.removeAttribute('hidden');
   }
 
   // The crowd goes wild: a wave runs across the box, left to right.
@@ -856,16 +900,17 @@
     var grid = $('grid'), count = 0;
     grid.textContent = '';
     LEVELS.forEach(function (l, n) {
+      if (n === MAIN) { var more = document.createElement('div'); more.className = 'more'; more.textContent = 'Bonus: new shapes'; grid.appendChild(more); }
       var b = document.createElement('button'), s = el('svg'), poly = el('polygon'), bb = G.bounds(l.container), done = save.done[l.name];
       if (done) count++;
       b.className = 'lv' + (done ? ' done' : '') + (n === level ? ' here' : '');
       b.style.setProperty('--n', n);
-      b.setAttribute('aria-label', 'Level ' + (n + 1) + ', ' + l.name + (done ? ', packed in ' + clock(done.t) : ''));
+      b.setAttribute('aria-label', label(n) + ', ' + l.name + (done ? ', packed in ' + clock(done.t) : ''));
       b.title = l.name + (done ? ' · best ' + clock(done.t) : '');
       s.setAttribute('viewBox', bb.minX + ' ' + bb.minY + ' ' + (bb.maxX - bb.minX) + ' ' + (bb.maxY - bb.minY));
       poly.setAttribute('points', pts(l.container));
       s.appendChild(poly); b.appendChild(s);
-      b.appendChild(document.createTextNode(n + 1));
+      b.appendChild(document.createTextNode(n < MAIN ? n + 1 : 'B' + (n - MAIN + 1)));
       if (done) { var t = document.createElement('span'); t.className = 'tick'; t.textContent = '✓'; b.appendChild(t); }
       b.addEventListener('click', function () { closeSheet($('m-levels')); startLevel(n); });
       grid.appendChild(b);
@@ -898,7 +943,7 @@
   // Share sheet on a phone; elsewhere the brag and the link go on the clipboard.
   $('win-share').addEventListener('click', function () {
     var b = this, url = location.href.split(/[?#]/)[0] + '?level=' + (level + 1);
-    var text = 'I packed ' + lv.name + ', level ' + (level + 1) + ' of Packman, in ' + clock(elapsed) + '. Can you beat that?';
+    var text = 'I packed ' + lv.name + ', ' + label(level).toLowerCase() + ' of Packman, in ' + clock(elapsed) + '. Can you beat that?';
     if (navigator.share) { navigator.share({ title: 'Packman', text: text, url: url }).catch(function () {}); return; }
     navigator.clipboard.writeText(text + ' ' + url).then(function () {
       b.textContent = 'Copied!';
@@ -980,7 +1025,6 @@
   else window.addEventListener('resize', layout);
 
   $('b-sound').classList.toggle('off', !!save.mute);
-  $('lv-of').textContent = LEVELS.length;
   var asked = /[?&#]level=(\d+)/.exec(location.search + location.hash);
   var first = asked ? +asked[1] - 1 : LEVELS.map(function (l) { return l.name; }).indexOf(save.last);
   startLevel(clamp(first, 0, LEVELS.length - 1));
