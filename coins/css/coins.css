@@ -1508,3 +1508,44 @@ body.filters-open .drawer { transform: none; }
   from { opacity: 0; transform: perspective(1200px) rotateY(-70deg) scale(0.9); }
   to   { opacity: 1; transform: perspective(1200px) rotateY(0deg) scale(1); }
 }
+
+/* ── Light on the viewer's faces ──────────────────────────────────────────── */
+/* The same lean and glint as the grid, gentler, since the coin is so much
+   bigger. The photograph and its glint share one transform so the light stays
+   on the metal as it turns. */
+
+.viewer.is-spread .face { isolation: isolate; }
+.viewer.is-spread .face img,
+.face-glint {
+  transform: perspective(1400px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.5s var(--ease);
+}
+.viewer.is-spread .face.is-tilting img,
+.face.is-tilting .face-glint { transition-duration: 0.12s; }
+
+.face-glint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  -webkit-mask: var(--mask) center / contain no-repeat;
+          mask: var(--mask) center / contain no-repeat;
+  background:
+    radial-gradient(circle at var(--gx, 35%) var(--gy, 25%),
+      rgba(255, 252, 240, 0.6), rgba(255, 252, 240, 0.12) 20%, rgba(255, 252, 240, 0) 42%),
+    linear-gradient(115deg,
+      transparent calc(var(--gx, 50%) - 30%),
+      rgba(255, 248, 225, 0.22) var(--gx, 50%),
+      transparent calc(var(--gx, 50%) + 30%));
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.35s var(--ease), transform 0.5s var(--ease);
+}
+.face.is-tilting .face-glint { opacity: 1; }
+
+/* Sideways drags belong to viewer.js, for moving between coins; up and down
+   still scroll the page to the details. */
+.stage { touch-action: pan-y; }
+
+@media (prefers-reduced-motion: reduce) {
+  .face-glint { display: none; }
+}

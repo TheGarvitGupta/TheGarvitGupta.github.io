@@ -20,9 +20,19 @@
 
   /* ── Tilt and glint ─────────────────────────────────────────────────────── */
 
-  var MAX_TILT = 14;   // degrees at the very edge of the tile
-
-  function bindTilt(grid) {
+  /**
+   * Lean whatever is under a mouse pointer toward it, and move its highlight.
+   * Writes --rx/--ry (the lean) and --gx/--gy (where the light falls) onto the
+   * matched element; the stylesheet decides what they move.
+   *
+   * @param {Element} container   listens here, so tiles can come and go
+   * @param {string} selector     the elements that tilt
+   * @param {number} maxTilt      degrees at the very edge
+   * @param {function} [surface]  the part of the element that is the coin —
+   *                              a grid tile's caption is not, so it is left out
+   *                              of the measurement
+   */
+  function bindTilt(container, selector, maxTilt, surface) {
     var active = null;
     var frame = 0;
     var last = null;
@@ -30,39 +40,59 @@
     function paint() {
       frame = 0;
       if (!active || !last) return;
-      var r = active.getBoundingClientRect();
-      var x = (last.clientX - r.left) / r.width;    // 0 … 1
-      var y = (last.clientY - r.top) / r.width;     // against the disc, which is square
-      x = Math.max(0, Math.min(1, x));
-      y = Math.max(0, Math.min(1, y));
-      active.style.setProperty("--ry", ((x - 0.5) * 2 * MAX_TILT).toFixed(2) + "deg");
-      active.style.setProperty("--rx", ((0.5 - y) * 2 * MAX_TILT).toFixed(2) + "deg");
+      var r = (surface ? surface(active) : active).getBoundingClientRect();
+      var x = Math.max(0, Math.min(1, (last.clientX - r.left) / r.width));
+      var y = Math.max(0, Math.min(1, (last.clientY - r.top) / r.height));
+      active.style.setProperty("--ry", ((x - 0.5) * 2 * maxTilt).toFixed(2) + "deg");
+      active.style.setProperty("--rx", ((0.5 - y) * 2 * maxTilt).toFixed(2) + "deg");
       active.style.setProperty("--gx", (x * 100).toFixed(1) + "%");
       active.style.setProperty("--gy", (y * 100).toFixed(1) + "%");
     }
 
-    function release(btn) {
-      if (!btn) return;
-      btn.classList.remove("is-tilting");
-      ["--rx", "--ry", "--gx", "--gy"].forEach(function (p) { btn.style.removeProperty(p); });
+    function release(node) {
+      if (!node) return;
+      node.classList.remove("is-tilting");
+      ["--rx", "--ry", "--gx", "--gy"].forEach(function (p) { node.style.removeProperty(p); });
     }
 
-    grid.addEventListener("pointermove", function (e) {
+    container.addEventListener("pointermove", function (e) {
       if (e.pointerType !== "mouse") return;
-      var btn = e.target.closest && e.target.closest(".coin-btn");
-      if (btn !== active) {
+      var hit = e.target.closest && e.target.closest(selector);
+      if (hit && !container.contains(hit)) hit = null;
+      if (hit !== active) {
         release(active);
-        active = btn;
+        active = hit;
         if (active) active.classList.add("is-tilting");
       }
       last = e;
       if (active && !frame) frame = requestAnimationFrame(paint);
     });
 
-    grid.addEventListener("pointerleave", function () {
+    container.addEventListener("pointerleave", function () {
       release(active);
       active = null;
     });
+  }
+
+  /**
+   * The viewer's faces get the same light as the grid. Their photograph changes
+   * — thumbnail first, then the full file, then another coin — so the glint's
+   * mask is taken from whatever the face is showing as the pointer arrives.
+   */
+  function bindViewerLight() {
+    var frame = document.getElementById("stage-frame");
+    if (!frame) return;
+    Array.prototype.forEach.call(frame.querySelectorAll(".face"), function (f) {
+      var glint = document.createElement("span");
+      glint.className = "face-glint";
+      glint.setAttribute("aria-hidden", "true");
+      f.appendChild(glint);
+      f.addEventListener("pointerenter", function () {
+        var img = f.querySelector("img");
+        if (img && img.currentSrc) glint.style.setProperty("--mask", 'url("' + img.currentSrc + '")');
+      });
+    });
+    bindTilt(frame, ".face", 9);
   }
 
   /* ── The coin in the wordmark ───────────────────────────────────────────── */
@@ -213,7 +243,12 @@
 
   document.addEventListener("coins:ready", function () {
     var grid = document.getElementById("grid");
-    if (grid && finePointer && !reduced) bindTilt(grid);
+    if (finePointer && !reduced) {
+      if (grid) bindTilt(grid, ".coin-btn", 14, function (btn) {
+        return btn.querySelector(".coin-disc") || btn;
+      });
+      bindViewerLight();
+    }
     buildWordmarkCoin();
   });
 })();

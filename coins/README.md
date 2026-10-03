@@ -17,7 +17,8 @@ coins/
   css/edit.css          Edit-mode styles (never loaded by the public site)
   js/coins.js           Catalogue, grid, filtering, routing
   js/viewer.js          Flip + deep-zoom viewer
-  js/flair.js           Decoration: tilt and glint on tiles, the coin in the wordmark
+  js/flair.js           Decoration: tilt and glint on coins, the coin in the wordmark
+  og-image.jpg          Link preview (1200×630); a one-off, not regenerated on Publish
   js/edit.js            Edit mode — inert unless the local server is running
   data/vocab.json       Mints, rulers, denominations, metals, field definitions
   tools/coins.py        The local server + image pipeline
@@ -175,9 +176,11 @@ merge `coins` into `master` to take it live.
 | `0` | fit |
 | `Esc` | close |
 
-The "o" in the **Coins** wordmark is a random coin from the collection; click it
-to toss it. In the grid, coins lean toward a mouse pointer and catch the light.
-None of this runs under `prefers-reduced-motion`, and the tilt is mouse-only.
+Tap the "o" in the **Coins** wordmark and it turns into a coin from the
+collection, is tossed, calls heads or tails, and turns back into the letter.
+In the grid and the viewer, coins lean toward a mouse pointer and catch the
+light. On a phone, swipe sideways on the coin to move to the next or previous
+one. The tilt and the toss's flight stand down under `prefers-reduced-motion`.
 
 Double-click toggles between fit and 250%. Scroll or pinch to zoom, drag to pan.
 With `prefers-reduced-motion` set, the flip becomes a cross-fade.

@@ -222,6 +222,70 @@ window.Viewer = (function () {
   }
 
 
+  /**
+   * Swiping sideways on the coin moves to the next or previous one. A phone has
+   * no arrows — they were given up for the width — so without this the only
+   * way to the next coin was back out to the grid and in again.
+   *
+   * The coin follows the finger, so the gesture is visibly doing something;
+   * vertical drags are left to the browser (touch-action: pan-y) so the page
+   * still scrolls down to the details.
+   */
+  function bindSwipe() {
+    var start = null;
+    var dx = 0;
+    var swiped = false;
+    var stage = el.frame.parentElement;
+
+    function settle(animate) {
+      el.frame.style.transition = animate ? "transform 0.25s, opacity 0.25s" : "none";
+      el.frame.style.transform = "";
+      el.frame.style.opacity = "";
+    }
+
+    stage.addEventListener("pointerdown", function (e) {
+      if (e.pointerType !== "touch") return;
+      start = { x: e.clientX, y: e.clientY };
+      dx = 0;
+      swiped = false;
+      el.frame.style.transition = "none";
+    });
+
+    stage.addEventListener("pointermove", function (e) {
+      if (!start) return;
+      dx = e.clientX - start.x;
+      if (Math.abs(dx) < 8) return;
+      swiped = true;
+      // Resist at either end of the collection, where there is nothing to reach.
+      var i = window.Coins.indexOfInView(current ? current.id : null);
+      var atEnd = (dx > 0 && i <= 0) ||
+                  (dx < 0 && i >= window.Coins.state.view.length - 1);
+      var shown = atEnd ? dx * 0.25 : dx;
+      el.frame.style.transform = "translateX(" + shown + "px)";
+      el.frame.style.opacity = String(1 - Math.min(Math.abs(shown) / 400, 0.5));
+    });
+
+    function end() {
+      if (!start) return;
+      start = null;
+      var before = current;
+      if (Math.abs(dx) > 60) step(dx < 0 ? 1 : -1);
+      // A new coin arrives by its own animation; only a return needs easing.
+      settle(current === before);
+    }
+    stage.addEventListener("pointerup", end);
+    stage.addEventListener("pointercancel", function () { start = null; settle(true); });
+
+    // The lift at the end of a swipe also counts as a tap on the face, which
+    // would open the photograph. Swallow that one.
+    stage.addEventListener("click", function (e) {
+      if (!swiped) return;
+      swiped = false;
+      e.stopPropagation();
+      e.preventDefault();
+    }, true);
+  }
+
   function onKey(e) {
     if (el.root.hidden) return;
     // Let typing in edit mode's inputs through untouched.
@@ -280,6 +344,7 @@ window.Viewer = (function () {
     document.addEventListener("keydown", onKey);
 
     bindStage();
+    bindSwipe();
 
     // Re-check the prev/next bounds when filtering changes what's on screen.
     window.Coins.onChange(updateNav);
