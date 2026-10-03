@@ -33,6 +33,16 @@
     var base = G.SHAPES[type], inr = type === 'square' ? 0.5 : G.H / 3, k = (inr - gap) / inr;
     return rounded(base.map(function (p) { return [p[0] * k, p[1] * k]; }), Math.min(6 * px, 0.12));
   }
+  // The box's outline is drawn just outside the real walls, so a piece resting
+  // against a wall shows the same sliver of gap as two pieces side by side.
+  function grown(Cn, by) {
+    var w = Cn.walls, n = w.length, out = [];
+    for (var k = 0; k < n; k++) {
+      var a = w[(k + n - 1) % n], b = w[k], da = a.d + by, db = b.d + by, det = a.nx * b.ny - a.ny * b.nx;
+      out.push([(da * b.ny - a.ny * db) / det, (a.nx * db - da * b.nx) / det]);
+    }
+    return out;
+  }
   function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
   function norm(a) { return ((a % 360) + 360) % 360; }
   function clock(sec) { sec = Math.round(sec); return Math.floor(sec / 60) + ':' + ('0' + sec % 60).slice(-2); }
@@ -117,7 +127,7 @@
     board.setAttribute('viewBox', view.x + ' ' + view.y + ' ' + vw + ' ' + vh);
     var px = 1 / view.scale;
     board.style.setProperty('--u', px);   // one screen pixel, in board units, for stroke widths
-    bin.firstElementChild.setAttribute('d', rounded(lv.container, Math.min(7 * px, 0.14)));
+    bin.firstElementChild.setAttribute('d', rounded(grown(C, 3.4 * px), Math.min(9 * px, 0.16)));
     pieces.forEach(function (p) { if (p.fill) p.fill.setAttribute('d', drawn(p.type)); });
     $('knob').setAttribute('r', 11 * px);
     $('knob-hit').setAttribute('r', 22 * px);
@@ -178,6 +188,9 @@
       e.setAttribute('cx', x); e.setAttribute('cy', -0.06); e.setAttribute('r', 0.048);
       eyes.appendChild(e);
     });
+    var shut = el('path', 'shut');
+    shut.setAttribute('d', 'M-0.18 -0.06H-0.08M0.08 -0.06H0.18');
+    eyes.appendChild(shut);
     face.appendChild(eyes);
     var idle = el('path', 'mouth m-idle'), good = el('path', 'mouth m-good'), bad = el('circle', 'mouth m-bad');
     idle.setAttribute('d', 'M-0.07 0.1 Q0 0.15 0.07 0.1');
@@ -231,7 +244,6 @@
       p.el.classList.toggle('bad', s.zone === 'edge' || s.hit);
       if (s.good && !p.good) {
         fitted = true;
-        p.el.classList.remove('boing'); void p.el.getBoundingClientRect(); p.el.classList.add('boing');
       }
       p.good = s.good;
     });
@@ -280,6 +292,16 @@
   }
   function spinTo(i, deg) { spin(i, ((deg - pieces[i].angle) % 360 + 540) % 360 - 180); }
 
+  // The knob has a sticky notch every 15 degrees: each multiple of 15 owns 4
+  // degrees of knob travel, and the 14 angles in between share the rest, so
+  // every whole degree is still reachable.
+  function notched(deg) {
+    var base = Math.floor(deg / 15) * 15, f = deg - base;
+    if (f < 2) return base;
+    if (f > 13) return base + 15;
+    return base + 1 + Math.min(13, Math.floor((f - 2) / 11 * 14));
+  }
+
   function world(e) {
     var r = board.getBoundingClientRect();
     return { x: view.x + (e.clientX - r.left) / view.scale, y: view.y + (e.clientY - r.top) / view.scale };
@@ -323,7 +345,7 @@
     var w = world(e), p;
     if (drag.mode === 'spin') {
       p = pieces[sel];
-      spinTo(sel, Math.round(Math.atan2(w.y - p.y, w.x - p.x) * 180 / Math.PI + 90));
+      spinTo(sel, notched(Math.atan2(w.y - p.y, w.x - p.x) * 180 / Math.PI + 90));
       judge();
       return;
     }
@@ -487,10 +509,6 @@
 
     select(-1);
     bin.setAttribute('class', 'win');
-    pieces.forEach(function (p, n) {
-      p.el.style.setProperty('--d', (n * 55) + 'ms');
-      p.el.classList.remove('boing'); p.el.classList.add('party');
-    });
     sfx.win();
     var last = level === LEVELS.length - 1;
     confetti(last ? 320 : 150);

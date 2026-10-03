@@ -17,7 +17,8 @@ var PackerLevels = (function () {
     }
     return out;
   }
-  // A whisker of breathing room on the exact-fit shapes, so they forgive a shaky hand.
+  // A whisker of breathing room on the exact-fit shapes: less than a pixel, so
+  // pieces packed edge to edge still look evenly spaced.
   function loosen(poly, k) {
     return poly.map(function (p) { return [p[0] * k, p[1] * k]; });
   }
@@ -35,21 +36,21 @@ var PackerLevels = (function () {
       name: 'Four Square',
       intro: 'Drag every shape into the box.',
       hint: 'No tricks here. Two on top, two below.',
-      container: box(2.02),
+      container: box(2.004),
       pieces: pieces(4, 0)
     },
     {
       name: 'Flip',
       intro: 'Shapes can spin. Pick one up, then drag its knob.',
       hint: 'Three triangles sit in the corners. The fourth goes upside-down in the middle.',
-      container: loosen([[0, -4 * H / 3], [1, 2 * H / 3], [-1, 2 * H / 3]], 1.01),
+      container: loosen([[0, -4 * H / 3], [1, 2 * H / 3], [-1, 2 * H / 3]], 1.002),
       pieces: pieces(0, 4)
     },
     {
       name: 'Honeycomb',
       intro: 'Six slices, one hexagon.',
       hint: 'Point every triangle at the centre, like a pizza. They sit 60° apart.',
-      container: loosen(ngon(6, 1, 0), 1.01),
+      container: loosen(ngon(6, 1, 0), 1.002),
       pieces: pieces(0, 6),
       scramble: true
     },
@@ -57,7 +58,7 @@ var PackerLevels = (function () {
       name: 'Home',
       intro: 'Squares and triangles, together at last.',
       hint: 'Squares build the walls, triangles build the roof.',
-      container: loosen([[-1, roofY + 2], [1, roofY + 2], [1, roofY], [0, roofY - 2 * H], [-1, roofY]], 1.01),
+      container: loosen([[-1, roofY + 2], [1, roofY + 2], [1, roofY], [0, roofY - 2 * H], [-1, roofY]], 1.004),
       pieces: pieces(4, 4),
       scramble: true
     },
@@ -80,7 +81,7 @@ var PackerLevels = (function () {
       name: 'Dozen',
       intro: 'Twelve sides, eighteen shapes, no gaps.',
       hint: 'Six triangles make a hexagon in the middle. Put a square on each of its sides, then a triangle in every gap. Everything sits on a multiple of 30°.',
-      container: loosen(ngon(12, 1 / (2 * Math.sin(Math.PI / 12)), 15), 1.01),
+      container: loosen(ngon(12, 1 / (2 * Math.sin(Math.PI / 12)), 15), 1.004),
       pieces: pieces(6, 12),
       scramble: true
     },

@@ -133,32 +133,24 @@ button{font:inherit; color:inherit; cursor:pointer}
 #board{position:absolute; inset:0; width:100%; height:100%; touch-action:none; overflow:visible; display:block}
 #board{--u:.02}
 .bin-fill{fill:var(--bin); stroke:var(--ink); stroke-width:calc(4px * var(--u)); stroke-linejoin:round; transition:fill .35s}
-#bin{animation:land .6s var(--pop) both}
+/* nothing inside the board animates with CSS transforms: Safari can leave smears behind */
+#bin{animation:fadein .5s both}
 #bin.win .bin-fill{fill:var(--win)}
-#bin.win{animation:cheer .7s var(--pop)}
-@keyframes land{from{transform:translateY(.4px); opacity:0}}
-@keyframes cheer{30%{transform:translateY(-.12px)} 60%{transform:translateY(.03px)}}
+@keyframes fadein{from{opacity:0}}
 
 .piece{cursor:grab}
 #pieces.dragging .piece:not(.held){transition:transform .12s ease-out}
-.pop{transition:transform .14s var(--pop)}
-.piece.fresh .pop{animation:popin .5s var(--pop) both; animation-delay:var(--d)}
-@keyframes popin{from{transform:translateY(-.5px); opacity:0}}
+.piece.fresh .pop{animation:fadein .4s both; animation-delay:var(--d)}
 .piece.held{cursor:grabbing}
 .body{transition:transform .1s ease-out}
 .fill{fill:var(--c); stroke:var(--ink); stroke-width:calc(2.5px * var(--u)); stroke-linejoin:round}
 .piece.sel .fill{stroke-width:calc(4px * var(--u))}
 .piece.bad .fill{stroke:var(--bad); stroke-width:calc(3.5px * var(--u)); stroke-dasharray:calc(7px * var(--u)) calc(5px * var(--u))}
-.piece.boing .pop{animation:boing .38s var(--pop)}
-@keyframes boing{40%{transform:translateY(-.08px)}}
-.piece.party .pop{animation:party .7s var(--pop) both; animation-delay:var(--d)}
-@keyframes party{30%{transform:translateY(-.22px)} 60%{transform:translateY(.03px)}}
 
 .face{pointer-events:none}
 .eye{fill:var(--face)}
-.eyes{transform-origin:0 -.06px}
-.piece.blink .eyes{animation:blink .2s}
-@keyframes blink{50%{transform:scaleY(.1)}}
+.shut{display:none; fill:none; stroke:var(--face); stroke-width:calc(2.6px * var(--u)); stroke-linecap:round}
+.piece.blink .eye{display:none} .piece.blink .shut{display:inline}
 .mouth{fill:none; stroke:var(--face); stroke-width:calc(2px * var(--u)); stroke-linecap:round}
 .m-good,.m-bad{display:none}
 .piece.good .m-good{display:inline} .piece.good .m-idle{display:none}
@@ -347,7 +339,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <li><span>4</span><div>Dashed red means it overlaps or pokes out. A big smile means it fits.</div></li>
     </ul>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.4</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.5</span></div>
   </div>
 </div>
 
@@ -384,8 +376,8 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.4"></script>
-<script src="levels.js?v=1.4"></script>
-<script src="game.js?v=1.4"></script>
+<script src="geom.js?v=1.5"></script>
+<script src="levels.js?v=1.5"></script>
+<script src="game.js?v=1.5"></script>
 </body>
 </html>
