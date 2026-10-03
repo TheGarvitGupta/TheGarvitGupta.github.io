@@ -56,16 +56,27 @@
   var board = $('board'), stage = $('stage'), layer = $('pieces'), bin = $('bin'), handle = $('handle'),
       bubble = $('bubble'), dock = $('dock'), ang = $('ang');
 
-  var save = { done: {}, last: 0, mute: false, seen: false };
+  var save = { v: 2, done: {}, last: 0, mute: false, seen: false };
   // progress saved back when the game was called Packer carries over
   try { var raw = JSON.parse(localStorage.getItem(STORE) || localStorage.getItem('packer.v1')); if (raw && raw.done) save = raw; } catch (e) {}
+  // v2 put three new levels in after level 7; older progress moves along to match
+  if (!save.v) {
+    var kept = {};
+    Object.keys(save.done).forEach(function (k) { kept[+k > 6 ? +k + 3 : k] = save.done[k]; });
+    save.done = kept;
+    if (save.last > 6) save.last += 3;
+    if (save.board && save.board.l > 6) save.board.l += 3;
+    save.v = 2;
+  }
   function persist() { try { localStorage.setItem(STORE, JSON.stringify(save)); } catch (e) {} }
 
   var level = 0, lv, C, cb;            // current level, its container, the container's bounds
   var pieces = [], sel = -1, drag = null, won = false;
   var view = { x: 0, y: 0, w: 10, h: 10, scale: 50, land: true };
   var moves = 0, t0 = 0, elapsed = 0, carried = 0, ticker = 0;
-  var shakeTo = null, shakeTimer = 0, shaking = false;
+  var shakeTimer = 0, shaking = false;
+  var undos = [], before = [], quietAt = 0;   // boards to go back to, the board as last committed, and when it was last nudged
+  var syms = [], ghost = null;         // the ways the box maps onto itself, and the spot a hint is pointing at
   var STUCK = 180, stuck = false;      // seconds on one level before the hint lights up and offers the solution
 
   /* ---------- sound ---------- */
@@ -154,6 +165,7 @@
     board.style.setProperty('--u', px);   // one screen pixel, in board units, for stroke widths
     bin.firstElementChild.setAttribute('d', rounded(grown(C, 3.4 * px), Math.min(9 * px, 0.16)));
     pieces.forEach(function (p) { if (p.fill) p.fill.setAttribute('d', drawn(p.type)); });
+    if (ghost) $('ghost').setAttribute('d', drawn(ghost.type));
     $('knob').setAttribute('r', 11 * px);
     $('knob-hit').setAttribute('r', 22 * px);
     $('knob-dot').setAttribute('r', 4 * px);
@@ -216,6 +228,9 @@
     var shut = el('path', 'shut');
     shut.setAttribute('d', 'M-0.18 -0.06H-0.08M0.08 -0.06H0.18');
     eyes.appendChild(shut);
+    var wince = el('path', 'wince');   // screwed-up eyes, for when it is squashed
+    wince.setAttribute('d', 'M-0.18 -0.11L-0.09 -0.06L-0.18 -0.01M0.18 -0.11L0.09 -0.06L0.18 -0.01');
+    eyes.appendChild(wince);
     face.appendChild(eyes);
     var idle = el('path', 'mouth m-idle'), good = el('path', 'mouth m-good'), bad = el('circle', 'mouth m-bad');
     idle.setAttribute('d', 'M-0.07 0.1 Q0 0.15 0.07 0.1');
@@ -224,7 +239,7 @@
     face.appendChild(idle); face.appendChild(good); face.appendChild(bad);
     body.appendChild(fill); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
-    p.el = g; p.pop = pop; p.body = body; p.fill = fill; p.tf = p.rot = '';
+    p.el = g; p.pop = pop; p.body = body; p.fill = fill; p.eyes = eyes; p.tf = p.rot = p.look = '';
     layer.appendChild(g);
     setTimeout(function () { g.classList.remove('fresh'); }, 620 + i * 28);
   }
@@ -280,17 +295,51 @@
 
   // After a move is finished: count it, make the right noise, maybe win.
   function commit(quiet) {
+    seatGhost();
+    remember(quiet);
     var ev = judge();
     moves++;
     if (ev.solved) { win(); return; }
     lookForShake();
+    saveBoard();
+    if (quiet) return;
+    if (ev.fitted) sfx.fit(); else if (sel >= 0 && pieces[sel].el.classList.contains('bad')) sfx.bad(); else sfx.drop();
+  }
+
+  function saveBoard() {
     save.board = {
       l: level, m: moves, t: t0 ? Math.round((performance.now() - t0) / 1000) : carried,
       p: pieces.map(function (p) { return [+p.x.toFixed(4), +p.y.toFixed(4), p.angle]; })
     };
     persist();
-    if (quiet) return;
-    if (ev.fitted) sfx.fit(); else if (sel >= 0 && pieces[sel].el.classList.contains('bad')) sfx.bad(); else sfx.drop();
+  }
+
+  /* ---------- undo ---------- */
+
+  function snapshot() { return pieces.map(function (p) { return [p.x, p.y, p.angle]; }); }
+  function showUndo() {
+    var none = !undos.length || won;
+    $('b-undo').classList.toggle('dim', none);
+    $('b-undo').setAttribute('aria-disabled', none ? 'true' : 'false');
+  }
+  // Each finished move leaves the board before it on the pile. A run of small
+  // turns (the wheel, the keys, a held button) counts as one move.
+  function remember(quiet) {
+    var now = snapshot(), t = performance.now();
+    if (now.join() === before.join()) return;
+    if (!(quiet && t - quietAt < 700)) { undos.push(before); if (undos.length > 60) undos.shift(); }
+    quietAt = quiet ? t : 0;
+    before = now;
+    showUndo();
+  }
+  function undo() {
+    if (!undos.length || won || shaking || drag) return;
+    var to = undos.pop();
+    clearTimeout(shakeTimer);   // or a board that was shaken into place would shake straight back
+    pieces.forEach(function (p, i) { p.x = to[i][0]; p.y = to[i][1]; p.angle = to[i][2]; render(i); });
+    before = to; quietAt = 0;
+    judge(); showAngle(); placeHandle(); showUndo(); saveBoard();
+    wake(); sfx.pick();
   }
 
   function startClock() {
@@ -321,7 +370,7 @@
     var p = pieces[i];
     startClock();
     p.angle += by;
-    offerShake(null);
+    clearTimeout(shakeTimer);
     G.settle(pieces, i, C);
     render(i); placeHandle(); showAngle(); tick();
     if (norm(p.angle) % 15 === 0) haptic();
@@ -421,7 +470,7 @@
       return;
     }
     if (!drag.moved && Math.abs(e.clientX - drag.sx) + Math.abs(e.clientY - drag.sy) < 4) return;
-    if (!drag.moved) offerShake(null);   // the board is changing now
+    if (!drag.moved) clearTimeout(shakeTimer);   // the board is changing now
     drag.moved = true; startClock();
     p = pieces[drag.i];
     // Only the dragged piece moves, and what you see while dragging is exactly
@@ -437,6 +486,7 @@
 
   function release(e) {
     delete fingers[e.pointerId];
+    if (e.pointerType === 'touch') watch(null);
     if (blank === e.pointerId) { blank = null; select(-1); return; }
     if (!drag || (e.pointerId !== drag.id && e.pointerId !== drag.id2)) return;
     if (frame) { cancelAnimationFrame(frame); if (drag.mode === 'twist') { frame = 0; pending = null; } else moveTo(); }
@@ -454,6 +504,33 @@
   }
   board.addEventListener('pointerup', release);
   board.addEventListener('pointercancel', release);
+
+  // Every face watches the pointer, and so whatever it is carrying.
+  var gazeAt = null, gazeFrame = 0;
+  function gaze() {
+    gazeFrame = 0;
+    var w = gazeAt && world(gazeAt);
+    pieces.forEach(function (p) {
+      var tf = '';
+      if (w) {
+        var dx = w.x - p.x, dy = w.y - p.y, d = Math.hypot(dx, dy);
+        if (d > 0.3) {
+          var r = -p.angle * Math.PI / 180, k = Math.min(0.04, d * 0.03) / d;
+          tf = 'translate(' + ((dx * Math.cos(r) - dy * Math.sin(r)) * k).toFixed(3) + ' ' + ((dx * Math.sin(r) + dy * Math.cos(r)) * k).toFixed(3) + ')';
+        }
+      }
+      if (tf === p.look || !p.eyes) return;
+      p.look = tf;
+      if (tf) p.eyes.setAttribute('transform', tf); else p.eyes.removeAttribute('transform');
+    });
+  }
+  function watch(e) {
+    if (calm) return;
+    gazeAt = e && !won ? { clientX: e.clientX, clientY: e.clientY } : null;
+    if (!gazeFrame) gazeFrame = requestAnimationFrame(gaze);
+  }
+  board.addEventListener('pointermove', watch);
+  board.addEventListener('pointerleave', function () { watch(null); });
 
   var wheelAcc = 0;
   board.addEventListener('wheel', function (e) {
@@ -498,8 +575,9 @@
   ang.addEventListener('focus', function () { ang.select(); });
 
   document.addEventListener('keydown', function (e) {
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
     var open = document.querySelector('.sheet.open');
+    if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'z' && !open) { e.preventDefault(); undo(); return; }
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === 'Escape') { if (open) closeSheet(open); else select(-1); return; }
     if (open || won || shaking) return;
     var k = e.key.toLowerCase(), big = e.shiftKey;
@@ -508,6 +586,7 @@
       select((sel + (big ? pieces.length - 1 : 1) + (sel < 0 && big ? 1 : 0)) % pieces.length);
       return;
     }
+    if (k === 'z' || k === 'u') { undo(); return; }
     if (sel < 0) return;
     var p = pieces[sel], step = big ? 0.1 : 0.01, dx = 0, dy = 0;
     if (k === 'q' || k === '[' || k === '{') { spin(sel, big ? -15 : -1); commit(true); }
@@ -535,6 +614,7 @@
     won = false; drag = null; sel = -1; moves = 0; t0 = 0; elapsed = 0; carried = 0;
     clearInterval(ticker);
     stuck = false; $('b-hint').classList.remove('nag');
+    syms = symmetries(lv.container); showGhost(null);
     save.last = i; persist();
 
     $('lv-num').textContent = i + 1;
@@ -565,40 +645,29 @@
       $('clock').textContent = clock(carried);
     } else scatter();
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
+    undos = []; before = snapshot(); quietAt = 0; showUndo();
     judge(); showAngle(); placeHandle(); nag();
-    offerShake(null); lookForShake();
+    lookForShake();
   }
 
   /* ---------- shake ---------- */
 
   // After each move, quietly check whether a shake would finish the board
-  // (every piece within a hair and a degree of a solved spot). The button only
-  // shows up when it would.
-  function offerShake(to) {
-    shakeTo = to;
-    $('shake').classList.toggle('ready', !!to);
-    $('shake').setAttribute('aria-disabled', to ? 'false' : 'true');
-  }
-  var noteTimer = 0;
-  function shakeNote() {
-    var n = $('shake-note');
-    n.classList.add('show');
-    clearTimeout(noteTimer);
-    noteTimer = setTimeout(function () { n.classList.remove('show'); }, 2400);
-  }
+  // (every piece within a hair and a degree of a solved spot). If it would,
+  // the box shakes itself.
   function lookForShake() {
     clearTimeout(shakeTimer);
     shakeTimer = setTimeout(function () {
       if (won || drag || shaking) return;
-      offerShake(G.evaluate(pieces, C).solved ? null : G.shake(pieces, C, 150));
-    }, 120);
+      var to = G.evaluate(pieces, C).solved ? null : G.shake(pieces, C, 150);
+      if (to) shake(to);
+    }, 220);
   }
 
-  function shake() {
-    if (!shakeTo || shaking || won) return;
-    $('shake-note').classList.remove('show');
-    var to = shakeTo, from = pieces.map(function (p) { return { x: p.x, y: p.y, a: p.angle }; }), t0s = performance.now();
-    shaking = true; offerShake(null); select(-1);
+  function shake(to) {
+    if (shaking || won) return;
+    var from = pieces.map(function (p) { return { x: p.x, y: p.y, a: p.angle }; }), t0s = performance.now();
+    shaking = true; select(-1);
     wake(); sfx.rattle();
     if (navigator.vibrate && touchy) { try { navigator.vibrate([18, 50, 18, 50, 18, 50, 18]); } catch (e) {} } else haptic();
     (function frame(t) {
@@ -621,12 +690,75 @@
       commit();
     })(t0s);
   }
-  $('shake').addEventListener('click', function () { if (shakeTo) shake(); else if (!won && !shaking) shakeNote(); });
+  /* ---------- one-spot hint ---------- */
+
+  // Every turn and flip that lands the box back on itself. The stored solution
+  // is as good in any of them, so the hint can follow whichever one the player
+  // has started building.
+  function symmetries(poly) {
+    var out = [];
+    [1, -1].forEach(function (m) {
+      for (var r = 0; r < 360; r += 30) {
+        var c = Math.cos(r * Math.PI / 180), s = Math.sin(r * Math.PI / 180);
+        var fits = poly.every(function (p) {
+          var x = m * p[0] * c - p[1] * s, y = m * p[0] * s + p[1] * c;
+          return poly.some(function (q) { return Math.abs(q[0] - x) + Math.abs(q[1] - y) < 1e-6; });
+        });
+        if (fits) out.push({ m: m, r: r, c: c, s: s });
+      }
+    });
+    return out;
+  }
+  // How far angle a is from b, given that a square looks the same every 90
+  // degrees and a triangle every 120.
+  function off(a, b, type) { var t = type === 'square' ? 90 : 120; return ((a - b) % t + t * 1.5) % t - t / 2; }
+  function near(p, s, reach, turn) {
+    return p.type === s.type && Math.hypot(p.x - s.x, p.y - s.y) <= reach && Math.abs(off(s.angle, p.angle, p.type)) <= turn;
+  }
+
+  // An empty spot from the solution, for one piece that is not packed yet.
+  function pickSpot() {
+    var best = null;
+    syms.forEach(function (t) {
+      var slots = lv.solution.map(function (s, i) {
+        return { type: lv.pieces[i], x: t.m * s[0] * t.c - s[1] * t.s, y: t.m * s[0] * t.s + s[1] * t.c, angle: norm(t.m * s[2] + t.r) };
+      });
+      var open = slots.filter(function (s) { return !pieces.some(function (p) { return p.good && near(p, s, 0.15, 3); }); });
+      if (!best || open.length < best.length) best = open;
+    });
+    var packed = pieces.filter(function (p) { return p.good; }).map(G.verts);
+    var clear = best.filter(function (s) {
+      var V = G.verts(s);
+      return !packed.some(function (B) { var o = G.overlap(V, B); return o && o.depth > G.EPS; });
+    });
+    return clear[0] || best[0] || null;
+  }
+  function showGhost(s) {
+    var e = $('ghost');
+    ghost = s;
+    e.toggleAttribute('hidden', !s);
+    if (!s) return;
+    e.setAttribute('d', drawn(s.type));
+    e.setAttribute('transform', 'translate(' + s.x.toFixed(4) + ' ' + s.y.toFixed(4) + ') rotate(' + s.angle + ')');
+  }
+  // A piece let go on the ghost drops exactly into it.
+  function seatGhost() {
+    if (!ghost) return;
+    for (var i = 0; i < pieces.length; i++) {
+      var p = pieces[i];
+      if (!near(p, ghost, 0.22, 6)) continue;
+      var x = p.x, y = p.y, a = p.angle;
+      p.x = ghost.x; p.y = ghost.y; p.angle += off(ghost.angle, p.angle, p.type);
+      if (G.evaluate(pieces, C).states[i].good) { render(i); showGhost(null); showAngle(); placeHandle(); sfx.snap(); haptic(); return; }
+      p.x = x; p.y = y; p.angle = a;
+    }
+  }
 
   function win() {
     won = true;
-    offerShake(null);
+    clearTimeout(shakeTimer);
     $('b-hint').classList.remove('nag');
+    showGhost(null); showUndo(); watch(null);
     clearInterval(ticker);
     elapsed = t0 ? (performance.now() - t0) / 1000 : 0;
     $('clock').textContent = clock(elapsed);
@@ -638,13 +770,14 @@
     select(-1);
     bin.setAttribute('class', 'win');
     sfx.win();
+    cheer();
     var last = level === LEVELS.length - 1;
     confetti(last ? 320 : 150);
 
     var all = LEVELS.every(function (_, n) { return save.done[n]; });
     $('win-title').textContent = last ? 'Seventeen!' : PRAISE[Math.floor(Math.random() * PRAISE.length)];
     $('win-sub').textContent = last
-      ? (all ? 'That was the hard one, and you have now packed all ten. Take a bow.' : 'That was the hard one. Take a bow.')
+      ? (all ? 'That was the hard one, and you have now packed every box. Take a bow.' : 'That was the hard one. Take a bow.')
       : 'Level ' + (level + 1) + ', ' + lv.name + ', is all packed up.';
     $('win-time').textContent = clock(elapsed);
     $('win-moves').textContent = moves;
@@ -653,6 +786,23 @@
     $('win-fact').textContent = lv.fact || '';
     $('win-next').hidden = last;
     setTimeout(function () { if (won) openSheet($('m-win')); }, calm ? 200 : 1250);
+  }
+
+  // The crowd goes wild: a wave runs across the box, left to right.
+  function cheer() {
+    if (calm) return;
+    var crowd = pieces, start = performance.now(), wide = cb.maxX - cb.minX;
+    (function frame(t) {
+      if (crowd !== pieces) return;
+      var live = false;
+      crowd.forEach(function (p) {
+        var k = (t - start) / 1000 - 0.1 - (p.x - cb.minX) / wide * 0.5, hop = 0;
+        if (k < 1) live = true;
+        if (k > 0 && k < 1) hop = Math.abs(Math.sin(k * 2 * Math.PI)) * 0.14 * (1 - k * 0.6);
+        p.pop.style.transform = hop ? 'translate(0px,' + (-hop).toFixed(4) + 'px)' : '';
+      });
+      if (live) requestAnimationFrame(frame);
+    })(start);
   }
 
   /* ---------- sheets ---------- */
@@ -671,6 +821,7 @@
     $('b-hint').classList.remove('nag');
     $('hint-sol').setAttribute('hidden', '');
     $('hint-show').hidden = !stuck || won;
+    $('hint-spot').hidden = won;
     openSheet($('m-hint'));
   }
 
@@ -693,6 +844,8 @@
       g.style.transform = 'translate(' + to[0] + 'px,' + to[1] + 'px)';
       g.querySelector('.body').style.transform = 'rotate(' + to[2] + 'deg)';
       g.querySelector('.fill').setAttribute('d', drawn(pieces[i].type, px));
+      g.querySelector('.eyes').removeAttribute('transform');
+      g.querySelector('.pop').style.transform = '';
       s.appendChild(g);
     });
   }
@@ -715,13 +868,15 @@
       b.addEventListener('click', function () { closeSheet($('m-levels')); startLevel(n); });
       grid.appendChild(b);
     });
-    $('levels-sub').textContent = count ? count + ' of ' + LEVELS.length + ' packed. They get harder as you go.' : 'Ten boxes. They get harder as you go.';
+    $('levels-sub').textContent = count ? count + ' of ' + LEVELS.length + ' packed. They get harder as you go.' : LEVELS.length + ' boxes. They get harder as you go.';
     openSheet($('m-levels'));
   }
 
   $('chip').addEventListener('click', showLevels);
   $('b-hint').addEventListener('click', showHint);
   $('hint-show').addEventListener('click', showSolution);
+  $('hint-spot').addEventListener('click', function () { closeSheet($('m-hint')); showGhost(pickSpot()); });
+  $('b-undo').addEventListener('click', undo);
   $('b-help').addEventListener('click', function () { openSheet($('m-help')); });
   var armed = 0;
   function disarm() { clearTimeout(armed); armed = 0; $('b-reset').classList.remove('sure'); }
@@ -738,6 +893,17 @@
   $('win-next').addEventListener('click', function () { closeSheet($('m-win')); startLevel(Math.min(level + 1, LEVELS.length - 1)); });
   $('win-again').addEventListener('click', function () { closeSheet($('m-win')); startLevel(level, true); });
   $('win-levels').addEventListener('click', function () { closeSheet($('m-win')); showLevels(); });
+  // Share sheet on a phone; elsewhere the brag and the link go on the clipboard.
+  $('win-share').addEventListener('click', function () {
+    var b = this, url = location.href.split(/[?#]/)[0] + '?level=' + (level + 1);
+    var text = 'I packed ' + lv.name + ', level ' + (level + 1) + ' of Packman, in ' + clock(elapsed) + '. Can you beat that?';
+    if (navigator.share) { navigator.share({ title: 'Packman', text: text, url: url }).catch(function () {}); return; }
+    navigator.clipboard.writeText(text + ' ' + url).then(function () {
+      b.textContent = 'Copied!';
+      setTimeout(function () { b.textContent = 'Share'; }, 1600);
+    }).catch(function () {});
+  });
+  if (!navigator.share && !(navigator.clipboard && navigator.clipboard.writeText)) $('win-share').hidden = true;
 
   /* ---------- confetti ---------- */
 
@@ -812,6 +978,7 @@
   else window.addEventListener('resize', layout);
 
   $('b-sound').classList.toggle('off', !!save.mute);
+  $('lv-of').textContent = LEVELS.length;
   var asked = /[?&#]level=(\d+)/.exec(location.search + location.hash);
   var first = asked ? +asked[1] - 1 : save.last || 0;
   startLevel(clamp(first, 0, LEVELS.length - 1));

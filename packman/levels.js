@@ -94,6 +94,32 @@ var PackmanLevels = (function () {
       solution: [[1.183, 0.683, 30], [0, 1.366, 0], [-1.183, 0.683, 60], [-1.183, -0.683, 30], [0, -1.366, 0], [1.183, -0.683, 60], [0.5, 0.2887, 300], [0, 0.5774, 0], [-0.5, 0.2887, 60], [-0.5, -0.2887, 120], [0, -0.5774, 180], [0.5, -0.2887, 240], [1.5774, 0, 270], [0.7887, 1.366, 330], [-0.7887, 1.366, 30], [-1.5774, 0, 90], [-0.7887, -1.366, 150], [0.7887, -1.366, 210]]
     },
     {
+      name: 'Lantern',
+      intro: 'A honeycomb, stretched. Only eight shapes this time.',
+      hint: 'Two squares side by side across the middle. Three triangles above them and three below: point, flip, point.',
+      container: loosen([[-1, -0.5], [-0.5, -0.5 - H], [0.5, -0.5 - H], [1, -0.5], [1, 0.5], [0.5, 0.5 + H], [-0.5, 0.5 + H], [-1, 0.5]], 1.004),
+      pieces: pieces(2, 6),
+      scramble: true,
+      solution: [[-0.5, 0, 0], [0.5, 0, 0], [-0.5, -0.7887, 0], [0.5, -0.7887, 0], [0, -1.0774, 180], [-0.5, 0.7887, 180], [0.5, 0.7887, 180], [0, 1.0774, 0]]
+    },
+    {
+      name: 'Squeeze',
+      intro: 'Three shapes. Side by side they would need a bigger box.',
+      hint: 'Nothing leans. The square sits against the middle of one wall. One triangle rests flat on the floor, the other hangs flat from the ceiling, and their points meet beside the square.',
+      container: box(1.783),
+      pieces: pieces(1, 2),
+      solution: [[0.388, 0, 0], [-0.388, 0.599, 0], [-0.388, -0.599, 180]]
+    },
+    {
+      name: 'Diamond',
+      intro: 'Two triangles, and a box that looks too small for them.',
+      hint: 'Join them edge to edge to make a diamond. Then lay the diamond corner to corner across the box: one triangle at 15°, the other at 75°.',
+      fact: 'The diamond is \u221A3 long, so it only fits along the diagonal. The smallest box is \u221A6/2 \u2248 1.225 across; this one is 1.232.',
+      container: box(1.232),
+      pieces: pieces(0, 2),
+      solution: [[0.204, 0.204, 15], [-0.204, -0.204, 75]]
+    },
+    {
       name: 'Ten Tight',
       intro: 'Ten squares. A 4×4 box would be easy, so this one is smaller.',
       hint: 'Three squares in one corner, three in the opposite corner, one in each of the other two. The last two turn 45° and run down the diagonal.',

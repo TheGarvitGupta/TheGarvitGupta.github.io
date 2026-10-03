@@ -7,13 +7,13 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#FFF4DE" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1F1A30" media="(prefers-color-scheme: dark)">
-<meta name="description" content="A packing puzzle. Fit every square and triangle inside the box. Ten levels, ending with the famously ugly 17 squares.">
+<meta name="description" content="A packing puzzle. Fit every square and triangle inside the box. Thirteen levels, ending with the famously ugly 17 squares.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='4' width='24' height='24' rx='5' fill='%23FF6B6B' stroke='%232B2140' stroke-width='2.5'/%3E%3Ccircle cx='12' cy='14' r='2' fill='%232B2140'/%3E%3Ccircle cx='20' cy='14' r='2' fill='%232B2140'/%3E%3Cpath d='M11 19q5 5 10 0' fill='none' stroke='%232B2140' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
 
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://www.garvitgupta.com/packman/">
 <meta property="og:title" content="Packman">
-<meta property="og:description" content="A packing puzzle. Fit every square and triangle inside the box. Ten levels, ending with the famously ugly 17 squares.">
+<meta property="og:description" content="A packing puzzle. Fit every square and triangle inside the box. Thirteen levels, ending with the famously ugly 17 squares.">
 <meta property="og:image" content="https://www.garvitgupta.com/packman/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -100,6 +100,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 .ib.sure::after{content:"Again to start over"; position:absolute; top:calc(100% + 10px); right:-6px; padding:5px 11px 6px; white-space:nowrap;
   font-weight:600; font-size:14px; color:#FFF4DE; background:#2B2140; border-radius:10px; z-index:5; animation:hop .3s var(--pop) both}
 @keyframes wiggle{25%{transform:translateX(-4px)} 60%{transform:translateX(3px)}}
+.ib.dim{color:var(--mut); opacity:.5}
 .ib.nag{background:var(--sun); color:#2B2140; box-shadow:0 0 0 4px rgba(255,201,60,.4); animation:nudge 1.6s ease-in-out infinite}
 .ib.off .on-only{display:none}
 .ib:not(.off) .off-only{display:none}
@@ -151,13 +152,17 @@ button{font:inherit; color:inherit; cursor:pointer}
 
 .face{pointer-events:none}
 .eye{fill:var(--face)}
-.shut{display:none; fill:none; stroke:var(--face); stroke-width:calc(2.6px * var(--u)); stroke-linecap:round}
-.piece.blink .eye{display:none} .piece.blink .shut{display:inline}
+.shut,.wince{display:none; fill:none; stroke:var(--face); stroke-width:calc(2.6px * var(--u)); stroke-linecap:round; stroke-linejoin:round}
+.piece.blink .eye,.piece.bad .eye{display:none} .piece.blink .shut,.piece.bad .wince{display:inline}
+.piece.bad.blink .shut{display:none}
 .mouth{fill:none; stroke:var(--face); stroke-width:calc(2px * var(--u)); stroke-linecap:round}
 .m-good,.m-bad{display:none}
 .piece.good .m-good{display:inline} .piece.good .m-idle{display:none}
 .piece.bad .m-bad{display:inline; fill:var(--face)} .piece.bad .m-idle{display:none}
 
+.ghost{pointer-events:none; fill:var(--sun); fill-opacity:.3; stroke:var(--text); stroke-width:calc(2.5px * var(--u)); stroke-linejoin:round;
+  stroke-dasharray:calc(6px * var(--u)) calc(5px * var(--u)); animation:beckon 1.2s ease-in-out infinite alternate}
+@keyframes beckon{from{opacity:.45}}
 #handle{pointer-events:none}
 #handle line{stroke:var(--text); stroke-width:calc(2.5px * var(--u)); stroke-dasharray:calc(1px * var(--u)) calc(5px * var(--u)); stroke-linecap:round}
 #knob{pointer-events:auto; cursor:grab; fill:var(--card); stroke:var(--ink); stroke-width:calc(2.5px * var(--u))}
@@ -170,17 +175,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 /* rotate dock */
 .dock{flex:none; display:flex; align-items:center; gap:10px; height:56px; position:relative}
 .spin{flex:1; display:flex; align-items:center; justify-content:center; gap:8px; position:relative; align-self:stretch}
-.shake{flex:none; display:flex; align-items:center; gap:7px; height:46px; padding:0 16px; font-weight:700; font-size:17px;
-  color:var(--mut); background:var(--card); border:var(--bw) solid var(--ink); border-radius:15px; opacity:.45;
-  transition:opacity .2s, background .2s, color .2s, transform .12s var(--pop)}
-.shake svg{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round}
-.shake.ready{opacity:1; color:#2B2140; background:var(--sun); animation:nudge 1.6s ease-in-out infinite}
-.shake.ready:active{transform:translateY(1px)}
-.shake.ready span::after{content:"!"}
 @keyframes nudge{0%,70%,100%{transform:none} 76%{transform:translateX(-4px)} 82%{transform:translateX(4px)} 88%{transform:translateX(-2px)}}
-.note{position:absolute; right:0; bottom:calc(100% + 8px); max-width:min(300px, 86vw); padding:7px 12px 8px; font-size:14px; font-weight:600; line-height:1.3;
-  color:#FFF4DE; background:#2B2140; border-radius:12px; opacity:0; transform:translateY(6px); pointer-events:none; transition:opacity .2s, transform .2s; z-index:4}
-.note.show{opacity:1; transform:none}
 .dock .rb{height:46px; min-width:52px; padding:0 10px; font-weight:600; font-size:16px; background:var(--card);
   border:var(--bw) solid var(--ink); border-radius:15px; transition:transform .2s var(--pop), opacity .2s}
 .dock .rb:active{transform:translateY(1px)}
@@ -260,14 +255,11 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   #pips{max-width:86px} #pips i{width:10px; height:10px; border-radius:3px} #pips i.t{width:12px}
   #pips i.t::after{inset:3.5px 3px 2px}
   .dock{gap:6px} .spin{gap:5px} .dock .rb{min-width:44px; padding:0 5px; font-size:14.5px} .angle{padding:0 9px 0 4px} .angle input{width:44px}
-  .shake{padding:0 11px} .shake span{display:none} .dock .tip{font-size:14px}
-  /* ready: a big labelled button; every piece is within a degree, so ±15 can step aside */
-  .shake.ready{height:50px; padding:0 16px; gap:6px; font-size:18px; border-radius:16px; box-shadow:0 0 0 4px rgba(255,201,60,.4)}
-  .shake.ready span{display:inline} .shake.ready svg{width:22px; height:22px}
-  .dock:has(.shake.ready) .rb:not(.big){display:none}
+  .dock .tip{font-size:14px}
   .grid{gap:8px} .lv{border-radius:13px; font-size:15px}
   .card{padding:20px 16px 18px}
 }
+@media (max-width:400px){ .word{font-size:22px} .logo{gap:6px} .tools{gap:5px} .ib{width:35px; height:35px} }
 @media (max-height:520px){ .hud{min-height:0} .title p{display:none} .dock{height:50px} }
 /* a phone on its side: one slim bar on top, the spin buttons stacked down the right */
 @media (max-height:480px) and (orientation:landscape){
@@ -281,7 +273,6 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   #stats{margin-top:2px; font-size:12.5px}
   #stage{grid-area:2 / 1 / 3 / 3; margin:0}
   .dock{grid-area:2 / 3; flex-direction:column; height:auto; gap:8px; align-self:center} .spin{flex:none; flex-direction:column; gap:5px}
-  .shake{height:38px; width:74px; justify-content:center; padding:0} .shake span{display:none} .note{bottom:auto; top:0; right:calc(100% + 8px); width:220px}
   .dock .rb{height:36px; min-width:74px; border-radius:12px} .angle{height:38px; width:74px; padding:0 8px 0 2px; font-size:18px; border-radius:12px}
   .angle input{width:44px}
   .dock .tip{font-size:13.5px; text-align:center; padding:0 6px}
@@ -291,7 +282,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   .card .fact{margin-top:8px; padding:8px 12px; font-size:13.5px}
   .btn{margin-top:9px; padding:8px 18px 9px; font-size:16px} .btn.plain{padding:7px 14px 8px; font-size:15px}
   .how{margin:6px 0 0} .how li{padding:3px 0; font-size:14.5px} .how li > span{width:30px; height:30px; border-radius:9px}
-  .grid{grid-template-columns:repeat(10,1fr); gap:7px; margin-top:8px} .credit{margin-top:8px}
+  .grid{grid-template-columns:repeat(7,1fr); gap:7px; margin-top:8px} .credit{margin-top:8px}
 }
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none !important; transition:none !important}
@@ -315,6 +306,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </a>
     <nav class="tools">
       <button class="ib" id="b-hint" aria-label="Hint" title="Hint"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5.8 1 .8 1.7h6c0-.7.2-1.2.8-1.7A6.5 6.5 0 0 0 12 2.5z"/></svg></button>
+      <button class="ib dim" id="b-undo" aria-label="Undo the last move" title="Undo"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
       <button class="ib" id="b-reset" aria-label="Start this level over" title="Start over"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5"/></svg></button>
       <button class="ib" id="b-sound" aria-label="Sound" title="Sound"><svg viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path class="on-only" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="off-only" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
       <button class="ib" id="b-help" aria-label="How to play" title="How to play"><svg viewBox="0 0 24 24"><path d="M9 9a3 3 0 1 1 4.6 2.5c-1 .7-1.6 1.3-1.6 2.5M12 18v.2"/></svg></button>
@@ -322,7 +314,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </header>
 
   <section class="hud">
-    <button class="chip" id="chip" aria-label="Choose a level">Level <b id="lv-num">1</b> / 10</button>
+    <button class="chip" id="chip" aria-label="Choose a level">Level <b id="lv-num">1</b> / <span id="lv-of">13</span></button>
     <div class="title" id="title"><h1 id="lv-name"></h1><p id="lv-intro"></p></div>
     <div class="meter"><div id="pips" aria-hidden="true"></div><div id="stats"><span id="count" aria-live="polite"></span> · <span id="clock">0:00</span></div></div>
   </section>
@@ -331,6 +323,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     <svg id="board" role="application" aria-label="Puzzle board">
       <g id="bin"><path class="bin-fill"/></g>
       <g id="pieces"></g>
+      <path id="ghost" class="ghost" hidden/>
       <g id="handle" hidden><line/><circle id="knob-hit"/><circle id="knob"/><circle id="knob-dot"/></g>
     </svg>
     <div id="bubble"></div>
@@ -345,10 +338,6 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <button class="rb" data-r="15" aria-label="Rotate 15 degrees right">+15°</button>
       <div class="tip">Pick up a shape to spin it</div>
     </div>
-    <button id="shake" class="shake" aria-disabled="true" aria-label="Shake the box" title="Shake: when every piece is in and nearly in place, everything drops into place">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="6" width="10" height="12" rx="2.5"/><path d="M3.5 9v6M20.5 9v6M1 11v2M23 11v2"/></svg><span>Shake</span>
-    </button>
-    <div class="note" id="shake-note" role="status">Get every piece into the box and close to its spot, then shake.</div>
   </footer>
 </div>
 
@@ -365,7 +354,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <li><span>4</span><div>Dashed red means it overlaps or pokes out. A big smile means it fits.</div></li>
     </ul>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.10</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.11</span></div>
   </div>
 </div>
 
@@ -376,7 +365,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     <svg id="hint-sol" class="snap" role="img" aria-label="The box, packed" hidden></svg>
     <p class="fact" id="hint-fact"></p>
     <button class="btn" data-close>Got it</button>
-    <div><button class="btn plain" id="hint-show" hidden>Show the solution</button></div>
+    <div><button class="btn plain" id="hint-spot">Show me one spot</button><button class="btn plain" id="hint-show" hidden>Show the solution</button></div>
   </div>
 </div>
 
@@ -400,12 +389,12 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </div>
     <p class="fact" id="win-fact"></p>
     <button class="btn" id="win-next">Next level</button>
-    <div><button class="btn plain" id="win-again">Play again</button><button class="btn plain" id="win-levels">Levels</button></div>
+    <div><button class="btn plain" id="win-again">Play again</button><button class="btn plain" id="win-levels">Levels</button><button class="btn plain" id="win-share">Share</button></div>
   </div>
 </div>
 
-<script src="geom.js?v=1.10"></script>
-<script src="levels.js?v=1.10"></script>
-<script src="game.js?v=1.10"></script>
+<script src="geom.js?v=1.11"></script>
+<script src="levels.js?v=1.11"></script>
+<script src="game.js?v=1.11"></script>
 </body>
 </html>
