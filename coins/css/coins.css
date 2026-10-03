@@ -1551,9 +1551,10 @@ body.filters-open .drawer { transform: none; }
 }
 .face.is-tilting .face-glint { opacity: 1; }
 
-/* Sideways drags belong to viewer.js, for moving between coins; up and down
-   still scroll the page to the details. */
-.stage { touch-action: pan-y; }
+/* Sideways drags anywhere in the viewer belong to viewer.js, for moving
+   between coins; up and down still scroll the page to the details. */
+.viewer, .viewer * { touch-action: pan-y; }
+.viewer input, .viewer textarea, .viewer select { touch-action: auto; }
 
 @media (prefers-reduced-motion: reduce) {
   .face-glint { display: none; }

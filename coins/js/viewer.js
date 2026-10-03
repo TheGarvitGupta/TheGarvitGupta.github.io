@@ -223,35 +223,37 @@ window.Viewer = (function () {
 
 
   /**
-   * Swiping sideways on the coin moves to the next or previous one. A phone has
-   * no arrows — they were given up for the width — so without this the only
-   * way to the next coin was back out to the grid and in again.
+   * Swiping sideways anywhere in the viewer moves to the next or previous
+   * coin. A phone has no arrows — they were given up for the width — so
+   * without this the only way to the next coin was back out to the grid.
    *
-   * The coin follows the finger, so the gesture is visibly doing something;
-   * vertical drags are left to the browser (touch-action: pan-y) so the page
-   * still scrolls down to the details.
+   * The whole page follows the finger, so the gesture is visibly doing
+   * something; vertical drags are left to the browser (touch-action: pan-y) so
+   * the page still scrolls down to the details.
    */
   function bindSwipe() {
     var start = null;
     var dx = 0;
     var swiped = false;
-    var stage = el.frame.parentElement;
+    var moving = el.body;
 
     function settle(animate) {
-      el.frame.style.transition = animate ? "transform 0.25s, opacity 0.25s" : "none";
-      el.frame.style.transform = "";
-      el.frame.style.opacity = "";
+      moving.style.transition = animate ? "transform 0.25s, opacity 0.25s" : "none";
+      moving.style.transform = "";
+      moving.style.opacity = "";
     }
 
-    stage.addEventListener("pointerdown", function (e) {
+    el.root.addEventListener("pointerdown", function (e) {
       if (e.pointerType !== "touch") return;
+      // Edit mode's fields keep their own gestures — selecting text, mostly.
+      if (e.target.closest("input, textarea, select, [contenteditable='true']")) return;
       start = { x: e.clientX, y: e.clientY };
       dx = 0;
       swiped = false;
-      el.frame.style.transition = "none";
+      moving.style.transition = "none";
     });
 
-    stage.addEventListener("pointermove", function (e) {
+    el.root.addEventListener("pointermove", function (e) {
       if (!start) return;
       dx = e.clientX - start.x;
       if (Math.abs(dx) < 8) return;
@@ -261,8 +263,8 @@ window.Viewer = (function () {
       var atEnd = (dx > 0 && i <= 0) ||
                   (dx < 0 && i >= window.Coins.state.view.length - 1);
       var shown = atEnd ? dx * 0.25 : dx;
-      el.frame.style.transform = "translateX(" + shown + "px)";
-      el.frame.style.opacity = String(1 - Math.min(Math.abs(shown) / 400, 0.5));
+      moving.style.transform = "translateX(" + shown + "px)";
+      moving.style.opacity = String(1 - Math.min(Math.abs(shown) / 500, 0.4));
     });
 
     function end() {
@@ -273,12 +275,12 @@ window.Viewer = (function () {
       // A new coin arrives by its own animation; only a return needs easing.
       settle(current === before);
     }
-    stage.addEventListener("pointerup", end);
-    stage.addEventListener("pointercancel", function () { start = null; settle(true); });
+    el.root.addEventListener("pointerup", end);
+    el.root.addEventListener("pointercancel", function () { start = null; settle(true); });
 
-    // The lift at the end of a swipe also counts as a tap on the face, which
-    // would open the photograph. Swallow that one.
-    stage.addEventListener("click", function (e) {
+    // The lift at the end of a swipe also counts as a tap on whatever is under
+    // it — a face would open its photograph. Swallow that one.
+    el.root.addEventListener("click", function (e) {
       if (!swiped) return;
       swiped = false;
       e.stopPropagation();
