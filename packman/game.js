@@ -7,8 +7,8 @@
   var COLORS = ['#FF6B6B', '#FFC93C', '#3DDBB4', '#4DA8FF', '#9B7BFF', '#FF8FCB', '#FF9F45'];
   var PRAISE = ['Packed!', 'Snug!', 'Tidy!', 'Nailed it!', 'So neat!', 'Boxed!'];
   var STORE = 'packman.v1';
-  // Where someone who packs all seventeen claims their prize. Left empty, the prize is not mentioned.
-  var PRIZE_FORM = 'https://forms.gle/gcz1YtH6nc9aiPvF7';
+  // Whoever packs all seventeen is asked to send Garvit a screenshot. Set false and the prize is not mentioned.
+  var PRIZE = true;
   var MAIN = LEVELS.filter(function (l) { return !l.bonus; }).length;   // the bonus levels follow these
   var TURN = { square: 90, triangle: 120, domino: 180, hexagon: 60 };   // degrees before a shape looks the same again
   var KNOB = { square: 0.72, triangle: 0.6, domino: 0.72, hexagon: 1.08 };
@@ -900,8 +900,7 @@
     $('finale-sum').textContent = sum;
     if (finale) party();
     $('win-all').hidden = !(all && level === MAIN - 1); $('win-one').hidden = !$('win-all').hidden;   // the last win shows the totals alone
-    $('win-prize').hidden = !(PRIZE_FORM && all && level === MAIN - 1);
-    $('prize-link').href = PRIZE_FORM || '#';
+    $('win-prize').hidden = !(PRIZE && all && level === MAIN - 1);
     $('all-time').textContent = clock(total.t);
     $('all-moves').textContent = total.m;
     $('win-title').textContent = finale ? 'Seventeen!' : faster ? 'New best!' : PRAISE[Math.floor(Math.random() * PRAISE.length)];
@@ -943,7 +942,7 @@
   }
 
   // Anyone who has packed all seventeen gets the party, the totals and the
-  // prize every time they open the game, until they follow the prize link.
+  // prize every time they open the game, until they press Done on the prize.
   function lateParty(preview) {
     var total = { t: 0, m: 0 }, last = save.done[LEVELS[MAIN - 1].name] || { t: 0, m: 0 };
     LEVELS.forEach(function (l) { var d = save.done[l.name]; if (!l.bonus && d) { total.t += d.t; total.m += d.m; } });
@@ -953,7 +952,7 @@
     $('win-best').parentNode.classList.remove('new');
     $('win-time').textContent = clock(last.t); $('win-moves').textContent = last.m; $('win-best').textContent = clock(last.t);
     $('win-all').hidden = false; $('win-one').hidden = true; $('all-time').textContent = clock(total.t); $('all-moves').textContent = total.m;
-    $('win-prize').hidden = !PRIZE_FORM; $('prize-link').href = PRIZE_FORM || '#';
+    $('win-prize').hidden = !PRIZE;
     $('win-fact').hidden = true; $('win-next').hidden = true;
     party(true); confetti(220);
     setTimeout(function () { openSheet($('m-win')); }, calm ? 2800 : 4600);
@@ -1114,7 +1113,7 @@
     if (!save.mute) { wake(); sfx.fit(); }
   });
   $('win-next').addEventListener('click', function () { closeSheet($('m-win')); startLevel(Math.min(level + 1, LEVELS.length - 1)); });
-  $('prize-link').addEventListener('click', function () { save.claimed = true; persist(); });
+  $('prize-done').addEventListener('click', function () { save.claimed = true; persist(); closeSheet($('m-win')); });
   $('prize-gift').innerHTML = GIFT;
   $('go-next').addEventListener('click', function () { startLevel(Math.min(level + 1, LEVELS.length - 1)); });
   $('win-again').addEventListener('click', function () { closeSheet($('m-win')); startLevel(level, true); });

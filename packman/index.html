@@ -273,8 +273,11 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .prize .gi{display:block; width:46px; height:46px; margin:0 auto 2px; animation:tempt 1.8s ease-in-out infinite}
 .prize .gi svg{display:block; width:100%; height:100%}
 .prize b{display:block; font-size:26px; line-height:1.15; color:var(--coral); -webkit-text-stroke:2.5px var(--ink); paint-order:stroke fill}
-.prize p{margin:5px 0 0; font-size:15px; font-weight:500} .prize a{color:inherit; font-weight:700; white-space:nowrap}
+.prize p{margin:5px 0 0; font-size:15px; font-weight:500}
 .prize small{display:block; margin-top:7px; font-size:13px; font-weight:500; opacity:.72}
+.prize button{display:block; margin:11px auto 0; padding:6px 22px 7px; font:inherit; font-weight:700; font-size:15px; color:#2B2140; background:#FFF4DE;
+  border:var(--bw) solid var(--ink); border-radius:999px; cursor:pointer; transition:transform .12s var(--pop)}
+.prize button:hover{transform:translateY(-2px)} .prize button:active{transform:translateY(1px)}
 @keyframes rays{to{transform:rotate(1turn)}}
 @keyframes glow{50%{box-shadow:0 0 0 8px rgba(255,201,60,.28), 0 0 20px 8px rgba(255,201,60,.6)}}
 #win-title{font-size:40px; color:var(--coral); -webkit-text-stroke:2.5px var(--ink); paint-order:stroke fill}
@@ -428,7 +431,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door by Garvit.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.42</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.43</span></div>
   </div>
 </div>
 
@@ -475,8 +478,8 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <span class="gi" id="prize-gift"></span>
       <b>You have won a prize!</b>
       <p>Send a screenshot of this page to Garvit!</p>
-      <p>Or alternatively, <a id="prize-link" target="_blank" rel="noopener">fill in this form<span aria-hidden="true"> ›</span></a></p>
       <small>You’ll receive your prize in up to 2 weeks.</small>
+      <button id="prize-done">Done</button>
     </div>
     <p class="fact" id="win-fact"></p>
     <button class="btn" id="win-next">Next level</button>
@@ -484,8 +487,8 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.42"></script>
-<script src="levels.js?v=1.42"></script>
-<script src="game.js?v=1.42"></script>
+<script src="geom.js?v=1.43"></script>
+<script src="levels.js?v=1.43"></script>
+<script src="game.js?v=1.43"></script>
 </body>
 </html>
