@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stats</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex">
+<meta name="description" content="Visits to garvitgupta.com.">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
+
+<style>
+:root{
+  --bg:#F5F5F7; --card:#FFFFFF; --card-2:#F5F5F7;
+  --ink:#1D1D1F; --ink-2:#424245; --mut:#6E6E73;
+  --line:rgba(0,0,0,.09); --line-2:rgba(0,0,0,.16);
+  --acc:#0071E3; --acc-wash:rgba(0,113,227,.09);
+  --series:#2A78D6; --series-hi:#184F95; --wash:rgba(42,120,214,.12);
+  --up:#1A7F37; --down:#C0342B;
+  --sh:0 1px 2px rgba(0,0,0,.04), 0 8px 28px -14px rgba(0,0,0,.18);
+  --sh-2:0 2px 6px rgba(0,0,0,.06), 0 18px 44px -18px rgba(0,0,0,.24);
+  --f:-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --r:18px; --r2:12px; --r3:9px;
+}
+@media (prefers-color-scheme:dark){ :root{
+  --bg:#141414; --card:#1D1D1F; --card-2:#2A2A2D;
+  --ink:#F5F5F7; --ink-2:#D0D0D2; --mut:#9A9AA0;
+  --line:rgba(255,255,255,.11); --line-2:rgba(255,255,255,.2);
+  --acc:#4490FE; --acc-wash:rgba(68,144,254,.14);
+  --series:#3987E5; --series-hi:#86B6EF; --wash:rgba(57,135,229,.2);
+  --up:#4CC26B; --down:#FF6F61;
+  --sh:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -16px rgba(0,0,0,.9);
+  --sh-2:0 2px 8px rgba(0,0,0,.6), 0 20px 48px -20px rgba(0,0,0,1);
+}}
+
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--f); font-size:16px; line-height:1.45;
+  -webkit-font-smoothing:antialiased; letter-spacing:-.008em}
+h1,h2{margin:0; font-weight:600; letter-spacing:-.026em; line-height:1.1}
+p{margin:0}
+button,input,select{font:inherit; color:inherit; letter-spacing:inherit}
+button{cursor:pointer}
+.n{font-variant-numeric:tabular-nums}
+.wrap{max-width:1120px; margin:0 auto; padding:28px 20px 56px}
+
+/* header */
+.top{display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:18px}
+.top h1{font-size:34px}
+.top p{margin-top:5px; color:var(--mut); font-size:15px}
+.ghost{display:inline-flex; align-items:center; gap:7px; padding:8px 14px; background:var(--card); border:1px solid var(--line); border-radius:999px;
+  font-size:14px; font-weight:500; white-space:nowrap; box-shadow:var(--sh)}
+.ghost:hover{border-color:var(--line-2)}
+.ghost svg{width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
+.busy .ghost svg{animation:turn .9s linear infinite}
+@keyframes turn{to{transform:rotate(1turn)}}
+
+/* filters: one row above everything they scope */
+.filters{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:16px}
+.seg{display:flex; max-width:100%; overflow-x:auto; padding:3px; background:var(--card); border:1px solid var(--line); border-radius:999px; box-shadow:var(--sh); scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:none; padding:6px 13px; background:none; border:0; border-radius:999px; font-size:14px; font-weight:500; color:var(--ink-2); white-space:nowrap}
+.seg button:hover{background:var(--card-2)}
+.seg button[aria-pressed="true"]{background:var(--ink); color:var(--card)}
+.seg button:disabled{opacity:.35; cursor:default; background:none}
+.custom{display:flex; align-items:center; gap:6px; font-size:14px; color:var(--mut)}
+.custom input{padding:6px 10px; background:var(--card); border:1px solid var(--line); border-radius:var(--r3); font-size:14px}
+.dd{position:relative}
+.dd summary{list-style:none; display:flex; align-items:center; gap:8px; padding:9px 14px; background:var(--card); border:1px solid var(--line); border-radius:999px;
+  font-size:14px; font-weight:500; cursor:pointer; box-shadow:var(--sh); max-width:260px}
+.dd summary::-webkit-details-marker{display:none}
+.dd summary span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.dd summary::after{content:""; flex:none; width:6px; height:6px; margin-top:-3px; border:solid var(--mut); border-width:0 1.7px 1.7px 0; transform:rotate(45deg)}
+.dd.on summary{border-color:var(--acc); color:var(--acc)}
+.menu{position:absolute; z-index:20; top:calc(100% + 6px); left:0; width:min(320px, calc(100vw - 40px)); max-height:340px; overflow:auto; padding:6px;
+  background:var(--card); border:1px solid var(--line); border-radius:var(--r2); box-shadow:var(--sh-2)}
+.menu label{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:var(--r3); font-size:14px; cursor:pointer}
+.menu label:hover{background:var(--card-2)}
+.menu label span{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.menu label small{color:var(--mut); font-size:13px}
+.menu input{accent-color:var(--acc); width:16px; height:16px; margin:0}
+.menu .none{padding:10px; color:var(--mut); font-size:14px}
+.clear{padding:8px 4px; background:none; border:0; font-size:14px; font-weight:500; color:var(--acc)}
+
+/* cards */
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--sh); padding:18px 20px 20px; min-width:0}
+.card h2{font-size:17px}
+.head{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px}
+.head .seg{box-shadow:none; background:var(--card-2); border:0}
+.head .seg button{padding:4px 11px; font-size:13px}
+.head .seg button[aria-pressed="true"]{background:var(--card); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.tools{display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px}
+.grid{display:grid; gap:14px; margin-bottom:14px}
+.tiles{grid-template-columns:repeat(4, 1fr)}
+.two{grid-template-columns:1.35fr 1fr}
+.three{grid-template-columns:repeat(3, 1fr)}
+.stale{opacity:.5; transition:opacity .15s}
+
+/* stat tiles */
+.tile{padding:16px 20px 17px}
+.tile small{display:block; color:var(--mut); font-size:13px; font-weight:500}
+.tile b{display:block; margin-top:3px; font-size:32px; font-weight:600; letter-spacing:-.03em; line-height:1.1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.tile span{display:block; margin-top:5px; color:var(--mut); font-size:13px; min-height:19px}
+.tile i{font-style:normal; font-weight:600}
+.tile i.up{color:var(--up)} .tile i.down{color:var(--down)}
+
+/* charts */
+.plot{position:relative}
+.plot svg{display:block; width:100%; overflow:visible}
+.plot text{fill:var(--mut); font-size:11px; font-variant-numeric:tabular-nums}
+.plot .gl{stroke:var(--line); stroke-width:1}
+.plot .bar{fill:var(--series)}
+.plot .bar.hot{fill:var(--series-hi)}
+.tip{position:absolute; z-index:5; top:0; left:0; padding:7px 11px 8px; background:var(--ink); color:var(--card); border-radius:var(--r3);
+  font-size:12px; line-height:1.3; white-space:nowrap; pointer-events:none; opacity:0; transition:opacity .1s; box-shadow:var(--sh-2)}
+.tip b{display:block; font-size:16px; font-weight:600}
+.tip.on{opacity:1}
+.scroll{max-height:300px; overflow:auto}
+table{width:100%; border-collapse:collapse; font-size:14px}
+th,td{padding:7px 4px; text-align:left; border-bottom:1px solid var(--line)}
+th{position:sticky; top:0; background:var(--card); color:var(--mut); font-size:12px; font-weight:500}
+td:last-child,th:last-child{text-align:right}
+.empty{padding:34px 0; text-align:center; color:var(--mut); font-size:14px}
+
+/* ranked lists: pages and every breakdown */
+.rows{display:grid; gap:4px}
+.row{position:relative; display:flex; align-items:center; gap:10px; width:100%; min-height:36px; padding:6px 10px; background:none; border:0; border-radius:var(--r3);
+  text-align:left; font-size:14px; overflow:hidden}
+.row > *{position:relative}
+.row::before{content:""; position:absolute; inset:0 auto 0 0; width:var(--w, 0%); background:var(--wash); border-radius:var(--r3)}
+button.row:hover{background:var(--card-2)}
+.row .l{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.row .l small{margin-left:8px; color:var(--mut); font-size:13px}
+.row .c{font-weight:600}
+.row .p{width:42px; text-align:right; color:var(--mut); font-size:13px}
+.row.sel{box-shadow:inset 0 0 0 1.5px var(--acc)}
+.row.open .l::after{transform:rotate(225deg); margin-top:3px}
+button.row.more .l::after{content:""; display:inline-block; width:5px; height:5px; margin:-3px 0 0 9px; vertical-align:middle; border:solid var(--mut); border-width:0 1.5px 1.5px 0; transform:rotate(45deg)}
+.sub{display:grid; gap:2px; margin:0 0 6px 14px; padding-left:10px; border-left:1.5px solid var(--line)}
+.sub .row{min-height:30px; padding:3px 10px; font-size:13px}
+.sub .row::before{display:none}
+.all{justify-self:start; margin-top:4px; padding:5px 10px; background:none; border:0; font-size:13px; font-weight:500; color:var(--acc)}
+.find{width:150px; padding:5px 11px; background:var(--card-2); border:1px solid transparent; border-radius:999px; font-size:13px}
+.find:focus{outline:none; border-color:var(--acc)}
+
+/* token gate */
+.gate{max-width:440px; margin:12vh auto 0; padding:28px}
+.gate h1{font-size:28px}
+.gate p{margin-top:10px; color:var(--mut); font-size:15px}
+.gate form{display:flex; gap:8px; margin-top:20px}
+.gate input{flex:1; min-width:0; padding:10px 14px; background:var(--card-2); border:1px solid var(--line); border-radius:var(--r2)}
+.gate input:focus{outline:none; border-color:var(--acc)}
+.gate button{padding:10px 18px; background:var(--acc); color:#fff; border:0; border-radius:var(--r2); font-weight:600}
+.err{margin-top:12px; color:var(--down); font-size:14px}
+.banner{margin-bottom:14px; padding:12px 16px; background:var(--card); border:1px solid var(--down); border-radius:var(--r2); color:var(--down); font-size:14px}
+.foot{display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 20px; margin-top:22px; color:var(--mut); font-size:13px}
+.foot button{padding:0; background:none; border:0; color:var(--acc); font-size:13px}
+.foot a{color:var(--acc); text-decoration:none}
+
+@media (max-width:900px){
+  .tiles{grid-template-columns:repeat(2, 1fr)}
+  .two{grid-template-columns:1fr}
+  .three{grid-template-columns:repeat(2, 1fr)}
+}
+@media (max-width:600px){
+  .wrap{padding:18px 14px 40px}
+  .top h1{font-size:28px}
+  .ghost span{display:none} .ghost{padding:9px}
+  .grid{gap:10px; margin-bottom:10px}
+  .three{grid-template-columns:1fr}
+  .card{padding:15px 15px 16px; border-radius:16px}
+  .tile{padding:13px 15px 14px}
+  .tile b{font-size:26px}
+  .dd summary{max-width:200px}
+  .find{width:110px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="gate" hidden>
+  <div class="card gate">
+    <h1>Stats</h1>
+    <p>These numbers are private. Paste a GoatCounter API token to see them; it is kept in this browser only.</p>
+    <form id="gate-form"><input id="gate-token" type="password" autocomplete="off" placeholder="API token" aria-label="API token"><button>Show stats</button></form>
+    <p class="err" id="gate-err" hidden></p>
+  </div>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <div class="top">
+    <div><h1>Stats</h1><p id="sub">Visits to garvitgupta.com</p></div>
+    <button class="ghost" id="refresh" title="Refresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v5h-5"/></svg><span>Refresh</span></button>
+  </div>
+
+  <div class="filters">
+    <div class="seg" id="ranges" role="group" aria-label="Date range"></div>
+    <div class="custom" id="custom" hidden><input type="date" id="from" aria-label="From"> to <input type="date" id="to" aria-label="To"></div>
+    <details class="dd" id="pages-dd"><summary><span id="pages-label">All pages</span></summary><div class="menu" id="pages-menu"></div></details>
+    <button class="clear" id="pages-clear" hidden>Clear</button>
+  </div>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <div id="body">
+    <div class="grid tiles">
+      <div class="card tile"><small>Visits</small><b class="n" id="t-total">–</b><span id="t-delta"></span></div>
+      <div class="card tile"><small id="t-avg-l">Average per day</small><b class="n" id="t-avg">–</b><span id="t-avg-s"></span></div>
+      <div class="card tile"><small id="t-best-l">Busiest day</small><b class="n" id="t-best">–</b><span id="t-best-s"></span></div>
+      <div class="card tile"><small>Pages visited</small><b class="n" id="t-pages">–</b><span id="t-pages-s"></span></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="head"><h2>Visits over time</h2>
+          <div class="tools"><div class="seg" id="grains" role="group" aria-label="Group by"></div><div class="seg" id="views" role="group" aria-label="View"></div></div>
+        </div>
+        <div class="plot" id="chart"></div>
+        <div class="scroll" id="chart-table" hidden></div>
+      </div>
+    </div>
+
+    <div class="grid two">
+      <div class="card">
+        <div class="head"><h2>Pages</h2><input class="find" id="find" type="search" placeholder="Search pages" aria-label="Search pages"></div>
+        <div class="rows" id="pages"></div>
+      </div>
+      <div class="card">
+        <div class="head"><h2>Time of day</h2></div>
+        <div class="plot" id="hours"></div>
+      </div>
+    </div>
+
+    <div class="grid three" id="breakdowns"></div>
+  </div>
+
+  <div class="foot">
+    <span id="note">A visit is one person on one page, counted once every eight hours.</span>
+    <span><a href="https://garvitgupta.goatcounter.com" rel="noopener">GoatCounter</a> · <button id="forget">Forget token on this device</button></span>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var API = 'https://garvitgupta.goatcounter.com/api/v0', KEY = 'stats.token';
+  var DEMO = /[?&]demo\b/.test(location.search);
+  var RANGES = [['today', 'Today'], ['yesterday', 'Yesterday'], ['7', '7 days'], ['30', '30 days'], ['90', '90 days'], ['365', '12 months'], ['custom', 'Custom']];
+  var GRAINS = [['hour', 'Hour'], ['day', 'Day'], ['week', 'Week'], ['month', 'Month']];
+  // Each breakdown is one GoatCounter stats page; the ones with detail open up when a row is pressed.
+  var CARDS = [['toprefs', 'Where they came from'], ['locations', 'Countries', true], ['browsers', 'Browsers', true], ['systems', 'Systems', true],
+    ['sizes', 'Screens', true], ['languages', 'Languages'], ['campaigns', 'Campaigns']];
+  var SIZES = { phone: 'Phones', tablet: 'Tablets', desktop: 'Laptops and monitors', desktophd: 'Large monitors', unknown: 'Unknown' };
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  var $ = function (id) { return document.getElementById(id); };
+  var token = null, gen = 0, data = null, redraw = [];
+  var state = { range: '30', from: '', to: '', pages: [], grain: '', view: 'chart', find: '' };
+
+  /* ---------- small helpers ---------- */
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function svg(tag, attrs) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (var k in attrs) e.setAttribute(k, attrs[k]); return e; }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parse(s) { var p = s.split('-'); return new Date(+p[0], p[1] - 1, +p[2]); }
+  function shift(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+  function nice(d, year) { return MONTHS[d.getMonth()] + ' ' + d.getDate() + (year ? ', ' + d.getFullYear() : ''); }
+  function hour(h) { return (h % 12 || 12) + (h < 12 ? 'am' : 'pm'); }
+  function num(n) { return Math.round(n).toLocaleString('en-US'); }
+  function store(v) { try { if (v === undefined) return localStorage.getItem(KEY); if (v) localStorage.setItem(KEY, v); else localStorage.removeItem(KEY); } catch (e) {} return null; }
+  function flag(cc) { return /^[A-Z]{2}$/.test(cc) ? String.fromCodePoint(cc.charCodeAt(0) + 127397, cc.charCodeAt(1) + 127397) + ' ' : ''; }
+
+  /* ---------- the filters live in the address, so a view can be bookmarked ---------- */
+  function readUrl() {
+    var q = new URLSearchParams(location.search);
+    if (q.get('range')) state.range = q.get('range');
+    state.from = q.get('from') || ''; state.to = q.get('to') || '';
+    state.pages = q.get('pages') ? q.get('pages').split(',') : [];
+    state.grain = q.get('by') || ''; state.view = q.get('view') === 'table' ? 'table' : 'chart';
+    if (!RANGES.some(function (r) { return r[0] === state.range; })) state.range = '30';
+    if (state.range === 'custom' && !(state.from && state.to)) state.range = '30';
+  }
+  function writeUrl() {
+    var q = new URLSearchParams();
+    if (DEMO) q.set('demo', '');
+    if (state.range !== '30') q.set('range', state.range);
+    if (state.range === 'custom') { q.set('from', state.from); q.set('to', state.to); }
+    if (state.pages.length) q.set('pages', state.pages.join(','));
+    if (state.grain) q.set('by', state.grain);
+    if (state.view === 'table') q.set('view', 'table');
+    var s = q.toString().replace(/demo=(&|$)/, 'demo$1').replace(/%2F/g, '/').replace(/%2C/g, ',');
+    history.replaceState(null, '', location.pathname + (s ? '?' + s : ''));
+  }
+  function span() {
+    var today = parse(ymd(new Date())), a, b = today;
+    if (state.range === 'today') a = today;
+    else if (state.range === 'yesterday') a = b = shift(today, -1);
+    else if (state.range === 'custom') { a = parse(state.from); b = parse(state.to); if (a > b) { var t = a; a = b; b = t; } if (b > today) b = today; if (a > b) a = b; }
+    else a = shift(today, 1 - state.range);
+    var days = []; for (var d = a; d <= b; d = shift(d, 1)) days.push(ymd(d));
+    return { a: a, b: b, days: days };
+  }
+  function times(a, b) { return { start: a.toISOString(), end: new Date(b.getFullYear(), b.getMonth(), b.getDate(), 23).toISOString() }; }
+  function grainsFor(n) { return { hour: n <= 14, day: n > 1 && n <= 180, week: n > 13, month: n > 59 }; }
+  function grain(n) { var ok = grainsFor(n); return ok[state.grain] ? state.grain : n === 1 ? 'hour' : n <= 92 ? 'day' : 'week'; }
+
+  /* ---------- GoatCounter allows four requests a second, so they leave on a timer ---------- */
+  var slot = 0;
+  function api(path, params) {
+    if (DEMO) return Promise.resolve(demo(path, params || {}));
+    var q = new URLSearchParams(params || {}).toString(), at = Math.max(Date.now(), slot + 270);
+    slot = at;
+    return new Promise(function (r) { setTimeout(r, at - Date.now()); }).then(function () {
+      return fetch(API + path + (q ? '?' + q : ''), { headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' } });
+    }).then(function (r) {
+      if (r.status === 429) return api(path, params);
+      if (r.status === 401 || r.status === 403) throw { auth: true };
+      if (!r.ok) throw new Error('GoatCounter answered ' + r.status);
+      return r.json();
+    });
+  }
+
+  /* ---------- loading ---------- */
+  function load() {
+    var me = ++gen, sp = span(), t = times(sp.a, sp.b);
+    document.body.classList.add('busy'); $('body').classList.add('stale'); $('banner').hidden = true;
+    renderFilters(sp);
+    allHits(t, [], []).then(function (hits) {
+      if (me !== gen) return;
+      data = { sp: sp, pages: hits.map(function (h) {
+        var byDay = {}; h.stats.forEach(function (s) { byDay[s.day] = s; });
+        return { id: h.path_id, path: h.path, title: h.title, byDay: byDay };
+      }) };
+      render();
+      $('body').classList.remove('stale');
+      $('sub').textContent = 'Visits to garvitgupta.com · updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      return Promise.all([previous(me, sp), breakdowns(me, t)]);
+    }).catch(function (e) {
+      if (me !== gen) return;
+      if (e && e.auth) { store(''); token = null; return gate('That token was not accepted. Check it has permission to read statistics.'); }
+      $('banner').textContent = 'Could not load the numbers. ' + (e && e.message ? e.message + '.' : '') + ' Try Refresh.'; $('banner').hidden = false;
+      $('body').classList.remove('stale');
+    }).then(function () { if (me === gen) document.body.classList.remove('busy'); });
+  }
+  // every page with visits in the range, a hundred at a time
+  function allHits(t, got, skip) {
+    var p = { start: t.start, end: t.end, limit: 100 };
+    if (skip.length) p.exclude_paths = skip.join(',');
+    return api('/stats/hits', p).then(function (r) {
+      got = got.concat(r.hits || []);
+      if (!r.more || got.length >= 500) return got;
+      return allHits(t, got, got.map(function (h) { return h.path_id; }));
+    });
+  }
+  function ids() { return data.pages.filter(function (p) { return state.pages.indexOf(p.path) >= 0; }).map(function (p) { return p.id; }); }
+  function scoped(t) { var p = { start: t.start, end: t.end }, i = ids(); if (state.pages.length) p.include_paths = i.length ? i.join(',') : '0'; return p; }
+  function previous(me, sp) {
+    var n = sp.days.length, b = shift(sp.a, -1), a = shift(b, 1 - n);
+    return api('/stats/total', scoped(times(a, b))).then(function (r) {
+      if (me !== gen) return;
+      var now = data.total, was = r.total || 0, out = $('t-delta');
+      out.textContent = '';
+      var what = n === 1 ? 'the day before' : 'the ' + n + ' days before';
+      if (!was) { out.textContent = now ? 'None in ' + what : ''; return; }
+      var pct = Math.round((now - was) / was * 100), i = el('i', pct > 0 ? 'up' : pct < 0 ? 'down' : '', (pct > 0 ? '↑ ' : pct < 0 ? '↓ ' : '') + Math.abs(pct) + '%');
+      out.appendChild(i); out.appendChild(document.createTextNode(' vs ' + what + ' (' + num(was) + ')'));
+    }).catch(function () {});
+  }
+  function breakdowns(me, t) {
+    return Promise.all(CARDS.map(function (c) {
+      return api('/stats/' + c[0], Object.assign({ limit: 50 }, scoped(t))).then(function (r) {
+        if (me === gen) list(c, (r.stats || []).filter(function (s) { return s.count > 0; }), t);
+      }).catch(function () {});
+    }));
+  }
+
+  /* ---------- filters ---------- */
+  function seg(box, opts, cur, allowed, pick) {
+    box.textContent = '';
+    opts.forEach(function (o) {
+      var b = el('button', '', o[1]); b.type = 'button';
+      b.setAttribute('aria-pressed', o[0] === cur); b.disabled = allowed ? !allowed[o[0]] : false;
+      b.addEventListener('click', function () { pick(o[0]); });
+      box.appendChild(b);
+    });
+  }
+  function renderFilters(sp) {
+    seg($('ranges'), RANGES, state.range, null, function (v) {
+      if (v === 'custom' && state.range !== 'custom') { state.from = ymd(sp.a); state.to = ymd(sp.b); }
+      state.range = v; writeUrl(); load();
+    });
+    $('custom').hidden = state.range !== 'custom';
+    $('from').value = state.from; $('to').value = state.to; $('from').max = $('to').max = ymd(new Date());
+  }
+  function renderPagePicker() {
+    var menu = $('pages-menu'), n = state.pages.length;
+    menu.textContent = '';
+    if (!data.pages.length && !n) menu.appendChild(el('div', 'none', 'No pages in this range.'));
+    var names = data.pages.map(function (p) { return p.path; });
+    state.pages.forEach(function (p) { if (names.indexOf(p) < 0) names.push(p); });
+    names.forEach(function (path) {
+      var pg = data.pages.filter(function (p) { return p.path === path; })[0];
+      var l = el('label'), c = el('input'); c.type = 'checkbox'; c.checked = state.pages.indexOf(path) >= 0;
+      c.addEventListener('change', function () { toggle(path); });
+      l.appendChild(c); l.appendChild(el('span', '', path)); l.appendChild(el('small', 'n', pg ? num(pg.count) : '0'));
+      menu.appendChild(l);
+    });
+    $('pages-label').textContent = !n ? 'All pages' : n === 1 ? state.pages[0] : n + ' pages';
+    $('pages-dd').classList.toggle('on', n > 0); $('pages-clear').hidden = !n;
+  }
+  function toggle(path) {
+    var i = state.pages.indexOf(path);
+    if (i >= 0) state.pages.splice(i, 1); else state.pages.push(path);
+    writeUrl(); refilter();
+  }
+  // a change of pages needs no new page list: the chart is re-added here, and only the breakdowns are fetched again
+  function refilter() {
+    var me = ++gen, t = times(data.sp.a, data.sp.b);
+    render(); document.body.classList.add('busy');
+    Promise.all([previous(me, data.sp), breakdowns(me, t)]).then(function () { if (me === gen) document.body.classList.remove('busy'); });
+  }
+
+  /* ---------- everything below the filters ---------- */
+  function render() {
+    var sp = data.sp, days = sp.days, chosen = state.pages, single = days.length === 1;
+    data.pages.forEach(function (p) { p.count = days.reduce(function (s, d) { return s + (p.byDay[d] ? p.byDay[d].daily : 0); }, 0); });
+    data.pages.sort(function (a, b) { return b.count - a.count; });
+    var inScope = data.pages.filter(function (p) { return !chosen.length || chosen.indexOf(p.path) >= 0; });
+    var daily = days.map(function (d) {
+      var hourly = new Array(24).fill(0), sum = 0;
+      inScope.forEach(function (p) { var s = p.byDay[d]; if (s) { sum += s.daily; s.hourly.forEach(function (v, h) { hourly[h] += v; }); } });
+      return { day: d, n: sum, hourly: hourly };
+    });
+    var total = data.total = daily.reduce(function (s, d) { return s + d.n; }, 0);
+    renderPagePicker();
+
+    // tiles
+    $('t-total').textContent = num(total); $('t-delta').textContent = '';
+    var byHour = new Array(24).fill(0); daily.forEach(function (d) { d.hourly.forEach(function (v, h) { byHour[h] += v; }); });
+    if (single) {
+      var bh = byHour.indexOf(Math.max.apply(null, byHour));
+      $('t-avg-l').textContent = 'Average per hour'; $('t-avg').textContent = (total / 24).toFixed(1); $('t-avg-s').textContent = nice(sp.a, true);
+      $('t-best-l').textContent = 'Busiest hour'; $('t-best').textContent = total ? hour(bh) : '–'; $('t-best-s').textContent = total ? num(byHour[bh]) + ' visits' : '';
+    } else {
+      var best = daily.reduce(function (m, d) { return d.n > m.n ? d : m; }, daily[0]);
+      $('t-avg-l').textContent = 'Average per day'; $('t-avg').textContent = total / days.length < 10 ? (total / days.length).toFixed(1) : num(total / days.length);
+      $('t-avg-s').textContent = 'over ' + days.length + ' days';
+      $('t-best-l').textContent = 'Busiest day'; $('t-best').textContent = total ? nice(parse(best.day)) : '–'; $('t-best-s').textContent = total ? num(best.n) + ' visits' : '';
+    }
+    var seen = inScope.filter(function (p) { return p.count > 0; });
+    $('t-pages').textContent = num(seen.length); $('t-pages-s').textContent = seen.length ? 'Most visited: ' + seen[0].path : '';
+
+    // visits over time
+    var g = grain(days.length), buckets = bucket(daily, g, single);
+    seg($('grains'), GRAINS, g, grainsFor(days.length), function (v) { state.grain = v; writeUrl(); render(); });
+    seg($('views'), [['chart', 'Chart'], ['table', 'Table']], state.view, null, function (v) { state.view = v; writeUrl(); render(); });
+    $('chart').hidden = state.view !== 'chart'; $('chart-table').hidden = state.view !== 'table';
+    redraw = [];
+    if (state.view === 'chart') draw($('chart'), buckets, 250, total);
+    else table($('chart-table'), buckets, g);
+    draw($('hours'), byHour.map(function (v, h) { return { v: v, x: h % 6 === 0 ? hour(h) : '', long: hour(h) + ' to ' + hour((h + 1) % 24), keep: h % 6 === 0 }; }), 190, total);
+
+    renderPages();
+  }
+  function bucket(daily, g, single) {
+    var out = [], last = null;
+    daily.forEach(function (d) {
+      var date = parse(d.day);
+      if (g === 'hour') return d.hourly.forEach(function (v, h) {
+        out.push({ v: v, x: single ? hour(h) : h === 0 ? nice(date) : '', keep: !single && h === 0, long: DAYS[date.getDay()] + ' ' + nice(date) + ', ' + hour(h) });
+      });
+      if (g === 'day') return out.push({ v: d.n, x: nice(date), long: DAYS[date.getDay()] + ' ' + nice(date, true) });
+      var key = g === 'month' ? d.day.slice(0, 7) : ymd(shift(date, -((date.getDay() + 6) % 7)));
+      if (key !== last) { out.push({ v: 0, from: date, x: g === 'month' ? MONTHS[date.getMonth()] + ' ' + date.getFullYear() : nice(date) }); last = key; }
+      var b = out[out.length - 1]; b.v += d.n; b.to = date;
+      b.long = g === 'month' ? MONTHS[date.getMonth()] + ' ' + date.getFullYear() : nice(b.from) + ' to ' + nice(b.to, true);
+    });
+    return out;
+  }
+
+  /* ---------- one bar chart, used twice ---------- */
+  function draw(box, items, height, total) {
+    redraw.push(function () { draw(box, items, height, total); });
+    box.textContent = '';
+    if (!total) { box.appendChild(el('div', 'empty', 'No visits in this range.')); return; }
+    var max = Math.max.apply(null, items.map(function (i) { return i.v; })), step = 1;
+    for (var k = 1; max / step > 4; k++) step = [1, 2, 5][k % 3] * Math.pow(10, Math.floor(k / 3));   // whole-number gridlines, four at most
+    var top = Math.ceil(max / step) * step, y = function (v) { return T + ph - v / top * ph; };
+    var W = box.clientWidth || 600, H = W < 420 ? Math.round(height * .82) : height, L = 14 + num(top).length * 6.5, R = 4, T = 10, B = 22, pw = W - L - R, ph = H - T - B;
+    var s = svg('svg', { viewBox: '0 0 ' + W + ' ' + H, height: H, role: 'img', 'aria-label': 'Bar chart of visits' });
+    for (var v = 0; v <= top; v += step) {
+      s.appendChild(svg('line', { class: 'gl', x1: L, x2: W - R, y1: y(v) + .5, y2: y(v) + .5 }));
+      var tx = svg('text', { x: L - 8, y: y(v) + 4, 'text-anchor': 'end' }); tx.textContent = num(v); s.appendChild(tx);
+    }
+    var sw = pw / items.length, gap = sw >= 7 ? 2 : sw >= 3 ? 1 : 0, bw = Math.min(sw - gap, 44), rad = Math.min(4, bw / 2), bars = [];
+    var every = Math.ceil(64 / sw), forced = items.some(function (i) { return i.keep; }), lastX = -1e9;
+    items.forEach(function (it, i) {
+      var cx = L + sw * i + sw / 2, h = it.v / top * ph, x0 = cx - bw / 2, bar = null;
+      if (it.v > 0) {
+        var r = Math.min(rad, h);
+        bar = svg('path', { class: 'bar', d: 'M' + x0 + ' ' + (T + ph) + 'V' + (T + ph - h + r) + 'q0 ' + -r + ' ' + r + ' ' + -r + 'h' + (bw - 2 * r) + 'q' + r + ' 0 ' + r + ' ' + r + 'V' + (T + ph) + 'Z' });
+        s.appendChild(bar);
+      }
+      bars.push(bar);
+      var show = forced ? it.keep : i % every === 0;
+      if (show && it.x && cx - lastX >= 46) {
+        var anchor = cx < L + 24 ? 'start' : cx > W - R - 24 ? 'end' : 'middle';
+        var lb = svg('text', { x: anchor === 'start' ? L : anchor === 'end' ? W - R : cx, y: H - 5, 'text-anchor': anchor }); lb.textContent = it.x; s.appendChild(lb); lastX = cx;
+      }
+    });
+    var tip = el('div', 'tip'), tb = el('b', 'n'), tl = el('span'); tip.appendChild(tb); tip.appendChild(tl);
+    var hot = -1;
+    function at(e) {
+      var rect = s.getBoundingClientRect(), i = Math.floor((e.clientX - rect.left - L * rect.width / W) / (sw * rect.width / W));
+      if (i < 0 || i >= items.length) return off();
+      if (i !== hot) { if (bars[hot]) bars[hot].classList.remove('hot'); hot = i; if (bars[i]) bars[i].classList.add('hot'); tb.textContent = num(items[i].v) + (items[i].v === 1 ? ' visit' : ' visits'); tl.textContent = items[i].long; }
+      var cx = (L + sw * i + sw / 2) * rect.width / W, tw = tip.offsetWidth, left = Math.max(0, Math.min(cx - tw / 2, rect.width - tw));
+      var topPx = y(items[i].v) - tip.offsetHeight - 8;
+      tip.style.transform = 'translate(' + left + 'px,' + Math.max(-6, topPx) + 'px)'; tip.classList.add('on');
+    }
+    function off() { if (bars[hot]) bars[hot].classList.remove('hot'); hot = -1; tip.classList.remove('on'); }
+    s.addEventListener('pointermove', at); s.addEventListener('pointerdown', at); s.addEventListener('pointerleave', off);
+    box.appendChild(s); box.appendChild(tip);
+  }
+  function table(box, items, g) {
+    box.textContent = '';
+    var t = el('table'), h = el('tr'); h.appendChild(el('th', '', g === 'hour' ? 'Hour' : g === 'day' ? 'Day' : g === 'week' ? 'Week' : 'Month')); h.appendChild(el('th', '', 'Visits'));
+    t.appendChild(h);
+    items.slice().reverse().forEach(function (it) { var r = el('tr'); r.appendChild(el('td', '', it.long)); r.appendChild(el('td', 'n', num(it.v))); t.appendChild(r); });
+    box.appendChild(t);
+  }
+
+  /* ---------- ranked lists ---------- */
+  function row(label, sub, count, share, of, clickable) {
+    var r = el(clickable ? 'button' : 'div', 'row'), l = el('span', 'l', label);
+    if (clickable) r.type = 'button';
+    if (sub) l.appendChild(el('small', '', sub));
+    r.appendChild(l); r.appendChild(el('span', 'c n', num(count)));
+    if (of) r.appendChild(el('span', 'p n', Math.round(count / of * 100) + '%'));
+    r.style.setProperty('--w', (share * 100).toFixed(1) + '%');
+    return r;
+  }
+  function capped(box, rows, keep) {
+    rows.forEach(function (r, i) { if (i >= keep) r.forEach(function (n) { n.hidden = true; }); r.forEach(function (n) { box.appendChild(n); }); });
+    if (rows.length > keep) {
+      var b = el('button', 'all', 'Show all ' + rows.length); b.type = 'button';
+      b.addEventListener('click', function () { rows.forEach(function (r) { r[0].hidden = false; }); b.remove(); });
+      box.appendChild(b);
+    }
+  }
+  function renderPages() {
+    var box = $('pages'), q = state.find.toLowerCase(), all = data.pages.reduce(function (s, p) { return s + p.count; }, 0);
+    box.textContent = '';
+    var shown = data.pages.filter(function (p) { return p.count > 0 && (!q || (p.path + ' ' + (p.title || '')).toLowerCase().indexOf(q) >= 0); });
+    if (!shown.length) { box.appendChild(el('div', 'empty', q ? 'No pages match.' : 'No visits in this range.')); return; }
+    var max = shown[0].count;
+    capped(box, shown.map(function (p) {
+      var r = row(p.path, p.title && p.title !== p.path ? p.title : '', p.count, p.count / max, all, true);
+      r.title = 'Show only ' + p.path;
+      if (state.pages.indexOf(p.path) >= 0) { r.classList.add('sel'); r.title = 'Stop filtering by ' + p.path; }
+      r.addEventListener('click', function () { toggle(p.path); });
+      return [r];
+    }), 8);
+  }
+  function name(c, s) {
+    if (c[0] === 'sizes') return SIZES[s.id] || s.id;
+    if (c[0] === 'toprefs') return s.name || 'Direct or unknown';
+    if (c[0] === 'locations') return flag(s.id || '') + (s.name || 'Unknown');
+    return s.name || s.id || 'Unknown';
+  }
+  function list(c, stats, t) {
+    var card = $('b-' + c[0]), box = card.querySelector('.rows');
+    box.textContent = '';
+    // languages are off unless switched on in GoatCounter, and campaigns need tagged links: both stay out of the way until they have something
+    var dull = (c[0] === 'languages' || c[0] === 'campaigns') && !stats.some(function (s) { return (s.name || s.id) && s.id !== '(unknown)'; });
+    card.hidden = dull;
+    if (!stats.length) { box.appendChild(el('div', 'empty', 'Nothing in this range.')); return; }
+    var sum = stats.reduce(function (a, s) { return a + s.count; }, 0), max = stats[0].count;
+    capped(box, stats.map(function (s) {
+      var drill = c[2] && s.id && s.id !== 'unknown', r = row(name(c, s), '', s.count, s.count / max, sum, drill), sub = el('div', 'sub');
+      sub.hidden = true;
+      if (drill) {
+        r.classList.add('more');
+        r.addEventListener('click', function () {
+          var open = r.classList.toggle('open'); sub.hidden = !open;
+          if (!open || sub.firstChild) return;
+          sub.appendChild(el('div', 'row', 'Loading…'));
+          api('/stats/' + c[0] + '/' + encodeURIComponent(s.id), Object.assign({ limit: 20 }, scoped(t))).then(function (d) {
+            sub.textContent = '';
+            (d.stats || []).forEach(function (x) { sub.appendChild(row((x.name || 'Unknown').replace(/^\S+\s+(\d+px)/, '$1'), '', x.count, 0, 0, false)); });
+            if (!sub.firstChild) sub.appendChild(el('div', 'row', 'No detail.'));
+          }).catch(function () { sub.textContent = ''; sub.appendChild(el('div', 'row', 'Could not load.')); });
+        });
+      }
+      return [r, sub];
+    }), 6);
+  }
+
+  /* ---------- sample numbers for ?demo, so the page can be looked at without a token ---------- */
+  function demo(path, p) {
+    var rnd = function (s) { var x = Math.sin(s * 99.13) * 43758.5; return x - Math.floor(x); };
+    var a = new Date(p.start), b = new Date(p.end), pages = [['/packman', 'Packman', 60], ['/', 'Garvit Gupta', 14], ['/rental', 'Rental Math', 7], ['/coins', 'Coins', 4], ['/panorama-demo', 'Panorama', 2]];
+    var only = p.include_paths ? String(p.include_paths).split(',').map(Number) : null;
+    var series = function (k, w) {
+      var out = [];
+      for (var d = new Date(a.getFullYear(), a.getMonth(), a.getDate()); d <= b; d = shift(d, 1)) {
+        var seed = Math.floor(d / 864e5) + k * 7, wk = d.getDay() % 6 ? 1 : 1.5, hourly = [];
+        for (var h = 0; h < 24; h++) hourly.push(Math.round(w * wk * (.25 + rnd(seed + h * .37)) * Math.max(.05, Math.sin((h - 5) / 24 * Math.PI)) / 5));
+        out.push({ day: ymd(d), hourly: hourly, daily: hourly.reduce(function (x, y) { return x + y; }, 0) });
+      }
+      return out;
+    };
+    var sets = pages.map(function (pg, i) { var st = series(i, pg[2]); return { path_id: i + 1, path: pg[0], title: pg[1], stats: st, count: st.reduce(function (s, x) { return s + x.daily; }, 0) }; })
+      .filter(function (h) { return !only || only.indexOf(h.path_id) >= 0; });
+    var total = sets.reduce(function (s, h) { return s + h.count; }, 0);
+    if (path === '/stats/hits') return { hits: sets, total: total, more: false };
+    if (path === '/stats/total') return { total: Math.round(total * .86) };
+    var split = function (rows) { return { stats: rows.map(function (r) { return { id: r[0], name: r[1], count: Math.round(total * r[2]) }; }), more: false }; };
+    var kind = path.split('/')[2];
+    if (path.split('/').length > 3) return split([['a', kind === 'locations' ? 'California' : kind === 'sizes' ? '↔ 390px' : 'Version 152', .5], ['b', kind === 'locations' ? 'New York' : kind === 'sizes' ? '↔ 430px' : 'Version 151', .2]]);
+    return split({
+      toprefs: [['', '', .46], ['', 'reddit.com/r/puzzles', .21], ['', 'news.ycombinator.com', .14], ['', 'Google', .09], ['', 'twitter.com', .06], ['', 'linkedin.com', .02], ['', 'bsky.app', .02]],
+      locations: [['US', 'United States', .52], ['IN', 'India', .17], ['GB', 'United Kingdom', .09], ['DE', 'Germany', .07], ['CA', 'Canada', .06], ['AU', 'Australia', .04], ['FR', 'France', .03], ['JP', 'Japan', .02]],
+      browsers: [['Safari', 'Safari', .47], ['Chrome', 'Chrome', .41], ['Firefox', 'Firefox', .08], ['Edge', 'Edge', .04]],
+      systems: [['iOS', 'iOS', .44], ['macOS', 'macOS', .23], ['Android', 'Android', .18], ['Windows', 'Windows', .13], ['Linux', 'Linux', .02]],
+      sizes: [['phone', '', .6], ['desktop', '', .24], ['tablet', '', .09], ['desktophd', '', .07]],
+      languages: [['(unknown)', '(unknown)', 1]], campaigns: []
+    }[kind] || []);
+  }
+
+  /* ---------- start ---------- */
+  function gate(msg) {
+    $('app').hidden = true; $('gate').hidden = false;
+    $('gate-err').hidden = !msg; $('gate-err').textContent = msg || '';
+    $('gate-token').focus();
+  }
+  function start() { $('gate').hidden = true; $('app').hidden = false; load(); }
+
+  CARDS.forEach(function (c) {
+    var card = el('div', 'card'), head = el('div', 'head'); card.id = 'b-' + c[0];
+    head.appendChild(el('h2', '', c[1])); card.appendChild(head); card.appendChild(el('div', 'rows'));
+    card.hidden = c[0] === 'languages' || c[0] === 'campaigns';
+    $('breakdowns').appendChild(card);
+  });
+  $('gate-form').addEventListener('submit', function (e) { e.preventDefault(); var v = $('gate-token').value.trim(); if (!v) return; token = v; store(v); $('gate-token').value = ''; start(); });
+  $('refresh').addEventListener('click', load);
+  $('forget').addEventListener('click', function () { store(''); token = null; gen++; gate(); });
+  $('pages-clear').addEventListener('click', function () { state.pages = []; writeUrl(); refilter(); });
+  $('find').addEventListener('input', function () { state.find = this.value; renderPages(); });
+  ['from', 'to'].forEach(function (id) { $(id).addEventListener('change', function () { if (!this.value) return; state[id] = this.value; writeUrl(); load(); }); });
+  document.addEventListener('click', function (e) { if (!$('pages-dd').contains(e.target)) $('pages-dd').open = false; });
+  var wide = 0;
+  window.addEventListener('resize', function () { if (!data || innerWidth === wide) return; wide = innerWidth; var again = redraw; redraw = []; again.forEach(function (f) { f(); }); });
+
+  // a link ending in #token=… sets a new device up in one tap, then the token leaves the address bar
+  var m = /[#&]token=([^&]+)/.exec(location.hash);
+  if (m) { store(decodeURIComponent(m[1])); history.replaceState(null, '', location.pathname + location.search); }
+  token = store();
+  readUrl();
+  if (DEMO) $('note').textContent = 'Sample numbers, not real visits.';
+  if (DEMO || token) start(); else gate();
+})();
+</script>
+</body>
+</html>
