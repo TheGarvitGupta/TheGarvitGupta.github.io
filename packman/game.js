@@ -724,7 +724,6 @@
     loupe.style.top = r.top + 'px'; loupe.style.left = (open ? Math.max(6, r.right - size) : r.left) + 'px';
     loupe.style.width = loupe.style.height = side + 'px';
     lens.style.width = lens.style.height = (size - 2 * edge) + 'px';
-    $('loupe-eye').style.width = $('loupe-eye').style.height = (r.width - 2 * edge) + 'px';
   }
   function eye(on) {
     var b = $('b-eye');
