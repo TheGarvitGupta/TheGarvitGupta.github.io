@@ -679,6 +679,13 @@
     var px = 1 / view.scale, V = pieces.map(G.verts), inPlay = V.map(function (A) { return G.zone(A, C) !== 'out'; });
     lens.textContent = '';
     lens.style.setProperty('--u', px);
+    // the bands are hatched, so they read as a margin and not as part of the shape: stripes 5 pixels apart on the screen
+    var defs = el('defs'), hatch = el('pattern'), wash = el('rect', 'lens-wash'), stripe = el('rect', 'lens-stripe'), step = 5 * px / ZOOM;
+    hatch.setAttribute('id', 'lens-hatch'); hatch.setAttribute('patternUnits', 'userSpaceOnUse'); hatch.setAttribute('patternTransform', 'rotate(45)');
+    hatch.setAttribute('width', step); hatch.setAttribute('height', step);
+    wash.setAttribute('width', step); wash.setAttribute('height', step);
+    stripe.setAttribute('width', step); stripe.setAttribute('height', step * 0.36);
+    hatch.appendChild(wash); hatch.appendChild(stripe); defs.appendChild(hatch); lens.appendChild(defs);
     lens.appendChild(bin.firstElementChild.cloneNode(true));
     // the strip between the wall as drawn and the wall as judged
     var strip = el('path', 'lens-true'), ring = function (poly) { return 'M' + poly.map(function (p) { return p[0].toFixed(4) + ' ' + p[1].toFixed(4); }).join('L') + 'Z'; };
