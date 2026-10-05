@@ -273,6 +273,20 @@
     p.y = clamp(p.y, view.y + 0.4, view.y + view.h - 0.4);
   }
 
+  // The angles at which a shape of this kind has a side square to one of this box's walls,
+  // counted once each (a square looks the same every 90 degrees, and so on).
+  function squared(type) {
+    var S = G.makeContainer(G.SHAPES[type]).walls, turn = TURN[type], found = [0];
+    C.walls.forEach(function (w) {
+      S.forEach(function (sd) {
+        var a = (Math.atan2(w.ny, w.nx) - Math.atan2(sd.ny, sd.nx)) * 180 / Math.PI, whole;
+        a = ((a % turn) + turn) % turn; whole = Math.round(a) % turn;
+        if (Math.abs(a - Math.round(a)) < 0.01 && found.indexOf(whole) < 0) found.push(whole);
+      });
+    });
+    return found;
+  }
+
   // Deal the pieces out around the box.
   function scatter() {
     var m = view.land ? 0.85 : 0.7, gap = view.land ? 0.85 : 0.75, zones = [];
@@ -300,7 +314,11 @@
       var s = slots[i % slots.length], j = Math.min(0.12, cell / 8);
       p.x = s[0] + (Math.random() - 0.5) * j;
       p.y = s[1] + (Math.random() - 0.5) * j;
-      p.angle = lv.scramble ? 15 * Math.floor(Math.random() * (p.type === 'triangle' ? 24 : TURN[p.type] / 15)) : 0;
+      // Dealt straight, or, on a level that scrambles them, at any of the angles that put one
+      // of the shape's sides square to a wall of this box. Never anything else: a shape dealt
+      // at an angle no wall shares could not sit flush against anything until it was turned.
+      var ways = lv.scramble ? squared(p.type) : [0];
+      p.angle = ways[Math.floor(Math.random() * ways.length)];
       keepInView(p);
     });
   }
