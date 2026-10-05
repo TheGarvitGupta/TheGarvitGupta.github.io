@@ -656,24 +656,37 @@
     for (var i = 0; i < poly.length; i++) { var a = poly[i], b = poly[(i + 1) % poly.length]; sum += a[0] * b[1] - b[0] * a[1]; }
     return Math.abs(sum) / 2;
   }
-  // Under eyesight, wherever two true outlines overlap, or one passes a wall, is filled orange:
-  // in a layer over the shapes.
+  // Under eyesight, wherever two true outlines overlap, or one passes a wall, is filled
+  // orange-red, in a layer over the shapes.
   function showHits() {
-    var hits = $('hits');
-    hits.textContent = '';
+    var hits = $('hits'), seals = $('seals');
+    hits.textContent = ''; seals.textContent = '';
     if (!eyeOn) return;
     var V = pieces.map(G.verts), inPlay = V.map(function (A) { return G.zone(A, C) !== 'out'; });
-    function red(poly) {
-      if (poly.length < 3 || area(poly) < 1e-6) return;
-      var e = el('polygon', 'hit');
+    var tol = 0.75 / view.scale;   // three quarters of a pixel
+    var fat = V.map(function (A, i) { return inPlay[i] ? grown(G.makeContainer(A), tol) : null; });
+    function within(poly, walls) { return walls.reduce(function (rest, w) { return rest.length > 2 ? cut(rest, w) : rest; }, poly); }
+    function fill(layer, cls, poly, colour) {
+      if (poly.length < 3 || area(poly) < 1e-7) return;
+      var e = el('polygon', cls);
       e.setAttribute('points', pts(poly));
-      hits.appendChild(e);
+      if (colour) e.style.fill = colour;
+      layer.appendChild(e);
     }
     V.forEach(function (A, i) {
       if (!inPlay[i]) return;
-      C.walls.forEach(function (w) { red(cut(A, w, true)); });
+      var blue = BLUES[i % BLUES.length];
+      C.walls.forEach(function (w) {
+        fill(hits, 'hit', cut(A, w, true));
+        // Shapes are let sit a hair off a wall, and off each other, and a hair of white would
+        // show there as a line. Anything closer than a pixel and a half counts as touching,
+        // and the sliver between is filled in, under the shapes, in the shape's own blue.
+        if (-G.excess(A, w) < 2 * tol) fill(seals, 'seal', cut(within(fat[i], C.walls), { nx: w.nx, ny: w.ny, d: w.d - 3 * tol }, true), blue);
+      });
       for (var j = i + 1; j < V.length; j++) {
-        if (inPlay[j]) red(G.makeContainer(V[j]).walls.reduce(function (rest, w) { return rest.length > 2 ? cut(rest, w) : rest; }, A));
+        if (!inPlay[j] || Math.hypot(pieces[i].x - pieces[j].x, pieces[i].y - pieces[j].y) > 2.4) continue;
+        fill(hits, 'hit', within(A, G.makeContainer(V[j]).walls));
+        fill(seals, 'seal', within(fat[i], G.makeContainer(fat[j]).walls), blue);
       }
     });
   }
@@ -854,7 +867,7 @@
     bin.setAttribute('class', '');
     bin.style.animation = 'none'; void bin.getBoundingClientRect(); bin.style.animation = '';
 
-    layer.textContent = ''; $('seams').textContent = '';
+    layer.textContent = ''; $('seams').textContent = ''; $('seals').textContent = '';
     var colors = shuffled(COLORS), kits = shuffled(OUTFITS), pips = $('pips');
     pips.textContent = '';
     pieces = lv.pieces.map(function (type, n) {
