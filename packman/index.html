@@ -224,9 +224,15 @@ button{font:inherit; color:inherit; cursor:pointer}
 #lens{position:absolute; right:0; top:0; display:block; pointer-events:none; opacity:0; transition:opacity .15s}
 #loupe.on #lens{opacity:1; transition:opacity .2s .08s}
 .ib.gone{visibility:hidden}
-.lens-true{fill:url(#lens-hatch); stroke:#6B4FD8; stroke-width:1px; stroke-linejoin:round; vector-effect:non-scaling-stroke}
-.lens-wash{fill:rgba(155,123,255,.2)} .lens-stripe{fill:#6B4FD8; fill-opacity:.6}
-.lens-hit{fill:var(--bad); fill-opacity:.88}
+/* The margin: what the judging counts beyond what is drawn, hatched in violet. Every shape has one
+   under it and the box has one inside its wall; they show, with the graded rims, only under eyesight. */
+#hatch-wash{fill:rgba(155,123,255,.2)} #hatch-stripe{fill:#6B4FD8; fill-opacity:.6}
+.safe{visibility:hidden; pointer-events:none; fill:url(#hatch); stroke:#6B4FD8; stroke-width:calc(1px * var(--u)); stroke-linejoin:round}
+.rim{visibility:hidden; pointer-events:none}
+.ring{fill:none; stroke-width:calc(.62px * var(--u)); stroke-linejoin:round}
+.eyes .safe,#lens .safe,.eyes .piece:not(.bad) .rim,#lens .piece:not(.bad) .rim{visibility:visible}
+.eyes .piece:not(.bad) .fill,#lens .piece:not(.bad) .fill{stroke:transparent}
+.hit{fill:var(--bad); fill-opacity:.88; pointer-events:none}
 #lens .piece{cursor:default}
 .bin-fill{fill:var(--bin); stroke:var(--ink); stroke-width:calc(4px * var(--u)); stroke-linejoin:round; transition:fill .35s}
 /* nothing inside the board animates with CSS transforms: Safari can leave smears behind */
@@ -480,8 +486,10 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 
   <main id="stage">
     <svg id="board" role="application" aria-label="Puzzle board">
-      <g id="bin"><path class="bin-fill"/></g>
+      <defs><pattern id="hatch" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect id="hatch-wash"/><rect id="hatch-stripe"/></pattern></defs>
+      <g id="bin"><path class="bin-fill"/><path class="safe" id="wall-safe" fill-rule="evenodd"/></g>
       <g id="pieces"></g>
+      <g id="hits"></g>
       <g id="ribbon" hidden></g>
       <path id="ghost" class="ghost" hidden/>
       <g id="handle" hidden><line/><circle id="knob-hit"/><circle id="knob"/><circle id="knob-dot"/></g>
@@ -540,7 +548,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.69</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.70</span></div>
   </div>
 </div>
 
@@ -600,9 +608,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.69"></script>
-<script src="levels.js?v=1.69"></script>
-<script src="game.js?v=1.69"></script>
+<script src="geom.js?v=1.70"></script>
+<script src="levels.js?v=1.70"></script>
+<script src="game.js?v=1.70"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

@@ -252,6 +252,10 @@
     var px = 1 / view.scale;
     board.style.setProperty('--u', px);   // one screen pixel, in board units, for stroke widths
     bin.firstElementChild.setAttribute('d', binPath(px));
+    // for eyesight: the strip between the wall as drawn and the wall as judged, and the hatching, five pixels a stripe
+    var loop = function (poly) { return 'M' + poly.map(function (v) { return v[0].toFixed(4) + ' ' + v[1].toFixed(4); }).join('L') + 'Z'; };
+    $('wall-safe').setAttribute('d', loop(grown(C, 1.4 * px)) + loop(C.poly));
+    ['hatch', 'hatch-wash', 'hatch-stripe'].forEach(function (id) { $(id).setAttribute('width', 5 * px); $(id).setAttribute('height', (id === 'hatch-stripe' ? 1.8 : 5) * px); });
     pieces.forEach(function (p) { if (p.fill) outline(p); });
     if (ghost) $('ghost').setAttribute('d', drawn(ghost.type));
     $('knob').setAttribute('r', 11 * px);
@@ -339,7 +343,19 @@
     var back = el('rect', 'back'), k = p.type === 'triangle' ? 0.74 : p.type === 'hexagon' ? 1.3 : 1, dy = p.type === 'triangle' ? 0.03 : 0;
     back.setAttribute('x', -0.28 * k); back.setAttribute('y', -0.21 * k + dy);
     back.setAttribute('width', 0.56 * k); back.setAttribute('height', (p.type === 'triangle' ? 0.45 : 0.54) * k);   // short of a triangle's base
-    body.appendChild(fill); body.appendChild(back); body.appendChild(face);
+    // Two things that only show while eyesight is on. Under the shape, its true outline,
+    // hatched: the margin the judging counts but the drawing leaves off. And over its edge,
+    // in place of the dark line, a few fine lines one inside the next, shading from the
+    // margin's violet at the outside to the shape's own colour at the inside.
+    var safe = el('path', 'safe'), rim = el('g', 'rim');
+    safe.setAttribute('d', 'M' + G.SHAPES[p.type].map(function (v) { return v[0] + ' ' + v[1]; }).join('L') + 'Z');
+    p.rings = [];
+    for (var k = 0; k < RINGS; k++) {
+      var ring = el('path', 'ring');
+      ring.setAttribute('stroke', blend('#6B4FD8', p.color, k / (RINGS - 1)));
+      rim.appendChild(ring); p.rings.push(ring);
+    }
+    body.appendChild(safe); body.appendChild(fill); body.appendChild(rim); body.appendChild(back); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
     p.back = back;
     p.el = g; p.pop = pop; p.body = body; p.fill = fill; p.eyes = eyes; p.tf = p.rot = p.look = '';
@@ -354,9 +370,19 @@
     p.back.setAttribute('rx', p.flip ? 0.0001 : 0);
   }
 
+  var RINGS = 5, LINE = 2.5;   // the lines that stand in for a shape's outline under eyesight, and the width they share
+  function blend(a, b, t) {
+    var n = function (hex, at) { return parseInt(hex.substr(at, 2), 16); };
+    return 'rgb(' + [1, 3, 5].map(function (at) { return Math.round(n(a, at) + (n(b, at) - n(a, at)) * t); }).join(',') + ')';
+  }
   function outline(p) {
-    var d = drawn(p.type);
+    var d = drawn(p.type), px = 1 / view.scale, box = G.makeContainer(G.SHAPES[p.type]);
     p.fill.setAttribute('d', d);
+    // the same outline, stepped across the width of the line: the first ring along its outer edge, the last along its inner
+    p.rings.forEach(function (ring, k) {
+      var off = -2.6 + LINE / 2 - (k + 0.5) * LINE / RINGS;
+      ring.setAttribute('d', rounded(grown(box, off * px), Math.max(0, Math.min(6 * px, 0.12) + (off + 2.6) * px)));
+    });
   }
 
   // Pieces are moved with transform attributes, not CSS transforms: Safari
@@ -416,7 +442,7 @@
       track.classList.toggle('won', !!ev.solved);
     }
     ev.fitted = fitted;
-    refreshLens();
+    showHits(); refreshLens();
     return ev;
   }
 
@@ -619,6 +645,7 @@
   // three times the size, with what the judging goes by added. That is a band of colour
   // round each shape out to its true edge, and inside the box in to its true wall. Where
   // those true outlines overlap, or pass a wall, it is red. Tap the window to put it away.
+  // While it is open the board shows the same margins, at its own size.
   var loupe = $('loupe'), lens = $('lens'), ZOOM = 3, GROW = 4.5, eyeOn = false, focus = null, lensFrame = 0;
 
   // what is left of a convex outline on one side of a line: inside (n.p <= d) or outside it
@@ -636,39 +663,35 @@
     for (var i = 0; i < poly.length; i++) { var a = poly[i], b = poly[(i + 1) % poly.length]; sum += a[0] * b[1] - b[0] * a[1]; }
     return Math.abs(sum) / 2;
   }
-  function lensPoly(cls, pts) {
-    var e = el('polygon', cls);
-    e.setAttribute('points', pts.map(function (p) { return p[0].toFixed(4) + ',' + p[1].toFixed(4); }).join(' '));
-    lens.appendChild(e);
-  }
-  // The picture is built afresh each time from copies of what is on the board, rather than
-  // mirrored live: Safari is unreliable about redrawing a mirrored shape whose original has changed.
-  function drawLens() {
-    var px = 1 / view.scale, V = pieces.map(G.verts), inPlay = V.map(function (A) { return G.zone(A, C) !== 'out'; });
-    lens.textContent = '';
-    lens.style.setProperty('--u', px);
-    // the bands are hatched, so they read as a margin and not as part of the shape: stripes 5 pixels apart on the screen
-    var defs = el('defs'), hatch = el('pattern'), wash = el('rect', 'lens-wash'), stripe = el('rect', 'lens-stripe'), step = 5 * px / ZOOM;
-    hatch.setAttribute('id', 'lens-hatch'); hatch.setAttribute('patternUnits', 'userSpaceOnUse'); hatch.setAttribute('patternTransform', 'rotate(45)');
-    hatch.setAttribute('width', step); hatch.setAttribute('height', step);
-    wash.setAttribute('width', step); wash.setAttribute('height', step);
-    stripe.setAttribute('width', step); stripe.setAttribute('height', step * 0.36);
-    hatch.appendChild(wash); hatch.appendChild(stripe); defs.appendChild(hatch); lens.appendChild(defs);
-    lens.appendChild(bin.firstElementChild.cloneNode(true));
-    // the strip between the wall as drawn and the wall as judged
-    var strip = el('path', 'lens-true'), ring = function (poly) { return 'M' + poly.map(function (p) { return p[0].toFixed(4) + ' ' + p[1].toFixed(4); }).join('L') + 'Z'; };
-    strip.setAttribute('d', ring(grown(C, 1.4 * px)) + ring(C.poly)); strip.setAttribute('fill-rule', 'evenodd');
-    lens.appendChild(strip);
-    V.forEach(function (A) { lensPoly('lens-true', A); });   // each shape's true outline, showing as a band round the shape drawn over it
-    Array.prototype.forEach.call(layer.children, function (g) { lens.appendChild(g.cloneNode(true)); });
+  // Under eyesight, wherever two true outlines overlap, or one passes a wall, is filled red:
+  // on the board, in a layer over the shapes, and so in the window too.
+  function showHits() {
+    var hits = $('hits');
+    hits.textContent = '';
+    if (!eyeOn) return;
+    var V = pieces.map(G.verts), inPlay = V.map(function (A) { return G.zone(A, C) !== 'out'; });
+    function red(poly) {
+      if (poly.length < 3 || area(poly) < 1e-6) return;
+      var e = el('polygon', 'hit');
+      e.setAttribute('points', pts(poly));
+      hits.appendChild(e);
+    }
     V.forEach(function (A, i) {
       if (!inPlay[i]) return;
-      C.walls.forEach(function (w) { var over = cut(A, w, true); if (over.length > 2 && area(over) > 1e-6) lensPoly('lens-hit', over); });
+      C.walls.forEach(function (w) { red(cut(A, w, true)); });
       for (var j = i + 1; j < V.length; j++) {
-        if (!inPlay[j]) continue;
-        var both = G.makeContainer(V[j]).walls.reduce(function (rest, w) { return rest.length > 2 ? cut(rest, w) : rest; }, A);
-        if (both.length > 2 && area(both) > 1e-6) lensPoly('lens-hit', both);
+        if (inPlay[j]) red(G.makeContainer(V[j]).walls.reduce(function (rest, w) { return rest.length > 2 ? cut(rest, w) : rest; }, A));
       }
+    });
+  }
+  // The window's picture is built afresh each time from copies of what is on the board,
+  // rather than mirrored live: Safari is unreliable about redrawing a mirrored shape whose
+  // original has changed. The copies bring their margins, graded rims and red with them.
+  function drawLens() {
+    lens.textContent = '';
+    lens.style.setProperty('--u', 1 / view.scale);
+    [bin, layer, $('hits')].forEach(function (group) {
+      Array.prototype.forEach.call(group.children, function (e) { lens.appendChild(e.cloneNode(true)); });
     });
   }
   function paintLens() {
@@ -704,6 +727,8 @@
     var b = $('b-eye');
     clearTimeout(eyeTimer);
     eyeOn = on;
+    board.classList.toggle('eyes', on);   // the board itself puts on its margins and graded rims
+    showHits();
     b.setAttribute('aria-pressed', on);
     if (on) {
       seatLoupe(false); loupe.classList.add('show'); b.classList.add('gone');
