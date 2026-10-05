@@ -636,38 +636,6 @@
     for (var i = 0; i < poly.length; i++) { var a = poly[i], b = poly[(i + 1) % poly.length]; sum += a[0] * b[1] - b[0] * a[1]; }
     return Math.abs(sum) / 2;
   }
-  // the nearest two outlines come to each other: [how far apart, and the point between them]
-  function nearest(A, B) {
-    var best = [Infinity, 0, 0];
-    [[A, B], [B, A]].forEach(function (pair) {
-      pair[0].forEach(function (p) {
-        for (var i = 0; i < pair[1].length; i++) {
-          var a = pair[1][i], b = pair[1][(i + 1) % pair[1].length], ex = b[0] - a[0], ey = b[1] - a[1];
-          var t = clamp(((p[0] - a[0]) * ex + (p[1] - a[1]) * ey) / (ex * ex + ey * ey), 0, 1), qx = a[0] + ex * t, qy = a[1] + ey * t;
-          var d = Math.hypot(p[0] - qx, p[1] - qy);
-          if (d < best[0]) best = [d, (p[0] + qx) / 2, (p[1] + qy) / 2];
-        }
-      });
-    });
-    return best;
-  }
-  // where shape i comes closest to a wall or to another shape in the box; nothing while it is still out in the tray
-  function contact(i) {
-    var A = G.verts(pieces[i]), z = G.zone(A, C);
-    if (z === 'out') return null;
-    var best = nearest(A, C.poly);
-    if (z === 'edge') best[0] = 0;
-    pieces.forEach(function (q, j) {
-      if (j === i) return;
-      var B = G.verts(q);
-      if (G.zone(B, C) === 'out') return;
-      var n = nearest(A, B), o = G.overlap(A, B);
-      if (o && o.depth > G.EPS) n[0] = 0;
-      if (n[0] < best[0]) best = n;
-    });
-    return best;
-  }
-
   function lensPoly(cls, pts) {
     var e = el('polygon', cls);
     e.setAttribute('points', pts.map(function (p) { return p[0].toFixed(4) + ',' + p[1].toFixed(4); }).join(' '));
@@ -712,12 +680,12 @@
   }
   // the window is redrawn at most once a frame, however often the board or the pointer moves
   function refreshLens() { if (eyeOn && !lensFrame) lensFrame = requestAnimationFrame(paintLens); }
-  // What to look at: the spot under the pointer, or, while a shape is being moved or turned
-  // close to a neighbour or a wall, the place where they nearly meet.
+  // It always shows the spot under the cursor or finger, and nothing cleverer: a view that
+  // chose its own subject would jump about.
   function look(e) {
     if (!eyeOn) return;
-    var i = drag ? (drag.mode === 'move' ? drag.i : sel) : -1, c = i >= 0 ? contact(i) : null, w = world(e);
-    focus = c && c[0] < 0.25 ? [c[1], c[2]] : [w.x, w.y];
+    var w = world(e);
+    focus = [w.x, w.y];
     refreshLens();
   }
   // The button itself seems to grow: the window starts as an exact copy of it, in its place
