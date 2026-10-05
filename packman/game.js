@@ -4,7 +4,7 @@
 
   var G = PackmanGeom, LEVELS = PackmanLevels;
   var NS = 'http://www.w3.org/2000/svg';
-  var COLORS = ['#FF6B6B', '#FFC93C', '#3DDBB4', '#4DA8FF', '#9B7BFF', '#FF8FCB', '#FF9F45'];
+  var COLORS = ['#FF6B6B', '#FFC93C', '#3DDBB4', '#4DA8FF', '#9B7BFF', '#FF8FCB', '#FF9F45', '#B5E655', '#45D9E6', '#D987F5', '#FFB59E'];
   var PRAISE = ['Packed!', 'Snug!', 'Tidy!', 'Nailed it!', 'So neat!', 'Boxed!'];
   var STORE = 'packman.v1';
   // Whoever packs all seventeen is asked to send Garvit a screenshot. Set false and the prize is not mentioned.
@@ -24,7 +24,34 @@
     { idle: 'M-0.06 0.125H0.06', wear: [['path', 'wear', { d: 'M-0.2 -0.175L-0.08 -0.135M0.2 -0.175L0.08 -0.135' }]] },
     { still: true, eye: 0.036, eyeY: -0.045, idle: 'M-0.035 0.115Q0 0.13 0.035 0.115', wear: [['path', 'wear', { d: 'M-0.185 -0.078H-0.075M0.075 -0.078H0.185' }]] },
     { wear: [-0.24, -0.2, -0.22, 0.2, 0.24, 0.22].map(function (x, n) { return ['circle', 'wear solid', { cx: x, cy: n % 3 === 2 ? 0.07 : 0.03, r: 0.012 }]; }) },
-    { eye: 0.062, idle: 'M-0.04 0.115Q0 0.14 0.04 0.115' }
+    { eye: 0.062, idle: 'M-0.04 0.115Q0 0.14 0.04 0.115' },
+    // the cool one: shades, and a smirk. Nothing to blink or look with behind them.
+    { still: true, stare: true, idle: 'M-0.05 0.11Q0.03 0.15 0.08 0.09',
+      wear: [['path', 'wear solid', { d: 'M-0.235 -0.115H-0.03L-0.05 -0.02Q-0.13 0.03 -0.21 -0.02ZM0.03 -0.115H0.235L0.21 -0.02Q0.13 0.03 0.05 -0.02Z' }], ['path', 'wear', { d: 'M-0.03 -0.1H0.03' }]] },
+    // the gentleman: a monocle on a chain, and one raised eyebrow
+    { idle: 'M-0.05 0.12H0.05',
+      wear: [['circle', 'wear', { cx: 0.13, cy: -0.06, r: 0.095 }], ['path', 'wear thin', { d: 'M0.205 0Q0.255 0.1 0.2 0.21' }], ['path', 'wear', { d: 'M0.065 -0.185Q0.13 -0.22 0.195 -0.185' }]] },
+    // the cat: whiskers, a nose, and a mouth like a w
+    { idle: 'M-0.06 0.095Q-0.03 0.135 0 0.095Q0.03 0.135 0.06 0.095',
+      wear: [['path', 'wear thin', { d: 'M-0.2 0.04L-0.27 0.02M-0.2 0.075L-0.27 0.085M0.2 0.04L0.27 0.02M0.2 0.075L0.27 0.085' }], ['path', 'wear solid', { d: 'M-0.024 0.03H0.024L0 0.058Z' }]] },
+    // the cheeky one: tongue out
+    { idle: 'M-0.08 0.09Q0 0.15 0.08 0.09', wear: [['path', 'tongue', { d: 'M-0.012 0.122V0.165A0.036 0.036 0 0 0 0.06 0.165V0.112Z' }]] },
+    // the smitten one: hearts where the eyes would be
+    { eye: 0.001, still: true, stare: true, idle: 'M-0.06 0.1Q0 0.16 0.06 0.1',
+      wear: [-0.13, 0.13].map(function (x) {
+        return ['path', 'heart', { d: 'M' + x + ' -0.005C' + (x - 0.1) + ' -0.075 ' + (x - 0.05) + ' -0.15 ' + x + ' -0.095C' + (x + 0.05) + ' -0.15 ' + (x + 0.1) + ' -0.075 ' + x + ' -0.005Z' }];
+      }) },
+    // the startled one: wide eyes, raised brows, a mouth like an o
+    { eye: 0.056, eyeY: -0.065, idle: 'M-0.034 0.135A0.034 0.04 0 1 0 0.034 0.135A0.034 0.04 0 1 0 -0.034 0.135',
+      wear: [['path', 'wear', { d: 'M-0.19 -0.18Q-0.13 -0.215 -0.07 -0.18M0.07 -0.18Q0.13 -0.215 0.19 -0.18' }]] },
+    // the one that has been through it: a plaster, and a wobbly mouth
+    { idle: 'M-0.07 0.12Q-0.035 0.09 0 0.12Q0.035 0.15 0.07 0.12',
+      wear: [['rect', 'plaster', { x: 0.09, y: -0.215, width: 0.15, height: 0.062, rx: 0.031, transform: 'rotate(-18 0.165 -0.184)' }], ['path', 'wear thin', { d: 'M0.15 -0.2L0.16 -0.165M0.18 -0.21L0.19 -0.175' }]] },
+    // the goofy one: two front teeth
+    { idle: 'M-0.09 0.1Q0 0.14 0.09 0.1', wear: [['path', 'tooth', { d: 'M-0.034 0.118V0.168H0.034V0.118M0 0.122V0.168' }]] },
+    // the pirate: a patch on a strap
+    { idle: 'M-0.05 0.11Q0.03 0.15 0.08 0.09',
+      wear: [['path', 'wear thin', { d: 'M-0.27 -0.16L-0.19 -0.1M-0.07 -0.09L0.27 -0.175' }], ['ellipse', 'wear solid', { cx: -0.13, cy: -0.055, rx: 0.078, ry: 0.068 }]] }
   ];
   var GIFT = '<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg>';
   var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1188,7 +1215,7 @@
   setInterval(function () {
     if (!pieces.length || document.hidden) return;
     var p = pieces[Math.floor(Math.random() * pieces.length)];
-    if (!p.el) return;
+    if (!p.el || p.kit.stare) return;   // shades and heart eyes do not blink
     p.el.classList.add('blink'); repaint(p);
     setTimeout(function () { p.el.classList.remove('blink'); repaint(p); }, 220);
   }, 900);
