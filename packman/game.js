@@ -508,7 +508,7 @@
     if (frame) { cancelAnimationFrame(frame); moveTo(); }
     var p = pieces[sel];
     p.el.classList.remove('held');
-    drag = { mode: 'twist', id: a, id2: e.pointerId, from: drag ? drag.a0 : p.angle, a0: p.angle, last: fingerAngle(a, e.pointerId), turn: 0, moved: !!(drag && drag.moved) };
+    drag = { mode: 'twist', touch: true, id: a, id2: e.pointerId, from: drag ? drag.a0 : p.angle, a0: p.angle, last: fingerAngle(a, e.pointerId), turn: 0, moved: !!(drag && drag.moved) };
     blank = null;
     handle.classList.add('spin'); bubble.classList.add('show');
     placeHandle();
@@ -527,13 +527,13 @@
     if (document.activeElement === ang) ang.blur();
     var w = world(e), t = e.target, pe = t.closest ? t.closest('.piece') : null;
     if ((t.id === 'knob' || t.id === 'knob-hit') && sel >= 0) {
-      drag = { mode: 'spin', id: e.pointerId, from: pieces[sel].angle };
+      drag = { mode: 'spin', touch: e.pointerType === 'touch', id: e.pointerId, from: pieces[sel].angle };
       handle.classList.add('spin'); bubble.classList.add('show');
       placeHandle();
     } else if (pe) {
       var i = +pe.dataset.i, p = pieces[i];
       select(i);
-      drag = { mode: 'move', id: e.pointerId, i: i, ox: p.x - w.x, oy: p.y - w.y, sx: e.clientX, sy: e.clientY, moved: false, a0: p.angle, stuck: false };
+      drag = { mode: 'move', touch: e.pointerType === 'touch', id: e.pointerId, i: i, ox: p.x - w.x, oy: p.y - w.y, sx: e.clientX, sy: e.clientY, moved: false, a0: p.angle, stuck: false };
       p.el.classList.add('held');
       placeHandle(); sfx.pick();
     } else if (e.pointerType === 'touch' && sel >= 0) {
@@ -563,13 +563,13 @@
       var a = fingerAngle(drag.id, drag.id2);
       drag.turn += ((a - drag.last) % 360 + 540) % 360 - 180; drag.last = a;
       spinTo(sel, notched(drag.a0 + drag.turn));
-      judge();
+      judge(); peer(e);
       return;
     }
     if (drag.mode === 'spin') {
       p = pieces[sel];
       spinTo(sel, notched(Math.atan2(w.y - p.y, w.x - p.x) * 180 / Math.PI + 90));
-      judge();
+      judge(); peer(e);
       return;
     }
     if (!drag.moved && Math.abs(e.clientX - drag.sx) + Math.abs(e.clientY - drag.sy) < 4) return;
@@ -585,7 +585,7 @@
     if (stuck && !drag.stuck) { sfx.snap(); haptic(); }
     drag.stuck = stuck;
     render(drag.i);
-    judge(); showAngle();
+    judge(); showAngle(); peer(e);
   }
 
   function release(e) {
@@ -595,6 +595,7 @@
     if (!drag || (e.pointerId !== drag.id && e.pointerId !== drag.id2)) return;
     if (frame) { cancelAnimationFrame(frame); if (drag.mode === 'twist') { frame = 0; pending = null; } else moveTo(); }
     var d = drag; drag = null;
+    hideLens();
     try { board.releasePointerCapture(e.pointerId); } catch (err) {}
     if (d.mode !== 'move') {
       handle.classList.remove('spin'); bubble.classList.remove('show');
@@ -608,6 +609,117 @@
   }
   board.addEventListener('pointerup', release);
   board.addEventListener('pointercancel', release);
+
+  /* ---------- loupe ---------- */
+
+  // On the board every shape is drawn a hair small, with soft corners, and the box a hair
+  // big, so a packed box looks neatly spaced. The loupe shows what the judging sees instead:
+  // the true outlines, four times the size, with anything that overlaps or pokes through a
+  // wall in red. It comes up by itself while a shape is moved or turned within a hair of a
+  // neighbour or a wall, and under the cursor whenever Shift is held.
+  var loupe = $('loupe'), lens = $('lens'), ZOOM = 4, lensOn = false, peeking = false, mouseAt = null;
+
+  // what is left of a convex outline on one side of a line: inside (n.p <= d) or outside it
+  function cut(poly, w, outside) {
+    var out = [], n = poly.length, k = outside ? -1 : 1;
+    for (var i = 0; i < n; i++) {
+      var a = poly[i], b = poly[(i + 1) % n], da = k * (a[0] * w.nx + a[1] * w.ny - w.d), db = k * (b[0] * w.nx + b[1] * w.ny - w.d);
+      if (da <= 0) out.push(a);
+      if ((da < 0 && db > 0) || (da > 0 && db < 0)) { var t = da / (da - db); out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); }
+    }
+    return out;
+  }
+  function area(poly) {
+    var sum = 0;
+    for (var i = 0; i < poly.length; i++) { var a = poly[i], b = poly[(i + 1) % poly.length]; sum += a[0] * b[1] - b[0] * a[1]; }
+    return Math.abs(sum) / 2;
+  }
+  // the nearest two outlines come to each other: [how far apart, and the point between them]
+  function nearest(A, B) {
+    var best = [Infinity, 0, 0];
+    [[A, B], [B, A]].forEach(function (pair) {
+      pair[0].forEach(function (p) {
+        for (var i = 0; i < pair[1].length; i++) {
+          var a = pair[1][i], b = pair[1][(i + 1) % pair[1].length], ex = b[0] - a[0], ey = b[1] - a[1];
+          var t = clamp(((p[0] - a[0]) * ex + (p[1] - a[1]) * ey) / (ex * ex + ey * ey), 0, 1), qx = a[0] + ex * t, qy = a[1] + ey * t;
+          var d = Math.hypot(p[0] - qx, p[1] - qy);
+          if (d < best[0]) best = [d, (p[0] + qx) / 2, (p[1] + qy) / 2];
+        }
+      });
+    });
+    return best;
+  }
+  // where shape i comes closest to a wall or to another shape in the box; nothing while it is still out in the tray
+  function contact(i) {
+    var A = G.verts(pieces[i]), z = G.zone(A, C);
+    if (z === 'out') return null;
+    var best = nearest(A, C.poly);
+    if (z === 'edge') best[0] = 0;
+    pieces.forEach(function (q, j) {
+      if (j === i) return;
+      var B = G.verts(q);
+      if (G.zone(B, C) === 'out') return;
+      var n = nearest(A, B), o = G.overlap(A, B);
+      if (o && o.depth > G.EPS) n[0] = 0;
+      if (n[0] < best[0]) best = n;
+    });
+    return best;
+  }
+
+  function lensPoly(cls, pts, fill) {
+    var e = el('polygon', cls);
+    e.setAttribute('points', pts.map(function (p) { return p[0].toFixed(4) + ',' + p[1].toFixed(4); }).join(' '));
+    if (fill) e.setAttribute('fill', fill);
+    lens.appendChild(e);
+  }
+  function drawLens() {
+    lens.textContent = '';
+    lensPoly('lens-box', C.poly);
+    var V = pieces.map(G.verts), inPlay = V.map(function (A) { return G.zone(A, C) !== 'out'; });
+    V.forEach(function (A, i) { lensPoly('lens-piece', A, pieces[i].color); });
+    V.forEach(function (A, i) {
+      if (!inPlay[i]) return;
+      C.walls.forEach(function (w) { var over = cut(A, w, true); if (over.length > 2 && area(over) > 1e-6) lensPoly('lens-hit', over); });
+      for (var j = i + 1; j < V.length; j++) {
+        if (!inPlay[j]) continue;
+        var both = G.makeContainer(V[j]).walls.reduce(function (rest, w) { return rest.length > 2 ? cut(rest, w) : rest; }, A);
+        if (both.length > 2 && area(both) > 1e-6) lensPoly('lens-hit', both);
+      }
+    });
+    lensPoly('lens-wall', C.poly);
+  }
+  // Show the patch round (wx, wy). The loupe stands off above the finger or cursor, and
+  // goes to one side when there is no room above.
+  function showLens(wx, wy, cx, cy, touch) {
+    var r = stage.getBoundingClientRect(), D = loupe.offsetWidth, half = lens.clientWidth / 2 / (view.scale * ZOOM), off = touch ? 62 : 26;
+    drawLens();
+    lens.setAttribute('viewBox', (wx - half) + ' ' + (wy - half) + ' ' + 2 * half + ' ' + 2 * half);
+    var x = cx - r.left, y = cy - r.top - D / 2 - off;
+    if (y < D / 2 + 4) { y = cy - r.top; x += (x < r.width / 2 ? 1 : -1) * (D / 2 + off + 8); }
+    loupe.style.left = (clamp(x, D / 2 + 4, r.width - D / 2 - 4) - D / 2) + 'px';
+    loupe.style.top = (clamp(y, D / 2 + 4, r.height - D / 2 - 4) - D / 2) + 'px';
+    loupe.classList.add('on'); lensOn = true;
+  }
+  function hideLens() { if (lensOn) { loupe.classList.remove('on'); lensOn = false; } }
+  // while a shape is being moved or turned: up when it is within a hair of something, away again once it is clear
+  function peer(e) {
+    var i = drag.mode === 'move' ? drag.i : sel, c = i >= 0 ? contact(i) : null;
+    if (c && c[0] < (lensOn ? 0.16 : 0.08)) showLens(c[1], c[2], e.clientX, e.clientY, drag.touch); else hideLens();
+  }
+  // with a mouse: hold Shift and it follows the cursor, wherever that is
+  function peek(on) {
+    if (drag || won) return;
+    peeking = on && !!mouseAt;
+    if (peeking) { var w = world(mouseAt); showLens(w.x, w.y, mouseAt.clientX, mouseAt.clientY, false); } else hideLens();
+  }
+  board.addEventListener('pointermove', function (e) {
+    if (e.pointerType === 'touch') return;
+    mouseAt = { clientX: e.clientX, clientY: e.clientY };
+    if (e.shiftKey || peeking) peek(e.shiftKey);
+  });
+  board.addEventListener('pointerleave', function () { mouseAt = null; if (peeking) peek(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Shift' && !e.repeat && !document.querySelector('.sheet.open')) peek(true); });
+  document.addEventListener('keyup', function (e) { if (e.key === 'Shift' && peeking) peek(false); });
 
   // Every face watches the pointer, and so whatever it is carrying. Only the
   // two dots move: nothing in a face is ever shifted as a group or taken out
@@ -718,6 +830,7 @@
   // fresh: deal the pieces out again even if a half-packed board was saved.
   function startLevel(i, fresh) {
     level = i; lv = LEVELS[i];
+    peeking = false; hideLens();
     $('prize-track').hidden = level !== MAIN - 1;
     var was = save.done[lv.name];
     $('best').hidden = !was;
@@ -877,7 +990,7 @@
   }
 
   function win() {
-    won = true;
+    won = true; peeking = false; hideLens();
     countMove();
     clearTimeout(shakeTimer);
     $('b-hint').classList.remove('nag');
