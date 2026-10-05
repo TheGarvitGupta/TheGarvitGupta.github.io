@@ -164,10 +164,10 @@ button{font:inherit; color:inherit; cursor:pointer}
 /* level 17: a little piece runs along a rail towards the prize as the box fills */
 #prize-track{display:flex; align-items:center; gap:8px; margin-top:6px; max-width:420px}
 #prize-track[hidden]{display:none}
-/* the rail starts half a runner in, so the runner's left edge, not its middle, lines up with the words above */
-#prize-track .rail{position:relative; flex:1; height:12px; margin-left:calc(11px - var(--bw)); border:var(--bw) solid var(--ink); border-radius:999px; background:var(--card)}
+#prize-track .rail{position:relative; flex:1; height:12px; border:var(--bw) solid var(--ink); border-radius:999px; background:var(--card)}
 #rail-fill{position:absolute; left:0; top:0; bottom:0; width:0; border-radius:999px; background:linear-gradient(90deg,var(--mint),var(--sun)); transition:width .35s var(--pop)}
-#rail-run{position:absolute; top:50%; left:0; width:22px; height:22px; margin:-11px 0 0 -11px; transition:left .35s var(--pop)}
+/* the runner keeps inside the rail: flush with its left end at the start, and with its right end when all are packed */
+#rail-run{position:absolute; top:50%; left:calc(var(--at, 0) * (100% - 22px + 2 * var(--bw)) - var(--bw)); width:22px; height:22px; margin:-11px 0 0; transition:left .35s var(--pop)}
 #rail-run svg{display:block; width:100%; height:100%; animation:bob 1.6s ease-in-out infinite}
 #prize-track .goal{flex:none; width:34px; height:34px; animation:tempt 1.8s ease-in-out infinite}
 #prize-track .goal svg{display:block; width:100%; height:100%}
@@ -501,7 +501,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door by Garvit.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.53</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.54</span></div>
   </div>
 </div>
 
@@ -561,9 +561,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.53"></script>
-<script src="levels.js?v=1.53"></script>
-<script src="game.js?v=1.53"></script>
+<script src="geom.js?v=1.54"></script>
+<script src="levels.js?v=1.54"></script>
+<script src="game.js?v=1.54"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

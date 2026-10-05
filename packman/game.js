@@ -411,7 +411,7 @@
     $('count').textContent = ev.packed + ' of ' + pieces.length + ' packed';
     if (level === MAIN - 1) {
       var along = ev.packed / pieces.length * 100, track = $('prize-track');
-      $('rail-fill').style.width = along + '%'; $('rail-run').style.left = along + '%';
+      $('rail-fill').style.width = along + '%'; $('rail-run').style.setProperty('--at', along / 100);
       track.classList.toggle('near', ev.packed >= pieces.length - 3 && !ev.solved);
       track.classList.toggle('won', !!ev.solved);
     }
