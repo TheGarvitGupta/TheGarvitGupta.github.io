@@ -613,11 +613,12 @@
   /* ---------- loupe ---------- */
 
   // On the board every shape is drawn a hair small, with soft corners, and the box a hair
-  // big, so a packed box looks neatly spaced. The loupe shows what the judging sees instead:
-  // the true outlines, four times the size, with anything that overlaps or pokes through a
-  // wall in red. It comes up by itself while a shape is moved or turned within a hair of a
-  // neighbour or a wall, and under the cursor whenever Shift is held.
-  var loupe = $('loupe'), lens = $('lens'), ZOOM = 4, lensOn = false, peeking = false, mouseAt = null;
+  // big, so a packed box looks neatly spaced. The loupe shows the board exactly as it looks,
+  // three times the size, and adds what the judging goes by: a band of colour round each
+  // shape out to its true edge, and inside the box in to its true wall. Where those true
+  // outlines overlap, or pass a wall, it is red. It comes up by itself while a shape is moved
+  // or turned within a hair of a neighbour or a wall, and under the cursor whenever Shift is held.
+  var loupe = $('loupe'), lens = $('lens'), ZOOM = 3, lensOn = false, peeking = false, mouseAt = null;
 
   // what is left of a convex outline on one side of a line: inside (n.p <= d) or outside it
   function cut(poly, w, outside) {
@@ -666,17 +667,24 @@
     return best;
   }
 
-  function lensPoly(cls, pts, fill) {
+  function lensPoly(cls, pts) {
     var e = el('polygon', cls);
     e.setAttribute('points', pts.map(function (p) { return p[0].toFixed(4) + ',' + p[1].toFixed(4); }).join(' '));
-    if (fill) e.setAttribute('fill', fill);
     lens.appendChild(e);
   }
+  // The picture is built afresh each time from copies of what is on the board, rather than
+  // mirrored live: Safari is unreliable about redrawing a mirrored shape whose original has changed.
   function drawLens() {
+    var px = 1 / view.scale, V = pieces.map(G.verts), inPlay = V.map(function (A) { return G.zone(A, C) !== 'out'; });
     lens.textContent = '';
-    lensPoly('lens-box', C.poly);
-    var V = pieces.map(G.verts), inPlay = V.map(function (A) { return G.zone(A, C) !== 'out'; });
-    V.forEach(function (A, i) { lensPoly('lens-piece', A, pieces[i].color); });
+    lens.style.setProperty('--u', px);
+    lens.appendChild(bin.firstElementChild.cloneNode(true));
+    // the strip between the wall as drawn and the wall as judged
+    var strip = el('path', 'lens-true'), ring = function (poly) { return 'M' + poly.map(function (p) { return p[0].toFixed(4) + ' ' + p[1].toFixed(4); }).join('L') + 'Z'; };
+    strip.setAttribute('d', ring(grown(C, 1.4 * px)) + ring(C.poly)); strip.setAttribute('fill-rule', 'evenodd');
+    lens.appendChild(strip);
+    V.forEach(function (A) { lensPoly('lens-true', A); });   // each shape's true outline, showing as a band round the shape drawn over it
+    Array.prototype.forEach.call(layer.children, function (g) { lens.appendChild(g.cloneNode(true)); });
     V.forEach(function (A, i) {
       if (!inPlay[i]) return;
       C.walls.forEach(function (w) { var over = cut(A, w, true); if (over.length > 2 && area(over) > 1e-6) lensPoly('lens-hit', over); });
@@ -686,7 +694,6 @@
         if (both.length > 2 && area(both) > 1e-6) lensPoly('lens-hit', both);
       }
     });
-    lensPoly('lens-wall', C.poly);
   }
   // Show the patch round (wx, wy). The loupe stands off above the finger or cursor, and
   // goes to one side when there is no room above.

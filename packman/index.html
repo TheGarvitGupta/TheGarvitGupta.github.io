@@ -196,16 +196,15 @@ button{font:inherit; color:inherit; cursor:pointer}
 #stage{position:relative; flex:1; min-height:0; margin:8px 0}
 #board{position:absolute; inset:0; width:100%; height:100%; touch-action:none; overflow:visible; display:block}
 #board{--u:.02}
-/* the loupe: the true outlines, much enlarged, in a ring that stands off from the finger */
+/* the loupe: the board as it looks, enlarged, with each shape's true edge and the box's true wall marked out in violet */
 #loupe{position:absolute; z-index:6; left:0; top:0; width:136px; height:136px; overflow:hidden; pointer-events:none; background:var(--bg);
   border:3px solid var(--ink); border-radius:50%; box-shadow:0 12px 26px -10px rgba(27,20,45,.55);
   opacity:0; transform:scale(.5); transition:opacity .12s, transform .18s var(--pop)}
 #loupe.on{opacity:1; transform:none}
 #lens{display:block; width:100%; height:100%}
-.lens-box{fill:var(--bin)}
-.lens-piece{stroke:var(--ink); stroke-width:1px; stroke-linejoin:round; vector-effect:non-scaling-stroke}
-.lens-hit{fill:var(--bad); fill-opacity:.9}
-.lens-wall{fill:none; stroke:var(--ink); stroke-width:2px; vector-effect:non-scaling-stroke}
+.lens-true{fill:rgba(155,123,255,.38); stroke:#6B4FD8; stroke-width:1px; stroke-linejoin:round; vector-effect:non-scaling-stroke}
+.lens-hit{fill:var(--bad); fill-opacity:.88}
+#lens .piece{cursor:default}
 .bin-fill{fill:var(--bin); stroke:var(--ink); stroke-width:calc(4px * var(--u)); stroke-linejoin:round; transition:fill .35s}
 /* nothing inside the board animates with CSS transforms: Safari can leave smears behind */
 #bin{animation:fadein .5s both}
@@ -513,7 +512,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.58</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.59</span></div>
   </div>
 </div>
 
@@ -573,9 +572,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.58"></script>
-<script src="levels.js?v=1.58"></script>
-<script src="game.js?v=1.58"></script>
+<script src="geom.js?v=1.59"></script>
+<script src="levels.js?v=1.59"></script>
+<script src="game.js?v=1.59"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
