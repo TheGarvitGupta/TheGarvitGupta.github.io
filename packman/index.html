@@ -226,10 +226,14 @@ button{font:inherit; color:inherit; cursor:pointer}
   border:solid var(--ink); border-width:var(--bw) 0 0 var(--bw); border-radius:3px 0 0 0; transform:rotate(45deg)}
 
 /* Eyesight: every shape as its true outline, which is a hair bigger than it is drawn, hatched in violet.
-   The colour, the face and the dark line all go; the box shows the strip inside its true wall. */
+   The colour, the face and the dark line all go. The box is drawn the same way: its true outline, a hair
+   smaller than usual, with the same fine violet edge and no dark frame. */
 #hatch-wash{fill:rgba(155,123,255,.2)} #hatch-stripe{fill:#6B4FD8; fill-opacity:.6}
 .safe{visibility:hidden; pointer-events:none; fill:url(#hatch); stroke:#6B4FD8; stroke-width:calc(1px * var(--u)); stroke-linejoin:round}
-#board.eyes .safe{visibility:visible}
+#true-box{visibility:hidden; pointer-events:none; fill:var(--bin); stroke:#6B4FD8; stroke-width:calc(1px * var(--u)); stroke-linejoin:round; transition:fill .35s}
+#bin.win #true-box{fill:var(--win)}
+#board.eyes .safe,#board.eyes #true-box{visibility:visible}
+#board.eyes .bin-fill{visibility:hidden}
 #board.eyes .piece .fill{fill:transparent; stroke:transparent; pointer-events:all}
 #board.eyes .piece .face,#board.eyes .piece .face *,#board.eyes .piece .back{visibility:hidden}
 .hit{fill:var(--bad); fill-opacity:.88; pointer-events:none}
@@ -486,7 +490,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   <main id="stage">
     <svg id="board" role="application" aria-label="Puzzle board">
       <defs><pattern id="hatch" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect id="hatch-wash"/><rect id="hatch-stripe"/></pattern></defs>
-      <g id="bin"><path class="bin-fill"/><path class="safe" id="wall-safe" fill-rule="evenodd"/></g>
+      <g id="bin"><path class="bin-fill"/><path id="true-box"/></g>
       <g id="pieces"></g>
       <g id="hits"></g>
       <g id="ribbon" hidden></g>
@@ -548,7 +552,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.80</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.81</span></div>
   </div>
 </div>
 
@@ -608,9 +612,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.80"></script>
-<script src="levels.js?v=1.80"></script>
-<script src="game.js?v=1.80"></script>
+<script src="geom.js?v=1.81"></script>
+<script src="levels.js?v=1.81"></script>
+<script src="game.js?v=1.81"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

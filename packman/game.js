@@ -252,9 +252,8 @@
     var px = 1 / view.scale;
     board.style.setProperty('--u', px);   // one screen pixel, in board units, for stroke widths
     bin.firstElementChild.setAttribute('d', binPath(px));
-    // for eyesight: the strip between the wall as drawn and the wall as judged, and the hatching, five pixels a stripe
-    var loop = function (poly) { return 'M' + poly.map(function (v) { return v[0].toFixed(4) + ' ' + v[1].toFixed(4); }).join('L') + 'Z'; };
-    $('wall-safe').setAttribute('d', loop(grown(C, 1.4 * px)) + loop(C.poly));
+    // for eyesight: the box exactly as judged, and the hatching, five pixels a stripe
+    $('true-box').setAttribute('d', 'M' + C.poly.map(function (v) { return v[0].toFixed(4) + ' ' + v[1].toFixed(4); }).join('L') + 'Z');
     ['hatch', 'hatch-wash', 'hatch-stripe'].forEach(function (id) { $(id).setAttribute('width', 5 * px); $(id).setAttribute('height', (id === 'hatch-stripe' ? 1.8 : 5) * px); });
     pieces.forEach(function (p) { if (p.fill) outline(p); });
     if (ghost) $('ghost').setAttribute('d', drawn(ghost.type));
@@ -624,7 +623,7 @@
   // On the board every shape is drawn a hair small, with soft corners, and the box a hair
   // big, so a packed box looks neatly spaced. The eye button in the bar swaps that for what
   // the judging goes by: every shape as its true outline, hatched in violet and nothing
-  // else, the box's true wall, and red wherever those outlines overlap or pass a wall.
+  // else, the box as its true outline too, and red wherever those overlap or pass a wall.
   // Tap it again and the board goes back to how it looks.
   var eyeOn = false;
 
