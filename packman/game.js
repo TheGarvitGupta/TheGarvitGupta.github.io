@@ -664,7 +664,6 @@
     if (!eyeOn) return;
     var V = pieces.map(G.verts), inPlay = V.map(function (A) { return G.zone(A, C) !== 'out'; });
     var tol = 0.75 / view.scale;   // three quarters of a pixel
-    var fat = V.map(function (A, i) { return inPlay[i] ? grown(G.makeContainer(A), tol) : null; });
     function within(poly, walls) { return walls.reduce(function (rest, w) { return rest.length > 2 ? cut(rest, w) : rest; }, poly); }
     function fill(layer, cls, poly, colour) {
       if (poly.length < 3 || area(poly) < 1e-7) return;
@@ -673,20 +672,45 @@
       if (colour) e.style.fill = colour;
       layer.appendChild(e);
     }
+    // every edge of an outline, with the unit normal that points out of it
+    function edges(poly) {
+      var walls = G.makeContainer(poly).walls;
+      return poly.map(function (a, k) { return { a: a, b: poly[(k + 1) % poly.length], nx: walls[k].nx, ny: walls[k].ny }; });
+    }
+    // Shapes are let sit a hair off a wall, and off each other, and a hair of white would show
+    // there as a line. Where an edge of one faces an edge of the other and lies within a pixel
+    // and a half of it, the strip between the two is filled in, under the shapes, in blue: only
+    // the strip, and only as far along as the edges run side by side that close.
+    function seal(e, f, colour) {
+      if (e.nx * f.nx + e.ny * f.ny > -0.9986) return;   // not face to face, to within three degrees
+      var len = Math.hypot(e.b[0] - e.a[0], e.b[1] - e.a[1]), ux = (e.b[0] - e.a[0]) / len, uy = (e.b[1] - e.a[1]) / len;
+      var at = function (v) { return (v[0] - e.a[0]) * ux + (v[1] - e.a[1]) * uy; };          // how far along e
+      var off = function (v) { return (v[0] - e.a[0]) * e.nx + (v[1] - e.a[1]) * e.ny; };      // how far out from e
+      var t1 = at(f.a), t2 = at(f.b), g1 = off(f.a), g2 = off(f.b);
+      if (t1 > t2) { var t = t1; t1 = t2; t2 = t; t = g1; g1 = g2; g2 = t; }
+      var gap = function (x) { return t2 - t1 < 1e-9 ? g1 : g1 + (g2 - g1) * (x - t1) / (t2 - t1); };
+      var lo = Math.max(0, t1), hi = Math.min(len, t2), far = 2 * tol;
+      if (hi - lo < tol) return;
+      // keep to the stretch where the two are apart, and by no more than that
+      var ok = function (x) { var g = gap(x); return g > -tol && g < far; };
+      if (!ok(lo) && !ok(hi)) return;
+      for (var n = 0; n < 24 && !ok(lo); n++) lo += (hi - lo) / 24;
+      for (n = 0; n < 24 && !ok(hi); n++) hi -= (hi - lo) / 24;
+      if (hi - lo < tol) return;
+      var back = tol / 2, pt = function (x, out) { return [e.a[0] + ux * x + e.nx * out, e.a[1] + uy * x + e.ny * out]; };
+      fill(seals, 'seal', [pt(lo, -back), pt(hi, -back), pt(hi, gap(hi) + back), pt(lo, gap(lo) + back)], colour);   // lapped a little under each side
+    }
+    var E = V.map(function (A, i) { return inPlay[i] ? edges(A) : null; });
+    var boxEdges = edges(C.poly).map(function (w) { return { a: w.b, b: w.a, nx: -w.nx, ny: -w.ny }; });   // a wall faces inwards
     V.forEach(function (A, i) {
       if (!inPlay[i]) return;
       var blue = BLUES[i % BLUES.length];
-      C.walls.forEach(function (w) {
-        fill(hits, 'hit', cut(A, w, true));
-        // Shapes are let sit a hair off a wall, and off each other, and a hair of white would
-        // show there as a line. Anything closer than a pixel and a half counts as touching,
-        // and the sliver between is filled in, under the shapes, in the shape's own blue.
-        if (-G.excess(A, w) < 2 * tol) fill(seals, 'seal', cut(within(fat[i], C.walls), { nx: w.nx, ny: w.ny, d: w.d - 3 * tol }, true), blue);
-      });
+      C.walls.forEach(function (w) { fill(hits, 'hit', cut(A, w, true)); });
+      E[i].forEach(function (e) { boxEdges.forEach(function (f) { seal(e, f, blue); }); });
       for (var j = i + 1; j < V.length; j++) {
         if (!inPlay[j] || Math.hypot(pieces[i].x - pieces[j].x, pieces[i].y - pieces[j].y) > 2.4) continue;
         fill(hits, 'hit', within(A, G.makeContainer(V[j]).walls));
-        fill(seals, 'seal', within(fat[i], G.makeContainer(fat[j]).walls), blue);
+        E[i].forEach(function (e) { E[j].forEach(function (f) { seal(e, f, blue); }); });
       }
     });
   }
@@ -694,6 +718,10 @@
     eyeOn = on;
     board.classList.toggle('eyes', on);
     stage.classList.toggle('eyes', on);   // and the table round the box goes dark, so the white box stands out from it
+    // Safari repaints only the patches it thinks have changed, and after a change this big it
+    // leaves stray lines of the old picture behind. Taking the whole board out and putting it
+    // straight back makes it paint the lot again.
+    board.style.display = 'none'; void board.getBoundingClientRect(); board.style.display = '';
     $('b-eye').setAttribute('aria-pressed', on);
     showHits();
   }
