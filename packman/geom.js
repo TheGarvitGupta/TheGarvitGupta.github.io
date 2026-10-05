@@ -161,7 +161,11 @@ var PackmanGeom = (function () {
   var MAG_TURN = 7;      // degrees the magnet may turn a piece to match a nearby edge
   var GRID_TURN = 3;     // and to line up with the box's own walls, anywhere inside it
   var MAG_REACH = 0.2;   // how far the magnet may pull a piece towards its nearest neighbour
-  var MAG_SLIDE = 0.2;   // and then along that neighbour to meet a second one
+  // ...and then along that neighbour to meet a second one. This is kept short: a piece is
+  // dragged through here continuously, and in a slot with only a little play a long slide
+  // would haul it to the nearer end however the player moved, even against the way they
+  // were dragging.
+  var MAG_SLIDE = 0.08;
 
   function edgeList(V) {
     var cx = 0, cy = 0, out = [], i;
