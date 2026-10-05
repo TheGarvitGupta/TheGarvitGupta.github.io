@@ -368,7 +368,8 @@
     // still be told apart with no line between them.
     var safe = el('path', 'safe');
     safe.setAttribute('d', loop(G.SHAPES[p.type]));
-    safe.style.fill = BLUES[i % BLUES.length];
+    p.safe = safe; p.blue = i % BLUES.length;
+    safe.style.fill = BLUES[p.blue];
     // Two flat shapes that meet exactly still show a hairline of the white behind them, because
     // each only half covers the pixels along the join. So every shape is drawn twice: once in
     // a layer underneath them all, with hard edges, where each pixel is wholly one shape's or
@@ -376,7 +377,7 @@
     // a pixel the true shape does not reach, so nothing is drawn bigger than it is.
     p.under = el('path', 'seam');
     p.under.setAttribute('d', loop(G.SHAPES[p.type]));
-    p.under.style.fill = BLUES[i % BLUES.length];
+    p.under.style.fill = BLUES[p.blue];
     $('seams').appendChild(p.under);
     body.appendChild(safe); body.appendChild(fill); body.appendChild(back); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
@@ -739,6 +740,30 @@
     if (!eyeOn) return;
     var V = pieces.map(G.verts), inPlay = V.map(function (A) { return G.zone(A, C) !== 'out'; });
     var tol = 0.75 / view.scale;   // three quarters of a pixel
+    // No two shapes that share an edge may be the same blue, or with no line between them
+    // they would read as one. (Meeting at a corner does not count.) Each keeps its blue
+    // unless a neighbour settled before it has it; then it takes one that none of its
+    // neighbours has, or failing that none of those already settled. The shapes with most
+    // neighbours settle first, and the one in hand last, so it is the one seen to change.
+    var near = V.map(function (A) { return grown(G.makeContainer(A), 2 * tol); });
+    var touches = V.map(function (A, a) {
+      return V.map(function (B, b) {
+        if (a === b || Math.hypot(pieces[a].x - pieces[b].x, pieces[a].y - pieces[b].y) > 2.4) return false;
+        return area(G.makeContainer(B).walls.reduce(function (rest, w) { return rest.length > 2 ? cut(rest, w) : rest; }, near[a])) > 2 * tol * 0.15;   // side by side for a little way at least
+      });
+    });
+    var busy = touches.map(function (row) { return row.filter(Boolean).length; });
+    var order = pieces.map(function (p, n) { return n; }).sort(function (a, b) { return (a === sel) - (b === sel) || busy[b] - busy[a] || a - b; });
+    order.forEach(function (a, at) {
+      var p = pieces[a], all = {}, settled = {}, c;
+      order.forEach(function (b, bt) { if (touches[a][b] || touches[b][a]) { all[pieces[b].blue] = true; if (bt < at) settled[pieces[b].blue] = true; } });
+      if (!settled[p.blue]) return;
+      for (c = 0; c < BLUES.length && all[c]; c++);
+      if (c === BLUES.length) for (c = 0; c < BLUES.length && settled[c]; c++);
+      if (c === BLUES.length) return;
+      p.blue = c;
+      p.safe.style.fill = p.under.style.fill = BLUES[c];
+    });
     function within(poly, walls) { return walls.reduce(function (rest, w) { return rest.length > 2 ? cut(rest, w) : rest; }, poly); }
     function fill(layer, cls, poly, colour) {
       if (poly.length < 3 || area(poly) < 1e-7) return;
@@ -779,7 +804,7 @@
     var boxEdges = edges(C.poly).map(function (w) { return { a: w.b, b: w.a, nx: -w.nx, ny: -w.ny }; });   // a wall faces inwards
     V.forEach(function (A, i) {
       if (!inPlay[i]) return;
-      var blue = BLUES[i % BLUES.length];
+      var blue = BLUES[pieces[i].blue];
       C.walls.forEach(function (w) { fill(hits, 'hit', cut(A, w, true)); });
       E[i].forEach(function (e) { boxEdges.forEach(function (f) { seal(e, f, blue); }); });
       for (var j = i + 1; j < V.length; j++) {
@@ -796,6 +821,7 @@
     // Safari repaints only the patches it thinks have changed, and after a change this big it
     // leaves stray lines of the old picture behind. Taking the whole board out and putting it
     // straight back makes it paint the lot again.
+    bin.style.animation = 'none';   // or putting the board back would fade the box in afresh: the switch is meant to be instant
     board.style.display = 'none'; void board.getBoundingClientRect(); board.style.display = '';
     $('b-eye').setAttribute('aria-pressed', on);
     showHits();
