@@ -252,9 +252,7 @@
     var px = 1 / view.scale;
     board.style.setProperty('--u', px);   // one screen pixel, in board units, for stroke widths
     bin.firstElementChild.setAttribute('d', binPath(px));
-    // for eyesight: the box exactly as judged, with a soft shadow just inside its edge
-    ['true-box', 'true-shade', 'true-clip-path'].forEach(function (id) { $(id).setAttribute('d', loop(C.poly)); });
-    $('true-blur').setAttribute('stdDeviation', 4 * px);
+    $('true-box').setAttribute('d', loop(C.poly));   // for eyesight: the box exactly as judged
     pieces.forEach(function (p) { if (p.fill) outline(p); });
     if (ghost) $('ghost').setAttribute('d', drawn(ghost.type));
     $('knob').setAttribute('r', 11 * px);
