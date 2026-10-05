@@ -259,7 +259,7 @@
     $('knob-dot').setAttribute('r', 4 * px);
     for (var i = 0; i < pieces.length; i++) { keepInView(pieces[i]); if (pieces[i].el) render(i); }
     placeHandle();
-    if (eyeOn) { seatLoupe(); refreshLens(); }
+    if (eyeOn) { seatLoupe(true); refreshLens(); }
   }
 
   function keepInView(p) {
@@ -713,19 +713,32 @@
     focus = c && c[0] < 0.25 ? [c[1], c[2]] : [w.x, w.y];
     refreshLens();
   }
-  // The window sits over its button, the top right corners together, and grows out of it.
-  function seatLoupe() {
-    var r = $('b-eye').getBoundingClientRect(), size = Math.round(Math.min(r.width * GROW, innerWidth - 12, innerHeight - 12)), left = Math.max(6, r.right - size);
-    loupe.style.width = loupe.style.height = size + 'px';
-    loupe.style.left = left + 'px'; loupe.style.top = r.top + 'px';
-    loupe.style.transformOrigin = (r.left + r.width / 2 - left) + 'px ' + r.height / 2 + 'px';
-    loupe.style.setProperty('--k', r.width / size);
+  // The button itself seems to grow: the window starts as an exact copy of it, in its place
+  // (the real one is hidden meanwhile), and widens down and to the left with the same border
+  // and the same corners, the eye fading out as the view fades in. Closing runs it backwards.
+  var eyeTimer = 0;
+  function seatLoupe(open) {
+    var b = $('b-eye'), r = b.getBoundingClientRect(), cs = getComputedStyle(b), edge = parseFloat(cs.borderTopWidth) || 0;
+    var size = Math.round(Math.min(r.width * GROW, innerWidth - 12, innerHeight - 12)), side = open ? size : r.width;
+    loupe.style.borderRadius = cs.borderTopLeftRadius;
+    loupe.style.top = r.top + 'px'; loupe.style.left = (open ? Math.max(6, r.right - size) : r.left) + 'px';
+    loupe.style.width = loupe.style.height = side + 'px';
+    lens.style.width = lens.style.height = (size - 2 * edge) + 'px';
+    $('loupe-eye').style.width = $('loupe-eye').style.height = (r.width - 2 * edge) + 'px';
   }
   function eye(on) {
+    var b = $('b-eye');
+    clearTimeout(eyeTimer);
     eyeOn = on;
-    $('b-eye').setAttribute('aria-pressed', on);
-    if (on) { seatLoupe(); paintLens(); }
-    loupe.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on);
+    if (on) {
+      seatLoupe(false); loupe.classList.add('show'); b.classList.add('gone');
+      void loupe.offsetWidth;   // so it starts from the button's own size
+      seatLoupe(true); loupe.classList.add('on'); paintLens();
+    } else {
+      seatLoupe(false); loupe.classList.remove('on');
+      eyeTimer = setTimeout(function () { loupe.classList.remove('show'); b.classList.remove('gone'); }, 300);
+    }
   }
   $('b-eye').addEventListener('click', function () { eye(!eyeOn); });
   loupe.addEventListener('click', function () { eye(false); });

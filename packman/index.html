@@ -196,14 +196,19 @@ button{font:inherit; color:inherit; cursor:pointer}
 #stage{position:relative; flex:1; min-height:0; margin:8px 0}
 #board{position:absolute; inset:0; width:100%; height:100%; touch-action:none; overflow:visible; display:block}
 #board{--u:.02}
-/* eyesight: the eye button grows, where it is, into a window on the board as it looks, enlarged,
-   with each shape's true edge and the box's true wall marked out in violet */
-#loupe{position:fixed; z-index:15; left:0; top:0; overflow:hidden; cursor:pointer; background:var(--bg);
-  border:var(--bw) solid var(--ink); border-radius:26px; box-shadow:0 14px 30px -12px rgba(27,20,45,.6);
-  opacity:0; visibility:hidden; transform:scale(var(--k, .22)); transition:transform .22s ease-in, opacity .18s, visibility 0s .22s}
-#loupe.on{opacity:1; visibility:visible; transform:none; transition:transform .3s var(--pop), opacity .12s, visibility 0s}
-#lens{pointer-events:none}
-#lens{display:block; width:100%; height:100%}
+/* eyesight: the eye button grows, where it is, into a window on the board as it looks, enlarged, with each
+   shape's true edge and the box's true wall marked out in violet. The window starts as the button's twin,
+   same size, border and corners, and only its width and height change. */
+#loupe{position:fixed; z-index:15; display:none; box-sizing:border-box; overflow:hidden; cursor:pointer; background:var(--card);
+  border:var(--bw) solid var(--ink); transition:left .3s var(--pop), width .3s var(--pop), height .3s var(--pop), background-color .2s, box-shadow .2s}
+#loupe.show{display:block}
+#loupe.on{background:var(--bg); box-shadow:0 14px 30px -12px rgba(27,20,45,.6)}
+#loupe-eye{position:absolute; right:0; top:0; display:grid; place-items:center; color:var(--text); transition:opacity .15s}
+#loupe-eye svg{width:21px; height:21px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round}
+#loupe.on #loupe-eye{opacity:0}
+#lens{position:absolute; right:0; top:0; display:block; pointer-events:none; opacity:0; transition:opacity .15s}
+#loupe.on #lens{opacity:1; transition:opacity .2s .1s}
+.ib.gone{visibility:hidden}
 .lens-true{fill:rgba(155,123,255,.38); stroke:#6B4FD8; stroke-width:1px; stroke-linejoin:round; vector-effect:non-scaling-stroke}
 .lens-hit{fill:var(--bad); fill-opacity:.88}
 #lens .piece{cursor:default}
@@ -379,7 +384,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 
 @media (max-width:560px){
   .word{font-size:25px} .logo svg{width:32px; height:32px}
-  .tools{gap:6px} .ib{width:38px; height:38px; border-radius:12px} .ib svg{width:19px; height:19px}
+  .tools{gap:6px} .ib{width:38px; height:38px; border-radius:12px} .ib svg,#loupe-eye svg{width:19px; height:19px}
   .hud{display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:5px 9px; margin-top:10px; min-height:0}
   .title{display:contents} .title h1{font-size:18px}
   .title p{grid-column:1 / -1; grid-row:2; font-size:13.5px; margin:0; min-height:2.5em}
@@ -479,7 +484,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 </div>
 
 <canvas id="fx" aria-hidden="true"></canvas>
-<div id="loupe" title="Put the eyesight away"><svg id="lens" aria-hidden="true"></svg></div>
+<div id="loupe" title="Put the eyesight away"><span id="loupe-eye"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg></span><svg id="lens" aria-hidden="true"></svg></div>
 
 <div class="sheet" id="m-name" role="dialog" aria-modal="true" aria-labelledby="name-h">
   <div class="card">
@@ -515,7 +520,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.60</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.61</span></div>
   </div>
 </div>
 
@@ -575,9 +580,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.60"></script>
-<script src="levels.js?v=1.60"></script>
-<script src="game.js?v=1.60"></script>
+<script src="geom.js?v=1.61"></script>
+<script src="levels.js?v=1.61"></script>
+<script src="game.js?v=1.61"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
