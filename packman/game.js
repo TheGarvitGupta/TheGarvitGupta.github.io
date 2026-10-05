@@ -398,22 +398,42 @@
     }));
   }
   function knobAt(p) { return p.side == null ? -90 : sides(p.type)[p.side].at; }
-  function knobPos(p) {
-    var r = (p.angle + knobAt(p)) * Math.PI / 180;
-    var reach = (p.side == null ? KNOB[p.type] : sides(p.type)[p.side].off + 0.22) + 30 / view.scale;
+  // where the knob would stand for a given side (none: straight above, as at the start)
+  function knobSpot(p, side) {
+    var r = (p.angle + (side == null ? -90 : sides(p.type)[side].at)) * Math.PI / 180;
+    var reach = (side == null ? KNOB[p.type] : sides(p.type)[side].off + 0.22) + 42 / view.scale;
     return [p.x + Math.cos(r) * reach, p.y + Math.sin(r) * reach];
   }
+  function knobPos(p) { return knobSpot(p, p.side); }
   // Where the dotted line to the knob begins: at the shape's edge, not its middle, so no dots lie over the shape.
   var TOP = { square: 0.5, triangle: 2 * G.H / 3, domino: 0.5, hexagon: G.H };   // how far up a shape reaches from its centre
   function knobRoot(p) {
     var r = (p.angle + knobAt(p)) * Math.PI / 180, out = (p.side == null ? TOP[p.type] : sides(p.type)[p.side].off) + 3 / view.scale;
     return [p.x + Math.cos(r) * out, p.y + Math.sin(r) * out];
   }
-  // The flat side of a shape that a point is nearest: where its knob goes when a mouse picks it.
-  function nearSide(p, w) {
-    var rad = -p.angle * Math.PI / 180, lx = (w.x - p.x) * Math.cos(rad) - (w.y - p.y) * Math.sin(rad), ly = (w.x - p.x) * Math.sin(rad) + (w.y - p.y) * Math.cos(rad);
-    var S = sides(p.type), depth = function (n) { return S[n].off - (lx * S[n].nx + ly * S[n].ny); }, best = 0;
-    for (var n = 1; n < S.length; n++) if (depth(n) < depth(best)) best = n;
+  // Which side the knob comes up on when a mouse picks a shape. It goes for the side nearest
+  // the click, with two cautions. A click near the middle favours no side in particular, so
+  // then the knob keeps the place it had. And a place that is taken, by another shape or by
+  // the edge of the board, is passed over for the nearest one that is clear; failing that,
+  // one outside the box will do, since the knob can still be reached there.
+  function pickSide(p, w) {
+    var i = pieces.indexOf(p), rad = -p.angle * Math.PI / 180;
+    var lx = (w.x - p.x) * Math.cos(rad) - (w.y - p.y) * Math.sin(rad), ly = (w.x - p.x) * Math.sin(rad) + (w.y - p.y) * Math.cos(rad);
+    var S = sides(p.type), depth = S.map(function (sd) { return sd.off - (lx * sd.nx + ly * sd.ny); });
+    var order = S.map(function (sd, n) { return n; }).sort(function (a, b) { return depth[a] - depth[b]; });
+    var clear = depth[order[1]] - depth[order[0]] > 0.12;   // the click is plainly nearer one side than any other
+    var wanted = clear ? order[0] : p.side, tries = [wanted].concat(order.filter(function (n) { return n !== wanted; }));
+    var inBox = G.zone(G.verts(p), C) !== 'out', room = 16 / view.scale;
+    function trouble(side) {
+      var k = knobSpot(p, side);
+      if (k[0] < view.x + room || k[0] > view.x + view.w - room || k[1] < view.y + room || k[1] > view.y + view.h - room) return 2;   // off the board
+      for (var j = 0; j < pieces.length; j++) {
+        if (j !== i && G.makeContainer(G.verts(pieces[j])).walls.every(function (wl) { return k[0] * wl.nx + k[1] * wl.ny - wl.d < room; })) return 2;   // on another shape
+      }
+      return inBox && !C.walls.every(function (wl) { return k[0] * wl.nx + k[1] * wl.ny - wl.d < -room; }) ? 1 : 0;   // over the wall, or beyond it
+    }
+    var best = tries[0], worst = 3;
+    tries.forEach(function (side) { var t = trouble(side); if (t < worst) { worst = t; best = side; } });
     return best;
   }
 
@@ -578,7 +598,7 @@
       placeHandle();
     } else if (pe) {
       var i = +pe.dataset.i, p = pieces[i];
-      if (i !== sel && e.pointerType !== 'touch') p.side = nearSide(p, w);   // the knob comes up beside the cursor, and then keeps its place
+      if (i !== sel && e.pointerType !== 'touch') p.side = pickSide(p, w);   // the knob comes up beside the cursor, and then keeps its place
       select(i);
       drag = { mode: 'move', touch: e.pointerType === 'touch', id: e.pointerId, i: i, ox: p.x - w.x, oy: p.y - w.y, sx: e.clientX, sy: e.clientY, moved: false, a0: p.angle, stuck: false };
       p.el.classList.add('held');
