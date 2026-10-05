@@ -253,7 +253,7 @@
     board.style.setProperty('--u', px);   // one screen pixel, in board units, for stroke widths
     bin.firstElementChild.setAttribute('d', binPath(px));
     // for eyesight: the box exactly as judged, and the hatching, five pixels a stripe
-    $('true-box').setAttribute('d', 'M' + C.poly.map(function (v) { return v[0].toFixed(4) + ' ' + v[1].toFixed(4); }).join('L') + 'Z');
+    $('true-box').setAttribute('d', loop(grown(C, 0.5 * px)));
     ['hatch', 'hatch-wash', 'hatch-stripe'].forEach(function (id) { $(id).setAttribute('width', 5 * px); $(id).setAttribute('height', (id === 'hatch-stripe' ? 1.8 : 5) * px); });
     pieces.forEach(function (p) { if (p.fill) outline(p); });
     if (ghost) $('ghost').setAttribute('d', drawn(ghost.type));
@@ -345,7 +345,7 @@
     // Under the shape lies its true outline, hatched. It is all that shows of a shape
     // while eyesight is on.
     var safe = el('path', 'safe');
-    safe.setAttribute('d', 'M' + G.SHAPES[p.type].map(function (v) { return v[0] + ' ' + v[1]; }).join('L') + 'Z');
+    p.safe = safe;
     body.appendChild(safe); body.appendChild(fill); body.appendChild(back); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
     p.back = back;
@@ -361,9 +361,14 @@
     p.back.setAttribute('rx', p.flip ? 0.0001 : 0);
   }
 
+  function loop(poly) { return 'M' + poly.map(function (v) { return v[0].toFixed(4) + ' ' + v[1].toFixed(4); }).join('L') + 'Z'; }
   function outline(p) {
     var d = drawn(p.type);
     p.fill.setAttribute('d', d);
+    // Its true outline, for eyesight. The fine line round it is one pixel wide and lies wholly
+    // inside the true edge, as the box's lies wholly outside its own: a shape flush to a wall
+    // then shows the two lines side by side, neither over the other.
+    p.safe.setAttribute('d', loop(grown(G.makeContainer(G.SHAPES[p.type]), -0.5 / view.scale)));
   }
 
   // Pieces are moved with transform attributes, not CSS transforms: Safari
@@ -673,12 +678,14 @@
     if (coachOn) { coach(false); save.eyeTip = 1; persist(); eye(true); return; }   // the one way out of the introduction
     if (level === 1) return;   // the second level is played with it on, and it cannot be put away there
     eye(!eyeOn);
+    save.eyes = eyeOn; persist();   // and it stays however it was left, from level to level and visit to visit
   });
 
   // The second level is where eyesight is learnt. The first time, everything dims but its
   // button and a note under it says what it is for; there is no closing that, and pressing
   // the button is the way on. The level is then played with eyesight on, every time, and
-  // the button will not turn it off. The level after starts with it off again.
+  // the button will not turn it off. When that level is packed, or left, eyesight goes off.
+  // Everywhere else it is the player's to choose, and it stays as they leave it.
   var coachOn = false, coachTimer = 0;
   function seatCoach() {
     var r = $('b-eye').getBoundingClientRect(), pad = 5, c = $('coach'), spot = c.querySelector('.spot'), say = $('coach-say'), blk = c.querySelectorAll('.blk');
@@ -856,8 +863,10 @@
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
     judge(); showAngle(); placeHandle(); nag();
     lookForShake();
-    if (i === 1 && !save.eyeTip) { eye(false); coachTimer = setTimeout(offerEyes, 900); }
-    else eye(i === 1);   // on throughout the second level, off at the start of every other
+    if (i === 1) {
+      if (save.eyes) { save.eyes = false; persist(); }   // whatever was chosen before, the level after this one starts without it
+      if (save.eyeTip) eye(true); else { eye(false); coachTimer = setTimeout(offerEyes, 900); }
+    } else eye(!!save.eyes);   // as it was left
     if (i === 1) $('b-eye').removeAttribute('data-tip'); else $('b-eye').setAttribute('data-tip', 'Eyesight');   // no label where it cannot be changed
   }
 
@@ -974,6 +983,7 @@
 
   function win() {
     won = true;
+    if (level === 1) eye(false);   // the second level is over: the shapes get their faces back for the party
     countMove();
     clearTimeout(shakeTimer);
     $('b-hint').classList.remove('nag');
