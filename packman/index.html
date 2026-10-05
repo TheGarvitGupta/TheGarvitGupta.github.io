@@ -227,11 +227,15 @@ button{font:inherit; color:inherit; cursor:pointer}
 
 /* Eyesight: flat colour and no lines. Every shape at its true size, a hair bigger than it is drawn, in a
    blue of its own (set in game.js); the box at its true size, a hair smaller, in white. The faces and the dark frames all go. */
-/* Two flat shapes that meet exactly still show a hairline of the white behind them, because each only half
-   covers the pixels along the join. A one-pixel edge in the shape's own blue laps over the join and closes it. */
-.safe{visibility:hidden; pointer-events:none; fill:#7C97C9; stroke:#7C97C9; stroke-width:calc(1px * var(--u)); stroke-linejoin:miter}
+.safe{visibility:hidden; pointer-events:none; fill:#7C97C9}
+/* the hard-edged copy of each shape that lies under them all and backs the joins (see game.js) */
+.seam{visibility:hidden; pointer-events:none; shape-rendering:crispEdges}
+#board.eyes .seam{visibility:visible}
 #true-box{visibility:hidden; pointer-events:none; fill:var(--bin); transition:fill .35s}
 #bin.win #true-box{fill:var(--win)}
+/* a soft shadow just inside the box: a blurred dark line along its edge, cut off at the edge */
+#true-shade{visibility:hidden; pointer-events:none; fill:none; stroke:rgba(43,33,64,.3); stroke-width:calc(7px * var(--u))}
+#board.eyes #true-shade{visibility:visible}
 #board.eyes .safe,#board.eyes #true-box{visibility:visible}
 #board.eyes .bin-fill{visibility:hidden}
 #board.eyes .piece .fill{fill:transparent; stroke:transparent; pointer-events:all}
@@ -490,7 +494,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 
   <main id="stage">
     <svg id="board" role="application" aria-label="Puzzle board">
-      <g id="bin"><path class="bin-fill"/><path id="true-box"/></g>
+      <defs><clipPath id="true-clip"><path id="true-clip-path"/></clipPath><filter id="true-soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur id="true-blur"/></filter></defs>
+      <g id="bin"><path class="bin-fill"/><path id="true-box"/><path id="true-shade" filter="url(#true-soft)" clip-path="url(#true-clip)"/></g>
+      <g id="seams"></g>
       <g id="pieces"></g>
       <g id="hits"></g>
       <g id="ribbon" hidden></g>
@@ -552,7 +558,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.88</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.90</span></div>
   </div>
 </div>
 
@@ -612,9 +618,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.88"></script>
-<script src="levels.js?v=1.88"></script>
-<script src="game.js?v=1.88"></script>
+<script src="geom.js?v=1.90"></script>
+<script src="levels.js?v=1.90"></script>
+<script src="game.js?v=1.90"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

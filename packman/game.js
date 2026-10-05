@@ -252,7 +252,9 @@
     var px = 1 / view.scale;
     board.style.setProperty('--u', px);   // one screen pixel, in board units, for stroke widths
     bin.firstElementChild.setAttribute('d', binPath(px));
-    $('true-box').setAttribute('d', loop(C.poly));   // for eyesight: the box exactly as judged
+    // for eyesight: the box exactly as judged, with a soft shadow just inside its edge
+    ['true-box', 'true-shade', 'true-clip-path'].forEach(function (id) { $(id).setAttribute('d', loop(C.poly)); });
+    $('true-blur').setAttribute('stdDeviation', 4 * px);
     pieces.forEach(function (p) { if (p.fill) outline(p); });
     if (ghost) $('ghost').setAttribute('d', drawn(ghost.type));
     $('knob').setAttribute('r', 11 * px);
@@ -345,7 +347,16 @@
     // still be told apart with no line between them.
     var safe = el('path', 'safe');
     safe.setAttribute('d', loop(G.SHAPES[p.type]));
-    safe.style.fill = safe.style.stroke = BLUES[i % BLUES.length];   // the edge, in the same blue, is there only to close hairline seams
+    safe.style.fill = BLUES[i % BLUES.length];
+    // Two flat shapes that meet exactly still show a hairline of the white behind them, because
+    // each only half covers the pixels along the join. So every shape is drawn twice: once in
+    // a layer underneath them all, with hard edges, where each pixel is wholly one shape's or
+    // not at all, and once on top, smoothed. The hard copy backs the joins. It never colours
+    // a pixel the true shape does not reach, so nothing is drawn bigger than it is.
+    p.under = el('path', 'seam');
+    p.under.setAttribute('d', loop(G.SHAPES[p.type]));
+    p.under.style.fill = BLUES[i % BLUES.length];
+    $('seams').appendChild(p.under);
     body.appendChild(safe); body.appendChild(fill); body.appendChild(back); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
     p.back = back;
@@ -374,6 +385,7 @@
     if (tf === p.tf && rot === p.rot) return;
     if (rot !== p.rot) p.body.setAttribute('transform', rot);
     if (tf !== p.tf) p.el.setAttribute('transform', tf);
+    p.under.setAttribute('transform', tf + ' ' + rot);
     p.tf = tf; p.rot = rot;
   }
 
@@ -628,6 +640,7 @@
   // or pass a wall. A gap shows as a sliver of white.
   // Tap it again and the board goes back to how it looks.
   var eyeOn = false;
+  var EYE_LEVEL = 7;   // the level where eyesight is introduced and has to be used: the eighth
   var BLUES = ['#6583BD', '#A3B8DE', '#7C97C9', '#BCCCE9', '#5472AC'];   // ordered so that neighbours in the list differ most
 
   // what is left of a convex outline on one side of a line: inside (n.p <= d) or outside it
@@ -674,12 +687,12 @@
   }
   $('b-eye').addEventListener('click', function () {
     if (coachOn) { coach(false); save.eyeTip = 1; persist(); eye(true); return; }   // the one way out of the introduction
-    if (level === 1) return;   // the second level is played with it on, and it cannot be put away there
+    if (level === EYE_LEVEL) return;   // that level is played with it on, and it cannot be put away there
     eye(!eyeOn);
     save.eyes = eyeOn; persist();   // and it stays however it was left, from level to level and visit to visit
   });
 
-  // The second level is where eyesight is learnt. The first time, everything dims but its
+  // The eighth level is where eyesight is learnt. The first time, everything dims but its
   // button and a note under it says what it is for; there is no closing that, and pressing
   // the button is the way on. The level is then played with eyesight on, every time, and
   // the button will not turn it off. When that level is packed, or left, eyesight goes off.
@@ -701,7 +714,7 @@
   function coach(on) { coachOn = on; $('coach').hidden = !on; if (on) seatCoach(); }
   function offerEyes() {
     clearTimeout(coachTimer);
-    if (level !== 1 || save.eyeTip || won) return;
+    if (level !== EYE_LEVEL || save.eyeTip || won) return;
     if (document.querySelector('.sheet.open')) { coachTimer = setTimeout(offerEyes, 500); return; }   // wait for whatever is up to be put away
     coach(true);
   }
@@ -842,7 +855,7 @@
     bin.setAttribute('class', '');
     bin.style.animation = 'none'; void bin.getBoundingClientRect(); bin.style.animation = '';
 
-    layer.textContent = '';
+    layer.textContent = ''; $('seams').textContent = '';
     var colors = shuffled(COLORS), kits = shuffled(OUTFITS), pips = $('pips');
     pips.textContent = '';
     pieces = lv.pieces.map(function (type, n) {
@@ -861,11 +874,11 @@
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
     judge(); showAngle(); placeHandle(); nag();
     lookForShake();
-    if (i === 1) {
+    if (i === EYE_LEVEL) {
       if (save.eyes) { save.eyes = false; persist(); }   // whatever was chosen before, the level after this one starts without it
       if (save.eyeTip) eye(true); else { eye(false); coachTimer = setTimeout(offerEyes, 900); }
     } else eye(!!save.eyes);   // as it was left
-    if (i === 1) $('b-eye').removeAttribute('data-tip'); else $('b-eye').setAttribute('data-tip', 'Eyesight');   // no label where it cannot be changed
+    if (i === EYE_LEVEL) $('b-eye').removeAttribute('data-tip'); else $('b-eye').setAttribute('data-tip', 'Eyesight');   // no label where it cannot be changed
   }
 
   /* ---------- shake ---------- */
@@ -981,7 +994,7 @@
 
   function win() {
     won = true;
-    if (level === 1) eye(false);   // the second level is over: the shapes get their faces back for the party
+    if (level === EYE_LEVEL) eye(false);   // the eyesight level is over: the shapes get their faces back for the party
     countMove();
     clearTimeout(shakeTimer);
     $('b-hint').classList.remove('nag');
