@@ -1176,12 +1176,30 @@
         return report(score);
       }
       if (!d.top) return;
+      if (!LOCAL) { save.sent = save.sent || {}; save.sent[score.level] = 1; persist(); }   // sent, or shown the solution and so not to be
       ranks($('win-ranks'), d, 5);
       note.textContent = peeked ? 'This one is not counted, because the solution was shown.'
         : LOCAL ? 'Scores are not sent from a copy on this machine.' : standing(d);
       note.hidden = !note.textContent;
       box.hidden = false;
     }).catch(function () {});   // no board today: the win sheet simply goes without one
+  }
+
+  // Bests the board has not had yet are sent when the game opens, one at a time: everything
+  // packed before there was a leaderboard, and any win that did not get through. The pieces
+  // are long gone from the box, so the level's own solution goes along as the proof.
+  function sync() {
+    if (LOCAL || !save.name) return;
+    save.sent = save.sent || {};
+    var due = LEVELS.filter(function (l) { return save.done[l.name] && !save.sent[l.name]; });
+    (function next() {
+      var l = due.shift(), d = l && save.done[l.name];
+      if (!l) return;
+      ask(SCORES, { level: l.name, pid: save.pid, name: save.name, t: d.t, m: d.m, p: l.solution }).then(function (r) {
+        if (r.top || r.error === 'score') { save.sent[l.name] = 1; persist(); }   // on the board, or never going to be
+        if (r.top || r.error === 'score' || r.error === 'unpacked') setTimeout(next, 250);   // anything else: try again next time
+      }).catch(function () {});
+    })();
   }
 
   function showBoard() {
@@ -1373,6 +1391,7 @@
   // The name comes first, for new players and for anyone from before there was a leaderboard.
   // Whatever else was due to open (how to pack, the party for a finished game) waits for it.
   var opening = function () {
+    sync();
     if (/[?&]finale\b/.test(location.search)) setTimeout(function () { lateParty(true); }, 600);   // a look at the last level's party, whatever has been packed
     else if (!save.claimed && LEVELS.every(function (l) { return l.bonus || save.done[l.name]; })) setTimeout(lateParty, 700);
     if (!save.seen) openSheet($('m-help'));
