@@ -387,9 +387,43 @@
     p.tf = tf; p.rot = rot;
   }
 
+  // The knob stands straight above a shape to begin with. Once the cursor has been over the
+  // shape it stands off whichever flat side the cursor was nearest, so it is always close to
+  // hand. p.side is that side's number, and knobAt how far round it is from the shape's own
+  // "right", in degrees; the drag that turns the shape works from the same angle.
+  var SIDES = {};
+  function sides(type) {
+    return SIDES[type] || (SIDES[type] = G.makeContainer(G.SHAPES[type]).walls.map(function (w) {
+      return { nx: w.nx, ny: w.ny, off: w.d, at: Math.atan2(w.ny, w.nx) * 180 / Math.PI };
+    }));
+  }
+  function knobAt(p) { return p.side == null ? -90 : sides(p.type)[p.side].at; }
   function knobPos(p) {
-    var r = (p.angle - 90) * Math.PI / 180, reach = KNOB[p.type] + 30 / view.scale;
+    var r = (p.angle + knobAt(p)) * Math.PI / 180;
+    var reach = (p.side == null ? KNOB[p.type] : sides(p.type)[p.side].off + 0.22) + 30 / view.scale;
     return [p.x + Math.cos(r) * reach, p.y + Math.sin(r) * reach];
+  }
+  // With a mouse, the shape under the cursor is the one with the knob, and the knob goes to
+  // the side nearest the cursor. On the way from a shape out to its knob the cursor may cross
+  // a neighbour; that does not count, or the knob would be snatched away before it was reached.
+  function hoverKnob(e) {
+    if (e.pointerType === 'touch' || drag || won || shaking) return;
+    var t = e.target, w = world(e), near = 20 / view.scale;
+    if (t.id === 'knob' || t.id === 'knob-hit' || t.id === 'knob-dot') return;
+    if (sel >= 0) {
+      var cur = pieces[sel], k = knobPos(cur), ax = k[0] - cur.x, ay = k[1] - cur.y;
+      var along = clamp(((w.x - cur.x) * ax + (w.y - cur.y) * ay) / (ax * ax + ay * ay), 0, 1);
+      if (along > 0.35 && Math.hypot(w.x - cur.x - ax * along, w.y - cur.y - ay * along) < near) return;
+    }
+    var pe = t.closest ? t.closest('.piece') : null;
+    if (!pe) return;
+    var i = +pe.dataset.i, p = pieces[i];
+    if (i !== sel) select(i);
+    // the cursor in the shape's own frame, and how far inside each side it is: the nearest side is the least far
+    var rad = -p.angle * Math.PI / 180, lx = (w.x - p.x) * Math.cos(rad) - (w.y - p.y) * Math.sin(rad), ly = (w.x - p.x) * Math.sin(rad) + (w.y - p.y) * Math.cos(rad);
+    var S = sides(p.type), depth = function (n) { return S[n].off - (lx * S[n].nx + ly * S[n].ny); }, best = 0;
+    for (var n = 1; n < S.length; n++) if (depth(n) < depth(best)) best = n;
+    if (best !== p.side && (p.side == null || depth(best) < depth(p.side) - 0.08)) { p.side = best; placeHandle(); }   // a little reluctant to change, so it does not flicker along a diagonal
   }
 
   function placeHandle() {
@@ -494,7 +528,8 @@
     startClock();
     p.angle += by;
     clearTimeout(shakeTimer);
-    G.settle(pieces, i, C);
+    // Turning a shape turns it and nothing more: it is not nudged clear of its neighbours
+    // or pulled against them. All of that belongs to dragging.
     render(i); placeHandle(); showAngle(); tick();
     if (norm(p.angle) % 15 === 0) haptic();
   }
@@ -588,7 +623,7 @@
     }
     if (drag.mode === 'spin') {
       p = pieces[sel];
-      spinTo(sel, notched(Math.atan2(w.y - p.y, w.x - p.x) * 180 / Math.PI + 90));
+      spinTo(sel, notched(Math.atan2(w.y - p.y, w.x - p.x) * 180 / Math.PI - knobAt(p)));
       judge();
       return;
     }
@@ -790,6 +825,7 @@
     if (!gazeFrame) gazeFrame = requestAnimationFrame(gaze);
   }
   board.addEventListener('pointermove', watch);
+  board.addEventListener('pointermove', hoverKnob);
   board.addEventListener('pointerleave', function () { watch(null); });
 
   var wheelAcc = 0;
@@ -1155,7 +1191,7 @@
 
   // The crowd goes wild: a wave runs across the box, left to right.
   function cheer() {
-    if (calm) return;
+    if (calm || eyeOn) return;   // under eyesight the shapes are a diagram, and a diagram does not hop
     var crowd = pieces, start = performance.now(), wide = cb.maxX - cb.minX;
     (function frame(t) {
       if (crowd !== pieces) return;
