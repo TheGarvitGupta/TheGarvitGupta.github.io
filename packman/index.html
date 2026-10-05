@@ -285,11 +285,10 @@ button{font:inherit; color:inherit; cursor:pointer}
 .bow path,.bow circle{fill:var(--coral); stroke:var(--ink); stroke-width:calc(2.5px * var(--u)); stroke-linejoin:round}
 @keyframes tie{from{stroke-dashoffset:1}}
 #handle{pointer-events:none}
-/* the handle that turns the selected shape: a small plain dot just outside its edge */
+#handle line{stroke:var(--text); stroke-width:calc(2.5px * var(--u)); stroke-dasharray:calc(1px * var(--u)) calc(5px * var(--u)); stroke-linecap:round}
 #knob{pointer-events:auto; cursor:grab; fill:var(--card); stroke:var(--ink); stroke-width:calc(2.5px * var(--u))}
 #knob-hit{pointer-events:auto; cursor:grab; fill:transparent}
-/* just outside the selected shape, all the way round, a mouse can take hold and turn it: the cursor says so */
-#board.turning{cursor:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEYUlEQVR42u1WUWwUVRS9d+ZNs7B2tU1AKmVdtttSaFmQEi22dNouVCIajYo0mEb8VT/ULxM/msYP/DEmRuMf/FBTIWjaxDSpqbCUIBUTqSgFPuiKBWJbKqGU3Z037x0/dtZsmi7tIvz1JJPMvJl3z7n33XvnEi1hCQ8ZAPgBm9xjEhEXQv6gRBiLJX4I2GNm72oqYs32ppce8x45n+fetRLAMQAiu1Y4tUe+fnVTZW24tX/Lul0oL9naTkRs27bII8AkIpJSHrg76wDAu7nrBaDTICKqDjXa0YrYzZpQC8KPb9O7Yx19ueLmkBuet+sujV5JNdS9LKenbv0DYJW3bhRCzhuDjeGNkdZb1cEm1IRbnG+6+1QqlZ4FEMoSzuc9gO8/fP8AiiiY/vzTQwDQU2AUMt7XrG0erA3HUBtukcM//QoAGgBc193nGRTzkD939swIykvr3GgkpivKtqUSY+MKQPOiRGRDuyHc0rq5qg1rSuvcnsO9GoBy0s6MlPIVAFau9zmJVzpze/b6izveRHhVvdpctROhFfV4+62PAOA6gJLchJz3PCZogomITIP3J++mEH1qPV59/XlorQ3LsDosy/qWiBQz65xtzMwgouDli1eGr43fmFy2bJkhpZwKBPyHer/rP3h5dOxHIqryvstbEdkXHK2M/b6mdCs++fgLBwCklKc8b625JQXABMDJZHI/gJGe7t5keUkdopHY9YWay7zY9KT9KIHKmIkilSEiItKajnvE8LyguRFg5hIiiq4uL7OKigQBKNsQbN1g27bo7DxSNFd4XgEairPRMAwj66W7UOtl5iki0kKYIM5wGax0PB53u7r+cOcKzyvg/NWy28yYBIgSY+OeIWq4x/kxMwPgJgDG1cQ4pCOJmW9plZ7IfNKFxRwBMlVwVAE04vP5cPrkz0xEmpljcNDIzBJAkddiBYAiZpbJZLLCMLidmXHy+BkWwgIxLl4YPzPtlTUWnQNERBK62+9fzmeHz/FAf5yEJViSPAKgnpkdZna9ywFQbZqiz7LEI+dHRjHQH6dAoJiV0j1ERDadMO6V8XkaURdqw82/KEVbigPL1dfHvjQqKkPsukoB+ggRxZWCYuZtpsl7hRD+yYmbeOO1d5C4co19PusG3xFVv/39w91sdAv+CVUHt2+JRnY4lU806PpNL7iDA0MaeXB2+Jxqa2pXa1c+426uakN1sHl3vn/GIiKQ2XiUjqr1oe17LeE77DiOcNIpt6mlnu3YszpSGWLTNCgx9heGTgzz4MApAkj4/X5KpdMfXPwz/lnWxn0JyBVRE2xsMC3fV2zwxjszs+Q4DlmWIGIiKV0SpqDiQDER6YR0nfdGE0O9C5HT4iecTFXUUZ2VXhvoME1jHzHXaq1WZKrPmGaDL7iuOuZaqYOXLp2eye5ZyDIXNht0/df7n47sCqSUXAVoVq41eWF8YHqu4Icxm3EmoTrnKym2yRaFzo3/Z8hkok7O6XCgJSzhPvAvYGZ9h25lH/AAAAAASUVORK5CYII=") 16 16, alias}
+#knob-dot{fill:var(--coral); pointer-events:none}
 #handle.spin #knob{fill:var(--sun)}
 #bubble{position:absolute; left:0; top:0; padding:3px 10px 4px; font-weight:700; font-size:16px; font-variant-numeric:tabular-nums;
   background:var(--ink); color:#FFF4DE; border-radius:999px; pointer-events:none; opacity:0; transition:opacity .15s; will-change:transform}
@@ -503,7 +502,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <g id="hits"></g>
       <g id="ribbon" hidden></g>
       <path id="ghost" class="ghost" hidden/>
-      <g id="handle" hidden><circle id="knob-hit"/><circle id="knob"/></g>
+      <g id="handle" hidden><line/><circle id="knob-hit"/><circle id="knob"/><circle id="knob-dot"/></g>
     </svg>
 
     <div id="bubble"></div>
@@ -560,7 +559,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v2.02</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v2.03</span></div>
   </div>
 </div>
 
@@ -620,9 +619,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=2.02"></script>
-<script src="levels.js?v=2.02"></script>
-<script src="game.js?v=2.02"></script>
+<script src="geom.js?v=2.03"></script>
+<script src="levels.js?v=2.03"></script>
+<script src="game.js?v=2.03"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
