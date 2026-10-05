@@ -232,7 +232,12 @@
     var pad = 0.45, room = n * (n > 9 ? 1.05 : 1.6), vw, vh;
     view.land = W / Hp > 1.05;
     if (view.land) {
-      vh = Math.max(ch + 2 * pad, 4.4);
+      // A wide screen has room beside the box for the loose shapes, so the view is kept at
+      // least a few shapes tall and the box sits in the middle of it. A phone on its side has
+      // no height to spare: there the box fills it top to bottom, and the width takes the rest.
+      var low = Hp < 460;
+      if (low) pad = 0.32;
+      vh = Math.max(ch + 2 * pad, low ? 0 : 4.4);
       vw = cw + 2 * pad + 2 * Math.max(1.7, room / (2 * (vh - 0.6)));
       if (vw / vh < W / Hp) vw = vh * W / Hp; else vh = vw * Hp / W;
       view.x = (cb.minX + cb.maxX) / 2 - vw / 2;
