@@ -5,7 +5,30 @@
 // a little buzzier than the last) and vol (how loud).
 var PackmanSounds = function (tone) {
   'use strict';
+  // Each personality has a voice: what it says when it is picked up. The names are the ones in faces.js.
+  var voices = {
+    plain: function () { tone(520, 0.07, { to: 700, vol: 0.07 }); },
+    specs: function () { tone(988, 0.05, { type: 'triangle', vol: 0.06 }); tone(1319, 0.08, { at: 0.07, type: 'triangle', vol: 0.06 }); },
+    sweet: function () { tone(1047, 0.1, { to: 1568, vol: 0.06 }); tone(1319, 0.14, { at: 0.1, vol: 0.05 }); },
+    host: function () { tone(659, 0.14, { type: 'triangle', vol: 0.08 }); tone(523, 0.22, { at: 0.13, type: 'triangle', vol: 0.08 }); },
+    tache: function () { tone(131, 0.12, { type: 'triangle', vol: 0.13 }); tone(165, 0.2, { at: 0.13, type: 'triangle', to: 147, vol: 0.13 }); },
+    grump: function () { tone(120, 0.2, { type: 'square', to: 78, vol: 0.06 }); },
+    sleepy: function () { tone(330, 0.14, { to: 470, vol: 0.06 }); tone(470, 0.4, { at: 0.13, to: 170, vol: 0.06 }); },
+    kid: function () { tone(620, 0.06, { to: 930, vol: 0.07 }); tone(780, 0.07, { at: 0.08, to: 1240, vol: 0.07 }); },
+    wide: function () { tone(440, 0.24, { to: 830, vol: 0.07 }); },
+    cool: function () { tone(196, 0.16, { type: 'triangle', to: 98, vol: 0.14 }); tone(147, 0.14, { at: 0.2, type: 'triangle', vol: 0.12 }); },
+    gent: function () { tone(208, 0.05, { type: 'triangle', vol: 0.11 }); tone(262, 0.13, { at: 0.09, type: 'triangle', to: 233, vol: 0.11 }); },
+    cat: function () { tone(760, 0.1, { to: 1250, vol: 0.07 }); tone(1250, 0.24, { at: 0.1, to: 620, vol: 0.07 }); },
+    cheeky: function () { for (var k = 0; k < 7; k++) tone(96 - k * 3, 0.025, { at: k * 0.034, type: 'square', vol: 0.05 }); },
+    smitten: function () { [1319, 1661, 1976, 2637].forEach(function (f, i) { tone(f, 0.16, { at: i * 0.06, vol: 0.045 }); }); },
+    jumpy: function () { tone(420, 0.07, { type: 'triangle', to: 1700, vol: 0.07 }); },
+    unlucky: function () { tone(640, 0.09, { to: 560, vol: 0.07 }); tone(560, 0.2, { at: 0.09, to: 270, vol: 0.07 }); },
+    goof: function () { tone(311, 0.08, { type: 'square', to: 220, vol: 0.045 }); tone(415, 0.12, { at: 0.11, type: 'square', to: 277, vol: 0.045 }); },
+    pirate: function () { tone(150, 0.3, { type: 'square', to: 112, vol: 0.05 }); tone(300, 0.3, { type: 'triangle', to: 224, vol: 0.07 }); },
+    goth: function () { tone(392, 0.16, { type: 'triangle', vol: 0.08 }); tone(311, 0.16, { at: 0.15, type: 'triangle', vol: 0.08 }); tone(233, 0.45, { at: 0.3, type: 'triangle', vol: 0.08 }); }
+  };
   return {
+    voice: function (name) { (voices[name] || voices.plain)(); },
     // handling a shape
     pick: function () { tone(520, 0.07, { to: 700, vol: 0.07 }); },
     drop: function () { tone(210, 0.11, { to: 120, vol: 0.14 }); },
@@ -45,7 +68,7 @@ var PackmanSounds = function (tone) {
 // What each one is for, in the order of the list above: for the sound board (sounds.html).
 PackmanSounds.about = [
   ['Handling a shape', [
-    ['pick', 'Picking a shape up'], ['drop', 'Putting it down outside the box, or starting a level over'], ['snap', 'It snaps against a wall or a neighbour'],
+    ['pick', 'Picking a shape up, before each had a voice of its own'], ['drop', 'Putting it down outside the box, or starting a level over'], ['snap', 'It snaps against a wall or a neighbour'],
     ['tick', 'Each notch as it turns'], ['bad', 'Put down where it does not fit'],
     ['fit', 'A shape goes in. The note climbs through the level', [0.1, 0.5, 1]]]],
   ['The board', [

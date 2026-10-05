@@ -20,47 +20,8 @@
   var MAIN = LEVELS.filter(function (l) { return !l.bonus; }).length;   // the bonus levels follow these
   var TURN = { square: 90, triangle: 120, domino: 180, hexagon: 60 };   // degrees before a shape looks the same again
   var KNOB = { square: 0.72, triangle: 0.6, domino: 0.72, hexagon: 1.08 };
-  // What a piece wears. Everything is in face units and stays well inside the
-  // body, so no outfit changes the shape the player has to pack.
-  var OUTFITS = [
-    {},
-    { wear: [['circle', 'wear', { cx: -0.13, cy: -0.06, r: 0.088 }], ['circle', 'wear', { cx: 0.13, cy: -0.06, r: 0.088 }], ['path', 'wear', { d: 'M-0.042 -0.07Q0 -0.09 0.042 -0.07' }]] },
-    { wear: [['ellipse', 'blush', { cx: -0.215, cy: 0.045, rx: 0.05, ry: 0.034 }], ['ellipse', 'blush', { cx: 0.215, cy: 0.045, rx: 0.05, ry: 0.034 }],
-             ['path', 'wear thin', { d: 'M-0.17 -0.1L-0.205 -0.13M-0.14 -0.115L-0.15 -0.155M0.17 -0.1L0.205 -0.13M0.14 -0.115L0.15 -0.155' }]] },
-    { wear: [['path', 'wear solid', { d: 'M0 0.27L-0.1 0.215V0.325ZM0 0.27L0.1 0.215V0.325Z' }], ['circle', 'wear solid', { cx: 0, cy: 0.27, r: 0.022 }]] },
-    { wear: [['path', 'wear solid', { d: 'M0 0.035C-0.04 0 -0.11 0.01 -0.15 0.065C-0.1 0.08 -0.04 0.075 0 0.045C0.04 0.075 0.1 0.08 0.15 0.065C0.11 0.01 0.04 0 0 0.035Z' }]] },
-    { idle: 'M-0.06 0.125H0.06', wear: [['path', 'wear', { d: 'M-0.2 -0.175L-0.08 -0.135M0.2 -0.175L0.08 -0.135' }]] },
-    { still: true, eye: 0.036, eyeY: -0.045, idle: 'M-0.035 0.115Q0 0.13 0.035 0.115', wear: [['path', 'wear', { d: 'M-0.185 -0.078H-0.075M0.075 -0.078H0.185' }]] },
-    { wear: [-0.24, -0.2, -0.22, 0.2, 0.24, 0.22].map(function (x, n) { return ['circle', 'wear solid', { cx: x, cy: n % 3 === 2 ? 0.07 : 0.03, r: 0.012 }]; }) },
-    { eye: 0.062, idle: 'M-0.04 0.115Q0 0.14 0.04 0.115' },
-    // the cool one: shades, and a smirk. Nothing to blink or look with behind them.
-    { still: true, stare: true, idle: 'M-0.05 0.11Q0.03 0.15 0.08 0.09',
-      wear: [['path', 'wear solid', { d: 'M-0.235 -0.115H-0.03L-0.05 -0.02Q-0.13 0.03 -0.21 -0.02ZM0.03 -0.115H0.235L0.21 -0.02Q0.13 0.03 0.05 -0.02Z' }], ['path', 'wear', { d: 'M-0.03 -0.1H0.03' }]] },
-    // the gentleman: a monocle on a chain, and one raised eyebrow
-    { idle: 'M-0.05 0.12H0.05',
-      wear: [['circle', 'wear', { cx: 0.13, cy: -0.06, r: 0.095 }], ['path', 'wear thin', { d: 'M0.205 0Q0.255 0.1 0.2 0.21' }], ['path', 'wear', { d: 'M0.065 -0.185Q0.13 -0.22 0.195 -0.185' }]] },
-    // the cat: whiskers, a nose, and a mouth like a w
-    { idle: 'M-0.06 0.095Q-0.03 0.135 0 0.095Q0.03 0.135 0.06 0.095',
-      wear: [['path', 'wear thin', { d: 'M-0.2 0.04L-0.27 0.02M-0.2 0.075L-0.27 0.085M0.2 0.04L0.27 0.02M0.2 0.075L0.27 0.085' }], ['path', 'wear solid', { d: 'M-0.024 0.03H0.024L0 0.058Z' }]] },
-    // the cheeky one: tongue out
-    { idle: 'M-0.08 0.09Q0 0.15 0.08 0.09', wear: [['path', 'tongue', { d: 'M-0.012 0.122V0.165A0.036 0.036 0 0 0 0.06 0.165V0.112Z' }]] },
-    // the smitten one: hearts where the eyes would be
-    { eye: 0.001, still: true, stare: true, idle: 'M-0.06 0.1Q0 0.16 0.06 0.1',
-      wear: [-0.13, 0.13].map(function (x) {
-        return ['path', 'heart', { d: 'M' + x + ' -0.005C' + (x - 0.1) + ' -0.075 ' + (x - 0.05) + ' -0.15 ' + x + ' -0.095C' + (x + 0.05) + ' -0.15 ' + (x + 0.1) + ' -0.075 ' + x + ' -0.005Z' }];
-      }) },
-    // the startled one: wide eyes, raised brows, a mouth like an o
-    { eye: 0.056, eyeY: -0.065, idle: 'M-0.034 0.135A0.034 0.04 0 1 0 0.034 0.135A0.034 0.04 0 1 0 -0.034 0.135',
-      wear: [['path', 'wear', { d: 'M-0.19 -0.18Q-0.13 -0.215 -0.07 -0.18M0.07 -0.18Q0.13 -0.215 0.19 -0.18' }]] },
-    // the one that has been through it: a plaster, and a wobbly mouth
-    { idle: 'M-0.07 0.12Q-0.035 0.09 0 0.12Q0.035 0.15 0.07 0.12',
-      wear: [['rect', 'plaster', { x: 0.09, y: -0.215, width: 0.15, height: 0.062, rx: 0.031, transform: 'rotate(-18 0.165 -0.184)' }], ['path', 'wear thin', { d: 'M0.15 -0.2L0.16 -0.165M0.18 -0.21L0.19 -0.175' }]] },
-    // the goofy one: two front teeth
-    { idle: 'M-0.09 0.1Q0 0.14 0.09 0.1', wear: [['path', 'tooth', { d: 'M-0.034 0.118V0.168H0.034V0.118M0 0.122V0.168' }]] },
-    // the pirate: a patch on a strap
-    { idle: 'M-0.05 0.11Q0.03 0.15 0.08 0.09',
-      wear: [['path', 'wear thin', { d: 'M-0.27 -0.16L-0.19 -0.1M-0.07 -0.09L0.27 -0.175' }], ['ellipse', 'wear solid', { cx: -0.13, cy: -0.055, rx: 0.078, ry: 0.068 }]] }
-  ];
+  var OUTFITS = PackmanFaces;   // what a piece wears: the personalities, in faces.js
+
   var GIFT = '<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg>';
   var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -180,24 +141,7 @@
     o.connect(g); g.connect(actx.destination);
     o.start(t); o.stop(t + dur + 0.02);
   }
-  var sfx = {
-    pick: function () { tone(520, 0.07, { to: 700, vol: 0.07 }); },
-    drop: function () { tone(210, 0.11, { to: 120, vol: 0.14 }); },
-    fit: function () { tone(660, 0.09, { vol: 0.1 }); tone(990, 0.14, { at: 0.07, vol: 0.1 }); },
-    bad: function () { tone(160, 0.12, { type: 'triangle', to: 110, vol: 0.1 }); },
-    snap: function () { tone(880, 0.05, { type: 'triangle', to: 1320, vol: 0.06 }); },
-    rattle: function () { for (var k = 0; k < 7; k++) tone(260 + Math.random() * 260, 0.04, { at: k * 0.085, type: 'square', vol: 0.045 }); },
-    tick: function () { tone(1250, 0.025, { type: 'triangle', vol: 0.035 }); },
-    best: function () { tone(1568, 0.16, { at: 0.5, type: 'triangle', vol: 0.11 }); tone(2093, 0.3, { at: 0.62, type: 'triangle', vol: 0.11 }); },
-    pop: function () { tone(320 + Math.random() * 240, 0.09, { type: 'square', to: 70, vol: 0.05 }); tone(1500 + Math.random() * 900, 0.12, { at: 0.05, type: 'triangle', vol: 0.05 }); },
-    fanfare: function () {
-      [[523, 0], [523, 0.14], [523, 0.28], [698, 0.42], [880, 0.7], [784, 0.98], [1047, 1.12]].forEach(function (n, i) {
-        tone(n[0], i === 6 ? 0.7 : 0.2, { at: n[1], type: 'triangle', vol: 0.14 });
-        tone(n[0] / 2, i === 6 ? 0.7 : 0.2, { at: n[1], vol: 0.08 });
-      });
-    },
-    win: function () { [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone(f, 0.22, { at: i * 0.09, type: 'triangle', vol: 0.13 }); }); }
-  };
+  var sfx = PackmanSounds(tone);   // every sound is a few notes written down in sounds.js and made here; none is a recording
   // A tiny tap under the finger. Android has the Vibration API; iPhones have
   // none, but Safari (iOS 18+) gives a haptic tick when a switch-style
   // checkbox toggles, so a hidden one is flipped instead. Touch screens only.
@@ -329,6 +273,7 @@
     var g = el('g', 'piece fresh'), pop = el('g', 'pop'), body = el('g', 'body'), fill = el('path', 'fill'), face = el('g', 'face');
     g.dataset.i = i;
     g.style.setProperty('--c', p.color);
+    if (p.kit && p.kit.ink) g.style.setProperty('--face', p.kit.ink);
     g.style.setProperty('--d', (60 + i * 28) + 'ms');
     var kit = p.kit || OUTFITS[0];
     if (p.type === 'triangle') face.setAttribute('transform', 'translate(0 0.03) scale(0.74)');
@@ -526,7 +471,7 @@
     lookForShake();
     saveBoard();
     if (quiet) return;
-    if (ev.fitted) sfx.fit(); else if (sel >= 0 && pieces[sel].el.classList.contains('bad')) sfx.bad(); else sfx.drop();
+    if (ev.fitted) sfx.fit(ev.packed / pieces.length); else if (sel >= 0 && pieces[sel].el.classList.contains('bad')) sfx.bad(); else sfx.drop();
   }
 
   function saveBoard() {
@@ -631,7 +576,7 @@
       select(i);
       drag = { mode: 'move', touch: e.pointerType === 'touch', id: e.pointerId, i: i, ox: p.x - w.x, oy: p.y - w.y, sx: e.clientX, sy: e.clientY, moved: false, a0: p.angle, stuck: false };
       p.el.classList.add('held');
-      placeHandle(); sfx.pick();
+      placeHandle(); sfx.voice(p.kit.voice);
     } else if (e.pointerType === 'touch' && sel >= 0) {
       blank = e.pointerId;   // a second finger may be on its way; deselect on lift instead
     } else { select(-1); return; }
@@ -828,9 +773,10 @@
     showHits();
   }
   $('b-eye').addEventListener('click', function () {
-    if (coachOn) { coach(false); save.eyeTip = 1; persist(); eye(true); return; }   // the one way out of the introduction
+    if (coachOn) { coach(false); save.eyeTip = 1; persist(); eye(true); sfx.eyeOn(); return; }   // the one way out of the introduction
     if (level === EYE_LEVEL) return;   // that level is played with it on, and it cannot be put away there
     eye(!eyeOn);
+    if (eyeOn) sfx.eyeOn(); else sfx.eyeOff();
     save.eyes = eyeOn; persist();   // and it stays however it was left, from level to level and visit to visit
   });
 
@@ -853,7 +799,7 @@
     say.style.left = px(left); say.style.top = px(B + 14);
     say.style.setProperty('--ax', px(mid - left));
   }
-  function coach(on) { coachOn = on; $('coach').hidden = !on; if (on) seatCoach(); }
+  function coach(on) { coachOn = on; $('coach').hidden = !on; if (on) { seatCoach(); sfx.chime(); } }
   function offerEyes() {
     clearTimeout(coachTimer);
     if (level !== EYE_LEVEL || save.eyeTip || won) return;
@@ -1004,7 +950,7 @@
       var pip = document.createElement('i');
       if (type !== 'square') pip.className = type.charAt(0);
       pips.appendChild(pip);
-      return { type: type, size: 1, x: 0, y: 0, angle: 0, color: colors[n % colors.length], kit: kits[n % kits.length], good: false };
+      return { type: type, size: 1, x: 0, y: 0, angle: 0, color: kits[n % kits.length].color || colors[n % colors.length], kit: kits[n % kits.length], good: false };
     });
     layout();
     var kept = save.board;
@@ -1012,7 +958,7 @@
       pieces.forEach(function (p, n) { p.x = kept.p[n][0]; p.y = kept.p[n][1]; p.angle = kept.p[n][2]; keepInView(p); });
       moves = kept.m || 0; carried = kept.t || 0;
       $('clock').textContent = clock(carried);
-    } else scatter();
+    } else { scatter(); sfx.deal(pieces.length); }
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
     judge(); showAngle(); placeHandle(); nag();
     lookForShake();
@@ -1096,7 +1042,9 @@
       var slots = lv.solution.map(function (s, i) {
         return { type: lv.pieces[i], x: t.m * s[0] * t.c - s[1] * t.s, y: t.m * s[0] * t.s + s[1] * t.c, angle: norm(t.m * s[2] + t.r) };
       });
-      var open = slots.filter(function (s) { return !pieces.some(function (p) { return p.good && near(p, s, 0.15, 3); }); });
+      // A spot is taken once the right shape is sitting in it, whether or not that shape is happy:
+      // one being squashed by a stray neighbour is still where it belongs.
+      var open = slots.filter(function (s) { return !pieces.some(function (p) { return near(p, s, 0.15, 3); }); });
       if (!best || open.length < best.length) best = open;
     });
     var packed = pieces.filter(function (p) { return p.good; }).map(G.verts);
@@ -1133,8 +1081,7 @@
   function seatGhost() {
     if (!ghost) return;
     if (sel >= 0 && intoGhost(sel)) { render(sel); showAngle(); placeHandle(); }
-    var ev = G.evaluate(pieces, C);
-    if (pieces.some(function (p, i) { return ev.states[i].good && near(p, ghost, 0.004, 0.5); })) showGhost(null);
+    if (pieces.some(function (p) { return near(p, ghost, 0.004, 0.5); })) showGhost(null);
   }
 
   function win() {
@@ -1278,9 +1225,10 @@
   /* ---------- sheets ---------- */
 
   // A sheet opens with its way on (.go) in focus, or failing that its first button.
-  function openSheet(s) { s.classList.add('open'); var b = s.querySelector('.btn.go:not([hidden])') || s.querySelector('.btn:not([hidden])'); if (b) setTimeout(function () { b.focus({ preventScroll: true }); }, 60); }
+  function openSheet(s) { if (!s.classList.contains('open')) sfx.open(); s.classList.add('open'); var b = s.querySelector('.btn.go:not([hidden])') || s.querySelector('.btn:not([hidden])'); if (b) setTimeout(function () { b.focus({ preventScroll: true }); }, 60); }
   // 'How to pack' counts as seen only once it is closed, so a load nobody looked at does not use it up
   function closeSheet(s) {
+    if (s.classList.contains('open')) sfx.close();
     s.classList.remove('open');
     if (s.id === 'm-help' && !save.seen) { save.seen = true; persist(); }
     if (s.id === 'm-name') named();
@@ -1339,7 +1287,8 @@
   // A player's picture: a square block wearing one of the faces. Nobody picks
   // theirs; it comes from their id, so it is the same wherever it is shown.
   function avatar(h, cls) {
-    var kit = OUTFITS[(h >>> 8) % OUTFITS.length], s = el('svg', 'avatar' + (cls ? ' ' + cls : '')), fill = el('rect', 'fill'), face = el('g', 'face');
+    var kit = OUTFITS[(h >>> 8) % 18],   // the first eighteen: a face added later must not change anybody's picture
+        s = el('svg', 'avatar' + (cls ? ' ' + cls : '')), fill = el('rect', 'fill'), face = el('g', 'face');
     s.setAttribute('viewBox', '-0.56 -0.56 1.12 1.12'); s.setAttribute('aria-hidden', 'true');
     s.style.setProperty('--c', COLORS[h % COLORS.length]);
     fill.setAttribute('x', -0.5); fill.setAttribute('y', -0.5); fill.setAttribute('width', 1); fill.setAttribute('height', 1); fill.setAttribute('rx', 0.14);
@@ -1432,6 +1381,7 @@
       if (!d.top) return;
       if (!LOCAL) { save.sent = save.sent || {}; save.sent[score.level] = 1; save.as = score.name; persist(); }
       ranks($('win-ranks'), d, 5);
+      if (d.rank === 1 && !skip) sfx.top();
       note.textContent = LOCAL ? 'Scores are not sent from a copy on this machine.' : standing(d);
       note.hidden = !note.textContent;
       box.hidden = false;
@@ -1522,6 +1472,7 @@
     var spot = pickSpot();
     if (spot) { save.hints[lv.name].push(Date.now()); persist(); }   // three to a level, a day
     closeSheet($('m-hint')); showGhost(spot);
+    if (spot) sfx.spot();
   });
   $('b-board').addEventListener('click', showBoard);
   $('b-help').addEventListener('click', function () { openSheet($('m-help')); });
@@ -1529,7 +1480,7 @@
   function disarm() { clearTimeout(armed); armed = 0; $('b-reset').classList.remove('sure'); }
   $('b-reset').addEventListener('click', function () {
     var packed = pieces.filter(function (p) { return p.good; }).length;
-    if (packed >= 3 && !armed && !won) { this.classList.add('sure'); armed = setTimeout(disarm, 2800); return; }
+    if (packed >= 3 && !armed && !won) { this.classList.add('sure'); armed = setTimeout(disarm, 2800); sfx.arm(); return; }
     disarm(); wake(); startLevel(level, true); sfx.drop();
   });
   $('b-sound').addEventListener('click', function () {
@@ -1642,6 +1593,11 @@
   if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
   else window.addEventListener('resize', layout);
 
+  // A light tap under any button that has no sound of its own.
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('button') : null;
+    if (b && b.id !== 'b-eye' && b.id !== 'b-sound' && b.id !== 'b-reset' && !b.closest('.dock')) sfx.tap();
+  }, true);
   // the sound button's label says which way it is: Unmuted or Muted
   function showMute() { $('b-sound').classList.toggle('off', !!save.mute); $('b-sound').setAttribute('data-tip', save.mute ? 'Muted' : 'Unmuted'); }
   showMute();

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Packman personalities</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFF4DE; --ink:#2B2140; --mut:#7A6F90; --card:#FFFFFF; --wash:rgba(43,33,64,.06); --sun:#FFC93C; --face:#2B2140; --bw:2.5px;
+  --f:"Fredoka", ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif}
+@media (prefers-color-scheme:dark){ :root{--bg:#1F1A30; --ink:#0D0A17; --mut:#A99FC4; --card:#2E2746; --wash:rgba(255,244,222,.08)} body{color:#FFF4DE} }
+*{box-sizing:border-box}
+body{margin:0; padding:28px 18px 56px; font-family:var(--f); color:#2B2140; background:var(--bg); background-image:radial-gradient(rgba(43,33,64,.09) 1.6px, transparent 1.7px); background-size:26px 26px}
+main{max-width:760px; margin:0 auto}
+h1{margin:0; font-size:34px; font-weight:700; line-height:1.1}
+.lead{margin:8px 0 0; font-size:16px; font-weight:500; line-height:1.4; color:var(--mut)}
+#cast{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; margin:22px 0 0; padding:0; list-style:none}
+#cast button{display:flex; flex-direction:column; align-items:center; width:100%; height:100%; padding:16px 10px 14px; font:inherit; color:inherit; text-align:center; background:var(--card); border:var(--bw) solid var(--ink); border-radius:20px; cursor:pointer; -webkit-tap-highlight-color:transparent}
+#cast button:hover{transform:translateY(-1px)} #cast button:active{transform:translateY(1px)}
+#cast svg{display:block; width:84px; height:84px; margin:0 auto 10px; overflow:visible}
+#cast b{display:block; font-size:17px; font-weight:600}
+#cast span{display:block; margin-top:2px; font-size:14px; font-weight:500; line-height:1.3; color:var(--mut)}
+.fill{fill:var(--c); stroke:var(--ink); stroke-width:.03}
+.eye{fill:var(--face)}
+.mouth{fill:none; stroke:var(--face); stroke-width:.024; stroke-linecap:round}
+.m-good{visibility:hidden} .on .m-good{visibility:visible} .on .m-idle{visibility:hidden}
+.on svg{animation:hop .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes hop{30%{transform:translateY(-10px) scale(1.08)} 60%{transform:translateY(0) scale(.96,1.04)}}
+.wear{fill:none; stroke:var(--face); stroke-width:.024; stroke-linecap:round; stroke-linejoin:round}
+.wear.thin{stroke-width:.018} .wear.solid{fill:var(--face); stroke-width:.012}
+.blush{fill:#D6305F; fill-opacity:.32}
+.tongue{fill:#FF7A9C; stroke:var(--face); stroke-width:.018; stroke-linejoin:round}
+.heart{fill:#E5263A; stroke:var(--face); stroke-width:.018; stroke-linejoin:round}
+.plaster{fill:#F7DDB8; stroke:var(--face); stroke-width:.018}
+.fringe{fill:#17121F; stroke:#17121F; stroke-width:.018; stroke-linejoin:round}
+.tooth{fill:#fff; stroke:var(--face); stroke-width:.018; stroke-linejoin:round}
+.foot{margin-top:26px; font-size:14px; font-weight:500; color:var(--mut)} .foot a{color:inherit}
+@media (max-width:380px){ #cast{grid-template-columns:1fr 1fr; gap:10px} }
+@media (prefers-reduced-motion:reduce){ .on svg{animation:none} }
+</style>
+</head>
+<body>
+<main>
+  <h1>Meet the shapes</h1>
+  <p class="lead">Every shape in Packman is dealt a personality, and each has a voice. Tap one to hear it.</p>
+  <ul id="cast"></ul>
+  <p class="foot"><a href="./">Back to Packman</a></p>
+</main>
+<script src="faces.js"></script>
+<script src="sounds.js"></script>
+<script>
+(function () {
+  'use strict';
+  var NS = 'http://www.w3.org/2000/svg';
+  var COLORS = ['#FF6B6B', '#FFC93C', '#3DDBB4', '#4DA8FF', '#9B7BFF', '#FF8FCB', '#FF9F45', '#B5E655', '#45D9E6', '#D987F5', '#FFB59E'];
+  var actx = null;
+  // the same one-note player the game has
+  function tone(freq, dur, opts) {
+    if (!actx) return;
+    opts = opts || {};
+    var t = actx.currentTime + (opts.at || 0), o = actx.createOscillator(), g = actx.createGain();
+    o.type = opts.type || 'sine';
+    o.frequency.setValueAtTime(freq, t);
+    if (opts.to) o.frequency.exponentialRampToValueAtTime(opts.to, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(opts.vol || 0.12, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  var sounds = PackmanSounds(tone);
+  function wake() {
+    if (!actx) { var AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); }
+    if (actx && actx.state !== 'running') actx.resume();
+  }
+  function el(tag, cls, attrs) {
+    var e = document.createElementNS(NS, tag);
+    if (cls) e.setAttribute('class', cls);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  // a square block wearing the face, the way the game draws one
+  function block(kit, color) {
+    var s = el('svg', '', { viewBox: '-0.56 -0.56 1.12 1.12', 'aria-hidden': 'true' });
+    s.style.setProperty('--c', kit.color || color);
+    if (kit.ink) s.style.setProperty('--face', kit.ink);
+    s.appendChild(el('rect', 'fill', { x: -0.5, y: -0.5, width: 1, height: 1, rx: 0.14 }));
+    [-0.13, 0.13].forEach(function (x) { s.appendChild(el('circle', 'eye', { cx: x, cy: kit.eyeY || -0.06, r: kit.eye || 0.048 })); });
+    s.appendChild(el('path', 'mouth m-idle', { d: kit.idle || 'M-0.07 0.1 Q0 0.15 0.07 0.1' }));
+    s.appendChild(el('path', 'mouth m-good', { d: 'M-0.12 0.07 Q0 0.24 0.12 0.07' }));
+    (kit.wear || []).forEach(function (w) { s.appendChild(el(w[0], w[1], w[2])); });
+    return s;
+  }
+  var cast = document.getElementById('cast');
+  PackmanFaces.forEach(function (kit, n) {
+    var li = document.createElement('li'), btn = document.createElement('button'), b = document.createElement('b'), d = document.createElement('span'), off = 0;
+    btn.type = 'button';
+    b.textContent = kit.name; d.textContent = kit.about;
+    btn.appendChild(block(kit, COLORS[n % COLORS.length])); btn.appendChild(b); btn.appendChild(d);
+    btn.addEventListener('click', function () {
+      wake();
+      sounds.voice(kit.voice);
+      btn.classList.remove('on'); void btn.offsetWidth; btn.classList.add('on');   // start the hop over if it is tapped again
+      clearTimeout(off); off = setTimeout(function () { btn.classList.remove('on'); }, 650);
+    });
+    li.appendChild(btn); cast.appendChild(li);
+  });
+})();
+</script>
+</body>
+</html>
