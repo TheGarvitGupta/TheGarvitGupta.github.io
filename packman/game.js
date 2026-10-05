@@ -1192,7 +1192,7 @@
     ask(SCORES + '?pid=' + save.pid).then(function (d) {
       if (!d.top) throw 0;
       ranks(list, d, 10);
-      note.textContent = (standing(d) + ' Ranked by levels packed, then fewest moves, then least time.').trim();
+      note.textContent = standing(d);
     }).catch(function () {
       list.textContent = ''; note.textContent = 'The leaderboard is not available right now.';
     }).then(function () { list.classList.remove('wait'); });
