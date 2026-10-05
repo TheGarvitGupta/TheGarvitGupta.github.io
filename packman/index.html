@@ -117,6 +117,8 @@ button{font:inherit; color:inherit; cursor:pointer}
   .tools .ib[data-tip]:last-child:not(.sure):hover::after,.tools .ib[data-tip]:last-child:not(.sure):focus-visible::after{transform:none}
 }
 .ib.dim{color:var(--mut); opacity:.5}
+/* eyesight, while it is on: the button takes the margins' violet */
+.ib[aria-pressed="true"]{background:var(--grape); color:#2B2140}
 /* the leaderboard: the same button, in trophy gold */
 .ib.lead{background:var(--sun); color:#2B2140}
 .ib.lead .cup{fill:#fff}
@@ -210,31 +212,16 @@ button{font:inherit; color:inherit; cursor:pointer}
 #stage{position:relative; flex:1; min-height:0; margin:8px 0}
 #board{position:absolute; inset:0; width:100%; height:100%; touch-action:none; overflow:visible; display:block}
 #board{--u:.02}
-/* eyesight: the eye button grows, where it is, into a window on the board as it looks, enlarged, with each
-   shape's true edge and the box's true wall marked out in violet. The window starts as the button's twin,
-   same size, border and corners, and only its width and height change. */
-#loupe{position:fixed; z-index:15; display:none; box-sizing:border-box; overflow:hidden; cursor:pointer; background:var(--card);
-  border:var(--bw) solid var(--ink); transition:left .3s var(--pop), width .3s var(--pop), height .3s var(--pop), background-color .2s, box-shadow .2s}
-#loupe.show{display:block}
-#loupe.on{background:var(--bg); box-shadow:0 14px 30px -12px rgba(27,20,45,.6)}
-/* the eye fills the window in the button's proportions, so it swells with it, fading as it goes */
-#loupe-eye{position:absolute; inset:0; display:grid; place-items:center; color:var(--text); transition:opacity .14s ease-out .14s}
-#loupe-eye svg{width:57%; height:57%; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round}
-#loupe.on #loupe-eye{opacity:0; transition:opacity .11s ease-out}
-#lens{position:absolute; right:0; top:0; display:block; pointer-events:none; opacity:0; transition:opacity .15s}
-#loupe.on #lens{opacity:1; transition:opacity .2s .08s}
-.ib.gone{visibility:hidden}
 /* The margin: what the judging counts beyond what is drawn, hatched in violet. Every shape has one
    under it and the box has one inside its wall; they show, with the graded rims, only under eyesight. */
 #hatch-wash{fill:rgba(155,123,255,.2)} #hatch-stripe{fill:#6B4FD8; fill-opacity:.6}
 .safe{visibility:hidden; pointer-events:none; fill:url(#hatch); stroke:#6B4FD8; stroke-width:calc(1px * var(--u)); stroke-linejoin:round}
 .rim{visibility:hidden; pointer-events:none}
 .ring{fill:none; stroke-width:calc(.62px * var(--u)); stroke-linejoin:round}
-#board.eyes .safe,#lens .safe,#board.eyes .rim,#lens .rim{visibility:visible}
+#board.eyes .safe,#board.eyes .rim{visibility:visible}
 /* no dark outline and no red dashes under eyesight: a shape that does not fit shows it in red where it overlaps */
-#board.eyes .piece .fill,#lens .piece .fill{stroke:transparent}
+#board.eyes .piece .fill{stroke:transparent}
 .hit{fill:var(--bad); fill-opacity:.88; pointer-events:none}
-#lens .piece{cursor:default}
 .bin-fill{fill:var(--bin); stroke:var(--ink); stroke-width:calc(4px * var(--u)); stroke-linejoin:round; transition:fill .35s}
 /* nothing inside the board animates with CSS transforms: Safari can leave smears behind */
 #bin{animation:fadein .5s both}
@@ -469,7 +456,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </a>
     <nav class="tools">
       <!-- for the board in front of you: look closer, ask for help, start again -->
-      <button class="ib" id="b-eye" aria-label="Eyesight: a closer look at whatever you point at" aria-pressed="false" data-tip="Eyesight"><svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <button class="ib" id="b-eye" aria-label="Eyesight: show every shape's true edge" aria-pressed="false" data-tip="Eyesight"><svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
       <button class="ib" id="b-hint" aria-label="Hint" data-tip="Hint"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5.8 1 .8 1.7h6c0-.7.2-1.2.8-1.7A6.5 6.5 0 0 0 12 2.5z"/></svg></button>
       <button class="ib" id="b-reset" aria-label="Start this level over" data-tip="Start over"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5"/></svg></button>
       <!-- and for the game as a whole: who is winning, the sound, how it works -->
@@ -513,7 +500,6 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 </div>
 
 <canvas id="fx" aria-hidden="true"></canvas>
-<div id="loupe" title="Put the eyesight away"><span id="loupe-eye"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg></span><svg id="lens" aria-hidden="true"></svg></div>
 
 <div class="sheet" id="m-name" role="dialog" aria-modal="true" aria-labelledby="name-h">
   <div class="card">
@@ -545,11 +531,11 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <li><span>1</span><div><b>Drag</b> a shape into the box.</div></li>
       <li><span>2</span><div><b>Spin</b> it with its knob<span class="keys"> or <kbd>Q</kbd> <kbd>E</kbd></span><span class="taps"> or two fingers</span>.</div></li>
       <li><span>3</span><div><b>Red dashes</b> mean it doesn’t fit. A <b>smile</b> means it does.</div></li>
-      <li><span>4</span><div><b>Tight fit?</b> Tap the eye for a closer look at whatever you point at.</div></li>
+      <li><span>4</span><div><b>Tight fit?</b> Tap the eye to see every shape’s true edge.</div></li>
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.71</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.72</span></div>
   </div>
 </div>
 
@@ -609,9 +595,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.71"></script>
-<script src="levels.js?v=1.71"></script>
-<script src="game.js?v=1.71"></script>
+<script src="geom.js?v=1.72"></script>
+<script src="levels.js?v=1.72"></script>
+<script src="game.js?v=1.72"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

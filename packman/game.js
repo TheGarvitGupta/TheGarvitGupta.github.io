@@ -263,7 +263,6 @@
     $('knob-dot').setAttribute('r', 4 * px);
     for (var i = 0; i < pieces.length; i++) { keepInView(pieces[i]); if (pieces[i].el) render(i); }
     placeHandle();
-    if (eyeOn) { seatLoupe(true); refreshLens(); }
   }
 
   function keepInView(p) {
@@ -442,7 +441,7 @@
       track.classList.toggle('won', !!ev.solved);
     }
     ev.fitted = fitted;
-    showHits(); refreshLens();
+    showHits();
     return ev;
   }
 
@@ -591,13 +590,13 @@
       var a = fingerAngle(drag.id, drag.id2);
       drag.turn += ((a - drag.last) % 360 + 540) % 360 - 180; drag.last = a;
       spinTo(sel, notched(drag.a0 + drag.turn));
-      judge(); look(e);
+      judge();
       return;
     }
     if (drag.mode === 'spin') {
       p = pieces[sel];
       spinTo(sel, notched(Math.atan2(w.y - p.y, w.x - p.x) * 180 / Math.PI + 90));
-      judge(); look(e);
+      judge();
       return;
     }
     if (!drag.moved && Math.abs(e.clientX - drag.sx) + Math.abs(e.clientY - drag.sy) < 4) return;
@@ -613,7 +612,7 @@
     if (stuck && !drag.stuck) { sfx.snap(); haptic(); }
     drag.stuck = stuck;
     render(drag.i);
-    judge(); showAngle(); look(e);
+    judge(); showAngle();
   }
 
   function release(e) {
@@ -637,16 +636,14 @@
   board.addEventListener('pointerup', release);
   board.addEventListener('pointercancel', release);
 
-  /* ---------- loupe ---------- */
+  /* ---------- eyesight ---------- */
 
   // On the board every shape is drawn a hair small, with soft corners, and the box a hair
-  // big, so a packed box looks neatly spaced. The eye button in the bar grows, where it is,
-  // into a window on whatever the cursor or finger is over: the board exactly as it looks,
-  // three times the size, with what the judging goes by added. That is a band of colour
-  // round each shape out to its true edge, and inside the box in to its true wall. Where
-  // those true outlines overlap, or pass a wall, it is red. Tap the window to put it away.
-  // While it is open the board shows the same margins, at its own size.
-  var loupe = $('loupe'), lens = $('lens'), ZOOM = 3, GROW = 4.5, eyeOn = false, focus = null, lensFrame = 0;
+  // big, so a packed box looks neatly spaced. The eye button in the bar shows what the
+  // judging goes by instead: a hatched band round each shape out to its true edge, and
+  // inside the box in to its true wall, with red wherever those true outlines overlap or
+  // pass a wall. Tap it again and the board goes back to how it looks.
+  var eyeOn = false;
 
   // what is left of a convex outline on one side of a line: inside (n.p <= d) or outside it
   function cut(poly, w, outside) {
@@ -664,7 +661,7 @@
     return Math.abs(sum) / 2;
   }
   // Under eyesight, wherever two true outlines overlap, or one passes a wall, is filled red:
-  // on the board, in a layer over the shapes, and so in the window too.
+  // in a layer over the shapes.
   function showHits() {
     var hits = $('hits');
     hits.textContent = '';
@@ -684,65 +681,13 @@
       }
     });
   }
-  // The window's picture is built afresh each time from copies of what is on the board,
-  // rather than mirrored live: Safari is unreliable about redrawing a mirrored shape whose
-  // original has changed. The copies bring their margins, graded rims and red with them.
-  function drawLens() {
-    lens.textContent = '';
-    lens.style.setProperty('--u', 1 / view.scale);
-    [bin, layer, $('hits')].forEach(function (group) {
-      Array.prototype.forEach.call(group.children, function (e) { lens.appendChild(e.cloneNode(true)); });
-    });
-  }
-  function paintLens() {
-    lensFrame = 0;
-    if (!eyeOn || !lv) return;
-    var f = focus || [(cb.minX + cb.maxX) / 2, (cb.minY + cb.maxY) / 2], half = lens.clientWidth / 2 / (view.scale * ZOOM);
-    drawLens();
-    lens.setAttribute('viewBox', (f[0] - half) + ' ' + (f[1] - half) + ' ' + 2 * half + ' ' + 2 * half);
-  }
-  // the window is redrawn at most once a frame, however often the board or the pointer moves
-  function refreshLens() { if (eyeOn && !lensFrame) lensFrame = requestAnimationFrame(paintLens); }
-  // It always shows the spot under the cursor or finger, and nothing cleverer: a view that
-  // chose its own subject would jump about.
-  function look(e) {
-    if (!eyeOn) return;
-    var w = world(e);
-    focus = [w.x, w.y];
-    refreshLens();
-  }
-  // The button itself seems to grow: the window starts as an exact copy of it, in its place
-  // (the real one is hidden meanwhile), and widens down and to the left with the same border
-  // and the same corners, the eye fading out as the view fades in. Closing runs it backwards.
-  var eyeTimer = 0;
-  function seatLoupe(open) {
-    var b = $('b-eye'), r = b.getBoundingClientRect(), cs = getComputedStyle(b), edge = parseFloat(cs.borderTopWidth) || 0;
-    var size = Math.round(Math.min(r.width * GROW, innerWidth - 12, innerHeight - 12)), side = open ? size : r.width;
-    loupe.style.borderRadius = cs.borderTopLeftRadius;
-    loupe.style.top = r.top + 'px'; loupe.style.left = (open ? Math.max(6, r.right - size) : r.left) + 'px';
-    loupe.style.width = loupe.style.height = side + 'px';
-    lens.style.width = lens.style.height = (size - 2 * edge) + 'px';
-  }
   function eye(on) {
-    var b = $('b-eye');
-    clearTimeout(eyeTimer);
     eyeOn = on;
-    board.classList.toggle('eyes', on);   // the board itself puts on its margins and graded rims
+    board.classList.toggle('eyes', on);
+    $('b-eye').setAttribute('aria-pressed', on);
     showHits();
-    b.setAttribute('aria-pressed', on);
-    if (on) {
-      seatLoupe(false); loupe.classList.add('show'); b.classList.add('gone');
-      void loupe.offsetWidth;   // so it starts from the button's own size
-      seatLoupe(true); loupe.classList.add('on'); paintLens();
-    } else {
-      seatLoupe(false); loupe.classList.remove('on');
-      eyeTimer = setTimeout(function () { loupe.classList.remove('show'); b.classList.remove('gone'); }, 300);
-    }
   }
   $('b-eye').addEventListener('click', function () { eye(!eyeOn); });
-  loupe.addEventListener('click', function () { eye(false); });
-  board.addEventListener('pointermove', function (e) { if (!drag) look(e); });
-  board.addEventListener('pointerdown', look);
 
   // Every face watches the pointer, and so whatever it is carrying. Only the
   // two dots move: nothing in a face is ever shifted as a group or taken out
@@ -853,7 +798,6 @@
   // fresh: deal the pieces out again even if a half-packed board was saved.
   function startLevel(i, fresh) {
     level = i; lv = LEVELS[i];
-    focus = null; refreshLens();
     $('prize-track').hidden = level !== MAIN - 1;
     var was = save.done[lv.name];
     $('best').hidden = !was;
