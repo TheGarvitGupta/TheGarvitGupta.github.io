@@ -680,6 +680,7 @@
   function eye(on) {
     eyeOn = on;
     board.classList.toggle('eyes', on);
+    stage.classList.toggle('eyes', on);   // and the table round the box goes dark, so the white box stands out from it
     $('b-eye').setAttribute('aria-pressed', on);
     showHits();
   }

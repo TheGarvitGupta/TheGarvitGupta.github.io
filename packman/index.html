@@ -34,7 +34,7 @@
   --ink:#2B2140; --text:#2B2140; --mut:#7A6F90;
   --card:#FFFFFF; --bin:#FFFFFF; --wash:rgba(43,33,64,.06);
   --coral:#FF6B6B; --sun:#FFC93C; --mint:#3DDBB4; --sky:#4DA8FF; --grape:#9B7BFF; --pink:#FF8FCB; --tang:#FF9F45;
-  --face:#2B2140; --bad:#E5263A; --win:#C9F7E6;
+  --face:#2B2140; --bad:#E5263A; --win:#C9F7E6; --around:#2F3A5C;
   --f:"Fredoka", ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", system-ui, -apple-system, "Segoe UI", sans-serif;
   --bw:2.5px; --pop:cubic-bezier(.34,1.56,.64,1);
 }
@@ -43,7 +43,7 @@
     --bg:#1F1A30; --dot:rgba(255,244,222,.07);
     --ink:#0D0A17; --text:#FFF4DE; --mut:#A99FC4;
     --card:#2E2746; --bin:#3A3158; --wash:rgba(255,244,222,.08);
-    --win:#255E55;
+    --win:#255E55; --around:#0D0A17;
   }
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
@@ -209,7 +209,9 @@ button{font:inherit; color:inherit; cursor:pointer}
 #stats{margin-top:4px; font-size:13.5px; font-weight:500; color:var(--mut); font-variant-numeric:tabular-nums; white-space:nowrap}
 
 /* board */
-#stage{position:relative; flex:1; min-height:0; margin:8px 0}
+#stage{position:relative; flex:1; min-height:0; margin:8px 0; border-radius:22px; transition:background-color .25s}
+/* under eyesight the table round the box is dark: the box is white and the shapes are blues, and both stand clear of it */
+#stage.eyes{background-color:var(--around)}
 #board{position:absolute; inset:0; width:100%; height:100%; touch-action:none; overflow:visible; display:block}
 #board{--u:.02}
 /* Introducing eyesight, on the second level: all dark but the button, with a note hanging under it.
@@ -554,7 +556,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.91</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.92</span></div>
   </div>
 </div>
 
@@ -614,9 +616,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.91"></script>
-<script src="levels.js?v=1.91"></script>
-<script src="game.js?v=1.91"></script>
+<script src="geom.js?v=1.92"></script>
+<script src="levels.js?v=1.92"></script>
+<script src="game.js?v=1.92"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
