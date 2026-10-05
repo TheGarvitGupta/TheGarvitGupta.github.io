@@ -263,6 +263,7 @@
     $('knob-dot').setAttribute('r', 4 * px);
     for (var i = 0; i < pieces.length; i++) { keepInView(pieces[i]); if (pieces[i].el) render(i); }
     placeHandle();
+    if (coachOn) seatCoach();
   }
 
   function keepInView(p) {
@@ -669,7 +670,37 @@
     $('b-eye').setAttribute('aria-pressed', on);
     showHits();
   }
-  $('b-eye').addEventListener('click', function () { eye(!eyeOn); });
+  $('b-eye').addEventListener('click', function () {
+    if (coachOn) { coach(false); save.eyeTip = 1; persist(); eye(true); return; }   // the one way out of the introduction
+    if (level === 1) return;   // the second level is played with it on, and it cannot be put away there
+    eye(!eyeOn);
+  });
+
+  // The second level is where eyesight is learnt. The first time, everything dims but its
+  // button and a note under it says what it is for; there is no closing that, and pressing
+  // the button is the way on. The level is then played with eyesight on, every time, and
+  // the button will not turn it off. The level after starts with it off again.
+  var coachOn = false, coachTimer = 0;
+  function seatCoach() {
+    var r = $('b-eye').getBoundingClientRect(), pad = 5, c = $('coach'), spot = c.querySelector('.spot'), say = $('coach-say'), blk = c.querySelectorAll('.blk');
+    var L = r.left - pad, T = r.top - pad, R = r.right + pad, B = r.bottom + pad, px = function (v) { return Math.round(v) + 'px'; };
+    spot.style.cssText = 'left:' + px(L) + ';top:' + px(T) + ';width:' + px(R - L) + ';height:' + px(B - T) + ';border-radius:' + (parseFloat(getComputedStyle($('b-eye')).borderTopLeftRadius) + pad) + 'px';
+    // four panes round the button swallow every tap that is not on it
+    blk[0].style.cssText = 'left:0;top:0;right:0;height:' + px(T);
+    blk[1].style.cssText = 'left:0;top:' + px(B) + ';right:0;bottom:0';
+    blk[2].style.cssText = 'left:0;top:' + px(T) + ';width:' + px(L) + ';height:' + px(B - T);
+    blk[3].style.cssText = 'left:' + px(R) + ';top:' + px(T) + ';right:0;height:' + px(B - T);
+    var w = say.offsetWidth, mid = r.left + r.width / 2, left = clamp(mid - w / 2, 12, innerWidth - 12 - w);
+    say.style.left = px(left); say.style.top = px(B + 14);
+    say.style.setProperty('--ax', px(mid - left));
+  }
+  function coach(on) { coachOn = on; $('coach').hidden = !on; if (on) seatCoach(); }
+  function offerEyes() {
+    clearTimeout(coachTimer);
+    if (level !== 1 || save.eyeTip || won) return;
+    if (document.querySelector('.sheet.open')) { coachTimer = setTimeout(offerEyes, 500); return; }   // wait for whatever is up to be put away
+    coach(true);
+  }
 
   // Every face watches the pointer, and so whatever it is carrying. Only the
   // two dots move: nothing in a face is ever shifted as a group or taken out
@@ -780,6 +811,7 @@
   // fresh: deal the pieces out again even if a half-packed board was saved.
   function startLevel(i, fresh) {
     level = i; lv = LEVELS[i];
+    coach(false); clearTimeout(coachTimer);
     $('prize-track').hidden = level !== MAIN - 1;
     var was = save.done[lv.name];
     $('best').hidden = !was;
@@ -825,6 +857,9 @@
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
     judge(); showAngle(); placeHandle(); nag();
     lookForShake();
+    if (i === 1 && !save.eyeTip) { eye(false); coachTimer = setTimeout(offerEyes, 900); }
+    else eye(i === 1);   // on throughout the second level, off at the start of every other
+    $('b-eye').setAttribute('data-tip', i === 1 ? 'Eyesight stays on here' : 'Eyesight');
   }
 
   /* ---------- shake ---------- */

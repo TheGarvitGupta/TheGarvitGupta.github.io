@@ -212,6 +212,19 @@ button{font:inherit; color:inherit; cursor:pointer}
 #stage{position:relative; flex:1; min-height:0; margin:8px 0}
 #board{position:absolute; inset:0; width:100%; height:100%; touch-action:none; overflow:visible; display:block}
 #board{--u:.02}
+/* Introducing eyesight, on the second level: all dark but the button, with a note hanging under it.
+   Nothing here can be closed; the button is the way on. */
+#coach{position:fixed; inset:0; z-index:18; pointer-events:none}
+#coach[hidden]{display:none}
+#coach .spot{position:fixed; box-shadow:0 0 0 4px var(--sun), 0 0 0 200vmax rgba(27,20,45,.66); animation:spot 1.6s ease-in-out infinite}
+@keyframes spot{50%{box-shadow:0 0 0 8px var(--sun), 0 0 0 200vmax rgba(27,20,45,.66)}}
+#coach .blk{position:fixed; pointer-events:auto}
+#coach-say{position:fixed; width:min(262px, calc(100vw - 24px)); margin:0; padding:12px 15px 13px; font-size:15px; font-weight:500; line-height:1.35; text-align:left;
+  color:var(--text); background:var(--card); border:var(--bw) solid var(--ink); border-radius:16px; animation:hop .4s var(--pop) both}
+#coach-say b{font-weight:700}
+#coach-say::before{content:""; position:absolute; left:var(--ax, 50%); top:-8px; width:13px; height:13px; margin-left:-7px; background:var(--card);
+  border:solid var(--ink); border-width:var(--bw) 0 0 var(--bw); border-radius:3px 0 0 0; transform:rotate(45deg)}
+
 /* Eyesight: every shape as its true outline, which is a hair bigger than it is drawn, hatched in violet.
    The colour, the face and the dark line all go; the box shows the strip inside its true wall. */
 #hatch-wash{fill:rgba(155,123,255,.2)} #hatch-stripe{fill:#6B4FD8; fill-opacity:.6}
@@ -499,6 +512,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 </div>
 
 <canvas id="fx" aria-hidden="true"></canvas>
+<div id="coach" hidden><i class="spot"></i><i class="blk"></i><i class="blk"></i><i class="blk"></i><i class="blk"></i>
+  <p id="coach-say" role="status"><b>Blocks love their privacy.</b> Each one keeps a little space around itself. To see that privacy space, tap <b>Eyesight</b>.</p>
+</div>
 
 <div class="sheet" id="m-name" role="dialog" aria-modal="true" aria-labelledby="name-h">
   <div class="card">
@@ -534,7 +550,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.73</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.75</span></div>
   </div>
 </div>
 
@@ -594,9 +610,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.73"></script>
-<script src="levels.js?v=1.73"></script>
-<script src="game.js?v=1.73"></script>
+<script src="geom.js?v=1.75"></script>
+<script src="levels.js?v=1.75"></script>
+<script src="game.js?v=1.75"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
