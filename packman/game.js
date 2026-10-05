@@ -142,7 +142,7 @@
   var moves = 0, t0 = 0, elapsed = 0, carried = 0, ticker = 0;
   var shakeTimer = 0, shaking = false;
   var syms = [], ghost = null;         // the ways the box maps onto itself, and the spot a hint is pointing at
-  var STUCK = 180, stuck = false;      // seconds on one level before the hint button lights up
+  var STUCK = 150, stuck = false;      // seconds on one level before the hint button lights up
 
   /* ---------- sound ---------- */
 
@@ -451,7 +451,7 @@
     ticker = setInterval(function () { $('clock').textContent = clock((performance.now() - t0) / 1000); nag(); }, 500);
   }
 
-  // Three minutes into a level, the hint button lights up.
+  // Two and a half minutes into a level, the hint button lights up.
   function nag() {
     if (stuck || won || (t0 ? (performance.now() - t0) / 1000 : carried) < STUCK) return;
     stuck = true;
