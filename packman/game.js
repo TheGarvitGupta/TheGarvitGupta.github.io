@@ -387,9 +387,9 @@
     p.tf = tf; p.rot = rot;
   }
 
-  // The knob stands straight above a shape to begin with. Once the cursor has been over the
-  // shape it stands off whichever flat side the cursor was nearest, so it is always close to
-  // hand. p.side is that side's number, and knobAt how far round it is from the shape's own
+  // The knob stands straight above a shape to begin with. Once the shape is selected and the
+  // cursor moves round outside it, the knob goes to whichever flat side the cursor is nearest,
+  // so it is always close to hand. p.side is that side's number, and knobAt how far round it is from the shape's own
   // "right", in degrees; the drag that turns the shape works from the same angle.
   var SIDES = {};
   function sides(type) {
@@ -403,27 +403,20 @@
     var reach = (p.side == null ? KNOB[p.type] : sides(p.type)[p.side].off + 0.22) + 30 / view.scale;
     return [p.x + Math.cos(r) * reach, p.y + Math.sin(r) * reach];
   }
-  // With a mouse, the shape under the cursor is the one with the knob, and the knob goes to
-  // the side nearest the cursor. On the way from a shape out to its knob the cursor may cross
-  // a neighbour; that does not count, or the knob would be snatched away before it was reached.
+  // With a mouse, the selected shape's knob moves to the side the cursor is nearest, but
+  // only while the cursor is outside the shape. Inside it, the knob stays where it is, so
+  // it does not dart about under a cursor that is only picking the shape up.
   function hoverKnob(e) {
-    if (e.pointerType === 'touch' || drag || won || shaking) return;
-    var t = e.target, w = world(e), near = 20 / view.scale;
+    if (e.pointerType === 'touch' || drag || won || shaking || sel < 0) return;
+    var t = e.target;
     if (t.id === 'knob' || t.id === 'knob-hit' || t.id === 'knob-dot') return;
-    if (sel >= 0) {
-      var cur = pieces[sel], k = knobPos(cur), ax = k[0] - cur.x, ay = k[1] - cur.y;
-      var along = clamp(((w.x - cur.x) * ax + (w.y - cur.y) * ay) / (ax * ax + ay * ay), 0, 1);
-      if (along > 0.35 && Math.hypot(w.x - cur.x - ax * along, w.y - cur.y - ay * along) < near) return;
-    }
-    var pe = t.closest ? t.closest('.piece') : null;
-    if (!pe) return;
-    var i = +pe.dataset.i, p = pieces[i];
-    if (i !== sel) select(i);
-    // the cursor in the shape's own frame, and how far inside each side it is: the nearest side is the least far
-    var rad = -p.angle * Math.PI / 180, lx = (w.x - p.x) * Math.cos(rad) - (w.y - p.y) * Math.sin(rad), ly = (w.x - p.x) * Math.sin(rad) + (w.y - p.y) * Math.cos(rad);
+    var p = pieces[sel], w = world(e), rad = -p.angle * Math.PI / 180;
+    // the cursor in the shape's own frame, and how far inside each side it is; outside the shape, one at least is negative
+    var lx = (w.x - p.x) * Math.cos(rad) - (w.y - p.y) * Math.sin(rad), ly = (w.x - p.x) * Math.sin(rad) + (w.y - p.y) * Math.cos(rad);
     var S = sides(p.type), depth = function (n) { return S[n].off - (lx * S[n].nx + ly * S[n].ny); }, best = 0;
     for (var n = 1; n < S.length; n++) if (depth(n) < depth(best)) best = n;
-    if (best !== p.side && (p.side == null || depth(best) < depth(p.side) - 0.08)) { p.side = best; placeHandle(); }   // a little reluctant to change, so it does not flicker along a diagonal
+    if (depth(best) >= 0) return;   // inside
+    if (best !== p.side && (p.side == null || depth(best) < depth(p.side) - 0.08)) { p.side = best; placeHandle(); }   // a little reluctant to change, so it does not flicker past a corner
   }
 
   function placeHandle() {
