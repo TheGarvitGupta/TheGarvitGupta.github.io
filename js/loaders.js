@@ -28,7 +28,7 @@ $(window).scroll(function () {
 			$(".text-3-ed").eq(i).addClass("animated fadeInDown");
 			$(".text-2-ed").eq(i).addClass("animated fadeInDown");
 			$(".text-1-ed").eq(i).addClass("animated fadeInDown");
-			$(".lede-button").eq(i).addClass("animated fadeInLeft");
+			$(this).find(".lede-button").addClass("animated fadeInLeft");
 		}
 	});
 
@@ -87,3 +87,29 @@ $(function () {
 		}
 	});
 });
+
+/* Path column: its pieces rise in, one after another, the first time it scrolls into view */
+(function () {
+	var path = document.getElementById("path");
+	if (!path || !("IntersectionObserver" in window)) return;
+	path.classList.add("path-wait");
+	new IntersectionObserver(function (entries, io) {
+		if (!entries[0].isIntersecting) return;
+		path.classList.remove("path-wait");
+		path.classList.add("path-in");
+		io.disconnect();
+	}, { threshold: 0.12 }).observe(path);
+})();
+
+/* Path column: a sport's details show when its icon is hovered or tapped, and stay until another's are */
+(function () {
+	var sports = document.querySelectorAll(".path-play > li");
+	function pick(li) {
+		if (!li.querySelector(".path-fig:not([hidden]), .path-medals, .path-loop, .path-map")) return;   // nothing to say about this one
+		for (var i = 0; i < sports.length; i++) sports[i].classList.toggle("on", sports[i] === li);
+	}
+	for (var i = 0; i < sports.length; i++) {
+		sports[i].addEventListener("mouseenter", function () { pick(this); });
+		sports[i].addEventListener("click", function () { pick(this); });
+	}
+})();

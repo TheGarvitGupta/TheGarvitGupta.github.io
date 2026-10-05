@@ -233,6 +233,32 @@
 		$a.html(html);
 	}
 
+	// The figures in a sport's details in the Path column. A figure the worker has
+	// no number for stays hidden. This year's running is set against the 1,000 km goal.
+	function renderTotals(data) {
+		var dist = function (m) { return m > 0 ? fmtDist(m) : ""; };
+		var runs = function (n) { return n ? " · " + n.toLocaleString("en-US") + (n === 1 ? " run" : " runs") : ""; };
+		var text = {
+			runLife: dist(data.lifetimeMeters),
+			runLifeSub: data.lifetimeMeters > 0 ? "lifetime" + runs(data.lifetimeRunCount) : "",
+			runYear: data.ytdMeters > 0 ? fmtDist(data.ytdMeters).replace(/ \S+$/, "") + " of " + fmtDist(1e6) : "",
+			rideLife: dist(data.rideLifetimeMeters),
+			rideYear: dist(data.rideYtdMeters),
+			swimLife: dist(data.swimLifetimeMeters)
+		};
+		$(".path-stat").each(function () {
+			var t = text[this.getAttribute("data-stat")] || "";
+			if ($(this).hasClass("path-big")) {
+				// the number large, its unit small beside it
+				var cut = t.lastIndexOf(" ");
+				$(this).text(t.slice(0, cut < 0 ? t.length : cut)).append($("<small>").text(cut < 0 ? "" : t.slice(cut + 1)));
+			} else this.textContent = t;
+			$(this).closest(".path-fig").prop("hidden", !t);
+		});
+		var pct = Math.min(100, (data.ytdMeters || 0) / 1e4).toFixed(1) + "%";
+		$(".path-fill").each(function () { this.style.setProperty("--p", pct); });   // this jQuery cannot set custom properties
+	}
+
 	function reveal(data) {
 		if (data.profileUrl) $(".strava-link").attr("href", data.profileUrl);
 		renderActivity(data);
@@ -241,6 +267,7 @@
 	// Expose for units toggle to re-render the distance line on unit change
 	window.GG = window.GG || {};
 	window.GG.refreshStrava = function () {
+		if (pending) renderTotals(pending);
 		if (pending && revealed) renderActivity(pending);
 	};
 
@@ -260,6 +287,7 @@
 			.then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
 			.then(function (data) {
 				pending = data;
+				renderTotals(data);
 				tryReveal();
 			})
 			.catch(function (err) { console.warn("Strava worker fetch failed", err); });

@@ -129,6 +129,7 @@ export default {
 			const all = stats.all_run_totals || {};
 			const ytdRide = stats.ytd_ride_totals || {};
 			const allRide = stats.all_ride_totals || {};
+			const allSwim = stats.all_swim_totals || {};
 
 			// 3. Fetch the most recent activity of ANY type.
 			const actRes = await fetch(
@@ -171,6 +172,7 @@ export default {
 				lifetimeRunCount: all.count || 0,
 				rideYtdMeters: Math.round(ytdRide.distance || 0),
 				rideLifetimeMeters: Math.round(allRide.distance || 0),
+				swimLifetimeMeters: Math.round(allSwim.distance || 0),
 				profileUrl: `https://www.strava.com/athletes/${env.STRAVA_ATHLETE_ID}`,
 				latest,
 			};

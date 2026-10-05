@@ -39,51 +39,42 @@
     .bg-editable {
         width: 230px;
     }
-    /* Static Box Adjustments */
-    
-    .static {
-        float: none !important;
-        position: relative !important;
-        top: auto !important;
-        left: auto !important;
-        right: auto !important;
-        width: auto !important;
-        transform:  none !important;
-        padding: 20px;
-        padding-bottom: 0px;
-        overflow-x: scroll;
-        padding-left: 50px;
-        border-left: solid 6px #000;
-        margin-top: 50px;
-    }
     .all-work {
         float: none !important;
     }
-    .static-box {
-        width: 230px;
-        float: left;
-        padding-right: 70px;
-        margin-right: 50px;
-        border-right: solid 1px #000;
+    /* Path drops below the projects and lays its three stops side by side */
+    .path {
+        float: none;
+        position: relative;
+        top: auto;
+        width: auto;
+        clear: both;
+        margin-top: 24px;
+        margin-right: 0;
     }
-    .static-box:nth-child(4) {
-        border: 0px;
-        margin-right: 0px;
-        padding-right: 0px;
+    .path-line {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 48px;
+        padding-bottom: 48px;
     }
-.static-box:after {
-        width: 0px;
+    .path-stop {
+        padding-bottom: 0;
     }
-    .static-inner {
-        width: 1000px;
+    .path-block {
+        padding-top: 0;
+    }
+    .path-stop:not(:last-child)::before {
+        display: none;
+    }
+    .path-play {
+        justify-content: flex-start;
+        gap: 22px;
     }
 }
 @media screen and (max-width: 1280px) {
     .garvit-gupta {
         width: 450px;
-    }
-.static {
-        margin-top: 150px;
     }
 }
 @media screen and (max-width: 1230px) {
@@ -113,9 +104,6 @@
 }
 @media screen and (max-width: 1023px) {
     .showcase-box {
-        display: none;
-    }
-    #dev-profile {
         display: none;
     }
     #message-received-parent {
@@ -511,5 +499,30 @@
 @media (pointer: coarse) {
     .gallery-arrow {
         display: none;
+    }
+}
+
+/* Path on a phone: one column again, with the rail back between the logos */
+@media screen and (max-width: 760px) {
+    .path {
+        margin-top: 28px;
+    }
+    .path-line {
+        display: block;
+        padding-bottom: 8px;
+    }
+    .path-stop {
+        padding-bottom: 32px;
+    }
+    .path-block {
+        padding-top: 12px;
+    }
+    .path-stop:not(:last-child)::before {
+        display: block;
+    }
+    .path-play {
+        justify-content: space-between;
+        gap: 0;
+        max-width: 340px;
     }
 }

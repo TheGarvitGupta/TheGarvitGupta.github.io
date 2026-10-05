@@ -46,12 +46,12 @@
 		<script defer src="js/initiateVariables.js?v=3"></script>
 		<link href="https://fonts.googleapis.com/css2?family=Montserrat&family=Open+Sans&display=swap" rel="stylesheet">
 		<link href='css/global.css?v=124' rel='stylesheet' type='text/css'>
-		<link href='css/work.css?v=3' rel='stylesheet' type='text/css'>
-		<link href='css/responsive.css?v=4' rel='stylesheet' type='text/css'>
+		<link href='css/work.css?v=34' rel='stylesheet' type='text/css'>
+		<link href='css/responsive.css?v=13' rel='stylesheet' type='text/css'>
 
 		<link href='css/animations.css' rel='stylesheet' type='text/css'>
 		<link href='css/particle-support.css' rel='stylesheet' type='text/css'>
-		<link href='css/darkmode.css?v=22' rel='stylesheet' type='text/css'>
+		<link href='css/darkmode.css?v=34' rel='stylesheet' type='text/css'>
 		<script src="js/darkmode.js?v=2"></script>
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox@3/dist/css/glightbox.min.css">
 		
@@ -597,7 +597,7 @@
 				<div class="clearfix">
 					<div class="about-text">
 						<p class="inline-p">Hello! I am a software engineer at Apple. I graduated with a master's in computer science from </p>
-						<a class="upenn" style="display: inline; text-decoration: none; color: #333" target="_blank" rel="noopener noreferrer" href="https://www.cis.upenn.edu/prospective-students/graduate/mse.php">University of Pennsylvania.</a>
+						<a class="upenn" style="display: inline; text-decoration: none; color: #333" target="_blank" rel="noopener noreferrer" href="https://www.cis.upenn.edu/mse-in-cis/">University of Pennsylvania.</a>
 						<p class="inline-p">I'm passionate about delivering incredibly detailed and intuitive experiences through the products I build.</p><br>
 						<br>
 						<p class="inline-p">Previously, I have collaborated with teams from Nokia and Microsoft to build one of the top downloaded apps on the</p>
@@ -663,55 +663,27 @@
 			<div class="clearfix relative">
 				<div class="all-work" id="work-frame">
 
-				<!-- Work - 1 -->
+					<!-- Work - 1 -->
 					<div class="lede-parent">
 						<div class="bg-editable">
-							<div class="text-1-ed" style="color:#CFD8DC">Distributed Cloud Platform</div>
-							<div class="text-2-ed">PennCloud</div>
-							<div class="text-3-ed" style="color:#CFD8DC">Distributed platform with scalable, fault-tolerant key-value datastore at the backend that supports consistency, efficient replication, checkpointing, and recovery.<br><br>Written in C++.</div>
+							<div class="text-1-ed" style="color:#D1C4E9">Puzzle Game</div>
+							<div class="text-2-ed">Packman</div>
+							<div class="text-3-ed" style="color:#D1C4E9">Fit every shape inside the box. Seventeen levels, and the last one packs seventeen squares into a box that looks a size too small.<br><br>Built with plain JavaScript and SVG.</div>
 						</div>	
-						<div class="lede-background" style="background-color:#263238">
-							<a  href="https://www.cis.upenn.edu/~cis5050/hall_of_fame.html#:~:text=2018%20PennCloud%20Award">
-								<div class="lede-button lb4">
-									<div class="lede-button-text">UPenn.edu</div>
+						<div class="lede-background" style="background-color:#311B92">
+							<a href="packman/">
+								<div class="lede-button lb1">
+									<div class="lede-button-text">Play</div>
 									<div class="lede-button-arrow"></div>
 								</div>
 							</a>
 						</div>
 						<div class="lede-image-container">
-							<div class="lede-image" style="background-image:url('images/work/penncloud.jpg')"></div>
+							<div class="lede-image packman-tile" id="packman-tile"></div>
 						</div>
 					</div>
 
 					<!-- Work - 2 -->
-					<div class="lede-parent">
-						<div class="bg-editable">
-							<div class="text-1-ed" style="color:#B2DFDB">Node.JS App</div>
-							<div class="text-2-ed">Biker Phoenix</div>
-							<div class="text-3-ed" style="color:#B2DFDB">Biker Phoenix combines rental bikes, and subway system database to provide the shortest commute directions in the city of New York.<br><br>Built with Node.js, AngularJS, and SQL</div>
-						</div>	
-						<div class="lede-background" style="background-color:#004D40">
-						</div>
-						<div class="lede-image-container">
-							<div class="lede-image" style="background-image:url('images/lede/biker-phoenix.jpg')"></div>
-						</div>
-					</div>
-
-					<!-- Work - 3 -->
-					<div class="lede-parent">
-						<div class="bg-editable">
-							<div class="text-1-ed" style="color:#B3E5FC">Carpooling Web App</div>
-							<div class="text-2-ed">AberLift</div>
-							<div class="text-3-ed" style="color:#B3E5FC">A unique carpooling platform for the students and staff in the Aberystwyth University, United Kingdom.<br><br>PHP and SQL on the back, Google's Material Design on the front.</div>
-						</div>	
-						<div class="lede-background" style="background-color:#01579B;">
-						</div>
-						<div class="lede-image-container">
-							<div class="lede-image" style="background-image:url('images/work/aberlift.jpg')"></div>
-						</div>
-					</div>
-
-					<!-- Work - 4 -->
 					<div class="lede-parent">
 						<div class="bg-editable">
 							<div class="text-1-ed" style="color:#FFF8E1">Windows App</div>
@@ -731,7 +703,7 @@
 						</div>
 					</div>
 
-					<!-- Work - 5 -->
+					<!-- Work - 3 -->
 					<div class="lede-parent" style="margin-bottom:0">
 						<div class="bg-editable">
 							<div class="text-1-ed" style="color:#B2EBF2">VR Experience</div>
@@ -749,50 +721,86 @@
 
 				</div>
 
-				<!-- SIDE BOX -->
-				<div class="static clearfix" id="dev-profile">
-					<div class="clearfix static-inner">
-						<div class="head-stat">
-							<div class="level-normal">Dev</div>
-							<div class="level-super">PROFILE</div>
-						</div>
+				<!-- PATH: where I work, where I studied, and what happens after hours -->
+				<div class="path" id="path">
+					<ol class="path-line">
+						<li class="path-stop path-rise" style="--i:0">
+							<div class="path-logo"><svg class="path-apple" viewBox="0 0 814 1000" role="img" aria-label="Apple"><path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76.5 0-103.7 40.8-165.9 40.8s-105.6-57-155.5-127C46.7 790.7 0 663 0 541.8c0-194.4 126.4-297.5 250.8-297.5 66.1 0 121.2 43.4 162.7 43.4 39.5 0 101.1-46 176.3-46 28.5 0 130.9 2.6 198.3 99.2zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/></svg></div>
+							<div class="path-text">
+								<div class="path-name">Apple</div>
+								<div class="path-role">Senior Software Engineer</div>
+								<div class="path-note">2019 – Present</div>
+							</div>
+						</li>
+						<li class="path-stop path-rise" style="--i:1">
+							<div class="path-logo"><img src="images/work/penn-shield.svg" alt="University of Pennsylvania"></div>
+							<div class="path-text">
+								<div class="path-name">University of Pennsylvania</div>
+								<div class="path-role">MSE, Computer and Information Science</div>
+							</div>
+						</li>
+						<li class="path-stop path-rise" style="--i:2">
+							<div class="path-logo"><img class="path-seal" src="images/work/delhi-university.png" alt="University of Delhi"></div>
+							<div class="path-text">
+								<div class="path-name">University of Delhi</div>
+								<div class="path-role">BSc, Computer Science</div>
+							</div>
+						</li>
+					</ol>
 
-						<div class="static-box">
-							<div class="box-logo">
-								<img src="images/work/microsoft.svg" class="box-logo-image">
-							</div>
-							<div class="box-text-1">
-								Distinguished Developer
-							</div>
-							<div class="box-text-2">
-								Microsoft App Builders Club
-							</div>
+					<div class="path-block path-rise" style="--i:3">
+						<div class="path-off">
+							<ul class="path-play">
+								<li class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="15.5" cy="4.5" r="1.8"/><path d="M13.5 8.5 10.5 14l3.5 2.5-1 5M10.5 14 8 17.5H4.5M13.5 8.5l-4 1L8 12.5M13.5 8.5l2.5 3h3"/></svg><span>Running</span>
+									<div class="path-detail">
+										<div class="path-fig" hidden>
+											<b class="path-big path-stat" data-stat="runLife"></b>
+											<div class="path-sub path-stat" data-stat="runLifeSub"></div>
+										</div>
+										<div class="path-fig" hidden>
+											<div class="path-sub">This year<b class="path-stat" data-stat="runYear"></b></div>
+											<div class="path-bar"><i class="path-fill"></i></div>
+										</div>
+										<div class="path-sub">SF Half Marathon</div>
+										<div class="path-medals"><i data-y="’22" style="--n:0"></i><i data-y="’23" style="--n:1"></i><i data-y="’24" style="--n:2"></i><i data-y="’25" style="--n:3"></i><i data-y="’26" style="--n:4"></i></div>
+										<div class="path-sub">Lake Tahoe Relay</div>
+										<div class="path-medals"><i data-y="’22" style="--n:0"></i></div>
+									</div>
+								</li>
+								<li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="16" r="3.8"/><circle cx="18" cy="16" r="3.8"/><path d="M6 16l3.5-7h6L18 16M9.5 9l3.5 7 2.5-7M8 9h3M15.5 9l-.8-2.5H17"/></svg><span>Biking</span>
+									<div class="path-detail">
+										<div class="path-fig" hidden>
+											<b class="path-big path-stat" data-stat="rideLife"></b>
+											<div class="path-sub">lifetime</div>
+										</div>
+										<div class="path-fig" hidden>
+											<b class="path-big path-mid path-stat" data-stat="rideYear"></b>
+											<div class="path-sub">this year</div>
+										</div>
+									</div>
+								</li>
+								<li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 19.5 9 7l3.5 6 2.5-3.5 6.5 10Z"/><path d="M7 11l1.4 1.2 1.1-1.3 1.3 1.1.5-.6"/></svg><span>Skiing</span>
+									<div class="path-detail">
+										<svg class="path-map" viewBox="0 0 260 98" role="img" aria-label="World map with three ski regions marked"><path class="path-land" d="M42.5 2.5h.01M62.5 2.5h.01M67.5 2.5h.01M72.5 2.5h.01M92.5 2.5h.01M97.5 2.5h.01M102.5 2.5h.01M107.5 2.5h.01M112.5 2.5h.01M192.5 2.5h.01M197.5 2.5h.01M202.5 2.5h.01M207.5 2.5h.01M15 6.8h.01M20 6.8h.01M25 6.8h.01M30 6.8h.01M35 6.8h.01M40 6.8h.01M45 6.8h.01M50 6.8h.01M55 6.8h.01M60 6.8h.01M65 6.8h.01M70 6.8h.01M80 6.8h.01M95 6.8h.01M100 6.8h.01M105 6.8h.01M110 6.8h.01M145 6.8h.01M150 6.8h.01M155 6.8h.01M170 6.8h.01M175 6.8h.01M180 6.8h.01M185 6.8h.01M190 6.8h.01M195 6.8h.01M200 6.8h.01M205 6.8h.01M210 6.8h.01M215 6.8h.01M220 6.8h.01M225 6.8h.01M230 6.8h.01M235 6.8h.01M240 6.8h.01M245 6.8h.01M250 6.8h.01M255 6.8h.01M12.5 11.2h.01M17.5 11.2h.01M22.5 11.2h.01M27.5 11.2h.01M32.5 11.2h.01M37.5 11.2h.01M42.5 11.2h.01M47.5 11.2h.01M52.5 11.2h.01M57.5 11.2h.01M62.5 11.2h.01M77.5 11.2h.01M97.5 11.2h.01M137.5 11.2h.01M142.5 11.2h.01M147.5 11.2h.01M152.5 11.2h.01M157.5 11.2h.01M162.5 11.2h.01M167.5 11.2h.01M172.5 11.2h.01M177.5 11.2h.01M182.5 11.2h.01M187.5 11.2h.01M192.5 11.2h.01M197.5 11.2h.01M202.5 11.2h.01M207.5 11.2h.01M212.5 11.2h.01M217.5 11.2h.01M222.5 11.2h.01M227.5 11.2h.01M232.5 11.2h.01M237.5 11.2h.01M242.5 11.2h.01M247.5 11.2h.01M252.5 11.2h.01M257.5 11.2h.01M15 15.5h.01M35 15.5h.01M40 15.5h.01M45 15.5h.01M50 15.5h.01M55 15.5h.01M60 15.5h.01M65 15.5h.01M75 15.5h.01M80 15.5h.01M85 15.5h.01M140 15.5h.01M150 15.5h.01M155 15.5h.01M160 15.5h.01M165 15.5h.01M170 15.5h.01M175 15.5h.01M180 15.5h.01M185 15.5h.01M190 15.5h.01M195 15.5h.01M200 15.5h.01M205 15.5h.01M210 15.5h.01M215 15.5h.01M220 15.5h.01M225 15.5h.01M230 15.5h.01M245 15.5h.01M37.5 19.8h.01M42.5 19.8h.01M47.5 19.8h.01M52.5 19.8h.01M57.5 19.8h.01M62.5 19.8h.01M67.5 19.8h.01M72.5 19.8h.01M77.5 19.8h.01M82.5 19.8h.01M87.5 19.8h.01M127.5 19.8h.01M132.5 19.8h.01M137.5 19.8h.01M142.5 19.8h.01M147.5 19.8h.01M152.5 19.8h.01M157.5 19.8h.01M162.5 19.8h.01M167.5 19.8h.01M172.5 19.8h.01M177.5 19.8h.01M182.5 19.8h.01M187.5 19.8h.01M192.5 19.8h.01M197.5 19.8h.01M202.5 19.8h.01M207.5 19.8h.01M212.5 19.8h.01M217.5 19.8h.01M222.5 19.8h.01M227.5 19.8h.01M232.5 19.8h.01M45 24.1h.01M50 24.1h.01M55 24.1h.01M60 24.1h.01M65 24.1h.01M70 24.1h.01M75 24.1h.01M80 24.1h.01M130 24.1h.01M135 24.1h.01M140 24.1h.01M145 24.1h.01M150 24.1h.01M160 24.1h.01M165 24.1h.01M170 24.1h.01M175 24.1h.01M180 24.1h.01M185 24.1h.01M190 24.1h.01M195 24.1h.01M200 24.1h.01M205 24.1h.01M210 24.1h.01M215 24.1h.01M220 24.1h.01M225 24.1h.01M42.5 28.5h.01M47.5 28.5h.01M52.5 28.5h.01M57.5 28.5h.01M62.5 28.5h.01M67.5 28.5h.01M72.5 28.5h.01M127.5 28.5h.01M152.5 28.5h.01M157.5 28.5h.01M162.5 28.5h.01M172.5 28.5h.01M177.5 28.5h.01M182.5 28.5h.01M187.5 28.5h.01M192.5 28.5h.01M197.5 28.5h.01M202.5 28.5h.01M207.5 28.5h.01M212.5 28.5h.01M222.5 28.5h.01M50 32.8h.01M55 32.8h.01M60 32.8h.01M65 32.8h.01M70 32.8h.01M125 32.8h.01M130 32.8h.01M135 32.8h.01M140 32.8h.01M145 32.8h.01M155 32.8h.01M160 32.8h.01M165 32.8h.01M170 32.8h.01M175 32.8h.01M180 32.8h.01M185 32.8h.01M190 32.8h.01M195 32.8h.01M200 32.8h.01M205 32.8h.01M210 32.8h.01M215 32.8h.01M52.5 37.1h.01M57.5 37.1h.01M122.5 37.1h.01M127.5 37.1h.01M132.5 37.1h.01M137.5 37.1h.01M142.5 37.1h.01M147.5 37.1h.01M152.5 37.1h.01M157.5 37.1h.01M162.5 37.1h.01M167.5 37.1h.01M172.5 37.1h.01M177.5 37.1h.01M182.5 37.1h.01M187.5 37.1h.01M192.5 37.1h.01M197.5 37.1h.01M202.5 37.1h.01M207.5 37.1h.01M212.5 37.1h.01M55 41.5h.01M60 41.5h.01M65 41.5h.01M120 41.5h.01M125 41.5h.01M130 41.5h.01M135 41.5h.01M140 41.5h.01M145 41.5h.01M150 41.5h.01M155 41.5h.01M160 41.5h.01M165 41.5h.01M170 41.5h.01M185 41.5h.01M190 41.5h.01M200 41.5h.01M205 41.5h.01M67.5 45.8h.01M117.5 45.8h.01M122.5 45.8h.01M127.5 45.8h.01M132.5 45.8h.01M137.5 45.8h.01M142.5 45.8h.01M147.5 45.8h.01M152.5 45.8h.01M157.5 45.8h.01M162.5 45.8h.01M187.5 45.8h.01M202.5 45.8h.01M207.5 45.8h.01M75 50.1h.01M80 50.1h.01M85 50.1h.01M125 50.1h.01M130 50.1h.01M135 50.1h.01M140 50.1h.01M145 50.1h.01M150 50.1h.01M155 50.1h.01M160 50.1h.01M165 50.1h.01M220 50.1h.01M77.5 54.5h.01M82.5 54.5h.01M87.5 54.5h.01M92.5 54.5h.01M137.5 54.5h.01M142.5 54.5h.01M147.5 54.5h.01M152.5 54.5h.01M157.5 54.5h.01M162.5 54.5h.01M202.5 54.5h.01M212.5 54.5h.01M75 58.8h.01M80 58.8h.01M85 58.8h.01M90 58.8h.01M95 58.8h.01M100 58.8h.01M140 58.8h.01M145 58.8h.01M150 58.8h.01M155 58.8h.01M205 58.8h.01M230 58.8h.01M77.5 63.1h.01M82.5 63.1h.01M87.5 63.1h.01M92.5 63.1h.01M97.5 63.1h.01M102.5 63.1h.01M142.5 63.1h.01M147.5 63.1h.01M152.5 63.1h.01M157.5 63.1h.01M80 67.4h.01M85 67.4h.01M90 67.4h.01M95 67.4h.01M100 67.4h.01M140 67.4h.01M145 67.4h.01M150 67.4h.01M155 67.4h.01M165 67.4h.01M220 67.4h.01M225 67.4h.01M82.5 71.8h.01M87.5 71.8h.01M92.5 71.8h.01M97.5 71.8h.01M142.5 71.8h.01M147.5 71.8h.01M152.5 71.8h.01M162.5 71.8h.01M217.5 71.8h.01M222.5 71.8h.01M227.5 71.8h.01M232.5 71.8h.01M237.5 71.8h.01M80 76.1h.01M85 76.1h.01M90 76.1h.01M145 76.1h.01M150 76.1h.01M215 76.1h.01M220 76.1h.01M225 76.1h.01M230 76.1h.01M235 76.1h.01M240 76.1h.01M82.5 80.4h.01M87.5 80.4h.01M147.5 80.4h.01M217.5 80.4h.01M227.5 80.4h.01M232.5 80.4h.01M237.5 80.4h.01M80 84.8h.01M85 84.8h.01M77.5 89.1h.01M252.5 89.1h.01M80 93.4h.01"/><circle class="path-pin" cx="43.3" cy="28.2" r="4"/><circle class="path-pin" cx="75.5" cy="26.9" r="4"/><circle class="path-pin" cx="135.3" cy="23.0" r="4"/></svg>
+										<ol class="path-regions"><li style="--n:0"><b>Lake Tahoe</b>Palisades · Heavenly · Northstar · Kirkwood</li><li style="--n:1"><b>Pennsylvania</b>Blue Mountain</li><li style="--n:2"><b>The Alps</b>Crans-Montana · Zermatt · Saint-Gervais</li></ol>
+									</div>
+								</li>
+								<li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5 3.5 19.5h17ZM12 12l-3.5 7.5M12 12l3.5 7.5M10.6 3 12 5l1.4-2"/></svg><span>Camping</span>
+									<div class="path-detail">
+										<svg class="path-loop" viewBox="0 0 260 176" role="img" aria-label="A looping trail with a mark at each campsite"><path class="path-way" id="path-way" d="M34 84C38.0 67.7 57.0 41.0 74 36C91.0 31.0 116.0 55.0 136 54C156.0 53.0 178.3 26.7 194 30C209.7 33.3 228.3 58.3 230 74C231.7 89.7 217.3 118.7 204 124C190.7 129.3 166.0 102.3 150 106C134.0 109.7 124.7 141.3 108 146C91.3 150.7 62.3 144.3 50 134C37.7 123.7 30.0 100.3 34 84Z"/><circle class="path-hiker" r="3"><animateMotion dur="26s" repeatCount="indefinite"><mpath href="#path-way"/></animateMotion></circle><g class="path-camp" transform="translate(48.8 56.1)" style="--n:0"><circle r="10"/><path d="M-6 5 0-6 6 5ZM0-.5-2.6 5M0-.5 2.6 5"/><text x="0.0" y="-14">Yosemite</text></g><g class="path-camp" transform="translate(128.6 53.4)" style="--n:1"><circle r="10"/><path d="M-6.5 0 0-6 6.5 0M-4.6-1.6V5.5H4.6V-1.6M-1.3 5.5V1.8H1.3V5.5"/><text x="0.0" y="-14">Big Sur</text></g><g class="path-camp" transform="translate(210.6 40.1)" style="--n:2"><circle r="10"/><path d="M0-6.5C3-2.5 4.6-.6 4.6 2A4.6 4.6 0 0 1-4.6 2C-4.6.2-3.2-.8-2.6-2.8-1.2-1.8-.6-3.8 0-6.5ZM-5.5 6.5H5.5"/><text x="0.0" y="-14">Lake Tahoe</text></g><g class="path-camp" transform="translate(210.4 119.8)" style="--n:3"><circle r="10"/><path d="M-6 5 0-6 6 5ZM0-.5-2.6 5M0-.5 2.6 5"/><text x="0.0" y="21">Point Reyes</text></g><g class="path-camp" transform="translate(131.8 122.1)" style="--n:4"><circle r="10"/><path d="M-6.5 0 0-6 6.5 0M-4.6-1.6V5.5H4.6V-1.6M-1.3 5.5V1.8H1.3V5.5"/><text x="0.0" y="21">Joshua Tree</text></g><g class="path-camp" transform="translate(53.5 136.5)" style="--n:5"><circle r="10"/><path d="M0-6.5C3-2.5 4.6-.6 4.6 2A4.6 4.6 0 0 1-4.6 2C-4.6.2-3.2-.8-2.6-2.8-1.2-1.8-.6-3.8 0-6.5ZM-5.5 6.5H5.5"/><text x="0.0" y="21">Pinnacles</text></g></svg>
+									</div>
+								</li>
+								<li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="16.5" cy="7.5" r="1.8"/><path d="M5 12.5l5-4 3.5 3M3 16c1.5 0 1.5 1.2 3 1.2S7.5 16 9 16s1.5 1.2 3 1.2 1.5-1.2 3-1.2 1.5 1.2 3 1.2 1.5-1.2 3-1.2M3 20c1.5 0 1.5 1.2 3 1.2S7.5 20 9 20s1.5 1.2 3 1.2 1.5-1.2 3-1.2 1.5 1.2 3 1.2 1.5-1.2 3-1.2"/></svg><span>Swimming</span>
+									<div class="path-detail">
+										<div class="path-fig" hidden>
+											<b class="path-big path-stat" data-stat="swimLife"></b>
+											<div class="path-sub">lifetime</div>
+										</div>
+									</div>
+								</li>
+							</ul>
 						</div>
-
-						<div class="static-box">
-							<div class="box-logo">
-								<img src="images/work/win_store.svg" class="box-logo-image">
-							</div>
-							<div class="box-text-1">
-								150,000+
-							</div>
-							<div class="box-text-2">
-								App downloads over 192 countries
-							</div>
-						</div>
-
-						<div class="static-box">
-							<div class="box-logo">
-								<img src="images/work/code.png" class="box-logo-image">
-							</div>
-							<div class="box-text-1">
-								Code++
-							</div>
-							<div class="box-text-2">
-								Python, C++, SQL, Node.js, PHP, HTML5, CSS3
-							</div>
-						</div>	
-					</div>		
+					</div>
 				</div>
 			</div>		
 		</div>
@@ -852,7 +860,7 @@
 		<script defer src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
 		<!-- Spotify realtime stream -->
 		<script defer src="js/spotify.js?v=19"></script>
-		<script defer src="js/strava.js?v=50"></script>
+		<script defer src="js/strava.js?v=55"></script>
 		<script defer src="js/weather.js?v=9"></script>
 		<script defer src="js/units.js?v=1"></script>
 		<!-- Polylion animation -->
@@ -860,7 +868,8 @@
 		<!-- All Loaders with scroll animations -->
 		<script defer src="js/glightbox.js?v=3"></script>
 		<script defer src="js/gallery.js?v=82"></script>
-		<script defer src="js/loaders.js?v=4"></script>
+		<script defer src="js/loaders.js?v=11"></script>
+		<script defer src="js/packman-tile.js?v=1"></script>
 		<!-- Particle JS -->
 		<script defer src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 		<script defer src="js/particle-support.js?v=2"></script>

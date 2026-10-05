@@ -166,29 +166,59 @@ html.dark-mode .gallery-arrow {
 }
 
 /* Work */
-html.dark-mode .level-normal {
+html.dark-mode .path-name,
+html.dark-mode .path-regions b,
+html.dark-mode .path-big {
     color: #e0e0e0;
 }
-html.dark-mode .level-super {
+html.dark-mode .path-role,
+html.dark-mode .path-sub b {
+    color: #b8b8b8;
+}
+html.dark-mode .path-stop:not(:last-child)::before {
+    background-color: #3a3a3a;
+}
+html.dark-mode .path-play > li > svg {
+    stroke: #e0e0e0;
+    border-color: #444444;
+}
+html.dark-mode .path-play > li:hover > svg,
+html.dark-mode .path-play > li.on > svg {
     background-color: #e0e0e0;
-    color: #141414;
+    border-color: #e0e0e0;
+    stroke: #141414;
 }
-html.dark-mode .static-box:after {
-    background-color: #444444;
+html.dark-mode .path-pin {
+    stroke: #141414;
 }
-html.dark-mode .static-box:nth-child(3) .box-logo-image,
-html.dark-mode .static-box:nth-child(4) .box-logo-image {
-    -webkit-filter: invert(0.9);
-    filter: invert(0.9);
+html.dark-mode .path-land {
+    stroke: #3d3d3d;
 }
-
-@media screen and (max-width: 1365px) {
-    html.dark-mode .static {
-        border-left-color: #e0e0e0;
-    }
-    html.dark-mode .static-box {
-        border-right-color: #666666;
-    }
+html.dark-mode .path-bar {
+    background-color: #2e2e2e;
+}
+html.dark-mode .path-fill::after {
+    background-color: #141414;
+}
+html.dark-mode .path-medals i {
+    color: #cccccc;
+    border-color: #444444;
+}
+html.dark-mode .path-way {
+    stroke: #555555;
+}
+html.dark-mode .path-hiker {
+    stroke: #141414;
+}
+html.dark-mode .path-camp circle {
+    fill: #141414;
+    stroke: #444444;
+}
+html.dark-mode .path-camp path {
+    stroke: #e0e0e0;
+}
+html.dark-mode .path-camp text {
+    fill: #b8b8b8;
 }
 
 /* Poly portrait */
