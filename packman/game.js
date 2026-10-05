@@ -342,19 +342,11 @@
     var back = el('rect', 'back'), k = p.type === 'triangle' ? 0.74 : p.type === 'hexagon' ? 1.3 : 1, dy = p.type === 'triangle' ? 0.03 : 0;
     back.setAttribute('x', -0.28 * k); back.setAttribute('y', -0.21 * k + dy);
     back.setAttribute('width', 0.56 * k); back.setAttribute('height', (p.type === 'triangle' ? 0.45 : 0.54) * k);   // short of a triangle's base
-    // Two things that only show while eyesight is on. Under the shape, its true outline,
-    // hatched: the margin the judging counts but the drawing leaves off. And over its edge,
-    // in place of the dark line, a few fine lines one inside the next, shading from the
-    // margin's violet at the outside to the shape's own colour at the inside.
-    var safe = el('path', 'safe'), rim = el('g', 'rim');
+    // Under the shape lies its true outline, hatched. It is all that shows of a shape
+    // while eyesight is on.
+    var safe = el('path', 'safe');
     safe.setAttribute('d', 'M' + G.SHAPES[p.type].map(function (v) { return v[0] + ' ' + v[1]; }).join('L') + 'Z');
-    p.rings = [];
-    for (var k = 0; k < RINGS; k++) {
-      var ring = el('path', 'ring');
-      ring.setAttribute('stroke', blend('#6B4FD8', p.color, k / (RINGS - 1)));
-      rim.appendChild(ring); p.rings.push(ring);
-    }
-    body.appendChild(safe); body.appendChild(fill); body.appendChild(rim); body.appendChild(back); body.appendChild(face);
+    body.appendChild(safe); body.appendChild(fill); body.appendChild(back); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
     p.back = back;
     p.el = g; p.pop = pop; p.body = body; p.fill = fill; p.eyes = eyes; p.tf = p.rot = p.look = '';
@@ -369,19 +361,9 @@
     p.back.setAttribute('rx', p.flip ? 0.0001 : 0);
   }
 
-  var RINGS = 5, LINE = 2.5;   // the lines that stand in for a shape's outline under eyesight, and the width they share
-  function blend(a, b, t) {
-    var n = function (hex, at) { return parseInt(hex.substr(at, 2), 16); };
-    return 'rgb(' + [1, 3, 5].map(function (at) { return Math.round(n(a, at) + (n(b, at) - n(a, at)) * t); }).join(',') + ')';
-  }
   function outline(p) {
-    var d = drawn(p.type), px = 1 / view.scale, box = G.makeContainer(G.SHAPES[p.type]);
+    var d = drawn(p.type);
     p.fill.setAttribute('d', d);
-    // the same outline, stepped across the width of the line: the first ring along its outer edge, the last along its inner
-    p.rings.forEach(function (ring, k) {
-      var off = -2.6 + LINE / 2 - (k + 0.5) * LINE / RINGS;
-      ring.setAttribute('d', rounded(grown(box, off * px), Math.max(0, Math.min(6 * px, 0.12) + (off + 2.6) * px)));
-    });
   }
 
   // Pieces are moved with transform attributes, not CSS transforms: Safari
@@ -639,10 +621,10 @@
   /* ---------- eyesight ---------- */
 
   // On the board every shape is drawn a hair small, with soft corners, and the box a hair
-  // big, so a packed box looks neatly spaced. The eye button in the bar shows what the
-  // judging goes by instead: a hatched band round each shape out to its true edge, and
-  // inside the box in to its true wall, with red wherever those true outlines overlap or
-  // pass a wall. Tap it again and the board goes back to how it looks.
+  // big, so a packed box looks neatly spaced. The eye button in the bar swaps that for what
+  // the judging goes by: every shape as its true outline, hatched in violet and nothing
+  // else, the box's true wall, and red wherever those outlines overlap or pass a wall.
+  // Tap it again and the board goes back to how it looks.
   var eyeOn = false;
 
   // what is left of a convex outline on one side of a line: inside (n.p <= d) or outside it
