@@ -102,6 +102,20 @@ button{font:inherit; color:inherit; cursor:pointer}
 .ib.sure::after{content:"Again to start over"; position:absolute; top:calc(100% + 10px); right:-6px; padding:5px 11px 6px; white-space:nowrap;
   font-weight:600; font-size:14px; color:#FFF4DE; background:#2B2140; border-radius:10px; z-index:5; animation:hop .3s var(--pop) both}
 @keyframes wiggle{25%{transform:translateX(-4px)} 60%{transform:translateX(3px)}}
+/* What a button is for, in a small label under it: while the cursor is over it, or, on a phone,
+   for a couple of seconds after it is tapped (.tip, set in game.js). */
+.ib[data-tip]{position:relative}
+.ib[data-tip]:not(.sure)::after{content:attr(data-tip); position:absolute; z-index:5; top:calc(100% + 8px); left:50%; padding:4px 10px 5px; white-space:nowrap;
+  font-weight:600; font-size:13px; line-height:1.2; color:#FFF4DE; background:#2B2140; border-radius:9px; pointer-events:none;
+  opacity:0; transform:translate(-50%,-4px); transition:opacity .35s, transform .35s}
+.ib[data-tip].tip:not(.sure)::after{opacity:1; transform:translate(-50%,0); transition:opacity .12s, transform .12s}
+/* the last one would run off the edge of the window if it were centred */
+.tools .ib[data-tip]:last-child:not(.sure)::after{left:auto; right:0; transform:translate(0,-4px)}
+.tools .ib[data-tip].tip:last-child:not(.sure)::after{transform:none}
+@media (hover:hover){
+  .ib[data-tip]:not(.sure):hover::after,.ib[data-tip]:not(.sure):focus-visible::after{opacity:1; transform:translate(-50%,0); transition:opacity .12s .25s, transform .12s .25s}
+  .tools .ib[data-tip]:last-child:not(.sure):hover::after,.tools .ib[data-tip]:last-child:not(.sure):focus-visible::after{transform:none}
+}
 .ib.dim{color:var(--mut); opacity:.5}
 /* the leaderboard: the same button, in trophy gold */
 .ib.lead{background:var(--sun); color:#2B2140}
@@ -444,12 +458,12 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <span class="word" aria-hidden="true"><b style="--n:0">P</b><b style="--n:1">a</b><b style="--n:2">c</b><b style="--n:3">k</b><b style="--n:4">m</b><b style="--n:5">a</b><b style="--n:6">n</b></span>
     </a>
     <nav class="tools">
-      <button class="ib" id="b-eye" aria-label="Eyesight: a closer look at whatever you point at" aria-pressed="false" title="Eyesight"><svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
-      <button class="ib" id="b-hint" aria-label="Hint" title="Hint"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5.8 1 .8 1.7h6c0-.7.2-1.2.8-1.7A6.5 6.5 0 0 0 12 2.5z"/></svg></button>
-      <button class="ib lead" id="b-board" aria-label="Leaderboard" title="Leaderboard"><svg viewBox="0 0 24 24"><path class="cup" d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 6H4.8a2.6 2.6 0 0 0 2.9 3.3M16.5 6h2.7a2.6 2.6 0 0 1-2.9 3.3M12 13.5V17M9.5 17h5l.8 3.5H8.7z"/></svg></button>
-      <button class="ib" id="b-reset" aria-label="Start this level over" title="Start over"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5"/></svg></button>
-      <button class="ib" id="b-sound" aria-label="Sound" title="Sound"><svg viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path class="on-only" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="off-only" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
-      <button class="ib" id="b-help" aria-label="How to play" title="How to play"><svg viewBox="0 0 24 24"><path d="M9 9a3 3 0 1 1 4.6 2.5c-1 .7-1.6 1.3-1.6 2.5M12 18v.2"/></svg></button>
+      <button class="ib" id="b-eye" aria-label="Eyesight: a closer look at whatever you point at" aria-pressed="false" data-tip="Eyesight"><svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <button class="ib" id="b-hint" aria-label="Hint" data-tip="Hint"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5.8 1 .8 1.7h6c0-.7.2-1.2.8-1.7A6.5 6.5 0 0 0 12 2.5z"/></svg></button>
+      <button class="ib lead" id="b-board" aria-label="Leaderboard" data-tip="Leaderboard"><svg viewBox="0 0 24 24"><path class="cup" d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 6H4.8a2.6 2.6 0 0 0 2.9 3.3M16.5 6h2.7a2.6 2.6 0 0 1-2.9 3.3M12 13.5V17M9.5 17h5l.8 3.5H8.7z"/></svg></button>
+      <button class="ib" id="b-reset" aria-label="Start this level over" data-tip="Start over"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5"/></svg></button>
+      <button class="ib" id="b-sound" aria-label="Sound" data-tip="Unmuted"><svg viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path class="on-only" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="off-only" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
+      <button class="ib" id="b-help" aria-label="How to play" data-tip="How to play"><svg viewBox="0 0 24 24"><path d="M9 9a3 3 0 1 1 4.6 2.5c-1 .7-1.6 1.3-1.6 2.5M12 18v.2"/></svg></button>
     </nav>
   </header>
 
@@ -521,7 +535,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.63</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.64</span></div>
   </div>
 </div>
 
@@ -581,9 +595,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.63"></script>
-<script src="levels.js?v=1.63"></script>
-<script src="game.js?v=1.63"></script>
+<script src="geom.js?v=1.64"></script>
+<script src="levels.js?v=1.64"></script>
+<script src="game.js?v=1.64"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

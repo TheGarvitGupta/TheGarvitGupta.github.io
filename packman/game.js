@@ -1408,7 +1408,7 @@
   });
   $('b-sound').addEventListener('click', function () {
     save.mute = !save.mute; persist();
-    $('b-sound').classList.toggle('off', save.mute);
+    showMute();
     if (!save.mute) { wake(); sfx.fit(); }
   });
   $('win-next').addEventListener('click', function () { closeSheet($('m-win')); startLevel(Math.min(level + 1, LEVELS.length - 1)); });
@@ -1516,7 +1516,20 @@
   if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
   else window.addEventListener('resize', layout);
 
-  $('b-sound').classList.toggle('off', !!save.mute);
+  // the sound button's label says which way it is: Unmuted or Muted
+  function showMute() { $('b-sound').classList.toggle('off', !!save.mute); $('b-sound').setAttribute('data-tip', save.mute ? 'Muted' : 'Unmuted'); }
+  showMute();
+  // A phone has no hovering, so there a button's label comes up when it is tapped and fades after two seconds.
+  Array.prototype.forEach.call(document.querySelectorAll('.ib[data-tip]'), function (b) {
+    var byFinger = false, timer = 0;
+    b.addEventListener('pointerdown', function (e) { byFinger = e.pointerType === 'touch'; });
+    b.addEventListener('click', function () {
+      if (!byFinger) return;
+      b.classList.add('tip');
+      clearTimeout(timer);
+      timer = setTimeout(function () { b.classList.remove('tip'); }, 2000);
+    });
+  });
   var asked = /[?&#]level=(\d+)/.exec(location.search + location.hash);
   var first = asked ? +asked[1] - 1 : LEVELS.map(function (l) { return l.name; }).indexOf(save.last);
   first = clamp(first, 0, LEVELS.length - 1);
