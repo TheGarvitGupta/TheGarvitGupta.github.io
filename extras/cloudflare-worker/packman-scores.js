@@ -180,7 +180,7 @@ var PackmanGeom = (function () {
   // itself in the nook it was dropped beside. Only this piece moves.
   var MAG_TURN = 7;      // degrees the magnet may turn a piece to match a nearby edge
   var GRID_TURN = 3;     // and to line up with the box's own walls, anywhere inside it
-  var MAG_REACH = 0.2;   // how far the magnet may pull a piece towards its nearest neighbour
+  var MAG_REACH = 0.1;   // how far the magnet may pull a piece towards its nearest neighbour
   // ...and then along that neighbour to meet a second one. This is kept short: a piece is
   // dragged through here continuously, and in a slot with only a little play a long slide
   // would haul it to the nearer end however the player moved, even against the way they
@@ -252,8 +252,12 @@ var PackmanGeom = (function () {
   // Slide piece p into contact with the nearest thing, then along that
   // contact into a second one. Returns true if it moved.
   function seat(p, others, C) {
+    // Each way it might go is towards one particular thing, and carries how far off that
+    // thing is. A way only counts if the piece can get there: if something else stops it
+    // first, going that way would not seat it against what it was heading for, only shove
+    // it sideways into the thing in between.
     var V = verts(p), dirs = [], k, best = null;
-    for (k = 0; k < C.walls.length; k++) dirs.push([C.walls[k].nx, C.walls[k].ny]);
+    for (k = 0; k < C.walls.length; k++) dirs.push([C.walls[k].nx, C.walls[k].ny, Math.max(0, -excess(V, C.walls[k]))]);
     others.forEach(function (B) {
       // head for B along the axis that separates the two the most
       var axes = normals(V).concat(normals(B)), pick = null;
@@ -262,10 +266,11 @@ var PackmanGeom = (function () {
         if (b[0] - a[1] > (pick ? pick.gap : -Infinity)) pick = { gap: b[0] - a[1], x: n[0], y: n[1] };
         if (a[0] - b[1] > pick.gap) pick = { gap: a[0] - b[1], x: -n[0], y: -n[1] };
       });
-      if (pick && pick.gap > 1e-9 && pick.gap <= MAG_REACH) dirs.push([pick.x, pick.y]);
+      if (pick && pick.gap > 1e-9 && pick.gap <= MAG_REACH) dirs.push([pick.x, pick.y, sweep(V, B, pick.x, pick.y)]);
     });
     dirs.forEach(function (d) {
       var t = travel(V, others, C, d[0], d[1]);
+      if (t < d[2] - 1e-9) return;   // stopped short of what it was heading for
       if (t > 1e-9 && t <= MAG_REACH && (!best || t < best.t)) best = { t: t, x: d[0], y: d[1] };
     });
     if (!best) return false;
