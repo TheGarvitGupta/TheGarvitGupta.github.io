@@ -141,7 +141,6 @@
   var view = { x: 0, y: 0, w: 10, h: 10, scale: 50, land: true };
   var moves = 0, t0 = 0, elapsed = 0, carried = 0, ticker = 0;
   var shakeTimer = 0, shaking = false;
-  var undos = [], before = [], quietAt = 0;   // boards to go back to, the board as last committed, and when it was last nudged
   var syms = [], ghost = null;         // the ways the box maps onto itself, and the spot a hint is pointing at
   var peeked = false;                  // the solution was shown on this go, so it will not be ranked
   var STUCK = 180, stuck = false;      // seconds on one level before the hint lights up and offers the solution
@@ -428,7 +427,6 @@
   // After a piece has been shifted or turned: make the right noise, maybe win.
   function commit(quiet) {
     seatGhost();
-    remember(quiet);
     var ev = judge();
     dirty = true;
     if (ev.solved) { win(); return; }
@@ -446,33 +444,7 @@
     persist();
   }
 
-  /* ---------- undo ---------- */
-
   function snapshot() { return pieces.map(function (p) { return [p.x, p.y, p.angle]; }); }
-  function showUndo() {
-    var none = !undos.length || won;
-    $('b-undo').classList.toggle('dim', none);
-    $('b-undo').setAttribute('aria-disabled', none ? 'true' : 'false');
-  }
-  // Each finished move leaves the board before it on the pile. A run of small
-  // turns (the wheel, the keys, a held button) counts as one move.
-  function remember(quiet) {
-    var now = snapshot(), t = performance.now();
-    if (now.join() === before.join()) return;
-    if (!(quiet && t - quietAt < 700)) { undos.push(before); if (undos.length > 60) undos.shift(); }
-    quietAt = quiet ? t : 0;
-    before = now;
-    showUndo();
-  }
-  function undo() {
-    if (!undos.length || won || shaking || drag) return;
-    var to = undos.pop();
-    clearTimeout(shakeTimer);   // or a board that was shaken into place would shake straight back
-    pieces.forEach(function (p, i) { p.x = to[i][0]; p.y = to[i][1]; p.angle = to[i][2]; render(i); });
-    before = to; quietAt = 0;
-    judge(); showAngle(); placeHandle(); showUndo(); saveBoard();
-    wake(); sfx.pick();
-  }
 
   function startClock() {
     if (t0 || won) return;
@@ -716,7 +688,6 @@
 
   document.addEventListener('keydown', function (e) {
     var open = document.querySelector('.sheet.open');
-    if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'z' && !open) { e.preventDefault(); undo(); return; }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === 'Escape') { if (open) closeSheet(open); else select(-1); return; }
     if (open || won || shaking) return;
@@ -726,7 +697,6 @@
       select((sel + (big ? pieces.length - 1 : 1) + (sel < 0 && big ? 1 : 0)) % pieces.length);
       return;
     }
-    if (k === 'z' || k === 'u') { undo(); return; }
     if (sel < 0) return;
     var p = pieces[sel], step = big ? 0.1 : 0.01, dx = 0, dy = 0;
     if (k === 'q' || k === '[' || k === '{') { spin(sel, big ? -15 : -1); commit(true); }
@@ -793,7 +763,6 @@
       $('clock').textContent = clock(carried);
     } else scatter();
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
-    undos = []; before = snapshot(); quietAt = 0; showUndo();
     judge(); showAngle(); placeHandle(); nag();
     lookForShake();
   }
@@ -914,7 +883,7 @@
     countMove();
     clearTimeout(shakeTimer);
     $('b-hint').classList.remove('nag');
-    showGhost(null); showUndo(); watch(null);
+    showGhost(null); watch(null);
     clearInterval(ticker);
     elapsed = t0 ? (performance.now() - t0) / 1000 : 0;
     $('clock').textContent = clock(elapsed);
@@ -1048,7 +1017,8 @@
 
   /* ---------- sheets ---------- */
 
-  function openSheet(s) { s.classList.add('open'); var b = s.querySelector('.btn:not([hidden])'); if (b) setTimeout(function () { b.focus({ preventScroll: true }); }, 60); }
+  // A sheet opens with its way on (.go) in focus, or failing that its first button.
+  function openSheet(s) { s.classList.add('open'); var b = s.querySelector('.btn.go:not([hidden])') || s.querySelector('.btn:not([hidden])'); if (b) setTimeout(function () { b.focus({ preventScroll: true }); }, 60); }
   // 'How to pack' counts as seen only once it is closed, so a load nobody looked at does not use it up
   function closeSheet(s) {
     s.classList.remove('open');
@@ -1111,7 +1081,6 @@
   var me = hash(save.pid);
   function alias(h) { return HUES[h % COLORS.length] + ' ' + ANIMALS[(h >>> 16) % ANIMALS.length]; }
   function tidy(name) { return String(name || '').replace(/[\u0000-\u001f\u007f<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 18); }
-  function fine(sec) { var t = Math.round(sec * 10); return Math.floor(t / 600) + ':' + ('0' + Math.floor(t / 10) % 60).slice(-2) + '.' + t % 10; }
   function nth(n) { var k = n % 100; return n + (k > 10 && k < 14 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'); }
 
   // A player's picture: a square block wearing one of the faces. Nobody picks
@@ -1145,9 +1114,7 @@
     afterName = then || null;
     $('name-face').textContent = ''; $('name-face').appendChild(avatar(me));
     $('name').value = save.name && save.name !== alias(me) ? save.name : '';
-    $('name').placeholder = alias(me);
-    $('name-alias').textContent = alias(me);
-    $('name-go').textContent = save.name ? 'Save' : 'Start packing';
+    $('name-go').textContent = save.name ? 'Save' : 'Start \u2192';
     $('name-skip').hidden = !!save.name;
     openSheet($('m-name'));
   }
@@ -1168,74 +1135,71 @@
     return fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {})
       .then(function (r) { return r.json().then(function (d) { d.status = r.status; return d; }); });
   }
-  // The fastest few, with whoever is looking picked out, and their own row added underneath if they are further down.
+  // The board: most levels packed first, then fewest moves, then least time. Everyone's
+  // three numbers are shown. Whoever is looking is picked out, and added underneath if
+  // they are further down than the rows on show.
   function ranks(list, data, limit) {
     list.textContent = '';
     var mine = false;
+    function cell(li, tag, cls, text) { var e = document.createElement(tag); e.className = cls; e.textContent = text; li.appendChild(e); return e; }
     function line(pos, r, own) {
-      var li = document.createElement('li'), b = document.createElement('b'), who = document.createElement('span'), t = document.createElement('span'), mv = document.createElement('small');
-      b.className = 'pos'; b.textContent = pos;
-      who.className = 'who'; who.textContent = r.name;
-      t.className = 'time'; t.textContent = fine(r.t);
-      mv.textContent = r.m + (r.m === 1 ? ' move' : ' moves');
+      var li = document.createElement('li');
+      cell(li, 'b', 'pos', pos);
+      li.appendChild(avatar(r.a));
+      cell(li, 'span', 'who', r.name);
+      cell(li, 'span', 'fig', r.n); cell(li, 'span', 'fig', r.m); cell(li, 'span', 'fig t', clock(r.t));
       if (own) { li.className = 'me'; mine = true; }
-      li.appendChild(b); li.appendChild(avatar(r.a)); li.appendChild(who); li.appendChild(t); li.appendChild(mv);
       list.appendChild(li);
     }
-    (data.top || []).slice(0, limit).forEach(function (r, i) { line(i + 1, r, r.a === me && r.name === save.name); });
-    if (!mine && data.best && data.rank) {
-      var gap = document.createElement('li'); gap.className = 'gap'; gap.textContent = '· · ·'; list.appendChild(gap);
-      line(data.rank, { name: save.name, t: data.best.t, m: data.best.m, a: me }, true);
+    var rows = (data.top || []).slice(0, limit);
+    if (!rows.length && !data.mine) { cell(list.appendChild(document.createElement('li')), 'span', '', 'Nobody yet. Be the first.').parentNode.className = 'none'; return; }
+    var head = document.createElement('li'); head.className = 'head';
+    cell(head, 'span', 'who', ''); cell(head, 'span', 'fig', 'Levels'); cell(head, 'span', 'fig', 'Moves'); cell(head, 'span', 'fig t', 'Time');
+    list.appendChild(head);
+    rows.forEach(function (r, i) { line(i + 1, r, r.a === me); });
+    if (!mine && data.mine && data.rank) {
+      cell(list.appendChild(document.createElement('li')), 'span', '', '· · ·').parentNode.className = 'gap';
+      line(data.rank, data.mine, true);
     }
-    if (!list.firstChild) { var none = document.createElement('li'); none.className = 'none'; none.textContent = 'Nobody yet. Be the first.'; list.appendChild(none); }
   }
+  function standing(d) { return d.rank ? 'You are ' + nth(d.rank) + ' of ' + d.of + '.' : ''; }
 
-  // After a win: send it, unless it should not count, and show where it landed.
-  var lastBoard = '';
+  // After a win: send it, unless it should not count, and show where that leaves them.
+  var sent = 0;
   function report(score) {
-    var box = $('win-lb'), note = $('win-lb-note'), skip = peeked || LOCAL, forLevel = score.level;
-    box.hidden = true; lastBoard = forLevel;
-    (skip ? ask(SCORES + '?level=' + encodeURIComponent(forLevel)) : ask(SCORES, score)).then(function (d) {
-      if (lastBoard !== forLevel || !lv || lv.name !== forLevel) return;   // they have moved on
+    var box = $('win-lb'), note = $('win-lb-note'), skip = peeked || LOCAL, mark = ++sent;
+    box.hidden = true;
+    (skip ? ask(SCORES + '?pid=' + save.pid) : ask(SCORES, score)).then(function (d) {
+      if (mark !== sent) return;   // another win has gone since
       if (d.error === 'name') {   // the board will not take that name: fall back to the stand-in and send it again
         save.name = alias(me); persist(); score.name = save.name;
         return report(score);
       }
       if (!d.top) return;
       ranks($('win-ranks'), d, 5);
-      note.textContent = peeked ? 'Not ranked this time, because the solution was shown.'
-        : LOCAL ? 'Scores are not sent from a copy on this machine.'
-        : d.rank ? 'You are ' + nth(d.rank) + ' of ' + d.of + ' on ' + forLevel + '.' : '';
+      note.textContent = peeked ? 'This one is not counted, because the solution was shown.'
+        : LOCAL ? 'Scores are not sent from a copy on this machine.' : standing(d);
       note.hidden = !note.textContent;
       box.hidden = false;
     }).catch(function () {});   // no board today: the win sheet simply goes without one
   }
 
-  var boardTab = 'level';
-  function showBoard(tab) {
-    boardTab = tab || boardTab;
-    var which = boardTab === 'all' ? 'all' : lv.name, list = $('board-ranks'), note = $('board-note');
-    $('tab-level').textContent = lv.name;
-    $('tab-level').setAttribute('aria-pressed', boardTab !== 'all'); $('tab-all').setAttribute('aria-pressed', boardTab === 'all');
+  function showBoard() {
+    var list = $('board-ranks'), note = $('board-note');
     $('board-face').textContent = ''; $('board-face').appendChild(avatar(me));
     $('board-name').textContent = save.name || alias(me);
-    list.classList.add('wait'); note.hidden = true;
-    ask(SCORES + '?level=' + encodeURIComponent(which)).then(function (d) {
-      if (which !== (boardTab === 'all' ? 'all' : lv.name)) return;
+    list.classList.add('wait');
+    ask(SCORES + '?pid=' + save.pid).then(function (d) {
       if (!d.top) throw 0;
       ranks(list, d, 10);
-      note.textContent = which === 'all' ? 'Best times added up, for everyone who has packed all seventeen.' : d.of > 10 ? d.of + ' people have packed this one.' : '';
-      note.hidden = !note.textContent;
+      note.textContent = (standing(d) + ' Ranked by levels packed, then fewest moves, then least time.').trim();
     }).catch(function () {
-      list.textContent = ''; note.textContent = 'The leaderboard is not available right now.'; note.hidden = false;
+      list.textContent = ''; note.textContent = 'The leaderboard is not available right now.';
     }).then(function () { list.classList.remove('wait'); });
     openSheet($('m-board'));
   }
-  $('tab-level').addEventListener('click', function () { showBoard('level'); });
-  $('tab-all').addEventListener('click', function () { showBoard('all'); });
-  $('win-lb-all').addEventListener('click', function () { closeSheet($('m-win')); showBoard('level'); });
-  $('levels-board').addEventListener('click', function () { closeSheet($('m-levels')); showBoard(); });
-  $('board-rename').addEventListener('click', function () { closeSheet($('m-board')); askName(function () { showBoard(); }); });
+  $('win-lb-all').addEventListener('click', function () { closeSheet($('m-win')); showBoard(); });
+  $('board-rename').addEventListener('click', function () { closeSheet($('m-board')); askName(showBoard); });
 
   function showLevels() {
     var grid = $('grid'), count = 0;
@@ -1281,7 +1245,7 @@
     if (spot) { spots--; saveBoard(); }   // three to a level
     closeSheet($('m-hint')); showGhost(spot);
   });
-  $('b-undo').addEventListener('click', undo);
+  $('b-board').addEventListener('click', showBoard);
   $('b-help').addEventListener('click', function () { openSheet($('m-help')); });
   var armed = 0;
   function disarm() { clearTimeout(armed); armed = 0; $('b-reset').classList.remove('sure'); }

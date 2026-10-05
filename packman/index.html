@@ -103,6 +103,9 @@ button{font:inherit; color:inherit; cursor:pointer}
   font-weight:600; font-size:14px; color:#FFF4DE; background:#2B2140; border-radius:10px; z-index:5; animation:hop .3s var(--pop) both}
 @keyframes wiggle{25%{transform:translateX(-4px)} 60%{transform:translateX(3px)}}
 .ib.dim{color:var(--mut); opacity:.5}
+/* the leaderboard: the same button, in trophy gold */
+.ib.lead{background:var(--sun); color:#2B2140}
+.ib.lead .cup{fill:#fff}
 .ib.nag{background:var(--sun); color:#2B2140; box-shadow:0 0 0 4px rgba(255,201,60,.4); animation:nudge 1.6s ease-in-out infinite}
 .ib.off .on-only{display:none}
 .ib:not(.off) .off-only{display:none}
@@ -120,11 +123,16 @@ button{font:inherit; color:inherit; cursor:pointer}
 .title h1{margin:0; font-size:21px; font-weight:700; line-height:1.15}
 .title p{margin:1px 0 0; font-size:14.5px; color:var(--mut); line-height:1.25;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+/* the hint's choices on one line, the way on at the right */
+.row{display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; margin-top:16px}
+.row .btn{margin:0; padding:8px 16px 9px; font-size:15px}
+
 /* leaderboard: the name sheet, a player's block, and the ranked rows */
 .avatar{flex:none; display:block; width:30px; height:30px; --u:.0373}
 .you{display:inline-block; vertical-align:middle}
 #name-face .avatar{width:84px; height:84px; margin:0 auto 10px; --u:.0133; animation:bob 2.6s ease-in-out infinite}
 #name-form{margin-top:16px}
+#name-form .btn{padding:11px 22px 12px; font-size:18px}
 #name{display:block; width:100%; padding:11px 16px 12px; font:600 19px var(--f); text-align:center; color:var(--text); background:var(--wash);
   border:var(--bw) solid var(--ink); border-radius:16px; user-select:text; -webkit-user-select:text}
 #name:focus{outline:none; background:var(--card); box-shadow:0 0 0 4px rgba(255,201,60,.55)}
@@ -135,23 +143,22 @@ button{font:inherit; color:inherit; cursor:pointer}
 .ranks{list-style:none; margin:0; padding:0; text-align:left; transition:opacity .15s}
 .ranks.wait{opacity:.45}
 .ranks li{display:flex; align-items:center; gap:9px; padding:5px 10px 5px 6px; border-radius:14px; font-size:15px}
-.ranks li:nth-child(odd){background:var(--wash)}
+.ranks li:nth-child(even){background:var(--wash)}
 .ranks .pos{flex:none; width:24px; font-size:14px; font-weight:700; text-align:center; color:var(--mut)}
-.ranks li:nth-child(1) .pos{font-size:17px; color:var(--text)}
+.ranks li:nth-child(2) .pos{font-size:17px; color:var(--text)}
 .ranks .who{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600}
-.ranks .time{font-weight:700; font-variant-numeric:tabular-nums}
-.ranks small{flex:none; width:68px; text-align:right; font-size:13px; font-weight:500; color:var(--mut)}
+.ranks .fig{flex:none; width:46px; text-align:right; font-size:14px; font-weight:600; font-variant-numeric:tabular-nums}
+.ranks .fig.t{width:52px}
+.ranks li.head{padding-top:0; padding-bottom:3px; background:none}
+.ranks li.head .fig{font-size:12px; font-weight:600; color:var(--mut)}
 .ranks li.me{background:var(--sun); color:#2B2140; box-shadow:inset 0 0 0 var(--bw) var(--ink)}
-.ranks li.me .pos,.ranks li.me small{color:#2B2140}
+.ranks li.me .pos{color:#2B2140}
 .ranks li.gap{justify-content:center; padding:0; font-weight:700; color:var(--mut); background:none}
 .ranks li.none{justify-content:center; padding:14px; color:var(--mut); background:var(--wash)}
 .note{margin:9px 0 0; font-size:14px; font-weight:500; color:var(--mut)}
 .note[hidden],.lb[hidden]{display:none}
-.tabs{display:flex; justify-content:center; gap:6px; margin:12px 0 14px}
-.tab{padding:6px 14px 7px; font:600 15px var(--f); color:var(--text); background:var(--card); border:var(--bw) solid var(--ink); border-radius:999px; cursor:pointer}
-.tab[aria-pressed="true"]{background:var(--sun); color:#2B2140}
 .whoami{display:flex; align-items:center; justify-content:center; gap:9px; margin:16px 0 0; font-size:15px; font-weight:500}
-@media (max-width:400px){ .ranks small{display:none} }
+@media (max-width:420px){ .ranks li{gap:6px; padding-left:4px; padding-right:8px} .ranks .pos{width:18px} .ranks .avatar{width:24px; height:24px; --u:.0467} .ranks .fig{width:38px; font-size:13px} .ranks .fig.t{width:44px} }
 
 /* level 17: a little piece runs along a rail towards the prize as the box fills */
 #prize-track{display:flex; align-items:center; gap:8px; margin-top:6px; max-width:420px}
@@ -418,7 +425,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </a>
     <nav class="tools">
       <button class="ib" id="b-hint" aria-label="Hint" title="Hint"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5.8 1 .8 1.7h6c0-.7.2-1.2.8-1.7A6.5 6.5 0 0 0 12 2.5z"/></svg></button>
-      <button class="ib dim" id="b-undo" aria-label="Undo the last move" title="Undo"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+      <button class="ib lead" id="b-board" aria-label="Leaderboard" title="Leaderboard"><svg viewBox="0 0 24 24"><path class="cup" d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 6H4.8a2.6 2.6 0 0 0 2.9 3.3M16.5 6h2.7a2.6 2.6 0 0 1-2.9 3.3M12 13.5V17M9.5 17h5l.8 3.5H8.7z"/></svg></button>
       <button class="ib" id="b-reset" aria-label="Start this level over" title="Start over"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5"/></svg></button>
       <button class="ib" id="b-sound" aria-label="Sound" title="Sound"><svg viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path class="on-only" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="off-only" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
       <button class="ib" id="b-help" aria-label="How to play" title="How to play"><svg viewBox="0 0 24 24"><path d="M9 9a3 3 0 1 1 4.6 2.5c-1 .7-1.6 1.3-1.6 2.5M12 18v.2"/></svg></button>
@@ -461,21 +468,19 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   <div class="card">
     <span class="you" id="name-face"></span>
     <h2 id="name-h">Who’s packing?</h2>
-    <p class="sub">Your name goes on the leaderboard, beside this block. The block is yours.</p>
+    <p class="sub">Enter your name to see it on the leaderboard.</p>
     <form id="name-form">
-      <input id="name" type="text" maxlength="18" autocomplete="nickname" autocapitalize="words" spellcheck="false" enterkeyhint="done" aria-label="Your name">
-      <button class="btn" id="name-go" type="submit">Start packing</button>
+      <input id="name" type="text" maxlength="18" autocomplete="nickname" autocapitalize="words" spellcheck="false" enterkeyhint="done" placeholder="Your name" aria-label="Your name">
+      <div><button class="btn plain" id="name-skip" type="button">Skip</button><button class="btn go" id="name-go" type="submit">Start →</button></div>
     </form>
-    <div><button class="btn plain" id="name-skip" type="button">Skip, call me <b id="name-alias"></b></button></div>
   </div>
 </div>
 
 <div class="sheet" id="m-board" role="dialog" aria-modal="true" aria-labelledby="board-h">
   <div class="card">
     <h2 id="board-h">Leaderboard</h2>
-    <div class="tabs"><button class="tab" id="tab-level" type="button"></button><button class="tab" id="tab-all" type="button">All seventeen</button></div>
     <ol class="ranks" id="board-ranks"></ol>
-    <p class="note" id="board-note" hidden></p>
+    <p class="note" id="board-note"></p>
     <p class="whoami"><span class="you" id="board-face"></span><span>You are <b id="board-name"></b></span><button class="link" id="board-rename" type="button">Change name</button></p>
     <button class="btn plain" data-close>Close</button>
   </div>
@@ -492,7 +497,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door by Garvit.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.45</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.47</span></div>
   </div>
 </div>
 
@@ -502,8 +507,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     <p id="hint-text"></p>
     <svg id="hint-sol" class="snap" role="img" aria-label="The box, packed" hidden></svg>
     <p class="fact" id="hint-fact"></p>
-    <button class="btn" data-close>Got it</button>
-    <div><button class="btn plain" id="hint-spot">Show me one spot<span class="badge" id="spots">3</span></button><button class="btn plain" id="hint-show" hidden>Show the solution</button></div>
+    <div class="row"><button class="btn plain" id="hint-spot">Show a spot<span class="badge" id="spots">3</span></button><button class="btn plain" id="hint-show" hidden>Show solution</button><button class="btn go" data-close>Got it</button></div>
   </div>
 </div>
 
@@ -512,7 +516,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     <h2 id="levels-h">Levels</h2>
     <p class="sub" id="levels-sub"></p>
     <div class="grid" id="grid"></div>
-    <button class="btn plain" id="levels-board">Leaderboard</button><button class="btn plain" data-close>Close</button>
+    <button class="btn plain" data-close>Close</button>
   </div>
 </div>
 
@@ -544,7 +548,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </div>
     <p class="fact" id="win-fact"></p>
     <div class="lb" id="win-lb" hidden>
-      <div class="lb-head"><b>Fastest</b><button class="link" id="win-lb-all" type="button">See all</button></div>
+      <div class="lb-head"><b>Leaderboard</b><button class="link" id="win-lb-all" type="button">See all</button></div>
       <ol class="ranks" id="win-ranks"></ol>
       <p class="note" id="win-lb-note" hidden></p>
     </div>
@@ -553,9 +557,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.45"></script>
-<script src="levels.js?v=1.45"></script>
-<script src="game.js?v=1.45"></script>
+<script src="geom.js?v=1.47"></script>
+<script src="levels.js?v=1.47"></script>
+<script src="game.js?v=1.47"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
