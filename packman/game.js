@@ -340,10 +340,12 @@
     var back = el('rect', 'back'), k = p.type === 'triangle' ? 0.74 : p.type === 'hexagon' ? 1.3 : 1, dy = p.type === 'triangle' ? 0.03 : 0;
     back.setAttribute('x', -0.28 * k); back.setAttribute('y', -0.21 * k + dy);
     back.setAttribute('width', 0.56 * k); back.setAttribute('height', (p.type === 'triangle' ? 0.45 : 0.54) * k);   // short of a triangle's base
-    // Under the shape lies its true outline, in one flat colour. It is all that shows of a
-    // shape while eyesight is on.
+    // Under the shape lies its true outline, in a flat blue. It is all that shows of a shape
+    // while eyesight is on. The shapes take turns at five blues, so two that sit flush can
+    // still be told apart with no line between them.
     var safe = el('path', 'safe');
     safe.setAttribute('d', loop(G.SHAPES[p.type]));
+    safe.style.fill = BLUES[i % BLUES.length];
     body.appendChild(safe); body.appendChild(fill); body.appendChild(back); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
     p.back = back;
@@ -622,10 +624,11 @@
   // On the board every shape is drawn a hair small, with soft corners, and the box a hair
   // big, so a packed box looks neatly spaced. The eye button in the bar swaps that for what
   // the judging goes by, in flat colour with no lines at all: every shape at its true size
-  // in one blue, the box at its true size in white, and orange-red wherever shapes overlap
-  // or pass a wall. Shapes that sit flush run together; a gap shows as a sliver of white.
+  // in a blue, the box at its true size in white, and orange-red wherever shapes overlap
+  // or pass a wall. A gap shows as a sliver of white.
   // Tap it again and the board goes back to how it looks.
   var eyeOn = false;
+  var BLUES = ['#6583BD', '#A3B8DE', '#7C97C9', '#BCCCE9', '#5472AC'];   // ordered so that neighbours in the list differ most
 
   // what is left of a convex outline on one side of a line: inside (n.p <= d) or outside it
   function cut(poly, w, outside) {
