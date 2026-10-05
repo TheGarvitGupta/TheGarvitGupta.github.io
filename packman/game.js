@@ -142,8 +142,7 @@
   var moves = 0, t0 = 0, elapsed = 0, carried = 0, ticker = 0;
   var shakeTimer = 0, shaking = false;
   var syms = [], ghost = null;         // the ways the box maps onto itself, and the spot a hint is pointing at
-  var peeked = false;                  // the solution was shown on this go, so it will not be ranked
-  var STUCK = 180, stuck = false;      // seconds on one level before the hint lights up and offers the solution
+  var STUCK = 180, stuck = false;      // seconds on one level before the hint button lights up
 
   /* ---------- sound ---------- */
 
@@ -438,7 +437,7 @@
 
   function saveBoard() {
     save.board = {
-      l: lv.name, m: moves, h: spots, k: peeked ? 1 : 0, t: t0 ? Math.round((performance.now() - t0) / 1000) : carried,
+      l: lv.name, m: moves, t: t0 ? Math.round((performance.now() - t0) / 1000) : carried,
       p: pieces.map(function (p) { return [+p.x.toFixed(4), +p.y.toFixed(4), p.angle]; })
     };
     persist();
@@ -452,8 +451,7 @@
     ticker = setInterval(function () { $('clock').textContent = clock((performance.now() - t0) / 1000); nag(); }, 500);
   }
 
-  // Three minutes into a level, the hint button lights up, and the hint sheet
-  // offers to show the solution.
+  // Three minutes into a level, the hint button lights up.
   function nag() {
     if (stuck || won || (t0 ? (performance.now() - t0) / 1000 : carried) < STUCK) return;
     stuck = true;
@@ -727,7 +725,7 @@
     C = G.makeContainer(lv.container); cb = G.bounds(lv.container);
     clearTimeout(partyTimer); $('finale').classList.remove('show');
     $('go-next').hidden = true; dock.classList.remove('won');
-    won = false; drag = null; sel = -1; dirty = false; spots = 3; moves = 0; t0 = 0; elapsed = 0; carried = 0;
+    won = false; drag = null; sel = -1; dirty = false; moves = 0; t0 = 0; elapsed = 0; carried = 0;
     clearInterval(ticker);
     stuck = false; $('b-hint').classList.remove('nag');
     syms = symmetries(lv.container); showGhost(null);
@@ -759,7 +757,7 @@
     var kept = save.board;
     if (!fresh && kept && kept.l === lv.name && kept.p && kept.p.length === pieces.length) {
       pieces.forEach(function (p, n) { p.x = kept.p[n][0]; p.y = kept.p[n][1]; p.angle = kept.p[n][2]; keepInView(p); });
-      moves = kept.m || 0; carried = kept.t || 0; spots = kept.h == null ? 3 : kept.h; peeked = !!kept.k;
+      moves = kept.m || 0; carried = kept.t || 0;
       $('clock').textContent = clock(carried);
     } else scatter();
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
@@ -1029,7 +1027,27 @@
     s.addEventListener('click', function (e) { if (e.target === s || e.target.hasAttribute('data-close')) closeSheet(s); });
   });
 
-  var spots = 3;   // how many times 'show me one spot' is still on offer in this level
+  // 'Show a spot' is on offer three times a level in any twenty-four hours. Each use is
+  // kept by its time, and comes back a day after it was spent.
+  var DAY = 864e5, waiter = 0;
+  function spent() {
+    save.hints = save.hints || {};
+    var now = Date.now(), used = (save.hints[lv.name] || []).filter(function (t) { return now - t < DAY && t <= now; });
+    save.hints[lv.name] = used;
+    return used;
+  }
+  // how long until the oldest one comes back: hours, then minutes inside the last hour, then seconds inside the last minute
+  function wait(ms) {
+    var n = ms >= 36e5 ? Math.floor(ms / 36e5) : ms >= 6e4 ? Math.floor(ms / 6e4) : Math.max(1, Math.ceil(ms / 1000));
+    return n + (ms >= 36e5 ? ' hour' : ms >= 6e4 ? ' minute' : ' second') + (n === 1 ? '' : 's');
+  }
+  function showSpots() {
+    var used = spent(), left = Math.max(0, 3 - used.length);
+    $('hint-spot').disabled = !left;
+    $('spots').textContent = left;
+    $('hint-wait').hidden = !!left || won;
+    if (!left) $('hint-wait').textContent = 'Next hint in ' + wait(used[0] + DAY - Date.now()) + '.';
+  }
 
   function showHint() {
     $('hint-h').textContent = lv.name;
@@ -1037,38 +1055,11 @@
     $('hint-fact').hidden = !lv.fact;
     $('hint-fact').textContent = lv.fact || '';
     $('b-hint').classList.remove('nag');
-    $('hint-sol').setAttribute('hidden', '');
-    $('hint-show').hidden = !stuck || won;
     $('hint-spot').hidden = won;
-    $('hint-spot').disabled = !spots;
-    $('spots').textContent = spots;
+    showSpots();
+    clearInterval(waiter);
+    waiter = setInterval(function () { if ($('m-hint').classList.contains('open')) showSpots(); else clearInterval(waiter); }, 1000);   // the wait counts down while the sheet is up
     openSheet($('m-hint'));
-  }
-
-  // The solution is a snapshot of the board: a copy of each real piece, in its
-  // own colour, sitting where it goes.
-  function showSolution() {
-    var s = $('hint-sol'), pad = 0.15, w = cb.maxX - cb.minX + 2 * pad, h = cb.maxY - cb.minY + 2 * pad;
-    $('hint-show').hidden = true; s.removeAttribute('hidden');
-    peeked = true; saveBoard();
-    s.textContent = '';
-    s.setAttribute('viewBox', (cb.minX - pad) + ' ' + (cb.minY - pad) + ' ' + w + ' ' + h);
-    s.style.aspectRatio = w + ' / ' + h;
-    var px = w / (s.clientWidth || 260);
-    s.style.setProperty('--u', px);
-    var box = el('path', 'bin-fill');
-    box.setAttribute('d', binPath(px));
-    s.appendChild(box);
-    lv.solution.forEach(function (to, i) {
-      var g = pieces[i].el.cloneNode(true);
-      g.setAttribute('class', 'piece good');
-      g.setAttribute('transform', 'translate(' + to[0] + ' ' + to[1] + ')');
-      g.querySelector('.body').setAttribute('transform', 'rotate(' + to[2] + ')');
-      g.querySelector('.fill').setAttribute('d', drawn(pieces[i].type, px));
-      Array.prototype.forEach.call(g.querySelectorAll('.eye'), function (e) { e.setAttribute('cx', e.getAttribute('data-x')); e.setAttribute('cy', e.getAttribute('data-y')); });
-      g.querySelector('.pop').removeAttribute('transform');
-      s.appendChild(g);
-    });
   }
 
   /* ---------- leaderboard ---------- */
@@ -1168,7 +1159,7 @@
   // After a win: send it, unless it should not count, and show where that leaves them.
   var sent = 0;
   function report(score) {
-    var box = $('win-lb'), note = $('win-lb-note'), skip = peeked || LOCAL, mark = ++sent;
+    var box = $('win-lb'), note = $('win-lb-note'), skip = LOCAL, mark = ++sent;
     box.hidden = true;
     (skip ? ask(SCORES + '?pid=' + save.pid) : ask(SCORES, score)).then(function (d) {
       if (mark !== sent) return;   // another win has gone since
@@ -1177,10 +1168,9 @@
         return report(score);
       }
       if (!d.top) return;
-      if (!LOCAL) { save.sent = save.sent || {}; save.sent[score.level] = 1; if (!skip) save.as = score.name; persist(); }   // sent, or shown the solution and so not to be
+      if (!LOCAL) { save.sent = save.sent || {}; save.sent[score.level] = 1; save.as = score.name; persist(); }
       ranks($('win-ranks'), d, 5);
-      note.textContent = peeked ? 'This one is not counted, because the solution was shown.'
-        : LOCAL ? 'Scores are not sent from a copy on this machine.' : standing(d);
+      note.textContent = LOCAL ? 'Scores are not sent from a copy on this machine.' : standing(d);
       note.hidden = !note.textContent;
       box.hidden = false;
     }).catch(function () {});   // no board today: the win sheet simply goes without one
@@ -1265,11 +1255,10 @@
 
   $('chip').addEventListener('click', showLevels);
   $('b-hint').addEventListener('click', showHint);
-  $('hint-show').addEventListener('click', showSolution);
   $('hint-spot').addEventListener('click', function () {
-    if (!spots) return;
+    if (spent().length >= 3) return;
     var spot = pickSpot();
-    if (spot) { spots--; saveBoard(); }   // three to a level
+    if (spot) { save.hints[lv.name].push(Date.now()); persist(); }   // three to a level, a day
     closeSheet($('m-hint')); showGhost(spot);
   });
   $('b-board').addEventListener('click', showBoard);

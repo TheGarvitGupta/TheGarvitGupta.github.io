@@ -287,7 +287,6 @@ button{font:inherit; color:inherit; cursor:pointer}
 .btn:disabled{opacity:.5; cursor:default; transform:none} .btn:disabled .badge{background:var(--card)}
 .btn.plain{background:var(--card); color:var(--text); font-weight:600; font-size:16px; padding:9px 16px 10px}
 .btn.plain svg{width:17px; height:17px; margin:-3px 6px 0 -2px; vertical-align:middle; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round}
-.snap{display:block; width:min(280px,100%); margin:14px auto 2px; overflow:visible; pointer-events:none}
 .how{list-style:none; margin:10px 0 2px; padding:0; text-align:left}
 .how li{display:flex; align-items:center; gap:10px; padding:5px 0; font-size:14.5px; line-height:1.3}
 .how li > span{flex:none; width:32px; height:32px; display:grid; place-items:center; font-weight:700; font-size:15px; color:#2B2140;
@@ -501,7 +500,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door by Garvit.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.54</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.55</span></div>
   </div>
 </div>
 
@@ -509,9 +508,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   <div class="card">
     <h2 id="hint-h">Hint</h2>
     <p id="hint-text"></p>
-    <svg id="hint-sol" class="snap" role="img" aria-label="The box, packed" hidden></svg>
     <p class="fact" id="hint-fact"></p>
-    <div class="row"><button class="btn plain" id="hint-spot">Show a spot<span class="badge" id="spots">3</span></button><button class="btn plain" id="hint-show" hidden>Show solution</button><button class="btn go" data-close>Got it</button></div>
+    <div class="row"><button class="btn plain" id="hint-spot">Show a spot<span class="badge" id="spots">3</span></button><button class="btn go" data-close>Got it</button></div>
+    <p class="note" id="hint-wait" hidden></p>
   </div>
 </div>
 
@@ -561,9 +560,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.54"></script>
-<script src="levels.js?v=1.54"></script>
-<script src="game.js?v=1.54"></script>
+<script src="geom.js?v=1.55"></script>
+<script src="levels.js?v=1.55"></script>
+<script src="game.js?v=1.55"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
