@@ -19,7 +19,7 @@ var PackmanSounds = function (tone) {
     cool: function () { tone(196, 0.16, { type: 'triangle', to: 98, vol: 0.14 }); tone(147, 0.14, { at: 0.2, type: 'triangle', vol: 0.12 }); },
     gent: function () { tone(208, 0.05, { type: 'triangle', vol: 0.11 }); tone(262, 0.13, { at: 0.09, type: 'triangle', to: 233, vol: 0.11 }); },
     cat: function () { tone(760, 0.1, { to: 1250, vol: 0.07 }); tone(1250, 0.24, { at: 0.1, to: 620, vol: 0.07 }); },
-    cheeky: function () { for (var k = 0; k < 7; k++) tone(96 - k * 3, 0.025, { at: k * 0.034, type: 'square', vol: 0.05 }); },
+    cheeky: function () { [[784, 0], [659, 0.09], [880, 0.18], [784, 0.27], [659, 0.36]].forEach(function (n, i) { tone(n[0], i === 4 ? 0.14 : 0.07, { at: n[1], type: 'triangle', vol: 0.07 }); }); },   // nyah-nyah
     smitten: function () { [1319, 1661, 1976, 2637].forEach(function (f, i) { tone(f, 0.16, { at: i * 0.06, vol: 0.045 }); }); },
     jumpy: function () { tone(420, 0.07, { type: 'triangle', to: 1700, vol: 0.07 }); },
     unlucky: function () { tone(640, 0.09, { to: 560, vol: 0.07 }); tone(560, 0.2, { at: 0.09, to: 270, vol: 0.07 }); },
