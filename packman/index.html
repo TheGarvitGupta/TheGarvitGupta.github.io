@@ -278,6 +278,8 @@ button{font:inherit; color:inherit; cursor:pointer}
 .ghost{pointer-events:none; fill:var(--sun); fill-opacity:.3; stroke:var(--text); stroke-width:calc(2.5px * var(--u)); stroke-linejoin:round;
   stroke-dasharray:calc(6px * var(--u)) calc(5px * var(--u)); animation:beckon 1.2s ease-in-out infinite alternate}
 @keyframes beckon{from{opacity:.45}}
+/* under eyesight the hinted spot is a flat yellow shape at its true size, like everything else there: no outline, no dashes */
+#board.eyes .ghost{fill-opacity:1; stroke:none}
 #ribbon{pointer-events:none}
 #ribbon .edge,#ribbon .band{fill:none; stroke-dasharray:1; animation:tie .4s ease-out both}
 #ribbon .edge{stroke:var(--ink); stroke-width:calc(.12px + 5px * var(--u))}
@@ -566,7 +568,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v2.11</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v2.12</span></div>
   </div>
 </div>
 
@@ -626,9 +628,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=2.11"></script>
-<script src="levels.js?v=2.11"></script>
-<script src="game.js?v=2.11"></script>
+<script src="geom.js?v=2.12"></script>
+<script src="levels.js?v=2.12"></script>
+<script src="game.js?v=2.12"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

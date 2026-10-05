@@ -259,7 +259,7 @@
     bin.firstElementChild.setAttribute('d', binPath(px));
     $('true-box').setAttribute('d', loop(C.poly));   // for eyesight: the box exactly as judged
     pieces.forEach(function (p) { if (p.fill) outline(p); });
-    if (ghost) $('ghost').setAttribute('d', drawn(ghost.type));
+    if (ghost) $('ghost').setAttribute('d', ghostPath(ghost.type));
     $('knob').setAttribute('r', 11 * px);
     $('knob-hit').setAttribute('r', 22 * px);
     $('knob-dot').setAttribute('r', 4 * px);
@@ -818,6 +818,7 @@
     eyeOn = on;
     board.classList.toggle('eyes', on);
     stage.classList.toggle('eyes', on);   // and the table round the box goes dark, so the white box stands out from it
+    if (ghost) $('ghost').setAttribute('d', ghostPath(ghost.type));
     // Safari repaints only the patches it thinks have changed, and after a change this big it
     // leaves stray lines of the old picture behind. Taking the whole board out and putting it
     // straight back makes it paint the lot again.
@@ -1105,12 +1106,15 @@
     });
     return clear[0] || best[0] || null;
   }
+  // The hinted spot is drawn like the shapes round it: a soft dashed outline as a rule, and
+  // under eyesight the shape's true outline in one flat colour, with no line.
+  function ghostPath(type) { return eyeOn ? loop(G.SHAPES[type]) : drawn(type); }
   function showGhost(s) {
     var e = $('ghost');
     ghost = s;
     e.toggleAttribute('hidden', !s);
     if (!s) return;
-    e.setAttribute('d', drawn(s.type));
+    e.setAttribute('d', ghostPath(s.type));
     e.setAttribute('transform', 'translate(' + s.x.toFixed(4) + ' ' + s.y.toFixed(4) + ') rotate(' + s.angle + ')');
   }
   // The hinted spot pulls the right kind of piece into it: carried anywhere
