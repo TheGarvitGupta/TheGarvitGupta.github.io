@@ -196,11 +196,13 @@ button{font:inherit; color:inherit; cursor:pointer}
 #stage{position:relative; flex:1; min-height:0; margin:8px 0}
 #board{position:absolute; inset:0; width:100%; height:100%; touch-action:none; overflow:visible; display:block}
 #board{--u:.02}
-/* the loupe: the board as it looks, enlarged, with each shape's true edge and the box's true wall marked out in violet */
-#loupe{position:absolute; z-index:6; left:0; top:0; width:136px; height:136px; overflow:hidden; pointer-events:none; background:var(--bg);
-  border:3px solid var(--ink); border-radius:50%; box-shadow:0 12px 26px -10px rgba(27,20,45,.55);
-  opacity:0; transform:scale(.5); transition:opacity .12s, transform .18s var(--pop)}
-#loupe.on{opacity:1; transform:none}
+/* eyesight: the eye button grows, where it is, into a window on the board as it looks, enlarged,
+   with each shape's true edge and the box's true wall marked out in violet */
+#loupe{position:fixed; z-index:15; left:0; top:0; overflow:hidden; cursor:pointer; background:var(--bg);
+  border:var(--bw) solid var(--ink); border-radius:26px; box-shadow:0 14px 30px -12px rgba(27,20,45,.6);
+  opacity:0; visibility:hidden; transform:scale(var(--k, .22)); transition:transform .22s ease-in, opacity .18s, visibility 0s .22s}
+#loupe.on{opacity:1; visibility:visible; transform:none; transition:transform .3s var(--pop), opacity .12s, visibility 0s}
+#lens{pointer-events:none}
 #lens{display:block; width:100%; height:100%}
 .lens-true{fill:rgba(155,123,255,.38); stroke:#6B4FD8; stroke-width:1px; stroke-linejoin:round; vector-effect:non-scaling-stroke}
 .lens-hit{fill:var(--bad); fill-opacity:.88}
@@ -383,7 +385,6 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   .title p{grid-column:1 / -1; grid-row:2; font-size:13.5px; margin:0; min-height:2.5em}
   #prize-track{grid-column:1 / -1; grid-row:3; margin:0; max-width:none}
   .chip{padding:6px 10px 7px; font-size:13.5px} .chip b{font-size:15px}
-  #loupe{width:118px; height:118px}
   #pips{max-width:86px} #pips i{width:10px; height:10px; border-radius:3px} #pips i.t{width:12px} #pips i.d{width:18px} #pips i.h{border-radius:50%}
   #pips i.t::after{inset:3.5px 3px 2px}
   .dock{gap:6px} .spin{gap:5px} .dock .rb{min-width:44px; padding:0 5px; font-size:14.5px} .angle{padding:0 9px 0 4px} .angle input{width:44px}
@@ -437,6 +438,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <span class="word" aria-hidden="true"><b style="--n:0">P</b><b style="--n:1">a</b><b style="--n:2">c</b><b style="--n:3">k</b><b style="--n:4">m</b><b style="--n:5">a</b><b style="--n:6">n</b></span>
     </a>
     <nav class="tools">
+      <button class="ib" id="b-eye" aria-label="Eyesight: a closer look at whatever you point at" aria-pressed="false" title="Eyesight"><svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
       <button class="ib" id="b-hint" aria-label="Hint" title="Hint"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5.8 1 .8 1.7h6c0-.7.2-1.2.8-1.7A6.5 6.5 0 0 0 12 2.5z"/></svg></button>
       <button class="ib lead" id="b-board" aria-label="Leaderboard" title="Leaderboard"><svg viewBox="0 0 24 24"><path class="cup" d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 6H4.8a2.6 2.6 0 0 0 2.9 3.3M16.5 6h2.7a2.6 2.6 0 0 1-2.9 3.3M12 13.5V17M9.5 17h5l.8 3.5H8.7z"/></svg></button>
       <button class="ib" id="b-reset" aria-label="Start this level over" title="Start over"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5"/></svg></button>
@@ -459,7 +461,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <path id="ghost" class="ghost" hidden/>
       <g id="handle" hidden><line/><circle id="knob-hit"/><circle id="knob"/><circle id="knob-dot"/></g>
     </svg>
-    <div id="loupe" aria-hidden="true"><svg id="lens"></svg></div>
+
     <div id="bubble"></div>
   </main>
 
@@ -477,6 +479,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 </div>
 
 <canvas id="fx" aria-hidden="true"></canvas>
+<div id="loupe" title="Put the eyesight away"><svg id="lens" aria-hidden="true"></svg></div>
 
 <div class="sheet" id="m-name" role="dialog" aria-modal="true" aria-labelledby="name-h">
   <div class="card">
@@ -508,11 +511,11 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <li><span>1</span><div><b>Drag</b> a shape into the box.</div></li>
       <li><span>2</span><div><b>Spin</b> it with its knob<span class="keys"> or <kbd>Q</kbd> <kbd>E</kbd></span><span class="taps"> or two fingers</span>.</div></li>
       <li><span>3</span><div><b>Red dashes</b> mean it doesn’t fit. A <b>smile</b> means it does.</div></li>
-      <li><span>4</span><div><b>Tight fit?</b> A magnifier pops up to show it<span class="keys">, or hold <kbd>Shift</kbd> to look anywhere</span>.</div></li>
+      <li><span>4</span><div><b>Tight fit?</b> Tap the eye for a closer look at whatever you point at.</div></li>
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.59</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.60</span></div>
   </div>
 </div>
 
@@ -572,9 +575,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.59"></script>
-<script src="levels.js?v=1.59"></script>
-<script src="game.js?v=1.59"></script>
+<script src="geom.js?v=1.60"></script>
+<script src="levels.js?v=1.60"></script>
+<script src="game.js?v=1.60"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
