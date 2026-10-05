@@ -9,6 +9,14 @@
   var STORE = 'packman.v1';
   // Whoever packs all seventeen is asked to send Garvit a screenshot. Set false and the prize is not mentioned.
   var PRIZE = true;
+  // The leaderboard lives in a Cloudflare Worker (extras/cloudflare-worker/packman-scores.js).
+  var SCORES = 'https://www.garvitgupta.com/api/packman';
+  var LOCAL = /^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname);   // served from this machine: read the board, never write to it
+  if (LOCAL && /[?&]scores=([^&]+)/.test(location.search)) SCORES = decodeURIComponent(RegExp.$1);   // a stand-in board, for trying things out
+  // Anyone who skips giving a name is a colour and an animal: the colour of their block, so Blue Leopard is blue.
+  var HUES = ['Red', 'Golden', 'Mint', 'Blue', 'Violet', 'Pink', 'Orange', 'Lime', 'Aqua', 'Orchid', 'Peach'];
+  var ANIMALS = ['Fox', 'Leopard', 'Otter', 'Panda', 'Tiger', 'Owl', 'Wolf', 'Koala', 'Lynx', 'Heron', 'Badger', 'Falcon',
+    'Dolphin', 'Moose', 'Raven', 'Gecko', 'Bison', 'Puffin', 'Hare', 'Seal', 'Yak', 'Crane', 'Lemur', 'Ibex'];
   var MAIN = LEVELS.filter(function (l) { return !l.bonus; }).length;   // the bonus levels follow these
   var TURN = { square: 90, triangle: 120, domino: 180, hexagon: 60 };   // degrees before a shape looks the same again
   var KNOB = { square: 0.72, triangle: 0.6, domino: 0.72, hexagon: 1.08 };
@@ -120,6 +128,11 @@
     if (save.board) save.board.l = old[save.board.l];
     save.v = 3;
   }
+  // Each browser is one player on the leaderboard. The id never shows; the block and the stand-in name come from it.
+  if (!save.pid) {
+    save.pid = window.crypto && crypto.randomUUID ? crypto.randomUUID()
+      : 'p-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 12);
+  }
   var wiped = false;   // set by the hard reset, so nothing is written back before the page reloads
   function persist() { if (wiped) return; try { localStorage.setItem(STORE, JSON.stringify(save)); } catch (e) {} }
 
@@ -130,6 +143,7 @@
   var shakeTimer = 0, shaking = false;
   var undos = [], before = [], quietAt = 0;   // boards to go back to, the board as last committed, and when it was last nudged
   var syms = [], ghost = null;         // the ways the box maps onto itself, and the spot a hint is pointing at
+  var peeked = false;                  // the solution was shown on this go, so it will not be ranked
   var STUCK = 180, stuck = false;      // seconds on one level before the hint lights up and offers the solution
 
   /* ---------- sound ---------- */
@@ -426,7 +440,7 @@
 
   function saveBoard() {
     save.board = {
-      l: lv.name, m: moves, h: spots, t: t0 ? Math.round((performance.now() - t0) / 1000) : carried,
+      l: lv.name, m: moves, h: spots, k: peeked ? 1 : 0, t: t0 ? Math.round((performance.now() - t0) / 1000) : carried,
       p: pieces.map(function (p) { return [+p.x.toFixed(4), +p.y.toFixed(4), p.angle]; })
     };
     persist();
@@ -775,7 +789,7 @@
     var kept = save.board;
     if (!fresh && kept && kept.l === lv.name && kept.p && kept.p.length === pieces.length) {
       pieces.forEach(function (p, n) { p.x = kept.p[n][0]; p.y = kept.p[n][1]; p.angle = kept.p[n][2]; keepInView(p); });
-      moves = kept.m || 0; carried = kept.t || 0; spots = kept.h == null ? 3 : kept.h;
+      moves = kept.m || 0; carried = kept.t || 0; spots = kept.h == null ? 3 : kept.h; peeked = !!kept.k;
       $('clock').textContent = clock(carried);
     } else scatter();
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
@@ -909,6 +923,7 @@
     save.done[lv.name] = { t: best, m: prev ? Math.min(prev.m, moves) : moves };
     if (save.board && save.board.l === lv.name) save.board = null;
     persist();
+    report({ level: lv.name, pid: save.pid, name: save.name, t: elapsed, m: moves, p: pieces.map(function (q) { return [q.x, q.y, q.angle]; }) });
 
     // A first win gets the full party. A replay gets a quieter one, unless it
     // beat the old time.
@@ -1035,7 +1050,11 @@
 
   function openSheet(s) { s.classList.add('open'); var b = s.querySelector('.btn:not([hidden])'); if (b) setTimeout(function () { b.focus({ preventScroll: true }); }, 60); }
   // 'How to pack' counts as seen only once it is closed, so a load nobody looked at does not use it up
-  function closeSheet(s) { s.classList.remove('open'); if (s.id === 'm-help' && !save.seen) { save.seen = true; persist(); } }
+  function closeSheet(s) {
+    s.classList.remove('open');
+    if (s.id === 'm-help' && !save.seen) { save.seen = true; persist(); }
+    if (s.id === 'm-name') named();
+  }
   Array.prototype.forEach.call(document.querySelectorAll('.sheet'), function (s) {
     s.addEventListener('click', function (e) { if (e.target === s || e.target.hasAttribute('data-close')) closeSheet(s); });
   });
@@ -1061,6 +1080,7 @@
   function showSolution() {
     var s = $('hint-sol'), pad = 0.15, w = cb.maxX - cb.minX + 2 * pad, h = cb.maxY - cb.minY + 2 * pad;
     $('hint-show').hidden = true; s.removeAttribute('hidden');
+    peeked = true; saveBoard();
     s.textContent = '';
     s.setAttribute('viewBox', (cb.minX - pad) + ' ' + (cb.minY - pad) + ' ' + w + ' ' + h);
     s.style.aspectRatio = w + ' / ' + h;
@@ -1080,6 +1100,142 @@
       s.appendChild(g);
     });
   }
+
+  /* ---------- leaderboard ---------- */
+
+  function hash(str) {
+    var h = 2166136261;
+    for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  var me = hash(save.pid);
+  function alias(h) { return HUES[h % COLORS.length] + ' ' + ANIMALS[(h >>> 16) % ANIMALS.length]; }
+  function tidy(name) { return String(name || '').replace(/[\u0000-\u001f\u007f<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 18); }
+  function fine(sec) { var t = Math.round(sec * 10); return Math.floor(t / 600) + ':' + ('0' + Math.floor(t / 10) % 60).slice(-2) + '.' + t % 10; }
+  function nth(n) { var k = n % 100; return n + (k > 10 && k < 14 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'); }
+
+  // A player's picture: a square block wearing one of the faces. Nobody picks
+  // theirs; it comes from their id, so it is the same wherever it is shown.
+  function avatar(h, cls) {
+    var kit = OUTFITS[(h >>> 8) % OUTFITS.length], s = el('svg', 'avatar' + (cls ? ' ' + cls : '')), fill = el('rect', 'fill'), face = el('g', 'face');
+    s.setAttribute('viewBox', '-0.56 -0.56 1.12 1.12'); s.setAttribute('aria-hidden', 'true');
+    s.style.setProperty('--c', COLORS[h % COLORS.length]);
+    fill.setAttribute('x', -0.5); fill.setAttribute('y', -0.5); fill.setAttribute('width', 1); fill.setAttribute('height', 1); fill.setAttribute('rx', 0.14);
+    s.appendChild(fill);
+    [-0.13, 0.13].forEach(function (x) {
+      var e = el('circle', 'eye');
+      e.setAttribute('cx', x); e.setAttribute('cy', kit.eyeY || -0.06); e.setAttribute('r', kit.eye || 0.048);
+      face.appendChild(e);
+    });
+    var mouth = el('path', 'mouth');
+    mouth.setAttribute('d', kit.idle || 'M-0.07 0.1 Q0 0.15 0.07 0.1');
+    face.appendChild(mouth);
+    (kit.wear || []).forEach(function (w) {
+      var e = el(w[0], w[1]);
+      for (var k in w[2]) e.setAttribute(k, w[2][k]);
+      face.appendChild(e);
+    });
+    s.appendChild(face);
+    return s;
+  }
+
+  // Asked once, before anything else. Skipping it, or closing it any other way, leaves the stand-in name.
+  var afterName = null;
+  function askName(then) {
+    afterName = then || null;
+    $('name-face').textContent = ''; $('name-face').appendChild(avatar(me));
+    $('name').value = save.name && save.name !== alias(me) ? save.name : '';
+    $('name').placeholder = alias(me);
+    $('name-alias').textContent = alias(me);
+    $('name-go').textContent = save.name ? 'Save' : 'Start packing';
+    $('name-skip').hidden = !!save.name;
+    openSheet($('m-name'));
+  }
+  function named() {
+    if (!save.name) { save.name = alias(me); persist(); }
+    var then = afterName; afterName = null;
+    if (then) then();
+  }
+  $('name-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    save.name = tidy($('name').value) || alias(me); persist();
+    $('name').blur();
+    closeSheet($('m-name'));
+  });
+  $('name-skip').addEventListener('click', function () { save.name = alias(me); persist(); closeSheet($('m-name')); });
+
+  function ask(url, body) {
+    return fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {})
+      .then(function (r) { return r.json().then(function (d) { d.status = r.status; return d; }); });
+  }
+  // The fastest few, with whoever is looking picked out, and their own row added underneath if they are further down.
+  function ranks(list, data, limit) {
+    list.textContent = '';
+    var mine = false;
+    function line(pos, r, own) {
+      var li = document.createElement('li'), b = document.createElement('b'), who = document.createElement('span'), t = document.createElement('span'), mv = document.createElement('small');
+      b.className = 'pos'; b.textContent = pos;
+      who.className = 'who'; who.textContent = r.name;
+      t.className = 'time'; t.textContent = fine(r.t);
+      mv.textContent = r.m + (r.m === 1 ? ' move' : ' moves');
+      if (own) { li.className = 'me'; mine = true; }
+      li.appendChild(b); li.appendChild(avatar(r.a)); li.appendChild(who); li.appendChild(t); li.appendChild(mv);
+      list.appendChild(li);
+    }
+    (data.top || []).slice(0, limit).forEach(function (r, i) { line(i + 1, r, r.a === me && r.name === save.name); });
+    if (!mine && data.best && data.rank) {
+      var gap = document.createElement('li'); gap.className = 'gap'; gap.textContent = '· · ·'; list.appendChild(gap);
+      line(data.rank, { name: save.name, t: data.best.t, m: data.best.m, a: me }, true);
+    }
+    if (!list.firstChild) { var none = document.createElement('li'); none.className = 'none'; none.textContent = 'Nobody yet. Be the first.'; list.appendChild(none); }
+  }
+
+  // After a win: send it, unless it should not count, and show where it landed.
+  var lastBoard = '';
+  function report(score) {
+    var box = $('win-lb'), note = $('win-lb-note'), skip = peeked || LOCAL, forLevel = score.level;
+    box.hidden = true; lastBoard = forLevel;
+    (skip ? ask(SCORES + '?level=' + encodeURIComponent(forLevel)) : ask(SCORES, score)).then(function (d) {
+      if (lastBoard !== forLevel || !lv || lv.name !== forLevel) return;   // they have moved on
+      if (d.error === 'name') {   // the board will not take that name: fall back to the stand-in and send it again
+        save.name = alias(me); persist(); score.name = save.name;
+        return report(score);
+      }
+      if (!d.top) return;
+      ranks($('win-ranks'), d, 5);
+      note.textContent = peeked ? 'Not ranked this time, because the solution was shown.'
+        : LOCAL ? 'Scores are not sent from a copy on this machine.'
+        : d.rank ? 'You are ' + nth(d.rank) + ' of ' + d.of + ' on ' + forLevel + '.' : '';
+      note.hidden = !note.textContent;
+      box.hidden = false;
+    }).catch(function () {});   // no board today: the win sheet simply goes without one
+  }
+
+  var boardTab = 'level';
+  function showBoard(tab) {
+    boardTab = tab || boardTab;
+    var which = boardTab === 'all' ? 'all' : lv.name, list = $('board-ranks'), note = $('board-note');
+    $('tab-level').textContent = lv.name;
+    $('tab-level').setAttribute('aria-pressed', boardTab !== 'all'); $('tab-all').setAttribute('aria-pressed', boardTab === 'all');
+    $('board-face').textContent = ''; $('board-face').appendChild(avatar(me));
+    $('board-name').textContent = save.name || alias(me);
+    list.classList.add('wait'); note.hidden = true;
+    ask(SCORES + '?level=' + encodeURIComponent(which)).then(function (d) {
+      if (which !== (boardTab === 'all' ? 'all' : lv.name)) return;
+      if (!d.top) throw 0;
+      ranks(list, d, 10);
+      note.textContent = which === 'all' ? 'Best times added up, for everyone who has packed all seventeen.' : d.of > 10 ? d.of + ' people have packed this one.' : '';
+      note.hidden = !note.textContent;
+    }).catch(function () {
+      list.textContent = ''; note.textContent = 'The leaderboard is not available right now.'; note.hidden = false;
+    }).then(function () { list.classList.remove('wait'); });
+    openSheet($('m-board'));
+  }
+  $('tab-level').addEventListener('click', function () { showBoard('level'); });
+  $('tab-all').addEventListener('click', function () { showBoard('all'); });
+  $('win-lb-all').addEventListener('click', function () { closeSheet($('m-win')); showBoard('level'); });
+  $('levels-board').addEventListener('click', function () { closeSheet($('m-levels')); showBoard(); });
+  $('board-rename').addEventListener('click', function () { closeSheet($('m-board')); askName(function () { showBoard(); }); });
 
   function showLevels() {
     var grid = $('grid'), count = 0;
@@ -1250,12 +1406,18 @@
   first = clamp(first, 0, LEVELS.length - 1);
   while (!unlocked(first)) first--;   // a link to a level not reached yet opens the furthest one that is
   startLevel(first);
-  if (/[?&]finale\b/.test(location.search)) setTimeout(function () { lateParty(true); }, 600);   // a look at the last level's party, whatever has been packed
-  else if (!save.claimed && LEVELS.every(function (l) { return l.bonus || save.done[l.name]; })) setTimeout(lateParty, 700);
-  if (!save.seen) openSheet($('m-help'));
+  // The name comes first, for new players and for anyone from before there was a leaderboard.
+  // Whatever else was due to open (how to pack, the party for a finished game) waits for it.
+  var opening = function () {
+    if (/[?&]finale\b/.test(location.search)) setTimeout(function () { lateParty(true); }, 600);   // a look at the last level's party, whatever has been packed
+    else if (!save.claimed && LEVELS.every(function (l) { return l.bonus || save.done[l.name]; })) setTimeout(lateParty, 700);
+    if (!save.seen) openSheet($('m-help'));
+  };
+  if (save.name) opening(); else askName(opening);
+  persist();
 
   // Developer tools, only when the game is served from this machine.
-  if (/^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname)) {
+  if (LOCAL) {
     var dev = document.createElement('div');
     dev.className = 'dev';
     [['Solver', function () {

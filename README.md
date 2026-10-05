@@ -42,6 +42,7 @@ status-tiles/           Standalone project page — Status Tiles Windows app
 panorama-demo/          Standalone 360° VR demo (Marzipano viewer)
 coins/                  Standalone sub-site — the coin collection (own README)
 packman/                Standalone game — pack squares and triangles into a box
+                        Leaderboard: extras/cloudflare-worker/packman-scores.js (built by tools/build-packman-worker.py)
 packer/                 Redirect to packman/ (the game's old name)
 demo/                   Unlinked dev preview pages for widgets
 tools/gallery.py        Local gallery manager (add/remove photos)
