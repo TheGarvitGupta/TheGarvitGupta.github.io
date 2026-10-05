@@ -230,8 +230,9 @@ button{font:inherit; color:inherit; cursor:pointer}
 .safe{visibility:hidden; pointer-events:none; fill:url(#hatch); stroke:#6B4FD8; stroke-width:calc(1px * var(--u)); stroke-linejoin:round}
 .rim{visibility:hidden; pointer-events:none}
 .ring{fill:none; stroke-width:calc(.62px * var(--u)); stroke-linejoin:round}
-.eyes .safe,#lens .safe,.eyes .piece:not(.bad) .rim,#lens .piece:not(.bad) .rim{visibility:visible}
-.eyes .piece:not(.bad) .fill,#lens .piece:not(.bad) .fill{stroke:transparent}
+#board.eyes .safe,#lens .safe,#board.eyes .rim,#lens .rim{visibility:visible}
+/* no dark outline and no red dashes under eyesight: a shape that does not fit shows it in red where it overlaps */
+#board.eyes .piece .fill,#lens .piece .fill{stroke:transparent}
 .hit{fill:var(--bad); fill-opacity:.88; pointer-events:none}
 #lens .piece{cursor:default}
 .bin-fill{fill:var(--bin); stroke:var(--ink); stroke-width:calc(4px * var(--u)); stroke-linejoin:round; transition:fill .35s}
@@ -548,7 +549,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.70</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.71</span></div>
   </div>
 </div>
 
@@ -608,9 +609,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.70"></script>
-<script src="levels.js?v=1.70"></script>
-<script src="game.js?v=1.70"></script>
+<script src="geom.js?v=1.71"></script>
+<script src="levels.js?v=1.71"></script>
+<script src="game.js?v=1.71"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
