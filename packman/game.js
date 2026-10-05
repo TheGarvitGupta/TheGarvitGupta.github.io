@@ -19,7 +19,6 @@
     'Dolphin', 'Moose', 'Raven', 'Gecko', 'Bison', 'Puffin', 'Hare', 'Seal', 'Yak', 'Crane', 'Lemur', 'Ibex'];
   var MAIN = LEVELS.filter(function (l) { return !l.bonus; }).length;   // the bonus levels follow these
   var TURN = { square: 90, triangle: 120, domino: 180, hexagon: 60 };   // degrees before a shape looks the same again
-  var KNOB = { square: 0.72, triangle: 0.6, domino: 0.72, hexagon: 1.08 };
   // What a piece wears. Everything is in face units and stays well inside the
   // body, so no outfit changes the shape the player has to pack.
   var OUTFITS = [
@@ -255,9 +254,8 @@
     $('true-box').setAttribute('d', loop(C.poly));   // for eyesight: the box exactly as judged
     pieces.forEach(function (p) { if (p.fill) outline(p); });
     if (ghost) $('ghost').setAttribute('d', drawn(ghost.type));
-    $('knob').setAttribute('r', 11 * px);
-    $('knob-hit').setAttribute('r', 22 * px);
-    $('knob-dot').setAttribute('r', 4 * px);
+    $('knob').setAttribute('r', 7.5 * px);
+    $('knob-hit').setAttribute('r', 18 * px);
     for (var i = 0; i < pieces.length; i++) { keepInView(pieces[i]); if (pieces[i].el) render(i); }
     placeHandle();
     if (coachOn) seatCoach();
@@ -398,40 +396,42 @@
     }));
   }
   function knobAt(p) { return p.side == null ? -90 : sides(p.type)[p.side].at; }
+  // It is a small plain handle just outside the edge, with nothing joining it to the shape.
+  var TOP = { square: 0.5, triangle: 2 * G.H / 3, domino: 0.5, hexagon: G.H };   // how far up a shape reaches from its centre
   function knobPos(p) {
-    var r = (p.angle + knobAt(p)) * Math.PI / 180;
-    var reach = (p.side == null ? KNOB[p.type] : sides(p.type)[p.side].off + 0.22) + 30 / view.scale;
+    var r = (p.angle + knobAt(p)) * Math.PI / 180, reach = (p.side == null ? TOP[p.type] : sides(p.type)[p.side].off) + 17 / view.scale;
     return [p.x + Math.cos(r) * reach, p.y + Math.sin(r) * reach];
   }
-  // Where the dotted line to the knob begins: at the shape's edge, not its middle, so no dots lie over the shape.
-  var TOP = { square: 0.5, triangle: 2 * G.H / 3, domino: 0.5, hexagon: G.H };   // how far up a shape reaches from its centre
-  function knobRoot(p) {
-    var r = (p.angle + knobAt(p)) * Math.PI / 180, out = (p.side == null ? TOP[p.type] : sides(p.type)[p.side].off) + 3 / view.scale;
-    return [p.x + Math.cos(r) * out, p.y + Math.sin(r) * out];
+  // How far outside the selected shape a point is, in pixels: nothing if it is inside. Close
+  // by, all the way round, is where a mouse can take hold of the shape to turn it.
+  function outside(p, w) {
+    var rad = -p.angle * Math.PI / 180, lx = (w.x - p.x) * Math.cos(rad) - (w.y - p.y) * Math.sin(rad), ly = (w.x - p.x) * Math.sin(rad) + (w.y - p.y) * Math.cos(rad);
+    var S = sides(p.type), out = [], best = 0;
+    for (var n = 0; n < S.length; n++) { out.push(lx * S[n].nx + ly * S[n].ny - S[n].off); if (out[n] > out[best]) best = n; }
+    return { side: best, by: out[best] * view.scale, each: out };
   }
+  var RIM = 30;   // pixels: the band round a shape where the cursor turns it
+
   // With a mouse, the selected shape's knob moves to the side the cursor is nearest, but
   // only while the cursor is outside the shape. Inside it, the knob stays where it is, so
-  // it does not dart about under a cursor that is only picking the shape up.
+  // it does not dart about under a cursor that is only picking the shape up. And while the
+  // cursor is in the band just outside the shape, it shows that a drag from there will turn it.
   function hoverKnob(e) {
-    if (e.pointerType === 'touch' || drag || won || shaking || sel < 0) return;
-    var t = e.target;
-    if (t.id === 'knob' || t.id === 'knob-hit' || t.id === 'knob-dot') return;
-    var p = pieces[sel], w = world(e), rad = -p.angle * Math.PI / 180;
-    // the cursor in the shape's own frame, and how far inside each side it is; outside the shape, one at least is negative
-    var lx = (w.x - p.x) * Math.cos(rad) - (w.y - p.y) * Math.sin(rad), ly = (w.x - p.x) * Math.sin(rad) + (w.y - p.y) * Math.cos(rad);
-    var S = sides(p.type), depth = function (n) { return S[n].off - (lx * S[n].nx + ly * S[n].ny); }, best = 0;
-    for (var n = 1; n < S.length; n++) if (depth(n) < depth(best)) best = n;
-    if (depth(best) >= 0) return;   // inside
-    if (best !== p.side && (p.side == null || depth(best) < depth(p.side) - 0.08)) { p.side = best; placeHandle(); }   // a little reluctant to change, so it does not flicker past a corner
+    if (e.pointerType === 'touch' || drag) return;
+    var t = e.target, onKnob = t.id === 'knob' || t.id === 'knob-hit', onPiece = !!(t.closest && t.closest('.piece'));
+    if (won || shaking || sel < 0) { board.classList.remove('turning'); return; }
+    var p = pieces[sel], o = outside(p, world(e));
+    board.classList.toggle('turning', !onKnob && !onPiece && o.by > 0 && o.by <= RIM);
+    if (onKnob || o.by <= 0) return;   // on the knob, or inside the shape
+    if (o.side !== p.side && (p.side == null || o.each[o.side] > o.each[p.side] + 0.08)) { p.side = o.side; placeHandle(); }   // a little reluctant to change, so it does not flicker past a corner
   }
 
   function placeHandle() {
     var show = sel >= 0 && !won && !(drag && drag.mode === 'move');
     handle.toggleAttribute('hidden', !show);
     if (!show) { bubble.classList.remove('show'); return; }
-    var p = pieces[sel], k = knobPos(p), from = knobRoot(p), line = handle.firstElementChild;
-    line.setAttribute('x1', from[0]); line.setAttribute('y1', from[1]); line.setAttribute('x2', k[0]); line.setAttribute('y2', k[1]);
-    ['knob', 'knob-hit', 'knob-dot'].forEach(function (id) { $(id).setAttribute('cx', k[0]); $(id).setAttribute('cy', k[1]); });
+    var p = pieces[sel], k = knobPos(p);
+    ['knob', 'knob-hit'].forEach(function (id) { $(id).setAttribute('cx', k[0]); $(id).setAttribute('cy', k[1]); });
     if (drag && drag.mode !== 'move') {
       bubble.textContent = norm(p.angle) + '°';
       var bx = (k[0] - view.x) * view.scale, by = (k[1] - view.y) * view.scale;
@@ -581,7 +581,7 @@
     if (document.activeElement === ang) ang.blur();
     var w = world(e), t = e.target, pe = t.closest ? t.closest('.piece') : null;
     if ((t.id === 'knob' || t.id === 'knob-hit') && sel >= 0) {
-      drag = { mode: 'spin', touch: e.pointerType === 'touch', id: e.pointerId, from: pieces[sel].angle };
+      drag = { mode: 'spin', touch: e.pointerType === 'touch', id: e.pointerId, from: pieces[sel].angle, base: knobAt(pieces[sel]) };   // the knob goes where the pointer does
       handle.classList.add('spin'); bubble.classList.add('show');
       placeHandle();
     } else if (pe) {
@@ -592,7 +592,12 @@
       placeHandle(); sfx.pick();
     } else if (e.pointerType === 'touch' && sel >= 0) {
       blank = e.pointerId;   // a second finger may be on its way; deselect on lift instead
-    } else { select(-1); return; }
+    } else if (sel >= 0 && outside(pieces[sel], w).by <= RIM) {
+      // a mouse pressed just outside the selected shape takes hold of it there and turns it, from whatever angle it is at
+      drag = { mode: 'spin', touch: false, id: e.pointerId, from: pieces[sel].angle, base: Math.atan2(w.y - pieces[sel].y, w.x - pieces[sel].x) * 180 / Math.PI - pieces[sel].angle };
+      handle.classList.add('spin'); bubble.classList.add('show');
+      placeHandle();
+    } else { board.classList.remove('turning'); select(-1); return; }
     try { board.setPointerCapture(e.pointerId); } catch (err) {}
     e.preventDefault();
   });
@@ -622,7 +627,7 @@
     }
     if (drag.mode === 'spin') {
       p = pieces[sel];
-      spinTo(sel, notched(Math.atan2(w.y - p.y, w.x - p.x) * 180 / Math.PI - knobAt(p)));
+      spinTo(sel, notched(Math.atan2(w.y - p.y, w.x - p.x) * 180 / Math.PI - drag.base));
       judge();
       return;
     }
@@ -825,7 +830,7 @@
   }
   board.addEventListener('pointermove', watch);
   board.addEventListener('pointermove', hoverKnob);
-  board.addEventListener('pointerleave', function () { watch(null); });
+  board.addEventListener('pointerleave', function () { watch(null); board.classList.remove('turning'); });
 
   var wheelAcc = 0;
   board.addEventListener('wheel', function (e) {
