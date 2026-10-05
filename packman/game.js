@@ -444,8 +444,10 @@
     var show = sel >= 0 && !won && !(drag && drag.mode === 'move');
     handle.toggleAttribute('hidden', !show);
     if (!show) { bubble.classList.remove('show'); return; }
-    var p = pieces[sel], k = knobPos(p), from = knobRoot(p), line = handle.firstElementChild;
-    line.setAttribute('x1', from[0]); line.setAttribute('y1', from[1]); line.setAttribute('x2', k[0]); line.setAttribute('y2', k[1]);
+    var p = pieces[sel], k = knobPos(p), from = knobRoot(p);
+    Array.prototype.forEach.call(handle.querySelectorAll('line'), function (line) {   // the stem, and the pale copy that lies under it for eyesight
+      line.setAttribute('x1', from[0]); line.setAttribute('y1', from[1]); line.setAttribute('x2', k[0]); line.setAttribute('y2', k[1]);
+    });
     ['knob', 'knob-hit', 'knob-dot'].forEach(function (id) { $(id).setAttribute('cx', k[0]); $(id).setAttribute('cy', k[1]); });
     if (drag && drag.mode !== 'move') {
       bubble.textContent = norm(p.angle) + '°';
