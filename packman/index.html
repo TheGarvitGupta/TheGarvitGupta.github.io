@@ -112,7 +112,8 @@ button{font:inherit; color:inherit; cursor:pointer}
 :focus-visible{outline:3px solid var(--sky); outline-offset:2px}
 
 /* level strip */
-.hud{display:flex; align-items:center; gap:12px; margin-top:12px; flex:none; min-height:50px}
+/* the level's button, its name and the progress squares all start from the same line, however much sits under the name */
+.hud{display:flex; align-items:flex-start; gap:12px; margin-top:12px; flex:none; min-height:50px}
 .chip{flex:none; padding:7px 13px 8px; font-weight:600; font-size:15px; white-space:nowrap;
   background:var(--sun); color:#2B2140; border:var(--bw) solid var(--ink); border-radius:999px;
   transition:transform .12s var(--pop)}
@@ -176,6 +177,8 @@ button{font:inherit; color:inherit; cursor:pointer}
 .title.swap p{animation-delay:60ms}
 @keyframes slidein{from{transform:translateX(-18px); opacity:0}}
 .meter{flex:none; text-align:right}
+/* how many are packed is plain from the squares; the words stay for screen readers only */
+.unseen{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap}
 #pips{display:flex; flex-wrap:wrap; justify-content:flex-end; gap:4px; max-width:150px; margin-left:auto}
 #pips i{width:13px; height:13px; border:2px solid var(--ink); border-radius:4px; background:var(--wash); transition:background .15s}
 #pips i.t{border:0; width:15px; background:var(--ink); clip-path:polygon(50% 0,100% 100%,0 100%); position:relative}
@@ -366,7 +369,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 @media (max-width:560px){
   .word{font-size:25px} .logo svg{width:32px; height:32px}
   .tools{gap:6px} .ib{width:38px; height:38px; border-radius:12px} .ib svg{width:19px; height:19px}
-  .hud{display:grid; grid-template-columns:auto 1fr auto; gap:5px 9px; margin-top:10px; min-height:0}
+  .hud{display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:5px 9px; margin-top:10px; min-height:0}
   .title{display:contents} .title h1{font-size:18px}
   .title p{grid-column:1 / -1; grid-row:2; font-size:13.5px; margin:0; min-height:2.5em}
   #prize-track{grid-column:1 / -1; grid-row:3; margin:0; max-width:none}
@@ -385,7 +388,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   #app{display:grid; grid-template-columns:auto 1fr auto; grid-template-rows:auto 1fr; gap:4px 12px}
   .top{display:contents}
   .logo{grid-area:1 / 1} .word{display:none}
-  .hud{grid-area:1 / 2; display:flex; margin:0; gap:10px} .title{display:block} .title h1{font-size:18px}
+  .hud{grid-area:1 / 2; display:flex; align-items:center; margin:0; gap:10px} .title{display:block} .title h1{font-size:18px}
   .tools{grid-area:1 / 3; gap:6px} .ib{width:38px; height:38px; border-radius:12px}
   #pips{max-width:none; flex-wrap:nowrap; gap:3px} #pips i{width:9px; height:9px; border-width:1.5px; border-radius:3px} #pips i.t{width:11px}
   #pips i.t::after{inset:3px 2.5px 1.5px}
@@ -435,7 +438,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   <section class="hud">
     <button class="chip" id="chip" aria-label="Choose a level"><span id="lv-word">Level</span> <b id="lv-num">1</b> / <span id="lv-of">17</span></button>
     <div class="title" id="title"><h1 id="lv-name"></h1><p id="lv-intro"></p><div id="prize-track" hidden aria-hidden="true"><div class="rail"><i id="rail-fill"></i><b id="rail-run"><svg viewBox="0 0 20 20"><rect x="1.5" y="1.5" width="17" height="17" rx="4" fill="#FF6B6B" stroke="#2B2140" stroke-width="2"/><circle cx="7.3" cy="8.6" r="1.4" fill="#2B2140"/><circle cx="12.7" cy="8.6" r="1.4" fill="#2B2140"/><path d="M7 12.4q3 2.8 6 0" fill="none" stroke="#2B2140" stroke-width="1.5" stroke-linecap="round"/></svg></b></div><span class="goal"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg></span></div></div>
-    <div class="meter"><div id="pips" aria-hidden="true"></div><div id="stats"><span id="count" aria-live="polite"></span> · <span id="clock">0:00</span></div><div id="best" hidden></div></div>
+    <div class="meter"><div id="pips" aria-hidden="true"></div><div id="stats"><span id="count" class="unseen" aria-live="polite"></span><span id="clock">0:00</span></div><div id="best" hidden></div></div>
   </section>
 
   <main id="stage">
@@ -497,7 +500,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door by Garvit.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.51</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.52</span></div>
   </div>
 </div>
 
@@ -557,9 +560,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.51"></script>
-<script src="levels.js?v=1.51"></script>
-<script src="game.js?v=1.51"></script>
+<script src="geom.js?v=1.52"></script>
+<script src="levels.js?v=1.52"></script>
+<script src="game.js?v=1.52"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
