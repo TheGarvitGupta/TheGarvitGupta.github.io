@@ -627,8 +627,8 @@
 
   // On the board every shape is drawn a hair small, with soft corners, and the box a hair
   // big, so a packed box looks neatly spaced. The eye button in the bar swaps that for what
-  // the judging goes by: every shape as its true outline, hatched in violet and nothing
-  // else, the box as its true outline too, and red wherever those overlap or pass a wall.
+  // the judging goes by: every shape as its true outline, hatched in slate blue and nothing
+  // else, the box as its true outline too, and orange wherever those overlap or pass a wall.
   // Tap it again and the board goes back to how it looks.
   var eyeOn = false;
 
@@ -647,7 +647,7 @@
     for (var i = 0; i < poly.length; i++) { var a = poly[i], b = poly[(i + 1) % poly.length]; sum += a[0] * b[1] - b[0] * a[1]; }
     return Math.abs(sum) / 2;
   }
-  // Under eyesight, wherever two true outlines overlap, or one passes a wall, is filled red:
+  // Under eyesight, wherever two true outlines overlap, or one passes a wall, is filled orange:
   // in a layer over the shapes.
   function showHits() {
     var hits = $('hits');

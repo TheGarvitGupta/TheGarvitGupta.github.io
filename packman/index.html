@@ -117,8 +117,8 @@ button{font:inherit; color:inherit; cursor:pointer}
   .tools .ib[data-tip]:last-child:not(.sure):hover::after,.tools .ib[data-tip]:last-child:not(.sure):focus-visible::after{transform:none}
 }
 .ib.dim{color:var(--mut); opacity:.5}
-/* eyesight, while it is on: the button takes the margins' violet */
-.ib[aria-pressed="true"]{background:var(--grape); color:#2B2140}
+/* eyesight, while it is on: the button takes the hatching's blue */
+.ib[aria-pressed="true"]{background:#8AA9DE; color:#2B2140}
 /* the leaderboard: the same button, in trophy gold */
 .ib.lead{background:var(--sun); color:#2B2140}
 .ib.lead .cup{fill:#fff}
@@ -225,18 +225,22 @@ button{font:inherit; color:inherit; cursor:pointer}
 #coach-say::before{content:""; position:absolute; left:var(--ax, 50%); top:-8px; width:13px; height:13px; margin-left:-7px; background:var(--card);
   border:solid var(--ink); border-width:var(--bw) 0 0 var(--bw); border-radius:3px 0 0 0; transform:rotate(45deg)}
 
-/* Eyesight: every shape as its true outline, which is a hair bigger than it is drawn, hatched in violet.
+/* Eyesight: every shape as its true outline, which is a hair bigger than it is drawn, hatched in slate blue.
    The colour, the face and the dark line all go. The box is drawn the same way: its true outline, a hair
-   smaller than usual, with the same fine violet edge and no dark frame. */
-#hatch-wash{fill:rgba(155,123,255,.2)} #hatch-stripe{fill:#6B4FD8; fill-opacity:.6}
-.safe{visibility:hidden; pointer-events:none; fill:url(#hatch); stroke:#6B4FD8; stroke-width:calc(1px * var(--u)); stroke-linejoin:round}
-#true-box{visibility:hidden; pointer-events:none; fill:var(--bin); stroke:#6B4FD8; stroke-width:calc(1px * var(--u)); stroke-linejoin:round; transition:fill .35s}
+   smaller than usual, with the same fine blue edge and no dark frame. */
+#hatch-wash{fill:rgba(91,123,181,.13)} #hatch-stripe{fill:#5B7BB5; fill-opacity:.62}
+.safe{visibility:hidden; pointer-events:none; fill:url(#hatch); stroke:#4A6AA8; stroke-width:calc(1px * var(--u)); stroke-linejoin:round}
+#true-box{visibility:hidden; pointer-events:none; fill:var(--bin); stroke:#4A6AA8; stroke-width:calc(1px * var(--u)); stroke-linejoin:round; transition:fill .35s}
 #bin.win #true-box{fill:var(--win)}
 #board.eyes .safe,#board.eyes #true-box{visibility:visible}
 #board.eyes .bin-fill{visibility:hidden}
 #board.eyes .piece .fill{fill:transparent; stroke:transparent; pointer-events:all}
 #board.eyes .piece .face,#board.eyes .piece .face *,#board.eyes .piece .back{visibility:hidden}
-.hit{fill:var(--bad); fill-opacity:.88; pointer-events:none}
+/* An overlap: solid orange against the cool hatching, the pair that stays apart for nearly every kind of
+   colour blindness. A dark edge gives even a hairline of it a shape, and it throbs so the eye is drawn. */
+.hit{fill:#FF4A1C; stroke:var(--ink); stroke-width:calc(1px * var(--u)); stroke-linejoin:round; pointer-events:none; animation:throb 1s ease-in-out infinite}
+@keyframes throb{50%{fill:#FFA41C}}
+@media (prefers-reduced-motion:reduce){ .hit{animation:none} }
 .bin-fill{fill:var(--bin); stroke:var(--ink); stroke-width:calc(4px * var(--u)); stroke-linejoin:round; transition:fill .35s}
 /* nothing inside the board animates with CSS transforms: Safari can leave smears behind */
 #bin{animation:fadein .5s both}
@@ -552,7 +556,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.83</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · v1.84</span></div>
   </div>
 </div>
 
@@ -612,9 +616,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=1.83"></script>
-<script src="levels.js?v=1.83"></script>
-<script src="game.js?v=1.83"></script>
+<script src="geom.js?v=1.84"></script>
+<script src="levels.js?v=1.84"></script>
+<script src="game.js?v=1.84"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
