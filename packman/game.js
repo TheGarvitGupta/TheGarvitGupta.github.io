@@ -252,9 +252,7 @@
     var px = 1 / view.scale;
     board.style.setProperty('--u', px);   // one screen pixel, in board units, for stroke widths
     bin.firstElementChild.setAttribute('d', binPath(px));
-    // for eyesight: the box exactly as judged, and the hatching, five pixels a stripe
-    $('true-box').setAttribute('d', loop(grown(C, 0.5 * px)));
-    ['hatch', 'hatch-wash', 'hatch-stripe'].forEach(function (id) { $(id).setAttribute('width', 5 * px); $(id).setAttribute('height', (id === 'hatch-stripe' ? 1.8 : 5) * px); });
+    $('true-box').setAttribute('d', loop(C.poly));   // for eyesight: the box exactly as judged
     pieces.forEach(function (p) { if (p.fill) outline(p); });
     if (ghost) $('ghost').setAttribute('d', drawn(ghost.type));
     $('knob').setAttribute('r', 11 * px);
@@ -342,10 +340,10 @@
     var back = el('rect', 'back'), k = p.type === 'triangle' ? 0.74 : p.type === 'hexagon' ? 1.3 : 1, dy = p.type === 'triangle' ? 0.03 : 0;
     back.setAttribute('x', -0.28 * k); back.setAttribute('y', -0.21 * k + dy);
     back.setAttribute('width', 0.56 * k); back.setAttribute('height', (p.type === 'triangle' ? 0.45 : 0.54) * k);   // short of a triangle's base
-    // Under the shape lies its true outline, hatched. It is all that shows of a shape
-    // while eyesight is on.
+    // Under the shape lies its true outline, in one flat colour. It is all that shows of a
+    // shape while eyesight is on.
     var safe = el('path', 'safe');
-    p.safe = safe;
+    safe.setAttribute('d', loop(G.SHAPES[p.type]));
     body.appendChild(safe); body.appendChild(fill); body.appendChild(back); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
     p.back = back;
@@ -365,10 +363,6 @@
   function outline(p) {
     var d = drawn(p.type);
     p.fill.setAttribute('d', d);
-    // Its true outline, for eyesight. The fine line round it is one pixel wide and lies wholly
-    // inside the true edge, as the box's lies wholly outside its own: a shape flush to a wall
-    // then shows the two lines side by side, neither over the other.
-    p.safe.setAttribute('d', loop(grown(G.makeContainer(G.SHAPES[p.type]), -0.5 / view.scale)));
   }
 
   // Pieces are moved with transform attributes, not CSS transforms: Safari
@@ -627,8 +621,9 @@
 
   // On the board every shape is drawn a hair small, with soft corners, and the box a hair
   // big, so a packed box looks neatly spaced. The eye button in the bar swaps that for what
-  // the judging goes by: every shape as its true outline, hatched in slate blue and nothing
-  // else, the box as its true outline too, and orange wherever those overlap or pass a wall.
+  // the judging goes by, in flat colour with no lines at all: every shape at its true size
+  // in one blue, the box at its true size in white, and orange-red wherever shapes overlap
+  // or pass a wall. Shapes that sit flush run together; a gap shows as a sliver of white.
   // Tap it again and the board goes back to how it looks.
   var eyeOn = false;
 
