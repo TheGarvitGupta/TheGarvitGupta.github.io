@@ -264,6 +264,20 @@ var PackmanGeom = (function () {
     return true;
   }
 
+  // Is the outline resting against a wall or another piece?
+  function touching(V, others, C) {
+    var k, near = 1e-4;
+    for (k = 0; k < C.walls.length; k++) if (-excess(V, C.walls[k]) <= near) return true;
+    return others.some(function (B) {
+      var apart = -Infinity;
+      normals(V).concat(normals(B)).forEach(function (n) {
+        var a = span(V, n[0], n[1]), b = span(B, n[0], n[1]);
+        apart = Math.max(apart, b[0] - a[1], a[0] - b[1]);
+      });
+      return apart <= near;
+    });
+  }
+
   // Returns true when the piece snapped somewhere clean. With keep, it stays
   // lined up even when the spot is not clean (and returns true).
   function magnet(pieces, i, C, keep) {
@@ -314,6 +328,10 @@ var PackmanGeom = (function () {
     settle(pieces, i, C);              // out of any shallow overlap first
     var moved = seat(p, others, C);
     if (!best && !moved && p.x === x0 && p.y === y0) return false;
+    // The turn and the pull are one snap. A piece that would be straightened but is still
+    // too far off to be pulled into contact, and is touching nothing, is left as it was:
+    // otherwise it is seen to turn first and jump into place only once it is brought closer.
+    if (p.angle !== a0 && !keep && !moved && p.x === x0 && p.y === y0 && !touching(verts(p), others, C)) { p.angle = a0; return false; }
 
     var V = verts(p);
     var ok = (p.x - x0) * (p.x - x0) + (p.y - y0) * (p.y - y0) <= MAX_SLIDE * MAX_SLIDE;
