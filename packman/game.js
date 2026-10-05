@@ -403,6 +403,12 @@
     var reach = (p.side == null ? KNOB[p.type] : sides(p.type)[p.side].off + 0.22) + 30 / view.scale;
     return [p.x + Math.cos(r) * reach, p.y + Math.sin(r) * reach];
   }
+  // Where the dotted line to the knob begins: at the shape's edge, not its middle, so no dots lie over the shape.
+  var TOP = { square: 0.5, triangle: 2 * G.H / 3, domino: 0.5, hexagon: G.H };   // how far up a shape reaches from its centre
+  function knobRoot(p) {
+    var r = (p.angle + knobAt(p)) * Math.PI / 180, out = (p.side == null ? TOP[p.type] : sides(p.type)[p.side].off) + 3 / view.scale;
+    return [p.x + Math.cos(r) * out, p.y + Math.sin(r) * out];
+  }
   // With a mouse, the selected shape's knob moves to the side the cursor is nearest, but
   // only while the cursor is outside the shape. Inside it, the knob stays where it is, so
   // it does not dart about under a cursor that is only picking the shape up.
@@ -423,8 +429,8 @@
     var show = sel >= 0 && !won && !(drag && drag.mode === 'move');
     handle.toggleAttribute('hidden', !show);
     if (!show) { bubble.classList.remove('show'); return; }
-    var p = pieces[sel], k = knobPos(p), line = handle.firstElementChild;
-    line.setAttribute('x1', p.x); line.setAttribute('y1', p.y); line.setAttribute('x2', k[0]); line.setAttribute('y2', k[1]);
+    var p = pieces[sel], k = knobPos(p), from = knobRoot(p), line = handle.firstElementChild;
+    line.setAttribute('x1', from[0]); line.setAttribute('y1', from[1]); line.setAttribute('x2', k[0]); line.setAttribute('y2', k[1]);
     ['knob', 'knob-hit', 'knob-dot'].forEach(function (id) { $(id).setAttribute('cx', k[0]); $(id).setAttribute('cy', k[1]); });
     if (drag && drag.mode !== 'move') {
       bubble.textContent = norm(p.angle) + '°';
