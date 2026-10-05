@@ -345,7 +345,7 @@
     // still be told apart with no line between them.
     var safe = el('path', 'safe');
     safe.setAttribute('d', loop(G.SHAPES[p.type]));
-    safe.style.fill = BLUES[i % BLUES.length];
+    safe.style.fill = safe.style.stroke = BLUES[i % BLUES.length];   // the edge, in the same blue, is there only to close hairline seams
     body.appendChild(safe); body.appendChild(fill); body.appendChild(back); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
     p.back = back;
