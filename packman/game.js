@@ -859,7 +859,7 @@
     lookForShake();
     if (i === 1 && !save.eyeTip) { eye(false); coachTimer = setTimeout(offerEyes, 900); }
     else eye(i === 1);   // on throughout the second level, off at the start of every other
-    $('b-eye').setAttribute('data-tip', i === 1 ? 'Eyesight stays on here' : 'Eyesight');
+    if (i === 1) $('b-eye').removeAttribute('data-tip'); else $('b-eye').setAttribute('data-tip', 'Eyesight');   // no label where it cannot be changed
   }
 
   /* ---------- shake ---------- */
