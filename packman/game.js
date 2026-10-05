@@ -892,7 +892,7 @@
     save.done[lv.name] = { t: best, m: prev ? Math.min(prev.m, moves) : moves };
     if (save.board && save.board.l === lv.name) save.board = null;
     persist();
-    report({ level: lv.name, pid: save.pid, name: save.name, t: elapsed, m: moves, p: pieces.map(function (q) { return [q.x, q.y, q.angle]; }) });
+    report({ level: lv.name, pid: save.pid, name: called(), t: elapsed, m: moves, p: pieces.map(function (q) { return [q.x, q.y, q.angle]; }) });
 
     // A first win gets the full party. A replay gets a quieter one, unless it
     // beat the old time.
@@ -1120,6 +1120,7 @@
   }
   function named() {
     if (!save.name) { save.name = alias(me); persist(); }
+    renames = 0; sync();   // tells the board the name, if it has anything under another
     var then = afterName; afterName = null;
     if (then) then();
   }
@@ -1146,7 +1147,7 @@
       var li = document.createElement('li');
       cell(li, 'b', 'pos', pos);
       li.appendChild(avatar(r.a));
-      cell(li, 'span', 'who', r.name);
+      cell(li, 'span', 'who', own ? called() : r.name);
       cell(li, 'span', 'fig', r.n); cell(li, 'span', 'fig', r.m); cell(li, 'span', 'fig t', clock(r.t));
       if (own) { li.className = 'me'; mine = true; }
       list.appendChild(li);
@@ -1176,7 +1177,7 @@
         return report(score);
       }
       if (!d.top) return;
-      if (!LOCAL) { save.sent = save.sent || {}; save.sent[score.level] = 1; persist(); }   // sent, or shown the solution and so not to be
+      if (!LOCAL) { save.sent = save.sent || {}; save.sent[score.level] = 1; if (!skip) save.as = score.name; persist(); }   // sent, or shown the solution and so not to be
       ranks($('win-ranks'), d, 5);
       note.textContent = peeked ? 'This one is not counted, because the solution was shown.'
         : LOCAL ? 'Scores are not sent from a copy on this machine.' : standing(d);
@@ -1185,27 +1186,35 @@
     }).catch(function () {});   // no board today: the win sheet simply goes without one
   }
 
-  // Bests the board has not had yet are sent when the game opens, one at a time: everything
-  // packed before there was a leaderboard, and any win that did not get through. The pieces
-  // are long gone from the box, so the level's own solution goes along as the proof.
+  // Bests the board has not had yet are sent as soon as the game opens, one at a time:
+  // everything packed before there was a leaderboard, and any win that did not get through.
+  // The pieces are long gone from the box, so the level's own solution goes along as the
+  // proof. Until a name is given they go up under the stand-in, and the board is told the
+  // real one the moment there is one.
+  var syncing = false, renames = 0;   // renames: how often this visit has gone back just to change the name, in case the board keeps refusing
+  function called() { return save.name || alias(me); }
   function sync() {
-    if (LOCAL || !save.name) return;
+    if (LOCAL || syncing) return;
     save.sent = save.sent || {};
     var due = LEVELS.filter(function (l) { return save.done[l.name] && !save.sent[l.name]; });
+    // nothing new to send, but the name has changed: send one old best again, which carries the name with it
+    if (!due.length && save.as !== called() && renames++ < 2) due = LEVELS.filter(function (l) { return save.done[l.name]; }).slice(0, 1);
+    if (!due.length) return;
+    syncing = true;
     (function next() {
-      var l = due.shift(), d = l && save.done[l.name];
-      if (!l) return;
-      ask(SCORES, { level: l.name, pid: save.pid, name: save.name, t: d.t, m: d.m, p: l.solution }).then(function (r) {
-        if (r.top || r.error === 'score') { save.sent[l.name] = 1; persist(); }   // on the board, or never going to be
-        if (r.top || r.error === 'score' || r.error === 'unpacked') setTimeout(next, 250);   // anything else: try again next time
-      }).catch(function () {});
+      var l = due.shift(), d = l && save.done[l.name], as = called();
+      if (!l) { syncing = false; if (save.as !== called()) sync(); return; }   // renamed while this was going on
+      ask(SCORES, { level: l.name, pid: save.pid, name: as, t: d.t, m: d.m, p: l.solution }).then(function (r) {
+        if (r.top || r.error === 'score') { save.sent[l.name] = 1; if (r.top) save.as = as; persist(); }   // on the board, or never going to be
+        if (r.top || r.error === 'score' || r.error === 'unpacked') setTimeout(next, 250); else syncing = false;   // anything else: try again next time
+      }).catch(function () { syncing = false; });
     })();
   }
 
   function showBoard() {
     var list = $('board-ranks'), note = $('board-note');
     $('board-face').textContent = ''; $('board-face').appendChild(avatar(me));
-    $('board-name').textContent = save.name || alias(me);
+    $('board-name').textContent = called();
     list.classList.add('wait');
     ask(SCORES + '?pid=' + save.pid).then(function (d) {
       if (!d.top) throw 0;
@@ -1391,11 +1400,11 @@
   // The name comes first, for new players and for anyone from before there was a leaderboard.
   // Whatever else was due to open (how to pack, the party for a finished game) waits for it.
   var opening = function () {
-    sync();
     if (/[?&]finale\b/.test(location.search)) setTimeout(function () { lateParty(true); }, 600);   // a look at the last level's party, whatever has been packed
     else if (!save.claimed && LEVELS.every(function (l) { return l.bonus || save.done[l.name]; })) setTimeout(lateParty, 700);
     if (!save.seen) openSheet($('m-help'));
   };
+  sync();
   if (save.name) opening(); else askName(opening);
   persist();
 
