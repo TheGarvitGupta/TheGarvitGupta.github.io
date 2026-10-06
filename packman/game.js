@@ -2006,9 +2006,10 @@
 
   // Starting from nothing: everything this browser remembers of the game is forgotten, and the page is
   // loaded afresh as for a new player. The leaderboard keeps the old scores, under an id nobody has any
-  // more. Unless the reset is confirmed with Command (or Control) and Shift held down, or, on a touch
-  // screen, by holding the button for three seconds: then this player's line is taken off the board
-  // first. Nothing on the sheet says so; it is for clearing one's own records out of other people's way.
+  // more. Unless the button that confirms it is held down for three seconds before it is let go: then
+  // this player's line is taken off the board first. Nothing says so, on the sheet or while the button
+  // is held, and nothing marks the three seconds passing: it is for clearing one's own records out of
+  // other people's way, and not for anyone to find.
   var deep = false, deepTimer = 0;
   function wipe(board) {
     var go = function () {
@@ -2022,12 +2023,12 @@
   $('reset-ask').addEventListener('click', function () { closeSheet($('m-help')); deep = false; openSheet($('m-reset')); });
   $('reset-go').addEventListener('pointerdown', function (e) {
     deep = false; clearTimeout(deepTimer);
-    if (e.pointerType === 'touch') deepTimer = setTimeout(function () { deep = true; haptic(); }, 3000);
+    deepTimer = setTimeout(function () { deep = true; }, 3000);
   });
   ['pointerleave', 'pointercancel'].forEach(function (n) { $('reset-go').addEventListener(n, function () { clearTimeout(deepTimer); deep = false; }); });
   $('reset-go').addEventListener('click', function (e) {
     clearTimeout(deepTimer);
-    wipe(deep || ((e.metaKey || e.ctrlKey) && e.shiftKey));
+    wipe(deep);
   });
   var armed = 0;
   function disarm() { clearTimeout(armed); armed = 0; $('b-reset').classList.remove('sure'); }
