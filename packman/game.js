@@ -1132,7 +1132,7 @@
     })(start);
   }
   // The magnet's reach, drawn round it as a ring that fades: when it is put down, and whenever it pulls.
-  var REACH = 2;
+  var REACH = 1.6;
   function field(m) {
     var ring = el('circle', 'field');
     ring.setAttribute('cx', m.x); ring.setAttribute('cy', m.y); ring.setAttribute('r', REACH);
