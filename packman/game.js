@@ -360,11 +360,6 @@
     $('seams').appendChild(p.under);
     body.appendChild(safe); body.appendChild(fill); body.appendChild(back); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
-    if (p.power === 'chameleon') {   // a cross over its head, for when it is sitting in the box in a shape that is not its own
-      var no = el('text', 'count no');
-      no.setAttribute('y', -(TOP[p.type] + 0.14)); no.setAttribute('text-anchor', 'middle'); no.textContent = '\u2717';
-      pop.appendChild(no);
-    }
     if (p.power === 'mine') {   // the seconds left on its fuse, over its head
       p.badge = el('text', 'count');
       p.badge.setAttribute('y', -(TOP[p.type] + 0.14)); p.badge.setAttribute('text-anchor', 'middle');
@@ -483,9 +478,8 @@
       p.el.classList.toggle('good', s.good);
       p.el.classList.toggle('bad', s.zone === 'edge' || s.hit);
       if (p.power === 'sleeper') p.el.classList.toggle('asleep', asleep(p));
-      if (p.power === 'chameleon') {   // in the box and in nobody's way, but not in its real shape: it is marked, and the card says why it does not count
+      if (p.power === 'chameleon') {   // in the box and in nobody's way, but not in its real shape: the card says why it does not count
         p.fake = !!p.form && s.zone === 'in' && !s.hit;
-        p.el.classList.toggle('fake', p.fake);
         if (i === sel && !drag) notePower('chameleon', p.fake ? 'It fits, but this is not its real shape, so it does not count. Pick it up again to change it.' : '');
       }
       // The ghost sharing a space as it should goes clearer and lies over whatever it shares with; that one gives up its face.
@@ -1393,13 +1387,14 @@
         var under = real.filter(function (q) { return q.type === p.type && Math.hypot(q.x - p.x, q.y - p.y) < 0.25 && Math.abs(off(q.angle, p.angle, p.type)) < 6; })[0];
         return under ? { x: got[real.indexOf(under)].x, y: got[real.indexOf(under)].y, angle: p.angle + off(got[real.indexOf(under)].angle, p.angle, p.type) } : { x: p.x, y: p.y, angle: p.angle };
       });
-      if (real.length < pieces.length) {
-        var was = pieces.map(pose);
-        pieces.forEach(function (p, i) { p.x = to[i].x; p.y = to[i].y; p.angle = to[i].angle; });
-        var fine = evaluate().solved;
-        pieces.forEach(function (p, i) { p.x = was[i][0]; p.y = was[i][1]; p.angle = was[i][2]; });
-        if (!fine) return;
-      }
+      // The shake only knows the plain rules. If the board would still not count as packed after it
+      // (a chameleon in the wrong shape, a ghost sharing with nobody), there is no shake: or it
+      // would shake, find nothing finished, and shake again, for ever.
+      var was = pieces.map(pose);
+      pieces.forEach(function (p, i) { p.x = to[i].x; p.y = to[i].y; p.angle = to[i].angle; });
+      var fine = evaluate().solved;
+      pieces.forEach(function (p, i) { p.x = was[i][0]; p.y = was[i][1]; p.angle = was[i][2]; });
+      if (!fine) return;
       shake(to);
     }, 220);
   }
