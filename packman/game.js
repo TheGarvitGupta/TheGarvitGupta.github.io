@@ -617,6 +617,7 @@
     p.el.classList.remove('held');
     drag = { mode: 'twist', touch: true, id: a, id2: e.pointerId, from: drag ? drag.a0 : p.angle, a0: p.angle, last: fingerAngle(a, e.pointerId), turn: 0, moved: !!(drag && drag.moved) };
     blank = null;
+    if (p.power === 'mine' && !(p.fuse > 0)) light(p);
     handle.classList.add('spin'); bubble.classList.add('show');
     placeHandle();
     try { board.setPointerCapture(e.pointerId); } catch (err) {}
@@ -637,6 +638,7 @@
       drag = { mode: 'spin', touch: e.pointerType === 'touch', id: e.pointerId, from: pieces[sel].angle };
       handle.classList.add('spin'); bubble.classList.add('show');
       placeHandle();
+      if (pieces[sel].power === 'mine' && !(pieces[sel].fuse > 0)) light(pieces[sel]);   // taking hold of its knob is picking it up too
     } else if (pe) {
       var i = +pe.dataset.i, p = pieces[i];
       if (i !== sel) {
@@ -1309,8 +1311,9 @@
     if (!lv || !lv.powers || won || shaking || document.hidden || document.querySelector('.sheet.open')) return;
     pieces.forEach(function (p, i) {
       if (!(p.fuse > 0) || shaking) return;
-      // The fuse only burns in the hand. Let go of the mine, anywhere at all, and it goes out.
-      if (!(drag && drag.mode === 'move' && drag.i === i)) { if (p.fuse < FUSE - 400) sfx.fizz(); quench(p); return; }
+      // The fuse only burns in the hand: while the mine is being carried, or turned by its knob or with
+      // two fingers. Let go of it, anywhere at all, and it goes out.
+      if (!(drag && (drag.mode === 'move' ? drag.i : sel) === i)) { if (p.fuse < FUSE - 400) sfx.fizz(); quench(p); return; }
       p.fuse -= 100;
       if (p.fuse <= 0) { boom(i); return; }
       burn(p);
