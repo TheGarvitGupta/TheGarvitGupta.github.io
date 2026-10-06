@@ -1020,10 +1020,11 @@
   // is one more, added at the end, of the same kind as one of them.
   function dealPowers() {
     // The puffer is only any trouble with a crowd round it, so it comes out in the levels with five shapes or more.
-    var pool = ['mine', 'ghost', 'sticky', 'chameleon', 'sleeper', 'magnet'].concat(lv.pieces.length >= 5 ? ['puffer'] : [], lv.angel ? ['angel'] : []);
+    var pool = ['mine', 'ghost', 'sticky', 'chameleon', 'sleeper', 'magnet'].concat(lv.pieces.length >= 5 ? ['puffer'] : [], lv.angel === true ? ['angel'] : []);
     var asked = LOCAL && /[?&]powers=([a-z,]+)/.exec(location.search);   // on this machine, the ones named in the address
     var out = lv.pieces.map(function () { return 0; }), free = shuffled(out.map(function (z, n) { return n; }));
-    (asked ? asked[1].split(',') : shuffled(pool).slice(0, lv.powers)).forEach(function (w) {
+    // where the angel is sure to come, it takes one of the places
+    (asked ? asked[1].split(',') : lv.angel === 'sure' ? ['angel'].concat(shuffled(pool).slice(0, lv.powers - 1)) : shuffled(pool).slice(0, lv.powers)).forEach(function (w) {
       if (!POWERS[w]) return;
       if (w === 'ghost') { out.push({ w: w, t: lv.pieces[Math.floor(Math.random() * lv.pieces.length)] }); return; }
       if (!free.length) return;
@@ -1174,7 +1175,7 @@
   function react() {
     var from = pieces.map(pose), noise = {}, ev = evaluate();
 
-    // The angel, put where it belongs, turns to stone, and puts two more shapes where they
+    // The angel, put where it belongs, turns to stone, and puts two more shapes (one, in a level of four or fewer) where they
     // belong: in whichever turn of the solution it is sitting in, and that the board is furthest along with.
     pieces.forEach(function (p, i) {
       if (p.power !== 'angel' || p.frozen || !ev.states[i].good) return;
@@ -1190,7 +1191,7 @@
       var home = pick.slots[pick.k], used = {};
       p.x = home.x; p.y = home.y; p.angle += off(home.angle, p.angle, p.type);
       p.frozen = true; stone(p); carry(i); used[i] = 1; noise.bless = 1;
-      shuffled(pick.slots.filter(function (s, n) { return n !== pick.k && !pieces.some(function (q) { return near(q, s, 0.15, 3); }); })).slice(0, 2).forEach(function (s) {
+      shuffled(pick.slots.filter(function (s, n) { return n !== pick.k && !pieces.some(function (q) { return near(q, s, 0.15, 3); }); })).slice(0, lv.pieces.length >= 5 ? 2 : 1).forEach(function (s) {   // two more, or one in a small level, where two would be most of it
         var cands = pieces.map(function (q, n) { return n; }).filter(function (n) {
           var q = pieces[n];
           return !used[n] && !q.frozen && q.type === s.type && q.power !== 'ghost' && !(q.power === 'chameleon' && q.form) &&
