@@ -988,7 +988,7 @@
   // here. Most have their say when a shape is put down: see react.
   var spared = null;   // the ghost and the one shape it is lying over, when that is how things stand
 
-  // Judge the board. As the geometry does it, but for the ghost: it may overlap one other
+  // Judge the board. As the geometry does it, but for the ghost: it must overlap one other
   // shape, and when it overlaps exactly one, that overlap counts against neither.
   function evaluate() {
     var n = pieces.length, V = pieces.map(G.verts), st = V.map(function (A) { return { zone: G.zone(A, C), hit: false }; }), hits = [], i, j, packed = 0;
@@ -1007,7 +1007,11 @@
       if (mine.length === 1) spared = mine[0];
     });
     hits.forEach(function (h) { if (h !== spared) st[h[0]].hit = st[h[1]].hit = true; });
-    for (i = 0; i < n; i++) { st[i].good = st[i].zone === 'in' && !st[i].hit; if (st[i].good) packed++; }
+    for (i = 0; i < n; i++) {
+      // And the ghost has to be sharing: sitting by itself in a bit of spare room does not count as packed.
+      st[i].good = st[i].zone === 'in' && !st[i].hit && (pieces[i].power !== 'ghost' || (!!spared && (spared[0] === i || spared[1] === i)));
+      if (st[i].good) packed++;
+    }
     return { states: st, packed: packed, solved: packed === n };
   }
 

@@ -818,13 +818,13 @@ var PackmanLevels = (function () {
       solution: [[0.2876, 0.5003, 0], [-0.2876, -0.5003, 60], [0.5003, -0.2876, 30], [-0.5003, 0.2876, 90]]
     },
     {
-      name: 'Tent',
+      name: 'Odd Squad',
       powers: 2,
-      intro: 'A brick and two squares in a triangle. Stacked up, the top one will not fit.',
-      hint: 'The brick and one square lie in a row along the floor, which they exactly fill. The last square turns 45° and stands on its corner above them.',
-      container: loosen([[0, -2 * H / 3], [0.5, H / 3], [-0.5, H / 3]], 4.166),
-      pieces: pieces(2, 0, 1),
-      solution: [[0, -1.176, 45], [0.9982, 0.6942, 0], [-0.5018, 0.7004, 0]]
+      intro: 'A square and three triangles, in a box with no room to line them up.',
+      hint: 'The square goes snug in a corner. One triangle hangs upside-down beneath it. One lies with a side flat against the wall beside the square, at 30°. The last goes in the far corner, turned to 105°.',
+      container: box(1.872),
+      pieces: pieces(1, 3),
+      solution: [[-0.4331, -0.4331, 0], [-0.4147, 0.3557, 60], [0.3754, 0.4147, 105], [0.6442, -0.4147, 30]]
     },
     {
       name: 'Corner Brick',
