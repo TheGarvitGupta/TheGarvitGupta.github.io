@@ -2011,14 +2011,25 @@
   // is held, and nothing marks the three seconds passing: it is for clearing one's own records out of
   // other people's way, and not for anyone to find.
   var deep = false, deepTimer = 0;
+  function forget() {
+    // both names the progress has been kept under: left behind, the old one would be read back in as if it were the player's
+    try { localStorage.removeItem(STORE); localStorage.removeItem('packer.v1'); } catch (e) {}
+  }
   function wipe(board) {
     var go = function () {
-      try { localStorage.removeItem(STORE); } catch (e) {}
+      wiped = true;
+      clearInterval(ticker); clearTimeout(shakeTimer); clearTimeout(partyTimer);
+      forget();
       location.replace(location.pathname + '?reset=' + Date.now());   // a new address, so the browser cannot hand back the old page
     };
-    wiped = true;
-    clearInterval(ticker); clearTimeout(shakeTimer); clearTimeout(partyTimer);
-    if (board && !LOCAL) fetch(SCORES + '?pid=' + save.pid, { method: 'DELETE' }).then(go, go); else go();
+    if (!board || LOCAL) { go(); return; }
+    // The line comes off the board first, and the reset only goes ahead once the board says it has. If
+    // it cannot be reached, nothing is reset: the id that line is kept under would be thrown away with
+    // the rest, and there would be no taking it off afterwards.
+    fetch(SCORES + '?pid=' + save.pid, { method: 'DELETE' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d && d.gone != null) go(); })
+      .catch(function () {});
   }
   $('reset-ask').addEventListener('click', function () { closeSheet($('m-help')); deep = false; openSheet($('m-reset')); });
   $('reset-go').addEventListener('pointerdown', function (e) {
@@ -2197,10 +2208,7 @@
       startClock(); commit(true, true);
     }], ['Hard reset', function () {
       if (!window.confirm('Clear all Packman progress on this browser?')) return;
-      wiped = true;
-      clearInterval(ticker); clearTimeout(shakeTimer); clearTimeout(partyTimer);
-      try { localStorage.removeItem(STORE); } catch (e) {}
-      location.replace(location.pathname + '?reset=' + Date.now());   // a new address, so the browser cannot hand back the old page
+      wipe(false);
     }]].forEach(function (b) {
       var btn = document.createElement('button');
       btn.textContent = b[0]; btn.addEventListener('click', b[1]);
