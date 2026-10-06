@@ -30,8 +30,7 @@
   // The powers of chapter three, by name. Each is a face of its own, also in faces.js.
   var POWERS = {};
   PackmanPowers.forEach(function (k) { POWERS[k.power] = k; });
-  var DECOY = { square: 'domino', triangle: 'square', domino: 'hexagon', hexagon: 'domino' };   // what a chameleon of each shape turns into: never something that fits its place
-  var CHAM = ['#3DDBB4', '#FF8FCB'];   // and the two colours it goes between
+  var CHAM = ['#3DDBB4', '#FF8FCB', '#FFC93C', '#4DA8FF'];   // the chameleon's colours: one for each of the four shapes it goes through
 
   var GIFT = '<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg>';
   var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1015,7 +1014,8 @@
       if (w === 'ghost') { out.push({ w: w, t: lv.pieces[Math.floor(Math.random() * lv.pieces.length)] }); return; }
       if (!free.length) return;
       var n = free.pop(), t = lv.pieces[n];
-      out[n] = w === 'chameleon' ? { w: w, o: [t, DECOY[t]], n: Math.random() < 0.5 ? 1 : 0, c: Math.random() < 0.5 ? 1 : 0 } : { w: w };
+      // the chameleon goes round all four shapes, its own first in the list, and starts on any of them
+      out[n] = w === 'chameleon' ? { w: w, o: [t].concat(shuffled(Object.keys(TURN).filter(function (k) { return k !== t; }))), n: Math.floor(Math.random() * 4), c: Math.floor(Math.random() * 4) } : { w: w };
     });
     var ghost = out.filter(function (g) { return g && g.w === 'ghost'; });   // last of all, whenever it was drawn
     return out.filter(function (g) { return !g || g.w !== 'ghost'; }).concat(ghost);
@@ -1092,9 +1092,9 @@
       return true;
     });
   }
-  // The chameleon turns into its other shape, and its other colour. It is drawn afresh.
+  // The chameleon turns into its next shape, and its next colour. It is drawn afresh.
   function morph(p, i) {
-    p.form = 1 - p.form; p.type = p.forms[p.form]; p.color = CHAM[(p.form + p.tint) % 2]; p.side = null;
+    p.form = (p.form + 1) % p.forms.length; p.type = p.forms[p.form]; p.color = CHAM[(p.form + p.tint) % CHAM.length]; p.side = null;
     layer.removeChild(p.el); p.under.parentNode.removeChild(p.under);
     buildPiece(p, i);
     p.el.classList.remove('fresh');
@@ -1341,7 +1341,7 @@
           pips.appendChild(pip);
         }
         p.power = g.w; p.kit = POWERS[g.w]; p.color = p.kit.color;
-        if (g.w === 'chameleon') { p.forms = g.o; p.form = g.n; p.tint = g.c; p.type = p.forms[p.form]; p.color = CHAM[(p.form + p.tint) % 2]; }
+        if (g.w === 'chameleon') { p.forms = g.o; p.form = g.n; p.tint = g.c; p.type = p.forms[p.form]; p.color = CHAM[(p.form + p.tint) % CHAM.length]; }
         if (g.w === 'sticky') { p.mate = g.m == null ? -1 : g.m; p.rel = g.r || null; }
         p.frozen = !!g.f;
       });
@@ -2046,7 +2046,7 @@
       if (won) return;
       select(-1);
       pieces.forEach(function (p, i) {
-        if (p.power === 'chameleon' && p.form) morph(p, i);
+        while (p.power === 'chameleon' && p.form) morph(p, i);
         var s = lv.solution[i] || lv.solution[lv.pieces.indexOf(p.type)];   // the ghost lies over one of its own kind
         p.x = s[0]; p.y = s[1]; p.angle = s[2]; render(i);
       });
