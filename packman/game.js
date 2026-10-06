@@ -1030,8 +1030,8 @@
         var size = { triangle: 0, square: 1, domino: 2, hexagon: 3 }, big = free.concat(n).sort(function (a, b) { return size[lv.pieces[b]] - size[lv.pieces[a]]; })[0];
         free = free.concat(n).filter(function (k) { return k !== big; }); n = big; t = lv.pieces[n];
       }
-      // the chameleon goes round all four shapes, its own first in the list, and is dealt in disguise: as one of the other three
-      out[n] = w === 'chameleon' ? { w: w, o: [t].concat(shuffled(Object.keys(TURN).filter(function (k) { return k !== t; }))), n: 1 + Math.floor(Math.random() * 3), c: Math.floor(Math.random() * 4) } : { w: w };
+      // the chameleon goes round all four shapes, its own first in the list, and may be dealt as any of them
+      out[n] = w === 'chameleon' ? { w: w, o: [t].concat(shuffled(Object.keys(TURN).filter(function (k) { return k !== t; }))), n: Math.floor(Math.random() * 4), c: Math.floor(Math.random() * 4) } : { w: w };
     });
     var ghost = out.filter(function (g) { return g && g.w === 'ghost'; });   // last of all, whenever it was drawn
     return out.filter(function (g) { return !g || g.w !== 'ghost'; }).concat(ghost);
