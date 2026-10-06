@@ -83,7 +83,7 @@ button.sun{background:var(--sun); font-size:17px; padding:9px 20px 10px}
       what.appendChild(b); what.appendChild(d);
       (s[2] || [undefined]).forEach(function (arg, n, all) {
         var btn = document.createElement('button');
-        btn.textContent = all.length === 1 ? 'Play' : s[0] === 'fit' ? ['Early', 'Half way', 'Last one'][n] : arg + ' shapes';
+        btn.textContent = all.length === 1 ? 'Play' : s[0] === 'fit' ? ['Early', 'Half way', 'Last one'][n] : s[0] === 'fuse' ? arg + (arg === 1 ? ' second' : ' seconds') : arg + ' shapes';
         btn.addEventListener('click', function () { play(s[0], arg, li); });
         box.appendChild(btn);
       });

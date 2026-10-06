@@ -47,3 +47,50 @@ var PackmanFaces = [
     wear: [['path', 'wear thin', { d: 'M-0.18 0.014Q-0.13 0.042 -0.08 0.014' }],
            ['path', 'fringe', { d: 'M-0.23 -0.17Q0 -0.25 0.26 -0.19L0.265 0.03L0.21 -0.02L0.16 0.04L0.1 -0.01L0.05 0.02L0 -0.07L-0.07 -0.13L-0.15 -0.17Z' }]] }
 ];
+
+// The powers of chapter three. Each is a face like those above, with a power: the name game.js
+// knows it by. tip is the one line shown in the game while it is picked up; does is the longer
+// account on the page that introduces them. They are dealt by power, never as a plain personality.
+var PackmanPowers = [
+  { power: 'mine', voice: 'mine', name: 'Mine', color: '#2A2438', ink: '#F1ECFF', idle: 'M-0.06 0.13Q0 0.1 0.06 0.13',
+    tip: 'Mine: put it down where it fits within five seconds, or boom.',
+    does: 'Its fuse burns for five seconds from the moment you pick it up. Put it down somewhere it fits and the fuse goes out. Otherwise it blows, and tosses out everything it touches.',
+    wear: [['path', 'wear', { d: 'M-0.2 -0.165L-0.08 -0.13M0.2 -0.165L0.08 -0.13' }],
+           ['path', 'fuse', { d: 'M0 -0.2Q0.01 -0.265 0.07 -0.268' }],
+           ['path', 'spark', { d: 'M0.1 -0.325L0.117 -0.287L0.155 -0.27L0.117 -0.253L0.1 -0.215L0.083 -0.253L0.045 -0.27L0.083 -0.287Z' }]] },
+  { power: 'angel', voice: 'angel', name: 'Angel', color: '#FFFDF4', eye: 0.001, still: true, stare: true, idle: 'M-0.06 0.09Q0 0.14 0.06 0.09',
+    tip: 'Angel: in its right place it turns to stone, and places two more.',
+    does: 'Put it exactly where it belongs and it turns to stone for the rest of the level, and puts two more shapes where they belong. It only turns up in the harder levels.',
+    wear: [['path', 'wing', { d: 'M-0.24 -0.03Q-0.33 -0.07 -0.31 0.05Q-0.3 0.12 -0.24 0.1ZM0.24 -0.03Q0.33 -0.07 0.31 0.05Q0.3 0.12 0.24 0.1Z' }],
+           ['path', 'wear', { d: 'M-0.18 -0.045Q-0.13 -0.095 -0.08 -0.045M0.08 -0.045Q0.13 -0.095 0.18 -0.045' }],
+           ['ellipse', 'halo', { cx: 0, cy: -0.215, rx: 0.12, ry: 0.038 }]] },
+  { power: 'ghost', voice: 'ghost', name: 'Ghost', color: '#D9CCFF', eye: 0.055, idle: 'M-0.034 0.135A0.034 0.04 0 1 0 0.034 0.135A0.034 0.04 0 1 0 -0.034 0.135',
+    tip: 'Ghost: one shape too many. It has to share a space with one other.',
+    does: 'It is one shape more than the box has room for. It fits only by lying over one other shape, and only one.',
+    wear: [['ellipse', 'shine', { cx: -0.19, cy: -0.19, rx: 0.06, ry: 0.025, transform: 'rotate(-25 -0.19 -0.19)' }]] },
+  { power: 'sticky', voice: 'sticky', name: 'Sticky', color: '#FFB52E', idle: 'M-0.09 0.08Q0 0.17 0.09 0.08',
+    tip: 'Sticky: glues to what it touches and rides along. Pick it up to peel it off.',
+    does: 'In the box it glues itself to the nearest shape it touches, and goes wherever that one goes. Pick it up to peel it off.',
+    wear: [['rect', 'honey', { x: -0.25, y: -0.285, width: 0.5, height: 0.095, rx: 0.04 }], ['rect', 'honey', { x: -0.03, y: -0.23, width: 0.06, height: 0.15, rx: 0.03 }],
+           ['rect', 'honey', { x: 0.15, y: -0.23, width: 0.055, height: 0.1, rx: 0.027 }], ['rect', 'honey', { x: -0.21, y: -0.23, width: 0.05, height: 0.075, rx: 0.025 }]] },
+  { power: 'puffer', voice: 'puffer', name: 'Puffer', color: '#45D9E6', eye: 0.056, idle: 'M-0.034 0.135A0.034 0.04 0 1 0 0.034 0.135A0.034 0.04 0 1 0 -0.034 0.135',
+    tip: 'Puffer: squash it and it puffs up, shoving its neighbours away.',
+    does: 'Put anything down on top of it, or it on top of anything, and it puffs up and shoves the lot away.',
+    wear: [['circle', 'blush', { cx: -0.23, cy: 0.05, r: 0.055 }], ['circle', 'blush', { cx: 0.23, cy: 0.05, r: 0.055 }],
+           ['path', 'spike', { d: 'M-0.12 -0.2L-0.14 -0.26M0 -0.21V-0.275M0.12 -0.2L0.14 -0.26M-0.27 -0.1L-0.32 -0.13M0.27 -0.1L0.32 -0.13' }]] },
+  { power: 'chameleon', voice: 'chameleon', name: 'Chameleon', color: '#3DDBB4', eye: 0.001, still: true, stare: true, idle: 'M-0.06 0.1Q0 0.14 0.06 0.1',
+    tip: 'Chameleon: a different shape each time you pick it up.',
+    does: 'It changes shape, and colour, each time you pick it up. Only one of its shapes fits. Put it down, pick something else up, and come back to change it again.',
+    wear: [['circle', 'white', { cx: -0.13, cy: -0.06, r: 0.07 }], ['circle', 'white', { cx: 0.13, cy: -0.06, r: 0.07 }],
+           ['circle', 'eye', { cx: -0.155, cy: -0.08, r: 0.03 }], ['circle', 'eye', { cx: 0.155, cy: -0.04, r: 0.03 }],
+           ['path', 'wear thin', { d: 'M0.17 0.14Q0.27 0.12 0.25 0.2Q0.23 0.26 0.18 0.22Q0.16 0.19 0.2 0.18' }]] },
+  { power: 'sleeper', voice: 'sleeper', name: 'Sleeper', color: '#9B7BFF', still: true, eye: 0.036, eyeY: -0.045, idle: 'M-0.03 0.11A0.03 0.035 0 1 0 0.03 0.11A0.03 0.035 0 1 0 -0.03 0.11',
+    tip: 'Sleeper: it will not turn inside the box. Take it out to turn it.',
+    does: 'Inside the box it falls asleep and cannot be turned. Carry it out, turn it, and bring it back.',
+    wear: [['path', 'wear', { d: 'M-0.185 -0.078H-0.075M0.075 -0.078H0.185' }], ['path', 'zz', { d: 'M0.13 -0.2H0.2L0.13 -0.135H0.2M0.23 -0.275H0.275L0.23 -0.235H0.275' }]] },
+  { power: 'magnet', voice: 'magnet', name: 'Magnet', color: '#D5DAE3', eye: 0.05, idle: 'M-0.08 0.09Q0 0.16 0.08 0.09',
+    tip: 'Magnet: in the box it pulls nearby shapes up against it.',
+    does: 'In the box it pulls every shape near it, across any gap, until something stops it. Build outwards from the magnet.',
+    wear: [['rect', 'pole n', { x: -0.31, y: -0.12, width: 0.08, height: 0.2, rx: 0.02 }], ['rect', 'pole s', { x: 0.23, y: -0.12, width: 0.08, height: 0.2, rx: 0.02 }],
+           ['path', 'wear thin', { d: 'M-0.1 -0.2Q0 -0.27 0.1 -0.2M-0.06 -0.165Q0 -0.205 0.06 -0.165' }]] }
+];

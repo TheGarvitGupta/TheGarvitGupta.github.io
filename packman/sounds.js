@@ -25,6 +25,15 @@ var PackmanSounds = function (tone) {
     unlucky: function () { tone(640, 0.09, { to: 560, vol: 0.07 }); tone(560, 0.2, { at: 0.09, to: 270, vol: 0.07 }); },
     goof: function () { tone(311, 0.08, { type: 'square', to: 220, vol: 0.045 }); tone(415, 0.12, { at: 0.11, type: 'square', to: 277, vol: 0.045 }); },
     pirate: function () { tone(150, 0.3, { type: 'square', to: 112, vol: 0.05 }); tone(300, 0.3, { type: 'triangle', to: 224, vol: 0.07 }); },
+    // the powers of chapter three
+    mine: function () { tone(1700, 0.02, { type: 'square', vol: 0.05 }); tone(1700, 0.02, { at: 0.11, type: 'square', vol: 0.05 }); },
+    angel: function () { [1568, 2093, 2637].forEach(function (f, i) { tone(f, 0.3, { at: i * 0.07, vol: 0.045 }); }); },
+    ghost: function () { tone(420, 0.18, { to: 640, vol: 0.06 }); tone(640, 0.28, { at: 0.17, to: 370, vol: 0.06 }); },
+    sticky: function () { tone(180, 0.07, { type: 'triangle', to: 430, vol: 0.1 }); tone(430, 0.06, { at: 0.07, type: 'triangle', to: 150, vol: 0.1 }); },
+    puffer: function () { tone(320, 0.11, { type: 'triangle', to: 950, vol: 0.07 }); },
+    chameleon: function () { [660, 880, 740].forEach(function (f, i) { tone(f, 0.05, { at: i * 0.06, type: 'triangle', vol: 0.07 }); }); },
+    sleeper: function () { tone(115, 0.26, { type: 'triangle', to: 88, vol: 0.13 }); tone(720, 0.2, { at: 0.3, to: 930, vol: 0.03 }); },
+    magnet: function () { tone(110, 0.2, { type: 'square', vol: 0.035 }); tone(220, 0.2, { type: 'triangle', to: 330, vol: 0.08 }); },
     goth: function () { tone(392, 0.16, { type: 'triangle', vol: 0.08 }); tone(311, 0.16, { at: 0.15, type: 'triangle', vol: 0.08 }); tone(233, 0.45, { at: 0.3, type: 'triangle', vol: 0.08 }); }
   };
   return {
@@ -52,6 +61,21 @@ var PackmanSounds = function (tone) {
     arm: function () { tone(300, 0.07, { type: 'square', vol: 0.05 }); tone(300, 0.07, { at: 0.11, type: 'square', vol: 0.05 }); },
     open: function () { tone(420, 0.09, { to: 640, vol: 0.06 }); },
     close: function () { tone(520, 0.08, { to: 340, vol: 0.05 }); },
+    // what the powers do
+    fuse: function (left) { tone(left <= 1 ? 1900 : 1400, 0.03, { type: 'square', vol: 0.05 }); if (left <= 2) tone(left <= 1 ? 1900 : 1400, 0.03, { at: 0.16, type: 'square', vol: 0.05 }); },
+    boom: function () {
+      tone(150, 0.5, { type: 'square', to: 34, vol: 0.14 }); tone(95, 0.65, { type: 'triangle', to: 30, vol: 0.2 });
+      for (var k = 0; k < 8; k++) tone(500 + Math.random() * 2200, 0.05, { at: k * 0.03, type: 'square', vol: 0.04 });
+    },
+    fizz: function () { tone(1200, 0.16, { to: 300, vol: 0.05 }); },
+    bless: function () { [784, 988, 1175, 1568, 1976].forEach(function (f, i) { tone(f, i === 4 ? 0.6 : 0.3, { at: i * 0.09, vol: 0.07 }); }); },
+    stone: function () { tone(180, 0.12, { type: 'triangle', to: 90, vol: 0.14 }); },
+    glue: function () { tone(260, 0.08, { type: 'triangle', to: 520, vol: 0.09 }); tone(520, 0.1, { at: 0.08, type: 'triangle', to: 200, vol: 0.09 }); },
+    peel: function () { tone(300, 0.12, { type: 'triangle', to: 900, vol: 0.06 }); },
+    puff: function () { tone(200, 0.18, { to: 1000, vol: 0.1 }); tone(1000, 0.2, { at: 0.16, to: 500, vol: 0.05 }); },
+    morph: function () { [500, 750, 1000].forEach(function (f, i) { tone(f, 0.05, { at: i * 0.045, type: 'square', vol: 0.035 }); }); },
+    snore: function () { tone(100, 0.2, { type: 'triangle', to: 80, vol: 0.12 }); },
+    pull: function () { tone(520, 0.22, { type: 'triangle', to: 160, vol: 0.08 }); },
     // winning
     win: function () { [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone(f, 0.22, { at: i * 0.09, type: 'triangle', vol: 0.13 }); }); },
     best: function () { tone(1568, 0.16, { at: 0.5, type: 'triangle', vol: 0.11 }); tone(2093, 0.3, { at: 0.62, type: 'triangle', vol: 0.11 }); },
@@ -76,6 +100,10 @@ PackmanSounds.about = [
     ['eyeOn', 'Eyesight on'], ['eyeOff', 'Eyesight off'], ['chime', 'Eyesight is introduced']]],
   ['Buttons and sheets', [
     ['tap', 'Any button'], ['arm', 'Start over asks to be pressed again'], ['open', 'A sheet opens'], ['close', 'A sheet closes']]],
+  ['Powers', [
+    ['fuse', 'The mine counts down, faster at the end', [5, 2, 1]], ['boom', 'The mine goes off'], ['fizz', 'The mine is put down in time'],
+    ['bless', 'The angel places two shapes'], ['stone', 'Trying to move the angel once it is stone'], ['glue', 'Sticky glues on'], ['peel', 'Sticky is peeled off'],
+    ['puff', 'The puffer shoves its neighbours'], ['morph', 'The chameleon changes shape'], ['snore', 'Trying to turn the sleeper in the box'], ['pull', 'The magnet pulls a shape in']]],
   ['Winning', [
     ['win', 'A level is packed'], ['best', 'It beat your best time'], ['top', 'You are first on the leaderboard'], ['pop', 'Each firework in the last level\'s party'],
     ['fanfare', 'All seventeen packed']]]

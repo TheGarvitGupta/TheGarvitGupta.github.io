@@ -464,6 +464,6 @@ var PackmanGeom = (function () {
   return {
     H: H, EPS: EPS, SHAPES: SHAPES,
     verts: verts, overlap: overlap, makeContainer: makeContainer, excess: excess,
-    pointInside: pointInside, zone: zone, evaluate: evaluate, settle: settle, magnet: magnet, place: place, shake: shake, bounds: bounds
+    pointInside: pointInside, zone: zone, evaluate: evaluate, settle: settle, magnet: magnet, place: place, shake: shake, bounds: bounds, sweep: sweep
   };
 })();

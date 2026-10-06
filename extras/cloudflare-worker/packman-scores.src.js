@@ -105,7 +105,9 @@ async function submit(db, request) {
 	// every piece has to be moved at least once, and nobody does that in under half a second each
 	const n = level.pieces.length;
 	if (!isFinite(t) || !isFinite(m) || m < n || m > 100000 || t < n * 0.5 || t > 86400) return json({ error: "score" }, 400);
-	if (!packed(level, b.p)) return json({ error: "unpacked" }, 400);
+	// A level with powers is taken on trust: a ghost shares a space, and a chameleon is not
+	// always the shape the level lists, so the plain rules cannot judge where its shapes ended up.
+	if (!level.powers && !packed(level, b.p)) return json({ error: "unpacked" }, 400);
 	if (await tooMany(db, request)) return json({ error: "slow down" }, 429);
 
 	const now = Math.floor(Date.now() / 1000);

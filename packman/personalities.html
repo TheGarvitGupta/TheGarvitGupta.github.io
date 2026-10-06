@@ -18,12 +18,12 @@ body{margin:0; padding:28px 18px 56px; font-family:var(--f); color:#2B2140; back
 main{max-width:760px; margin:0 auto}
 h1{margin:0; font-size:34px; font-weight:700; line-height:1.1}
 .lead{margin:8px 0 0; font-size:16px; font-weight:500; line-height:1.4; color:var(--mut)}
-#cast{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; margin:22px 0 0; padding:0; list-style:none}
-#cast button{display:flex; flex-direction:column; align-items:center; width:100%; height:100%; padding:16px 10px 14px; font:inherit; color:inherit; text-align:center; background:var(--card); border:var(--bw) solid var(--ink); border-radius:20px; cursor:pointer; -webkit-tap-highlight-color:transparent}
-#cast button:hover{transform:translateY(-1px)} #cast button:active{transform:translateY(1px)}
-#cast svg{display:block; width:84px; height:84px; margin:0 auto 10px; overflow:visible}
-#cast b{display:block; font-size:17px; font-weight:600}
-#cast span{display:block; margin-top:2px; font-size:14px; font-weight:500; line-height:1.3; color:var(--mut)}
+.cast{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; margin:22px 0 0; padding:0; list-style:none}
+.cast button{display:flex; flex-direction:column; align-items:center; width:100%; height:100%; padding:16px 10px 14px; font:inherit; color:inherit; text-align:center; background:var(--card); border:var(--bw) solid var(--ink); border-radius:20px; cursor:pointer; -webkit-tap-highlight-color:transparent}
+.cast button:hover{transform:translateY(-1px)} .cast button:active{transform:translateY(1px)}
+.cast svg{display:block; width:84px; height:84px; margin:0 auto 10px; overflow:visible}
+.cast b{display:block; font-size:17px; font-weight:600}
+.cast span{display:block; margin-top:2px; font-size:14px; font-weight:500; line-height:1.3; color:var(--mut)}
 .fill{fill:var(--c); stroke:var(--ink); stroke-width:.03}
 .eye{fill:var(--face)}
 .mouth{fill:none; stroke:var(--face); stroke-width:.024; stroke-linecap:round}
@@ -38,8 +38,19 @@ h1{margin:0; font-size:34px; font-weight:700; line-height:1.1}
 .plaster{fill:#F7DDB8; stroke:var(--face); stroke-width:.018}
 .fringe{fill:#17121F; stroke:#17121F; stroke-width:.018; stroke-linejoin:round}
 .tooth{fill:#fff; stroke:var(--face); stroke-width:.018; stroke-linejoin:round}
+.fuse{fill:none; stroke:#C9BA98; stroke-width:.024; stroke-linecap:round}
+.spark{fill:#FFC93C; stroke:#FF6B2C; stroke-width:.012; stroke-linejoin:round}
+.wing{fill:#D6ECFF; stroke:var(--face); stroke-width:.018; stroke-linejoin:round}
+.halo{fill:none; stroke:#F2B91E; stroke-width:.03}
+.shine{fill:#fff; fill-opacity:.8} .p-ghost .fill{fill-opacity:.5}
+.honey{fill:#E8891A}
+.spike{fill:none; stroke:#1596A6; stroke-width:.028; stroke-linecap:round}
+.white{fill:#fff; stroke:var(--face); stroke-width:.018}
+.zz{fill:none; stroke:#fff; stroke-width:.024; stroke-linecap:round; stroke-linejoin:round}
+.pole{stroke:var(--face); stroke-width:.014} .pole.n{fill:#FF6B6B} .pole.s{fill:#4DA8FF}
+h2{margin:40px 0 0; font-size:26px; font-weight:700; line-height:1.1}
 .foot{margin-top:26px; font-size:14px; font-weight:500; color:var(--mut)} .foot a{color:inherit}
-@media (max-width:380px){ #cast{grid-template-columns:1fr 1fr; gap:10px} }
+@media (max-width:380px){ .cast{grid-template-columns:1fr 1fr; gap:10px} }
 @media (prefers-reduced-motion:reduce){ .on svg{animation:none} }
 </style>
 </head>
@@ -47,7 +58,10 @@ h1{margin:0; font-size:34px; font-weight:700; line-height:1.1}
 <main>
   <h1>Meet the shapes</h1>
   <p class="lead">Every shape in Packman is dealt a personality, and each has a voice. Tap one to hear it.</p>
-  <ul id="cast"></ul>
+  <ul id="cast" class="cast"></ul>
+  <h2>The powers</h2>
+  <p class="lead">In chapter three some shapes are dealt a power, different every time. Tap one to hear it.</p>
+  <ul id="powers" class="cast"></ul>
   <p class="foot"><a href="./">Back to Packman</a></p>
 </main>
 <script src="faces.js"></script>
@@ -85,7 +99,7 @@ h1{margin:0; font-size:34px; font-weight:700; line-height:1.1}
   }
   // a square block wearing the face, the way the game draws one
   function block(kit, color) {
-    var s = el('svg', '', { viewBox: '-0.56 -0.56 1.12 1.12', 'aria-hidden': 'true' });
+    var s = el('svg', kit.power ? 'p-' + kit.power : '', { viewBox: '-0.56 -0.56 1.12 1.12', 'aria-hidden': 'true' });
     s.style.setProperty('--c', kit.color || color);
     if (kit.ink) s.style.setProperty('--face', kit.ink);
     s.appendChild(el('rect', 'fill', { x: -0.5, y: -0.5, width: 1, height: 1, rx: 0.14 }));
@@ -95,11 +109,12 @@ h1{margin:0; font-size:34px; font-weight:700; line-height:1.1}
     (kit.wear || []).forEach(function (w) { s.appendChild(el(w[0], w[1], w[2])); });
     return s;
   }
-  var cast = document.getElementById('cast');
-  PackmanFaces.forEach(function (kit, n) {
+  [[PackmanFaces, 'cast'], [PackmanPowers, 'powers']].forEach(function (group) {
+  var cast = document.getElementById(group[1]);
+  group[0].forEach(function (kit, n) {
     var li = document.createElement('li'), btn = document.createElement('button'), b = document.createElement('b'), d = document.createElement('span'), off = 0;
     btn.type = 'button';
-    b.textContent = kit.name; d.textContent = kit.about;
+    b.textContent = kit.name; d.textContent = kit.about || kit.does;
     btn.appendChild(block(kit, COLORS[n % COLORS.length])); btn.appendChild(b); btn.appendChild(d);
     btn.addEventListener('click', function () {
       wake();
@@ -108,6 +123,7 @@ h1{margin:0; font-size:34px; font-weight:700; line-height:1.1}
       clearTimeout(off); off = setTimeout(function () { btn.classList.remove('on'); }, 650);
     });
     li.appendChild(btn); cast.appendChild(li);
+  });
   });
 })();
 </script>

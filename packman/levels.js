@@ -2,7 +2,9 @@
 // same units as the pieces (every piece has side 1). Each solution is one packed
 // [x, y, angle] per piece, in the order the pieces are listed. The levels run
 // from easiest to hardest; saved progress goes by name, so they can be reordered.
-// Bonus levels come last, after the seventeen, and are numbered on their own.
+// There are three chapters. The first is the seventeen; the second (bonus: true) brings
+// the brick and the hexagon; the third (powers: n) deals n of its shapes a power each time,
+// picked at random, and the angel only where angel: true. Each chapter is numbered on its own.
 var PackmanLevels = (function () {
   'use strict';
 
@@ -11,6 +13,9 @@ var PackmanLevels = (function () {
   function box(side) {
     var h = side / 2;
     return [[-h, -h], [h, -h], [h, h], [-h, h]];
+  }
+  function rect(w, h) {
+    return [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]];
   }
   function ngon(n, radius, startDeg) {
     var out = [];
@@ -265,6 +270,154 @@ var PackmanLevels = (function () {
       container: loosen(ngon(12, 1.9318517, 15), 1.004),
       pieces: pieces(6, 6, 0, 1),
       solution: [[1.183, 0.683, 30], [0, 1.366, 0], [-1.183, 0.683, 60], [-1.183, -0.683, 30], [0, -1.366, 0], [1.183, -0.683, 60], [1.5774, 0, 30], [0.7887, 1.366, 90], [-0.7887, 1.366, 30], [-1.5774, 0, 90], [-0.7887, -1.366, 30], [0.7887, -1.366, 90], [0, 0, 0]]
+    },
+    {
+      name: 'Warm Up',
+      powers: 1,
+      intro: 'Some shapes have powers now. Pick one up to see what it does.',
+      hint: 'The brick lies along one wall. The two squares sit side by side along the other.',
+      container: box(2.004),
+      pieces: pieces(2, 0, 1),
+      solution: [[-0.5, 0.5, 0], [0.5, 0.5, 0], [0, -0.5, 0]]
+    },
+    {
+      name: 'Boat',
+      powers: 1,
+      intro: 'Five triangles in a hull.',
+      hint: 'Three stand on the floor. The other two hang upside-down between them.',
+      container: loosen([[-1.5, H / 2], [1.5, H / 2], [1, -H / 2], [-1, -H / 2]], 1.004),
+      pieces: pieces(0, 5),
+      solution: [[-1, 0.1443, 0], [0, 0.1443, 0], [1, 0.1443, 0], [-0.5, -0.1443, 180], [0.5, -0.1443, 180]]
+    },
+    {
+      name: 'Shelf',
+      powers: 1,
+      intro: 'Two bricks, two squares, two rows.',
+      hint: 'Each row is one brick and one square. Put the squares at opposite ends.',
+      container: loosen(rect(3, 2), 1.002),
+      pieces: pieces(2, 0, 2),
+      solution: [[1, -0.5, 0], [-1, 0.5, 0], [-0.5, -0.5, 0], [0.5, 0.5, 0]]
+    },
+    {
+      name: 'Slant',
+      powers: 1,
+      intro: 'A leaning box, a hexagon and two triangles.',
+      hint: 'The hexagon goes in the middle and touches all four walls. A triangle fills each sharp corner.',
+      container: loosen([[-1.5, -H], [0.5, -H], [1.5, H], [-0.5, H]], 1.004),
+      pieces: pieces(0, 2, 0, 1),
+      solution: [[-1, -0.5774, 180], [1, 0.5774, 0], [0, 0, 0]]
+    },
+    {
+      name: 'Barge',
+      powers: 2,
+      intro: 'Two powers at once from here.',
+      hint: 'Push the hexagon into the top-left corner, flat against the ceiling and the floor. Two triangles fit beside it at the top, four along the floor.',
+      container: loosen([[-1, -H], [1, -H], [2, H], [-2, H]], 1.004),
+      pieces: pieces(0, 6, 0, 1),
+      scramble: true,
+      solution: [[0.5, -0.5774, 180], [1, -0.2887, 0], [-1.5, 0.5774, 0], [0.5, 0.5774, 0], [1, 0.2887, 180], [1.5, 0.5774, 0], [-0.5, 0, 0]]
+    },
+    {
+      name: 'Three by Three',
+      powers: 2,
+      intro: 'Three bricks and three squares.',
+      hint: 'Each row is one brick and one square, with the square at the other end from the row above.',
+      container: box(3.006),
+      pieces: pieces(3, 0, 3),
+      solution: [[1, -1, 0], [-1, 0, 0], [1, 1, 0], [-0.5, -1, 0], [0.5, 0, 0], [-0.5, 1, 0]]
+    },
+    {
+      name: 'Bungalow',
+      powers: 2,
+      intro: 'A house built of bricks, with a triangle roof.',
+      hint: 'The two bricks lie flat, one on the other, as the walls. Four triangles make the roof: three pointing up, one upside-down in the middle.',
+      container: loosen([[-1, roofY + 2], [1, roofY + 2], [1, roofY], [0, roofY - 2 * H], [-1, roofY]], 1.004),
+      pieces: pieces(0, 4, 2),
+      scramble: true,
+      solution: [[0, -1.2887, 0], [-0.5, -0.4226, 0], [0.5, -0.4226, 0], [0, -0.7113, 180], [0, 0.366, 0], [0, 1.366, 0]]
+    },
+    {
+      name: 'Long Lantern',
+      powers: 2,
+      intro: 'A brick and a square across the middle, and ten triangles round them.',
+      hint: 'The brick and the square make a row of three across the middle. Above them go five triangles: up, down, up, down, up. The same below, the other way up.',
+      container: loosen([[-1.5, -0.5], [-1, -0.5 - H], [1, -0.5 - H], [1.5, -0.5], [1.5, 0.5], [1, 0.5 + H], [-1, 0.5 + H], [-1.5, 0.5]], 1.004),
+      pieces: pieces(1, 10, 1),
+      scramble: true,
+      solution: [[1, 0, 0], [-1, -0.7887, 0], [0, -0.7887, 0], [1, -0.7887, 0], [-0.5, -1.0774, 180], [0.5, -1.0774, 180], [-1, 0.7887, 180], [0, 0.7887, 180], [1, 0.7887, 180], [-0.5, 1.0774, 0], [0.5, 1.0774, 0], [-0.5, 0, 0]]
+    },
+    {
+      name: 'Clover Patch',
+      powers: 2,
+      intro: 'Two hexagons and twelve triangles fill this hexagon exactly.',
+      hint: 'The two hexagons meet at the centre point and each reaches out to a wall, leaving room for a third. Six triangles make that third one, like a pizza. The other six go in pairs in the three empty corners.',
+      container: loosen(ngon(6, 2, 0), 1.004),
+      pieces: pieces(0, 12, 0, 2),
+      scramble: true,
+      solution: [[-1.5, 0.2887, 180], [-1.5, -0.2887, 0], [0.5, 1.4434, 0], [1, 1.1547, 180], [0.5, -1.4434, 180], [1, -1.1547, 0], [1.5, 0.2887, 300], [1, 0.5774, 0], [0.5, 0.2887, 60], [0.5, -0.2887, 120], [1, -0.5774, 180], [1.5, -0.2887, 240], [-0.5, 0.866, 0], [-0.5, -0.866, 0]]
+    },
+    {
+      name: 'Pantry',
+      powers: 3,
+      angel: true,
+      intro: 'Three powers at once, and from here an angel may turn up.',
+      hint: 'Stand one brick on end against the right-hand wall, in the bottom corner. Two bricks lie along the top. Two more lie in the middle of the rows below, with a square to their left.',
+      container: loosen(rect(4, 3), 1.002),
+      pieces: pieces(2, 0, 5),
+      solution: [[-1.5, 0, 0], [-1.5, 1, 0], [-1, -1, 0], [1, -1, 0], [0, 0, 0], [0, 1, 0], [1.5, 0.5, 90]]
+    },
+    {
+      name: 'Summit',
+      powers: 3,
+      angel: true,
+      intro: 'A big triangle: one hexagon and ten small triangles.',
+      hint: 'The hexagon sits high, touching both sloping walls, with one triangle above it at the peak. A triangle goes in the gap on each side of it, and seven run along the floor: up, down, up, down, up, down, up.',
+      container: loosen([[0, -2 * H / 3], [0.5, H / 3], [-0.5, H / 3]], 4.016),
+      pieces: pieces(0, 10, 0, 1),
+      scramble: true,
+      solution: [[0, -1.7321, 0], [-1, 0, 0], [1, 0, 0], [-1.5, 0.866, 0], [-0.5, 0.866, 0], [0.5, 0.866, 0], [1.5, 0.866, 0], [-1, 0.5774, 180], [0, 0.5774, 180], [1, 0.5774, 180], [0, -0.5774, 0]]
+    },
+    {
+      name: 'Crate',
+      powers: 3,
+      angel: true,
+      intro: 'Six bricks and four squares, four rows deep.',
+      hint: 'The first and third rows are two bricks end to end. The second and fourth are a brick in the middle with a square at each end.',
+      container: box(4.006),
+      pieces: pieces(4, 0, 6),
+      solution: [[-1.5, -0.5, 0], [1.5, -0.5, 0], [-1.5, 1.5, 0], [1.5, 1.5, 0], [-1, -1.5, 0], [1, -1.5, 0], [0, -0.5, 0], [-1, 0.5, 0], [1, 0.5, 0], [0, 1.5, 0]]
+    },
+    {
+      name: 'Tall Lantern',
+      powers: 3,
+      angel: true,
+      intro: 'A lantern two rows deep: a brick, two squares and six triangles.',
+      hint: 'The brick and the two squares make a block of two rows in the middle. Three triangles cap it at the top and three at the bottom: point, flip, point.',
+      container: loosen([[-1, -1], [-0.5, -1 - H], [0.5, -1 - H], [1, -1], [1, 1], [0.5, 1 + H], [-0.5, 1 + H], [-1, 1]], 1.004),
+      pieces: pieces(2, 6, 1),
+      scramble: true,
+      solution: [[-0.5, 0.5, 0], [0.5, 0.5, 0], [-0.5, -1.2887, 0], [0.5, -1.2887, 0], [0, -1.5774, 180], [-0.5, 1.2887, 180], [0.5, 1.2887, 180], [0, 1.5774, 0], [0, -0.5, 0]]
+    },
+    {
+      name: 'Corona',
+      powers: 3,
+      angel: true,
+      intro: 'One hexagon, and a ring of eighteen triangles round it.',
+      hint: 'The hexagon goes dead centre. Every triangle in the ring points either straight up or straight down, and they alternate all the way round.',
+      container: loosen(ngon(6, 2, 0), 1.004),
+      pieces: pieces(0, 18, 0, 1),
+      scramble: true,
+      solution: [[-1, -1.1547, 0], [-0.5, -1.4434, 180], [0, -1.1547, 0], [0.5, -1.4434, 180], [1, -1.1547, 0], [-1.5, -0.2887, 0], [-1, -0.5774, 180], [1, -0.5774, 180], [1.5, -0.2887, 0], [-1.5, 0.2887, 180], [-1, 0.5774, 0], [1, 0.5774, 0], [1.5, 0.2887, 180], [-1, 1.1547, 180], [-0.5, 1.4434, 0], [0, 1.1547, 180], [0.5, 1.4434, 0], [1, 1.1547, 180], [0, 0, 0]]
+    },
+    {
+      name: 'Tight Bricks',
+      powers: 3,
+      angel: true,
+      intro: 'Ten Tight again, with two of its pairs welded into bricks. And powers.',
+      hint: 'A brick lies along the top wall from the left corner, with a square under its end. The other brick lies along the bottom wall from the right corner, with a square on top of its end. A square goes in each of the other two corners, and the last two turn 45° and run down the diagonal.',
+      container: box(3.713),
+      pieces: pieces(6, 0, 2),
+      solution: [[-1.3565, -0.3565, 0], [1.3565, 0.3565, 0], [1.3565, -1.3565, 0], [-1.3565, 1.3565, 0], [-0.2071, 0.2012, 45], [0.5, -0.5059, 45], [-0.8565, -1.3565, 0], [0.8565, 1.3565, 0]]
     }
   ];
 })();
