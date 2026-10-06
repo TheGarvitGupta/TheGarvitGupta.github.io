@@ -53,11 +53,12 @@ var PackmanFaces = [
 // account on the page that introduces them. They are dealt by power, never as a plain personality.
 var PackmanPowers = [
   { power: 'mine', voice: 'mine', name: 'Mine', color: '#2A2438', ink: '#F1ECFF', idle: 'M-0.06 0.13Q0 0.1 0.06 0.13',
-    tip: 'Mine: put it down where it fits within five seconds, or boom.',
-    does: 'Its fuse burns for five seconds from the moment you pick it up. Put it down somewhere it fits and the fuse goes out. Otherwise it blows, and tosses out everything it touches.',
+    tip: 'Mine: put it down where it fits within three seconds, or boom.',
+    does: 'Its fuse burns for three seconds from the moment you pick it up. Put it down somewhere it fits and the fuse goes out. Otherwise it blows, and tosses out everything it touches.',
     wear: [['path', 'wear', { d: 'M-0.2 -0.165L-0.08 -0.13M0.2 -0.165L0.08 -0.13' }],
-           ['path', 'fuse', { d: 'M0 -0.2Q0.01 -0.265 0.07 -0.268' }],
-           ['path', 'spark', { d: 'M0.1 -0.325L0.117 -0.287L0.155 -0.27L0.117 -0.253L0.1 -0.215L0.083 -0.253L0.045 -0.27L0.083 -0.287Z' }]] },
+           // the fuse, from the mine out to its tip, where the spark sits; game.js shortens it as it burns
+           ['path', 'fuse', { d: 'M-0.02 -0.19Q-0.02 -0.3 0.06 -0.3Q0.13 -0.3 0.16 -0.25', pathLength: 1 }],
+           ['path', 'spark', { d: 'M0 -0.055L0.017 -0.017L0.055 0L0.017 0.017L0 0.055L-0.017 0.017L-0.055 0L-0.017 -0.017Z', transform: 'translate(0.16 -0.25)' }]] },
   { power: 'angel', voice: 'angel', name: 'Angel', color: '#FFFDF4', eye: 0.001, still: true, stare: true, idle: 'M-0.06 0.09Q0 0.14 0.06 0.09',
     tip: 'Angel: in its right place it turns to stone, and places two more.',
     does: 'Put it exactly where it belongs and it turns to stone for the rest of the level, and puts two more shapes where they belong. It only turns up in the harder levels.',

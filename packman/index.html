@@ -55,24 +55,20 @@ body.powers{
 }
 body.powers .bin-fill{stroke:#FFC93C}
 /* The powers dealt to this level: a row of them under the title, each a button that opens the sheet saying what they all do. */
-#powers-bar{display:flex; flex-wrap:wrap; align-items:center; gap:7px; flex:none; margin-top:8px}
+#powers-bar{position:relative; display:flex; flex-wrap:wrap; align-items:center; gap:7px; flex:none; margin-top:8px}
 #powers-bar::before{content:"Powers"; margin-right:2px; font-size:12.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--mut)}
 .pwc{display:flex; align-items:center; gap:7px; padding:3px 12px 3px 4px; font-weight:600; font-size:14.5px; color:var(--text); background:var(--card);
   border:var(--bw) solid var(--ink); border-radius:999px; transition:transform .12s var(--pop)}
 .pwc:hover{transform:translateY(-2px)} .pwc:active{transform:translateY(1px)}
 .pwc .avatar{width:26px; height:26px; --u:.043}
 .pwc.on{background:var(--sun); color:#2B2140}
-.pw{list-style:none; margin:14px 0 4px; padding:0; text-align:left}
-.pw li{display:flex; align-items:center; gap:13px; padding:10px 10px; border-radius:16px}
-.pw li + li{margin-top:2px}
-.pw li.on{background:var(--wash)}
-.pw .avatar{width:58px; height:58px; --u:.0193}
-.pw b{display:block; font-size:18px; font-weight:700}
-.pw span{display:block; margin-top:1px; font-size:14.5px; font-weight:500; line-height:1.32; color:var(--mut)}
-.pw em{display:inline-block; margin-left:7px; padding:1px 8px 2px; font-size:11.5px; font-weight:700; font-style:normal; letter-spacing:.05em; text-transform:uppercase; vertical-align:2px; color:#2B2140; background:var(--sun); border-radius:999px}
+/* what the power in hand does: one line in a small note hung under the row, over the top of the board, so nothing moves when it comes and goes */
+#power-note{position:absolute; left:0; top:calc(100% + 6px); z-index:4; max-width:min(100%, 430px); margin:0; padding:5px 12px 6px; font-size:13.5px; font-weight:500; line-height:1.3;
+  color:var(--text); background:var(--card); border:var(--bw) solid var(--ink); border-radius:13px; pointer-events:none}
+#power-note b{font-weight:700}
 .avatar.p-ghost .fill{fill-opacity:.5}
 .avatar .zz{visibility:visible}
-@media (max-width:460px){ #powers-bar::before{display:none} .pwc{font-size:13.5px; padding-right:10px} .pw .avatar{width:48px; height:48px; --u:.0233} }
+@media (max-width:460px){ #powers-bar::before{display:none} .pwc{font-size:13.5px; padding-right:10px} #power-note{font-size:13px} }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html,body{height:100%; margin:0}
 *{touch-action:none}
@@ -548,7 +544,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     <div class="meter"><div id="pips" aria-hidden="true"></div><div id="stats"><span id="count" class="unseen" aria-live="polite"></span><span id="clock">0:00</span></div><div id="best" hidden></div></div>
   </section>
 
-  <div id="powers-bar" hidden></div>
+  <div id="powers-bar" hidden><p id="power-note" hidden></p></div>
 
   <main id="stage">
     <svg id="board" role="application" aria-label="Puzzle board">
@@ -616,7 +612,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · <a href="personalities.html">Meet the shapes</a> · v2.16</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · <a href="personalities.html">Meet the shapes</a> · v2.17</span></div>
   </div>
 </div>
 
@@ -627,15 +623,6 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     <p class="fact" id="hint-fact"></p>
     <div class="row"><button class="btn plain" id="hint-spot">Show a spot<span class="badge" id="spots">3</span></button><button class="btn go" data-close>Got it</button></div>
     <p class="note" id="hint-wait" hidden></p>
-  </div>
-</div>
-
-<div class="sheet" id="m-powers" role="dialog" aria-modal="true" aria-labelledby="powers-h">
-  <div class="card">
-    <h2 id="powers-h">Powers in this box</h2>
-    <p class="sub">Dealt at random each time. Tap a power under the title to see this again.</p>
-    <ul class="pw" id="powers-list"></ul>
-    <button class="btn go" data-close>Got it</button>
   </div>
 </div>
 
@@ -685,11 +672,11 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=2.16"></script>
-<script src="levels.js?v=2.16"></script>
-<script src="faces.js?v=2.16"></script>
-<script src="sounds.js?v=2.16"></script>
-<script src="game.js?v=2.16"></script>
+<script src="geom.js?v=2.17"></script>
+<script src="levels.js?v=2.17"></script>
+<script src="faces.js?v=2.17"></script>
+<script src="sounds.js?v=2.17"></script>
+<script src="game.js?v=2.17"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

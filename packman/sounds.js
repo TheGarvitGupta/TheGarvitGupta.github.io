@@ -101,7 +101,7 @@ PackmanSounds.about = [
   ['Buttons and sheets', [
     ['tap', 'Any button'], ['arm', 'Start over asks to be pressed again'], ['open', 'A sheet opens'], ['close', 'A sheet closes']]],
   ['Powers', [
-    ['fuse', 'The mine counts down, faster at the end', [5, 2, 1]], ['boom', 'The mine goes off'], ['fizz', 'The mine is put down in time'],
+    ['fuse', 'The mine counts down, faster at the end', [3, 2, 1]], ['boom', 'The mine goes off'], ['fizz', 'The mine is put down in time'],
     ['bless', 'The angel places two shapes'], ['stone', 'Trying to move the angel once it is stone'], ['glue', 'Sticky glues on'], ['peel', 'Sticky is peeled off'],
     ['puff', 'The puffer shoves its neighbours'], ['morph', 'The chameleon changes shape'], ['snore', 'Trying to turn the sleeper in the box'], ['pull', 'The magnet pulls a shape in']]],
   ['Winning', [

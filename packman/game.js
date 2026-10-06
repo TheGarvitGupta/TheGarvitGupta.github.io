@@ -550,10 +550,7 @@
     sel = i;
     if (i >= 0) { pieces[i].el.classList.add('sel'); layer.appendChild(pieces[i].el); }
     showAngle(); placeHandle();
-    if (lv && lv.powers) {
-      $('lv-intro').textContent = i >= 0 && pieces[i].power ? pieces[i].kit.tip : lv.intro;   // what the one in hand does
-      Array.prototype.forEach.call($('powers-bar').children, function (c) { c.classList.toggle('on', i >= 0 && c.dataset.w === pieces[i].power); });
-    }
+    if (lv && lv.powers) notePower(i >= 0 ? pieces[i].power || null : null);   // what the one in hand does
   }
 
   var snored = 0;
@@ -1024,49 +1021,31 @@
     return out.filter(function (g) { return !g || g.w !== 'ghost'; }).concat(ghost);
   }
 
-  // The powers in this deal are set out in a row under the title: each one's face and name,
-  // on a button that opens a sheet saying what they all do. The sheet opens by itself the
-  // first time a power is met, and never again for that power.
-  var powersTimer = 0;
+  // The powers in this deal are set out in a row under the title: each one's face and name.
+  // What one does is said in a small note under the row: for the shape in hand, or for
+  // whichever of the row is tapped. Tap it again, or put the shape down, and the note goes.
   function dealt() { return pieces.filter(function (p) { return p.power; }).map(function (p) { return p.power; }); }
   function listPowers() {
-    var bar = $('powers-bar'), mine = lv.powers ? dealt() : [];
-    clearTimeout(powersTimer);
-    bar.textContent = ''; bar.hidden = !mine.length;
+    var bar = $('powers-bar'), note = $('power-note'), mine = lv.powers ? dealt() : [];
+    Array.prototype.slice.call(bar.querySelectorAll('.pwc')).forEach(function (b) { bar.removeChild(b); });
+    bar.hidden = !mine.length; notePower(null);
     mine.forEach(function (w) {
       var b = document.createElement('button'), kit = POWERS[w];
       b.className = 'pwc'; b.dataset.w = w;
       b.setAttribute('aria-label', kit.name + ': what it does');
       b.appendChild(portrait(kit, kit.color, 'p-' + w)); b.appendChild(document.createTextNode(kit.name));
-      b.addEventListener('click', function () { showPowers(w); });
-      bar.appendChild(b);
+      b.addEventListener('click', function () { notePower(b.classList.contains('on') ? null : w); });
+      bar.insertBefore(b, note);
     });
-    save.met = save.met || {};
-    if (mine.some(function (w) { return !save.met[w]; })) powersTimer = setTimeout(meetPowers, 700);
   }
-  function meetPowers() {
-    clearTimeout(powersTimer);
-    if (won || !lv.powers) return;
-    if (document.querySelector('.sheet.open') || coachOn) { powersTimer = setTimeout(meetPowers, 500); return; }   // wait for whatever is up to be put away
-    showPowers();
-  }
-  // which: the one that was asked about, picked out in the list
-  function showPowers(which) {
-    var list = $('powers-list'), fresh = false;
-    list.textContent = '';
-    dealt().forEach(function (w) {
-      var kit = POWERS[w], li = document.createElement('li'), box = document.createElement('div'), b = document.createElement('b'), d = document.createElement('span');
-      b.textContent = kit.name; d.textContent = kit.does;
-      if (!save.met[w]) { var tag = document.createElement('em'); tag.textContent = 'New'; b.appendChild(tag); fresh = true; }
-      if (w === which) li.className = 'on';
-      box.appendChild(b); box.appendChild(d);
-      li.appendChild(portrait(kit, kit.color, 'p-' + w)); li.appendChild(box);
-      list.appendChild(li);
-      save.met[w] = 1;
-    });
-    persist();
-    $('powers-h').textContent = fresh ? 'New powers' : 'Powers in this box';
-    openSheet($('m-powers'));
+  function notePower(w) {
+    var note = $('power-note'), kit = w && POWERS[w];
+    Array.prototype.forEach.call($('powers-bar').querySelectorAll('.pwc'), function (c) { c.classList.toggle('on', c.dataset.w === w); });
+    note.hidden = !kit;
+    if (!kit) return;
+    var at = kit.tip.indexOf(':'), b = document.createElement('b');
+    note.textContent = ''; b.textContent = kit.tip.slice(0, at);
+    note.appendChild(b); note.appendChild(document.createTextNode(kit.tip.slice(at + 1)));
   }
 
   function pose(p) { return [p.x, p.y, p.angle]; }
@@ -1122,9 +1101,18 @@
     render(i);
     sfx.morph();
   }
-  // the mine's fuse: lit when it is picked up, and five seconds long
-  function light(p) { p.fuse = 5000; p.shown = 5; p.el.classList.add('lit'); p.badge.textContent = 5; sfx.fuse(5); }
-  function quench(p) { p.fuse = 0; p.el.classList.remove('lit'); p.badge.textContent = ''; }
+  // the mine's fuse: lit when it is picked up, and three seconds long
+  var FUSE = 3000;
+  function light(p) { p.fuse = FUSE; p.shown = FUSE / 1000; p.el.classList.add('lit'); p.badge.textContent = p.shown; sfx.fuse(p.shown); burn(p); }
+  function quench(p) { p.fuse = 0; p.el.classList.remove('lit'); p.badge.textContent = ''; burn(p); }
+  // The fuse is drawn as long as it has left to burn, with the spark at its end: whole when it is not lit.
+  function burn(p) {
+    var line = p.el.querySelector('.fuse'), spark = p.el.querySelector('.spark'), left = p.fuse > 0 ? p.fuse / FUSE : 1;
+    var at = line.getPointAtLength(line.getTotalLength() * left);
+    line.setAttribute('stroke-dasharray', left.toFixed(3) + ' 1');
+    spark.setAttribute('transform', 'translate(' + at.x.toFixed(4) + ' ' + at.y.toFixed(4) + ')');
+    repaint(p);
+  }
 
   // Shapes that move by themselves: from where each was, to where it now is, over ms.
   // Nothing can be picked up meanwhile.
@@ -1292,6 +1280,7 @@
       if (!(p.fuse > 0) || shaking) return;
       p.fuse -= 100;
       if (p.fuse <= 0) { boom(i); return; }
+      burn(p);
       var left = Math.ceil(p.fuse / 1000);
       if (left !== p.shown) { p.shown = left; p.badge.textContent = left; sfx.fuse(left); }
     });
