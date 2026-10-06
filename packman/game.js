@@ -360,6 +360,11 @@
     $('seams').appendChild(p.under);
     body.appendChild(safe); body.appendChild(fill); body.appendChild(back); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
+    if (p.power === 'chameleon') {   // a cross over its head, for when it is sitting in the box in a shape that is not its own
+      var no = el('text', 'count no');
+      no.setAttribute('y', -(TOP[p.type] + 0.14)); no.setAttribute('text-anchor', 'middle'); no.textContent = '\u2717';
+      pop.appendChild(no);
+    }
     if (p.power === 'mine') {   // the seconds left on its fuse, over its head
       p.badge = el('text', 'count');
       p.badge.setAttribute('y', -(TOP[p.type] + 0.14)); p.badge.setAttribute('text-anchor', 'middle');
@@ -478,6 +483,11 @@
       p.el.classList.toggle('good', s.good);
       p.el.classList.toggle('bad', s.zone === 'edge' || s.hit);
       if (p.power === 'sleeper') p.el.classList.toggle('asleep', asleep(p));
+      if (p.power === 'chameleon') {   // in the box and in nobody's way, but not in its real shape: it is marked, and the card says why it does not count
+        p.fake = !!p.form && s.zone === 'in' && !s.hit;
+        p.el.classList.toggle('fake', p.fake);
+        if (i === sel && !drag) notePower('chameleon', p.fake ? 'It fits, but this is not its real shape, so it does not count. Pick it up again to change it.' : '');
+      }
       // The ghost sharing a space as it should goes clearer and lies over whatever it shares with; that one gives up its face.
       var shared = !!spared && (spared[0] === i || spared[1] === i) && ev.states[spared[0]].good && ev.states[spared[1]].good;
       p.el.classList.toggle('haunted', shared && p.power !== 'ghost');
@@ -1039,15 +1049,17 @@
 
   // While a shape with a power is in hand, a card at the top of the board says what it does: the power's face, its name, and one line.
   var noted = null;
-  function notePower(w) {
-    var note = $('power-note'), kit = w && POWERS[w];
-    if ((w || null) === noted) return;
-    noted = w || null;
+  // say: something else for the card to say than what the power does (for the chameleon, put down in the wrong shape)
+  function notePower(w, say) {
+    var note = $('power-note'), kit = w && POWERS[w], key = w ? w + '|' + (say || '') : null;
+    if (key === noted) return;
+    noted = key;
     note.hidden = !kit;
     if (!kit) return;
     var at = kit.tip.indexOf(':'), box = document.createElement('div'), b = document.createElement('b'), d = document.createElement('span'), rest = kit.tip.slice(at + 1).trim();
-    b.textContent = kit.name; d.textContent = rest.charAt(0).toUpperCase() + rest.slice(1);
+    b.textContent = kit.name; d.textContent = say || rest.charAt(0).toUpperCase() + rest.slice(1);
     box.appendChild(b); box.appendChild(d);
+    note.classList.toggle('warn', !!say);
     note.textContent = ''; note.appendChild(portrait(kit, kit.color, 'p-' + w)); note.appendChild(box);
     note.style.animation = 'none'; void note.offsetWidth; note.style.animation = '';   // it hops in afresh for each power
   }

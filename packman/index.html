@@ -302,6 +302,8 @@ button{font:inherit; color:inherit; cursor:pointer}
 .fringe{fill:#17121F; stroke:#17121F; stroke-width:calc(1.5px * var(--u)); stroke-linejoin:round}
 /* the powers of chapter three: what each one wears, and how it shows the state it is in */
 .count{font:700 .4px var(--f); fill:#FF4A1C; stroke:#fff; stroke-width:.07px; paint-order:stroke; pointer-events:none}
+.count.no{visibility:hidden} .piece.fake .count.no{visibility:visible}
+#power-note.warn{background:#FF8A70}
 .fuse{fill:none; stroke:#C9BA98; stroke-width:calc(2px * var(--u)); stroke-linecap:round}
 .spark{fill:#FFC93C; stroke:#FF6B2C; stroke-width:calc(1px * var(--u)); stroke-linejoin:round}
 .piece.lit .spark{animation:flick .24s steps(2) infinite}
@@ -633,7 +635,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · <a href="personalities.html">Meet the shapes</a> · v2.37</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · <a href="personalities.html">Meet the shapes</a> · v2.38</span></div>
   </div>
 </div>
 
@@ -693,11 +695,11 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=2.37"></script>
-<script src="levels.js?v=2.37"></script>
-<script src="faces.js?v=2.37"></script>
-<script src="sounds.js?v=2.37"></script>
-<script src="game.js?v=2.37"></script>
+<script src="geom.js?v=2.38"></script>
+<script src="levels.js?v=2.38"></script>
+<script src="faces.js?v=2.38"></script>
+<script src="sounds.js?v=2.38"></script>
+<script src="game.js?v=2.38"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
