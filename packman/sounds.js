@@ -67,8 +67,10 @@ var PackmanSounds = function (tone) {
       for (var k = 0; k < 8; k++) tone(500 + Math.random() * 2200, 0.05, { at: k * 0.03, type: 'square', vol: 0.04 });
     },
     fizz: function () { tone(1200, 0.16, { to: 300, vol: 0.05 }); },
-    glue: function () { tone(260, 0.08, { type: 'triangle', to: 520, vol: 0.09 }); tone(520, 0.1, { at: 0.08, type: 'triangle', to: 200, vol: 0.09 }); },
-    peel: function () { tone(300, 0.12, { type: 'triangle', to: 900, vol: 0.06 }); },
+    // sticking: a wet squelch, down and settling
+    glue: function () { tone(520, 0.1, { type: 'triangle', to: 150, vol: 0.16 }); tone(240, 0.07, { at: 0.08, type: 'square', to: 110, vol: 0.06 }); tone(150, 0.12, { at: 0.14, to: 95, vol: 0.14 }); },
+    // coming unstuck: a quick tearing rip, and a pop at the end of it
+    peel: function () { for (var k = 0; k < 5; k++) tone(260 + k * 120, 0.022, { at: k * 0.024, type: 'square', vol: 0.05 }); tone(700, 0.09, { at: 0.13, to: 1500, vol: 0.13 }); },
     puff: function () { tone(200, 0.18, { to: 1000, vol: 0.1 }); tone(1000, 0.2, { at: 0.16, to: 500, vol: 0.05 }); },
     morph: function () { [500, 750, 1000].forEach(function (f, i) { tone(f, 0.05, { at: i * 0.045, type: 'square', vol: 0.035 }); }); },
     snore: function () { tone(100, 0.2, { type: 'triangle', to: 80, vol: 0.12 }); },

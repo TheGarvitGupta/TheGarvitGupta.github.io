@@ -5,6 +5,8 @@
 //
 // GET  /api/packman              the top ten: most levels packed, then fewest moves, then least time
 // GET  /api/packman?pid=<id>     the same, with where that player stands
+// GET  /api/packman?top=100      up to a hundred rows in place of ten
+// DELETE /api/packman?pid=<id>   takes that player off the board
 // POST /api/packman              {level, pid, name, t, m, p} one win; p is where every piece ended up
 //
 // Deploy via the Cloudflare dashboard:
@@ -920,13 +922,14 @@ var PackmanLevels = (function () {
 const G = PackmanGeom, LEVELS = PackmanLevels;
 const BY_NAME = new Map(LEVELS.map((l) => [l.name, l]));
 const NAMES = LEVELS.map((l) => l.name);
-const TOP = 10;            // rows returned for a board
+const TOP = 10;            // rows returned for a board, unless more are asked for
+const MOST = 100;          // and the most that can be
 const PER_HOUR = 60;       // scores one address may send in an hour
 const BLOCKED = /fuck|shit|cunt|nigg|fag|bitch|whore|rape|nazi|hitler|porn|penis|vagina/i;
 
 const CORS = {
 	"Access-Control-Allow-Origin": "*",
-	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+	"Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
 	"Access-Control-Allow-Headers": "Content-Type",
 	"Content-Type": "application/json",
 };
@@ -976,8 +979,8 @@ const row = (r) => ({ name: r.name, n: r.n, m: r.m, t: Math.round(r.t * 10) / 10
 const TOTALS = `SELECT pid, MAX(name) AS name, COUNT(*) AS n, SUM(m) AS m, SUM(t) AS t FROM scores
 	WHERE level IN (${NAMES.map(() => "?").join(",")}) GROUP BY pid`;
 
-async function board(db, pid) {
-	const top = await db.prepare(`${TOTALS} ORDER BY n DESC, m, t LIMIT ${TOP}`).bind(...NAMES).all();
+async function board(db, pid, rows = TOP) {
+	const top = await db.prepare(`${TOTALS} ORDER BY n DESC, m, t LIMIT ${rows}`).bind(...NAMES).all();
 	const all = await db.prepare(`SELECT COUNT(*) AS c FROM (${TOTALS})`).bind(...NAMES).first();
 	const out = { top: top.results.map(row), of: all ? all.c : 0, levels: NAMES.length };
 	if (!pid) return out;
@@ -1042,10 +1045,17 @@ export default {
 		try {
 			await tables(db);
 			if (request.method === "POST") return await submit(db, request);
-			if (request.method !== "GET") return json({ error: "method" }, 405);
-			const pid = new URL(request.url).searchParams.get("pid") || "";
+			const query = new URL(request.url).searchParams, pid = query.get("pid") || "";
 			if (pid && !/^[A-Za-z0-9-]{16,48}$/.test(pid)) return json({ error: "pid" }, 400);
-			return json(await board(db, pid), 200, { "Cache-Control": pid ? "no-store" : "public, max-age=20" });
+			if (request.method === "DELETE") {
+				// A player takes their own line off the board. The id is the only key to it, and only their browser has it.
+				if (!pid) return json({ error: "pid" }, 400);
+				const gone = await db.prepare("DELETE FROM scores WHERE pid = ?").bind(pid).run();
+				return json({ gone: gone.meta ? gone.meta.changes : 0 });
+			}
+			if (request.method !== "GET") return json({ error: "method" }, 405);
+			const rows = Math.min(MOST, Math.max(1, Math.floor(Number(query.get("top")) || TOP)));
+			return json(await board(db, pid, rows), 200, { "Cache-Control": pid ? "no-store" : "public, max-age=20" });
 		} catch (err) {
 			return json({ error: "exception", detail: String(err) }, 500);
 		}

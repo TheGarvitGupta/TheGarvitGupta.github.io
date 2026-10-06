@@ -577,7 +577,7 @@
     if (!by || won) return;
     var p = pieces[i];
     if (asleep(p)) { var now = performance.now(); if (now - snored > 800) { snored = now; sfx.snore(); } return; }
-    if (p.power === 'sticky' && p.mate >= 0) unstick(i);   // turned by hand, it comes away
+    if (p.power === 'sticky' && p.mate >= 0 && unstick(i)) sfx.peel();   // turned by hand, it comes away
     startClock();
     p.angle += by;
     carry(i);
@@ -984,7 +984,7 @@
     e.preventDefault();
     if (dx || dy) {
       startClock();
-      if (p.power === 'sticky') unstick(sel);
+      if (p.power === 'sticky' && unstick(sel)) sfx.peel();
       p.x += dx; p.y += dy; keepInView(p);
       var S = lv.powers ? solid(p) : pieces;
       G.settle(S, S.indexOf(p), C);
@@ -1937,9 +1937,10 @@
     $('board-face').textContent = ''; $('board-face').appendChild(avatar(me));
     $('board-name').textContent = called();
     list.classList.add('wait');
-    ask(SCORES + '?pid=' + save.pid).then(function (d) {
+    ask(SCORES + '?pid=' + save.pid + '&top=100').then(function (d) {
       if (!d.top) throw 0;
-      ranks(list, d, 10);
+      ranks(list, d, 100);   // the first hundred, to scroll through
+      list.scrollTop = 0;
       note.textContent = standing(d);
     }).catch(function () {
       list.textContent = ''; note.textContent = 'The leaderboard is not available right now.';
@@ -2002,6 +2003,32 @@
   });
   $('b-board').addEventListener('click', showBoard);
   $('b-help').addEventListener('click', function () { openSheet($('m-help')); });
+
+  // Starting from nothing: everything this browser remembers of the game is forgotten, and the page is
+  // loaded afresh as for a new player. The leaderboard keeps the old scores, under an id nobody has any
+  // more. Unless the reset is confirmed with Command (or Control) and Shift held down, or, on a touch
+  // screen, by holding the button for three seconds: then this player's line is taken off the board
+  // first. Nothing on the sheet says so; it is for clearing one's own records out of other people's way.
+  var deep = false, deepTimer = 0;
+  function wipe(board) {
+    var go = function () {
+      try { localStorage.removeItem(STORE); } catch (e) {}
+      location.replace(location.pathname + '?reset=' + Date.now());   // a new address, so the browser cannot hand back the old page
+    };
+    wiped = true;
+    clearInterval(ticker); clearTimeout(shakeTimer); clearTimeout(partyTimer);
+    if (board && !LOCAL) fetch(SCORES + '?pid=' + save.pid, { method: 'DELETE' }).then(go, go); else go();
+  }
+  $('reset-ask').addEventListener('click', function () { closeSheet($('m-help')); deep = false; openSheet($('m-reset')); });
+  $('reset-go').addEventListener('pointerdown', function (e) {
+    deep = false; clearTimeout(deepTimer);
+    if (e.pointerType === 'touch') deepTimer = setTimeout(function () { deep = true; haptic(); }, 3000);
+  });
+  ['pointerleave', 'pointercancel'].forEach(function (n) { $('reset-go').addEventListener(n, function () { clearTimeout(deepTimer); deep = false; }); });
+  $('reset-go').addEventListener('click', function (e) {
+    clearTimeout(deepTimer);
+    wipe(deep || ((e.metaKey || e.ctrlKey) && e.shiftKey));
+  });
   var armed = 0;
   function disarm() { clearTimeout(armed); armed = 0; $('b-reset').classList.remove('sure'); }
   $('b-reset').addEventListener('click', function () {

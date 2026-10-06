@@ -19,6 +19,8 @@ head = """// Cloudflare Worker — the Packman leaderboard.
 //
 // GET  /api/packman              the top ten: most levels packed, then fewest moves, then least time
 // GET  /api/packman?pid=<id>     the same, with where that player stands
+// GET  /api/packman?top=100      up to a hundred rows in place of ten
+// DELETE /api/packman?pid=<id>   takes that player off the board
 // POST /api/packman              {level, pid, name, t, m, p} one win; p is where every piece ended up
 //
 // Deploy via the Cloudflare dashboard:
