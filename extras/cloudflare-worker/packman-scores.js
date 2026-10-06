@@ -811,7 +811,8 @@ var PackmanLevels = (function () {
     },
     {
       name: 'Windmill',
-      powers: 2,
+      powers: 1,
+      sure: ['sleeper'],
       intro: 'No more neat grids. Four triangles, and a box that looks one too small.',
       hint: 'A pinwheel. Each triangle lies with one side flat against a different wall, pushed along to one end of it, all four going the same way round.',
       container: box(1.584),
