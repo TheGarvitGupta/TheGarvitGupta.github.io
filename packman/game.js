@@ -1049,14 +1049,13 @@
   // While a shape with a power is in hand, a card in the strip above the board says what it does: the power's face, its name, and one line.
   var noted = null;
   // Which card is up, if any. When everything is packed but for a chameleon sitting in a shape
-  // that is not its own, the card tells that story, whatever is in hand. Otherwise it is for the
-  // shape in hand, if that has a power.
+  // that is not its own, the card tells that story, whatever is in hand: and that is the only time
+  // anything says a chameleon is in the wrong shape. Otherwise the card is for the shape in hand, if that has a power.
   var almost = false;
   function card() {
     if (!lv || !lv.powers) return;
     var p = sel >= 0 ? pieces[sel] : null;
     if (almost) notePower('chameleon', 'Everything fits, but the chameleon is fooling you: it is in disguise! Find its true shape, then pack it to finish.', 'So close!');
-    else if (p && p.power === 'chameleon' && p.fake && !drag) notePower('chameleon', 'It fits, but this is not its true shape, so it does not count. Pick it up again to change it.');
     else notePower(p ? p.power || null : null);
   }
   // say: something else for the card to say than what the power does; title: and to be headed, in place of the power's name
