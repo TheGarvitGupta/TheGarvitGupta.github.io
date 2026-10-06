@@ -1176,14 +1176,53 @@
       return Math.hypot(a[0] + ex * u - x, a[1] + ey * u - y) <= r;
     });
   }
-  // The magnet's reach, drawn round it as a ring that fades: when it is put down, and whenever it pulls.
-  var REACH = 1.6;
-  function field(m) {
-    var ring = el('circle', 'field');
-    ring.setAttribute('cx', m.x); ring.setAttribute('cy', m.y); ring.setAttribute('r', REACH);
-    board.insertBefore(ring, layer);
-    setTimeout(function () { if (ring.parentNode) ring.parentNode.removeChild(ring); }, 900);
+  // The magnet is only a magnet in the hand. While it is held (carried, or turned by its knob), waves
+  // stand round it out to its reach, and every shape inside them is drawn towards it, a little at a time,
+  // until something stops it. Put the magnet down and it lets go of everything.
+  var REACH = 1.6, waves = null, tugged = false;
+  function attract() {
+    var i = -1;
+    if (lv && lv.powers && drag && !won && !shaking) pieces.forEach(function (p, k) { if (p.power === 'magnet' && (drag.mode === 'move' ? drag.i : sel) === k) i = k; });
+    if (i < 0) { if (waves) { waves.parentNode.removeChild(waves); waves = null; tugged = false; } return; }
+    var m = pieces[i], any = false;
+    if (!waves) {
+      waves = el('g', 'waves');
+      [0.45, 0.72, 1].forEach(function (k, n) { var c = el('circle', 'wave w' + n); c.setAttribute('r', REACH * k); waves.appendChild(c); });
+      board.insertBefore(waves, layer);
+    }
+    waves.setAttribute('transform', 'translate(' + m.x.toFixed(4) + ' ' + m.y.toFixed(4) + ')');
+    pieces.map(function (q, j) { return j; }).filter(function (j) {
+      var q = pieces[j];
+      return j !== i && q.power !== 'ghost' && !(q.power === 'sticky' && q.mate >= 0) && reaches(G.verts(q), m.x, m.y, REACH);   // any part of it inside the waves
+    }).sort(function (a, b) {
+      return Math.hypot(pieces[a].x - m.x, pieces[a].y - m.y) - Math.hypot(pieces[b].x - m.x, pieces[b].y - m.y);   // the nearest first, so those behind close up after it
+    }).forEach(function (j) {
+      var q = pieces[j], dx = m.x - q.x, dy = m.y - q.y, d = Math.hypot(dx, dy), A = G.verts(q), t = Infinity;
+      if (d < 1e-6) return;
+      dx /= d; dy /= d;
+      // What it is resting against must not hold it back unless it is being pulled into it: a shape
+      // snapped to a neighbour touches it, and a touch counts as a stop whichever way it is going.
+      // So the way is felt out with the shape drawn a hair small, and then it backs off until it is clear.
+      var slim = grown(G.makeContainer(A), -0.012), stops = [];
+      pieces.forEach(function (b, k) { if (k !== j && b.power !== 'ghost' && !(b.power === 'sticky' && b.mate === j)) stops.push(G.verts(b)); });
+      stops.forEach(function (B) { t = Math.min(t, G.sweep(slim, B, dx, dy)); });
+      t = Math.min(t, d, 0.07);   // so far each time, which is a steady slide and no jump
+      var clash = function (by) {
+        var V = A.map(function (v) { return [v[0] + dx * by, v[1] + dy * by]; });
+        return stops.some(function (B) { var o = G.overlap(V, B); return o && o.depth > G.EPS; });
+      };
+      if (clash(0)) return;   // already in something's way: it is not pulled deeper
+      if (clash(t)) {
+        for (var lo = 0, hi = t, n = 0; n < 16; n++) { var mid = (lo + hi) / 2; if (clash(mid)) hi = mid; else lo = mid; }
+        t = lo;
+      }
+      if (t < 0.004) return;
+      q.x += dx * t; q.y += dy * t; keepInView(q); carry(j); render(j);
+      any = true;
+    });
+    if (any) { if (!tugged) { tugged = true; sfx.pull(); } judge(); }
   }
+  setInterval(attract, 40);
   // the puffer, puffing
   function swell(p) {
     if (calm) return;
@@ -1198,7 +1237,7 @@
   }
 
   // A shape has been put down, or turned. The powers have their say, in this order: the
-  // puffer, the magnet, then Sticky, then the mine's fuse. If any shape is moved
+  // puffer, then Sticky, then the mine's fuse. If any shape is moved
   // by them this returns true, and the move is judged once they have all come to rest.
   function react() {
     var from = pieces.map(pose), noise = {}, ev = evaluate();
@@ -1219,46 +1258,6 @@
         any = true;
       });
       if (any) { noise.puff = 1; swell(p); }
-    });
-
-    // The magnet, wherever it is, pulls every shape within its reach straight towards it, in
-    // the box or out of it, until something stops it. One already up against something does not move.
-    pieces.forEach(function (m, i) {
-      if (m.power !== 'magnet') return;
-      if (i === sel) field(m);   // just put down: its reach shows for a moment
-      pieces.map(function (q, j) { return j; }).filter(function (j) {
-        var q = pieces[j];
-        return j !== i && q.power !== 'ghost' && !(q.power === 'sticky' && q.mate >= 0) && reaches(G.verts(q), m.x, m.y, REACH);   // any part of it inside the ring
-      }).sort(function (a, b) {
-        return Math.hypot(pieces[a].x - m.x, pieces[a].y - m.y) - Math.hypot(pieces[b].x - m.x, pieces[b].y - m.y);   // the nearest first, so those behind close up after it
-      }).forEach(function (j) {
-        var q = pieces[j], dx = m.x - q.x, dy = m.y - q.y, d = Math.hypot(dx, dy), A = G.verts(q), t = Infinity;
-        if (d < 1e-6) return;
-        dx /= d; dy /= d;
-        // What it is resting against must not hold it back unless it is being pulled into it: a shape
-        // snapped to a neighbour touches it, and a touch counts as a stop whichever way it is going.
-        // So the way is felt out with the shape drawn a hair small, and then it backs off until it is clear.
-        var slim = grown(G.makeContainer(A), -0.012), stops = [];
-        pieces.forEach(function (b, k) { if (k !== j && b.power !== 'ghost' && !(b.power === 'sticky' && b.mate === j)) stops.push(G.verts(b)); });
-        stops.forEach(function (B) { t = Math.min(t, G.sweep(slim, B, dx, dy)); });
-        if (t === Infinity) return;
-        t = Math.min(t, d);
-        var clash = function (by) {
-          var V = A.map(function (v) { return [v[0] + dx * by, v[1] + dy * by]; });
-          return stops.some(function (B) { var o = G.overlap(V, B); return o && o.depth > G.EPS; });
-        };
-        // It may have gone a little too far, into what stopped it: by more, the more glancing the meeting.
-        // So the furthest it can go and still be clear is found by halving, between where it is and there.
-        if (clash(0)) return;   // already in something's way: it is not pulled deeper
-        if (clash(t)) {
-          for (var lo = 0, hi = t, n = 0; n < 24; n++) { var mid = (lo + hi) / 2; if (clash(mid)) hi = mid; else lo = mid; }
-          t = lo;
-        }
-        if (t < 0.03) return;
-        q.x += dx * t; q.y += dy * t; carry(j);
-        if (!noise.pull) field(m);
-        noise.pull = 1;
-      });
     });
 
     var moved = pieces.some(function (p, i) { return p.x !== from[i][0] || p.y !== from[i][1] || p.angle !== from[i][2]; });

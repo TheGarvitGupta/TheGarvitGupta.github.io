@@ -95,8 +95,8 @@ var PackmanPowers = [
            ['path', 'zz z1', { d: 'M0.1 -0.17H0.145L0.1 -0.125H0.145' }], ['path', 'zz z2', { d: 'M0.165 -0.25H0.225L0.165 -0.19H0.225' }],
            ['path', 'zz z3', { d: 'M0.2 -0.335H0.275L0.2 -0.265H0.275' }]] },
   { power: 'magnet', voice: 'magnet', name: 'Magnet', color: '#D5DAE3', eye: 0.05, idle: 'M-0.08 0.09Q0 0.16 0.08 0.09',
-    tip: 'Magnet: wherever it is, it pulls nearby shapes up against it.',
-    does: 'Wherever it is put down, every shape within its ring slides towards it until something stops it, even ones waiting outside the box. Build outwards from the magnet.',
+    tip: 'Magnet: while you hold it, it drags every shape nearby towards it. Put it down and it lets go.',
+    does: 'It is only a magnet while you are holding it. Waves stand round it, and every shape inside them slides towards it until something stops it. Put it down and it is an ordinary shape again.',
     wear: [['rect', 'pole n', { x: -0.31, y: -0.12, width: 0.08, height: 0.2, rx: 0.02 }], ['rect', 'pole s', { x: 0.23, y: -0.12, width: 0.08, height: 0.2, rx: 0.02 }],
            ['path', 'wear thin', { d: 'M-0.1 -0.2Q0 -0.27 0.1 -0.2M-0.06 -0.165Q0 -0.205 0.06 -0.165' }]] }
 ];
