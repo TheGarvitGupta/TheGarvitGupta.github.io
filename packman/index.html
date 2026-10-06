@@ -54,21 +54,19 @@ body.powers{
   background-size:53px 47px, 131px 113px, 29px 31px; background-position:0 0, 40px 60px, 13px 17px;
 }
 body.powers .bin-fill{stroke:#FFC93C}
-/* The powers dealt to this level: a row of them under the title, each a button that opens the sheet saying what they all do. */
-#powers-bar{position:relative; display:flex; flex-wrap:wrap; align-items:center; gap:7px; flex:none; margin-top:8px}
-#powers-bar::before{content:"Powers"; margin-right:2px; font-size:12.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--mut)}
-.pwc{display:flex; align-items:center; gap:7px; padding:3px 12px 3px 4px; font-weight:600; font-size:14.5px; color:var(--text); background:var(--card);
-  border:var(--bw) solid var(--ink); border-radius:999px; transition:transform .12s var(--pop)}
-.pwc:hover{transform:translateY(-2px)} .pwc:active{transform:translateY(1px)}
-.pwc .avatar{width:26px; height:26px; --u:.043}
-.pwc.on{background:var(--sun); color:#2B2140}
-/* what the power in hand does: one line in a small note hung under the row, over the top of the board, so nothing moves when it comes and goes */
-#power-note{position:absolute; left:0; top:calc(100% + 6px); z-index:4; max-width:min(100%, 430px); margin:0; padding:5px 12px 6px; font-size:13.5px; font-weight:500; line-height:1.3;
-  color:var(--text); background:var(--card); border:var(--bw) solid var(--ink); border-radius:13px; pointer-events:none}
-#power-note b{font-weight:700}
-.avatar.p-ghost .fill{fill-opacity:.5}
+/* What the power in hand does: its face, its name and one line, on a gold card at the top of the board.
+   It lies over the board, so nothing moves when it comes and goes. */
+#power-note{position:absolute; left:50%; top:4px; z-index:4; display:flex; align-items:center; gap:11px; width:max-content; max-width:min(calc(100% - 12px), 520px); padding:7px 16px 8px 9px;
+  color:#2B2140; background:var(--sun); border:var(--bw) solid var(--ink); border-radius:18px; box-shadow:0 5px 0 rgba(13,10,23,.28); pointer-events:none;
+  transform:translateX(-50%); animation:note .32s var(--pop) both}
+@keyframes note{from{transform:translateX(-50%) translateY(-14px) scale(.9); opacity:0}}
+#power-note .avatar{width:44px; height:44px; --u:.0254}
+#power-note b{display:block; font-size:18px; font-weight:700; line-height:1.15}
+#power-note span{display:block; font-size:14.5px; font-weight:500; line-height:1.25}
+@media (prefers-reduced-motion:reduce){ #power-note{animation:none} }
+.avatar.p-ghost .fill{fill-opacity:.88}
 .avatar .zz,.avatar .snooze,.avatar .yawn,.avatar .drool{visibility:visible} .avatar .lid,.avatar.p-sleeper .eye,.avatar.p-sleeper .mouth{visibility:hidden}
-@media (max-width:460px){ #powers-bar::before{display:none} .pwc{font-size:13.5px; padding-right:10px} #power-note{font-size:13px} }
+@media (max-width:460px){ #power-note{gap:9px; padding:6px 12px 7px 7px} #power-note .avatar{width:38px; height:38px; --u:.0295} #power-note b{font-size:16.5px} #power-note span{font-size:13.5px} }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html,body{height:100%; margin:0}
 *{touch-action:none}
@@ -307,7 +305,16 @@ button{font:inherit; color:inherit; cursor:pointer}
 .halo{fill:none; stroke:#F2B91E; stroke-width:calc(2.6px * var(--u))}
 .piece.stone{cursor:not-allowed} .piece.stone .halo{stroke:#8E8AA0} .piece.stone .wing{fill:#CFCCDA}
 .shine{fill:#fff; fill-opacity:.8}
-.piece.p-ghost .fill{fill-opacity:.5} .piece.p-ghost .back{visibility:hidden}
+/* the ghost: see-through, with a dashed edge; clearer still once it is sharing a space as it should */
+.piece.p-ghost .fill{fill-opacity:.88; stroke-dasharray:calc(6px * var(--u)) calc(4px * var(--u))} .piece.p-ghost .back{visibility:hidden}
+.piece.p-ghost.haunt .fill{fill-opacity:.45}
+/* the shape it is lying over keeps its colour and gives up its face, so only the ghost's shows */
+.piece.haunted .face,.piece.haunted .back{visibility:hidden}
+/* Under eyesight the ghost is no block of colour, since it takes up no room of its own: only a dashed outline, so it can still be found and moved. */
+#board.eyes .seam.ghostly,#board.eyes .piece.p-ghost .safe{visibility:hidden}
+#board.eyes .piece.p-ghost .fill{stroke:#17213F; stroke-width:calc(2px * var(--u)); stroke-dasharray:calc(6px * var(--u)) calc(4px * var(--u))}
+.boo{fill:var(--face)} .piece.good .boo{visibility:hidden}
+.hem{fill:none; stroke:#fff; stroke-width:calc(2px * var(--u)); stroke-linecap:round; stroke-linejoin:round}
 .honey{fill:#E8891A}
 .piece.glued .fill{stroke:#B85C00}
 .spike{fill:none; stroke:#1596A6; stroke-width:calc(2.4px * var(--u)); stroke-linecap:round}
@@ -325,6 +332,8 @@ button{font:inherit; color:inherit; cursor:pointer}
 @keyframes zz{0%,10%{opacity:0} 30%,70%{opacity:1} 95%,100%{opacity:0}}
 @keyframes drool{50%{fill-opacity:.45}}
 @media (prefers-reduced-motion:reduce){ .piece.asleep .zz,.piece.asleep .drool{animation:none} }
+.field{fill:rgba(77,168,255,.1); stroke:#4DA8FF; stroke-width:calc(2px * var(--u)); stroke-dasharray:calc(6px * var(--u)) calc(6px * var(--u)); pointer-events:none; animation:fieldout .9s ease-out both}
+@keyframes fieldout{to{opacity:0}}
 .pole{stroke:var(--face); stroke-width:calc(1.2px * var(--u))} .pole.n{fill:#FF6B6B} .pole.s{fill:#4DA8FF}
 .tooth{fill:#fff; stroke:var(--face); stroke-width:calc(1.5px * var(--u)); stroke-linejoin:round}
 
@@ -555,8 +564,6 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     <div class="meter"><div id="pips" aria-hidden="true"></div><div id="stats"><span id="count" class="unseen" aria-live="polite"></span><span id="clock">0:00</span></div><div id="best" hidden></div></div>
   </section>
 
-  <div id="powers-bar" hidden><p id="power-note" hidden></p></div>
-
   <main id="stage">
     <svg id="board" role="application" aria-label="Puzzle board">
       <g id="bin"><path class="bin-fill"/><path id="true-box"/></g>
@@ -570,6 +577,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </svg>
 
     <div id="bubble"></div>
+    <div id="power-note" hidden></div>
   </main>
 
   <footer class="dock idle" id="dock">
@@ -623,7 +631,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · <a href="personalities.html">Meet the shapes</a> · v2.19</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · <a href="personalities.html">Meet the shapes</a> · v2.23</span></div>
   </div>
 </div>
 
@@ -683,11 +691,11 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=2.19"></script>
-<script src="levels.js?v=2.19"></script>
-<script src="faces.js?v=2.19"></script>
-<script src="sounds.js?v=2.19"></script>
-<script src="game.js?v=2.19"></script>
+<script src="geom.js?v=2.23"></script>
+<script src="levels.js?v=2.23"></script>
+<script src="faces.js?v=2.23"></script>
+<script src="sounds.js?v=2.23"></script>
+<script src="game.js?v=2.23"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

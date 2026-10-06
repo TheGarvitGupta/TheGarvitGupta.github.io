@@ -356,6 +356,7 @@
     p.under = el('path', 'seam');
     p.under.setAttribute('d', loop(G.SHAPES[p.type]));
     p.under.style.fill = BLUES[p.blue];
+    if (p.power === 'ghost') p.under.setAttribute('class', 'seam ghostly');   // under eyesight the ghost is an outline, not a block
     $('seams').appendChild(p.under);
     body.appendChild(safe); body.appendChild(fill); body.appendChild(back); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
@@ -478,6 +479,13 @@
       p.el.classList.toggle('good', s.good);
       p.el.classList.toggle('bad', s.zone === 'edge' || s.hit);
       if (p.power === 'sleeper') p.el.classList.toggle('asleep', asleep(p));
+      // The ghost sharing a space as it should goes clearer and lies over whatever it shares with; that one gives up its face.
+      var shared = !!spared && (spared[0] === i || spared[1] === i) && ev.states[spared[0]].good && ev.states[spared[1]].good;
+      p.el.classList.toggle('haunted', shared && p.power !== 'ghost');
+      if (p.power === 'ghost') {
+        p.el.classList.toggle('haunt', shared);
+        if (i !== sel && !drag && p.el !== layer.lastChild && (sel < 0 || p.el.nextSibling !== pieces[sel].el)) layer.insertBefore(p.el, sel >= 0 ? pieces[sel].el : null);
+      }
       repaint(p);
       if (s.good && !p.good) {
         fitted = true;
@@ -809,11 +817,12 @@
       if (!inPlay[i]) return;
       var blue = BLUES[pieces[i].blue];
       C.walls.forEach(function (w) { fill(hits, 'hit', cut(A, w, true)); });
-      E[i].forEach(function (e) { boxEdges.forEach(function (f) { seal(e, f, blue); }); });
+      var airy = pieces[i].power === 'ghost';   // nothing is filled in round the ghost: it is not drawn as a block
+      if (!airy) E[i].forEach(function (e) { boxEdges.forEach(function (f) { seal(e, f, blue); }); });
       for (var j = i + 1; j < V.length; j++) {
         if (!inPlay[j] || Math.hypot(pieces[i].x - pieces[j].x, pieces[i].y - pieces[j].y) > 2.4) continue;
         if (!(spared && spared[0] === i && spared[1] === j)) fill(hits, 'hit', within(A, G.makeContainer(V[j]).walls));   // the ghost's one shared space is no overlap
-        E[i].forEach(function (e) { E[j].forEach(function (f) { seal(e, f, blue); }); });
+        if (!airy && pieces[j].power !== 'ghost') E[i].forEach(function (e) { E[j].forEach(function (f) { seal(e, f, blue); }); });
       }
     });
   }
@@ -1021,31 +1030,19 @@
     return out.filter(function (g) { return !g || g.w !== 'ghost'; }).concat(ghost);
   }
 
-  // The powers in this deal are set out in a row under the title: each one's face and name.
-  // What one does is said in a small note under the row: for the shape in hand, or for
-  // whichever of the row is tapped. Tap it again, or put the shape down, and the note goes.
-  function dealt() { return pieces.filter(function (p) { return p.power; }).map(function (p) { return p.power; }); }
-  function listPowers() {
-    var bar = $('powers-bar'), note = $('power-note'), mine = lv.powers ? dealt() : [];
-    Array.prototype.slice.call(bar.querySelectorAll('.pwc')).forEach(function (b) { bar.removeChild(b); });
-    bar.hidden = !mine.length; notePower(null);
-    mine.forEach(function (w) {
-      var b = document.createElement('button'), kit = POWERS[w];
-      b.className = 'pwc'; b.dataset.w = w;
-      b.setAttribute('aria-label', kit.name + ': what it does');
-      b.appendChild(portrait(kit, kit.color, 'p-' + w)); b.appendChild(document.createTextNode(kit.name));
-      b.addEventListener('click', function () { notePower(b.classList.contains('on') ? null : w); });
-      bar.insertBefore(b, note);
-    });
-  }
+  // While a shape with a power is in hand, a card at the top of the board says what it does: the power's face, its name, and one line.
+  var noted = null;
   function notePower(w) {
     var note = $('power-note'), kit = w && POWERS[w];
-    Array.prototype.forEach.call($('powers-bar').querySelectorAll('.pwc'), function (c) { c.classList.toggle('on', c.dataset.w === w); });
+    if ((w || null) === noted) return;
+    noted = w || null;
     note.hidden = !kit;
     if (!kit) return;
-    var at = kit.tip.indexOf(':'), b = document.createElement('b');
-    note.textContent = ''; b.textContent = kit.tip.slice(0, at);
-    note.appendChild(b); note.appendChild(document.createTextNode(kit.tip.slice(at + 1)));
+    var at = kit.tip.indexOf(':'), box = document.createElement('div'), b = document.createElement('b'), d = document.createElement('span'), rest = kit.tip.slice(at + 1).trim();
+    b.textContent = kit.name; d.textContent = rest.charAt(0).toUpperCase() + rest.slice(1);
+    box.appendChild(b); box.appendChild(d);
+    note.textContent = ''; note.appendChild(portrait(kit, kit.color, 'p-' + w)); note.appendChild(box);
+    note.style.animation = 'none'; void note.offsetWidth; note.style.animation = '';   // it hops in afresh for each power
   }
 
   function pose(p) { return [p.x, p.y, p.angle]; }
@@ -1134,6 +1131,14 @@
       placeHandle(); done();
     })(start);
   }
+  // The magnet's reach, drawn round it as a ring that fades: when it is put down, and whenever it pulls.
+  var REACH = 2;
+  function field(m) {
+    var ring = el('circle', 'field');
+    ring.setAttribute('cx', m.x); ring.setAttribute('cy', m.y); ring.setAttribute('r', REACH);
+    board.insertBefore(ring, layer);
+    setTimeout(function () { if (ring.parentNode) ring.parentNode.removeChild(ring); }, 900);
+  }
   // the puffer, puffing
   function swell(p) {
     if (calm) return;
@@ -1206,23 +1211,25 @@
       if (any) { noise.puff = 1; swell(p); }
     });
 
-    // The magnet, in the box, pulls every shape near it in the box straight towards it,
-    // until something stops it. One already up against something does not move.
+    // The magnet, wherever it is, pulls every shape within its reach straight towards it, in
+    // the box or out of it, until something stops it. One already up against something does not move.
     pieces.forEach(function (m, i) {
-      if (m.power !== 'magnet' || !G.pointInside(C, m.x, m.y)) return;
+      if (m.power !== 'magnet') return;
+      if (i === sel) field(m);   // just put down: its reach shows for a moment
       pieces.map(function (q, j) { return j; }).filter(function (j) {
         var q = pieces[j];
-        return j !== i && !q.frozen && q.power !== 'ghost' && !(q.power === 'sticky' && q.mate >= 0) && inPlay(q) && Math.hypot(q.x - m.x, q.y - m.y) <= 1.7;
+        return j !== i && !q.frozen && q.power !== 'ghost' && !(q.power === 'sticky' && q.mate >= 0) && Math.hypot(q.x - m.x, q.y - m.y) <= REACH;
       }).sort(function (a, b) {
         return Math.hypot(pieces[a].x - m.x, pieces[a].y - m.y) - Math.hypot(pieces[b].x - m.x, pieces[b].y - m.y);   // the nearest first, so those behind close up after it
       }).forEach(function (j) {
         var q = pieces[j], dx = m.x - q.x, dy = m.y - q.y, d = Math.hypot(dx, dy), A = G.verts(q), t = Infinity;
         if (d < 1e-6) return;
         dx /= d; dy /= d;
-        pieces.forEach(function (b, k) { if (k !== j && b.power !== 'ghost' && !(b.power === 'sticky' && b.mate === j) && inPlay(b)) t = Math.min(t, G.sweep(A, G.verts(b), dx, dy)); });
+        pieces.forEach(function (b, k) { if (k !== j && b.power !== 'ghost' && !(b.power === 'sticky' && b.mate === j)) t = Math.min(t, G.sweep(A, G.verts(b), dx, dy)); });
         if (t === Infinity || t < 0.03) return;
         t = Math.min(t, d) - 0.0005;
         q.x += dx * t; q.y += dy * t; carry(j);
+        if (!noise.pull) field(m);
         noise.pull = 1;
       });
     });
@@ -1353,7 +1360,7 @@
       $('clock').textContent = clock(carried);
     } else { scatter(); sfx.deal(pieces.length); }
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
-    listPowers();
+    notePower(null);
     judge(); showAngle(); placeHandle(); nag();
     lookForShake();
     if (i === EYE_LEVEL) {
