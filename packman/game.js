@@ -1714,13 +1714,13 @@
     s.addEventListener('click', function (e) { if (e.target === s || e.target.hasAttribute('data-close')) closeSheet(s); });
   });
 
-  // 'Show a spot' is on offer three times a level in any twenty-four hours. Each use is
-  // kept by its time, and comes back a day after it was spent.
-  var DAY = 864e5, waiter = 0;
+  // 'Show a spot' is on offer ten times a chapter in any twenty-four hours, to spend on whichever of
+  // its levels they are wanted. Each use is kept by its time, and comes back a day after it was spent.
+  var HINTS = 10, DAY = 864e5, waiter = 0;
   function spent() {
     save.hints = save.hints || {};
-    var now = Date.now(), used = (save.hints[lv.name] || []).filter(function (t) { return now - t < DAY && t <= now; });
-    save.hints[lv.name] = used;
+    var key = 'chapter ' + chap(lv), now = Date.now(), used = (save.hints[key] || []).filter(function (t) { return now - t < DAY && t <= now; });
+    save.hints[key] = used;
     return used;
   }
   // how long until the oldest one comes back: hours, then minutes inside the last hour, then seconds inside the last minute
@@ -1729,7 +1729,7 @@
     return n + (ms >= 36e5 ? ' hour' : ms >= 6e4 ? ' minute' : ' second') + (n === 1 ? '' : 's');
   }
   function showSpots() {
-    var used = spent(), left = Math.max(0, 3 - used.length);
+    var used = spent(), left = Math.max(0, HINTS - used.length);
     var none = !won && masked() && !pickSpot();   // nothing to show that would not unmask the chameleon
     $('hint-spot').disabled = !left || none;
     $('spots').textContent = left;
@@ -1959,10 +1959,10 @@
   $('chip').addEventListener('click', showLevels);
   $('b-hint').addEventListener('click', showHint);
   $('hint-spot').addEventListener('click', function () {
-    if (spent().length >= 3) return;
+    if (spent().length >= HINTS) return;
     var spot = pickSpot();
     if (!spot && masked()) return;   // nothing to show that would not unmask the chameleon; the hint is not used up
-    if (spot) { save.hints[lv.name].push(Date.now()); persist(); }   // three to a level, a day
+    if (spot) { spent().push(Date.now()); persist(); }   // ten to a chapter, a day
     closeSheet($('m-hint')); showGhost(spot);
     if (spot) sfx.spot();
   });
