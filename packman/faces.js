@@ -53,8 +53,8 @@ var PackmanFaces = [
 // account on the page that introduces them. They are dealt by power, never as a plain personality.
 var PackmanPowers = [
   { power: 'mine', voice: 'mine', name: 'Mine', color: '#2A2438', ink: '#F1ECFF', idle: 'M-0.06 0.13Q0 0.1 0.06 0.13',
-    tip: 'Mine: put it down where it fits within three seconds, or boom.',
-    does: 'Its fuse burns for three seconds from the moment you pick it up. Put it down somewhere it fits and the fuse goes out. Otherwise it blows, and tosses out everything it touches.',
+    tip: 'Mine: you have three seconds to put it down. Hold it any longer and boom.',
+    does: 'Its fuse burns while you hold it, and lasts three seconds. Put it down in time, anywhere, and it goes out. Hold on too long and it blows in your hand, tossing out everything it is touching.',
     wear: [['path', 'wear', { d: 'M-0.2 -0.165L-0.08 -0.13M0.2 -0.165L0.08 -0.13' }],
            // the fuse, from the mine out to its tip, where the spark sits; game.js shortens it as it burns
            ['path', 'fuse', { d: 'M-0.02 -0.19Q-0.02 -0.3 0.06 -0.3Q0.13 -0.3 0.16 -0.25', pathLength: 1 }],

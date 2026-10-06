@@ -1133,7 +1133,7 @@
     render(i);
     sfx.morph();
   }
-  // the mine's fuse: lit when it is picked up, and three seconds long
+  // the mine's fuse: lit when it is picked up, three seconds long, and out again the moment it is put down
   var FUSE = 3000;
   function light(p) { p.fuse = FUSE; p.shown = FUSE / 1000; p.el.classList.add('lit'); p.badge.textContent = p.shown; sfx.fuse(p.shown); burn(p); }
   function quench(p) { p.fuse = 0; p.el.classList.remove('lit'); p.badge.textContent = ''; burn(p); }
@@ -1304,14 +1304,13 @@
     burst(r.left + (from[i][0] - view.x) * view.scale, r.top + (from[i][1] - view.y) * view.scale, 36);
     glide(from, calm ? 0 : 420, function () { commit(true, true); });
   }
-  // The fuses burn while the level is being played: not behind a sheet, nor while shapes are flying.
+  // The fuses burn while a mine is held and the level is being played: not behind a sheet, nor while shapes are flying.
   setInterval(function () {
     if (!lv || !lv.powers || won || shaking || document.hidden || document.querySelector('.sheet.open')) return;
     pieces.forEach(function (p, i) {
       if (!(p.fuse > 0) || shaking) return;
-      // Out of hand and sitting where it fits, it goes out. This is looked at all the time, not only when it
-      // is put down after being moved: one that was only tapped where it sat was never judged, and blew.
-      if (p.good && !(drag && drag.i === i)) { quench(p); sfx.fizz(); return; }
+      // The fuse only burns in the hand. Let go of the mine, anywhere at all, and it goes out.
+      if (!(drag && drag.mode === 'move' && drag.i === i)) { if (p.fuse < FUSE - 400) sfx.fizz(); quench(p); return; }
       p.fuse -= 100;
       if (p.fuse <= 0) { boom(i); return; }
       burn(p);
