@@ -1379,9 +1379,24 @@
     clearTimeout(shakeTimer);
     shakeTimer = setTimeout(function () {
       if (won || drag || shaking) return;
-      if (lv.powers && pieces.some(function (p) { return p.power === 'ghost' || p.frozen; })) return;   // the shake knows nothing of shared spaces, or of stone
-      var to = evaluate().solved ? null : G.shake(pieces, C, 150);
-      if (to) shake(to);
+      if (evaluate().solved) return;
+      // The shake works on the shapes that take up room. The ghost is left out of it, and then
+      // goes along with the shape it is lying over; the box is only shaken if that leaves it packed too.
+      var real = pieces.filter(function (p) { return p.power !== 'ghost'; }), got = G.shake(real, C, 150);
+      if (!got) return;
+      var to = pieces.map(function (p) {
+        if (p.power !== 'ghost') return got[real.indexOf(p)];
+        var under = real.filter(function (q) { return q.type === p.type && Math.hypot(q.x - p.x, q.y - p.y) < 0.25 && Math.abs(off(q.angle, p.angle, p.type)) < 6; })[0];
+        return under ? { x: got[real.indexOf(under)].x, y: got[real.indexOf(under)].y, angle: p.angle + off(got[real.indexOf(under)].angle, p.angle, p.type) } : { x: p.x, y: p.y, angle: p.angle };
+      });
+      if (real.length < pieces.length) {
+        var was = pieces.map(pose);
+        pieces.forEach(function (p, i) { p.x = to[i].x; p.y = to[i].y; p.angle = to[i].angle; });
+        var fine = evaluate().solved;
+        pieces.forEach(function (p, i) { p.x = was[i][0]; p.y = was[i][1]; p.angle = was[i][2]; });
+        if (!fine) return;
+      }
+      shake(to);
     }, 220);
   }
 
