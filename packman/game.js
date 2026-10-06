@@ -472,10 +472,15 @@
   /* ---------- judging ---------- */
 
   function judge() {
-    var ev = evaluate(), pips = $('pips').children, fitted = false;
+    var ev = evaluate(), pips = $('pips').children, fitted = false, shown = ev.packed;
     pieces.forEach(function (p, i) {
       var s = ev.states[i];
-      p.el.classList.toggle('good', s.good);
+      // A chameleon gives nothing away until the box is packed: in its true shape or not, it does not smile,
+      // lights nothing in the row of shapes and makes no sound of fitting. Otherwise it could be tried in
+      // the empty box, one shape after another, to see which one it likes.
+      var hush = p.power === 'chameleon' && !ev.solved;
+      if (hush && s.good) shown--;
+      p.el.classList.toggle('good', s.good && !hush);
       p.el.classList.toggle('bad', s.zone === 'edge' || s.hit);
       if (p.power === 'sleeper') p.el.classList.toggle('asleep', asleep(p));
       if (p.power === 'chameleon') {   // in the box and in nobody's way, but not in its real shape: the card says why it does not count
@@ -489,13 +494,13 @@
         if (i !== sel && !drag && p.el !== layer.lastChild && (sel < 0 || p.el.nextSibling !== pieces[sel].el)) layer.insertBefore(p.el, sel >= 0 ? pieces[sel].el : null);
       }
       repaint(p);
-      if (s.good && !p.good) {
+      if (s.good && !p.good && !hush) {
         fitted = true;
       }
       p.good = s.good;
     });
-    for (var k = 0; k < pips.length; k++) pips[k].classList.toggle('on', k < ev.packed);
-    $('count').textContent = ev.packed + ' of ' + pieces.length + ' packed';
+    for (var k = 0; k < pips.length; k++) pips[k].classList.toggle('on', k < shown);
+    $('count').textContent = shown + ' of ' + pieces.length + ' packed';
     if (level === MAIN - 1) {
       var along = ev.packed / pieces.length * 100, track = $('prize-track');
       $('rail-fill').style.width = along + '%'; $('rail-run').style.setProperty('--at', along / 100);
@@ -526,7 +531,7 @@
     lookForShake();
     saveBoard();
     if (quiet) return;
-    if (ev.fitted) sfx.fit(ev.packed / pieces.length); else if (sel >= 0 && pieces[sel].el.classList.contains('bad')) sfx.bad(); else sfx.drop();
+    if (ev.fitted) sfx.fit(Math.max(ev.packed - (masked() ? 1 : 0), 0) / pieces.length); else if (sel >= 0 && pieces[sel].el.classList.contains('bad')) sfx.bad(); else sfx.drop();
   }
 
   function saveBoard() {
