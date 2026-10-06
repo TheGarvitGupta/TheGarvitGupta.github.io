@@ -1020,7 +1020,8 @@
     var pool = ['mine', 'ghost', 'sticky', 'chameleon', 'sleeper', 'magnet'].concat(lv.pieces.length >= 5 ? ['puffer'] : []);
     var asked = LOCAL && /[?&]powers=([a-z,]+)/.exec(location.search);   // on this machine, the ones named in the address
     var out = lv.pieces.map(function () { return 0; }), free = shuffled(out.map(function (z, n) { return n; }));
-    (asked ? asked[1].split(',') : shuffled(pool).slice(0, lv.powers)).forEach(function (w) {
+    var sure = lv.sure || [];   // the ones a level always has; the rest of its powers are drawn
+    (asked ? asked[1].split(',') : sure.concat(shuffled(pool.filter(function (w) { return sure.indexOf(w) < 0; })).slice(0, lv.powers - sure.length))).forEach(function (w) {
       if (!POWERS[w]) return;
       if (w === 'ghost') { out.push({ w: w, t: lv.pieces[Math.floor(Math.random() * lv.pieces.length)] }); return; }
       if (!free.length) return;
@@ -1335,7 +1336,12 @@
           pips.appendChild(pip);
         }
         p.power = g.w; p.kit = POWERS[g.w]; p.color = p.kit.color;
-        if (g.w === 'chameleon') { p.forms = g.o; p.form = g.n; p.tint = g.c; p.type = p.forms[p.form]; p.color = CHAM[(p.form + p.tint) % CHAM.length]; }
+        if (g.w === 'chameleon') {
+          p.forms = g.o; p.form = g.n; p.tint = g.c; p.type = p.forms[p.form]; p.color = CHAM[(p.form + p.tint) % CHAM.length];
+          // Nothing may say which shape is its own. Its place in the row of shapes would, so that is
+          // taken out, and a blank one with a question mark goes on the end.
+          var mark = pips.children[n]; mark.className = 'q'; pips.appendChild(mark);
+        }
         if (g.w === 'sticky') { p.mate = g.m == null ? -1 : g.m; p.rel = g.r || null; }
       });
     }

@@ -79,7 +79,7 @@ var PackmanPowers = [
            ['path', 'spike', { d: 'M-0.12 -0.2L-0.14 -0.26M0 -0.21V-0.275M0.12 -0.2L0.14 -0.26M-0.27 -0.1L-0.32 -0.13M0.27 -0.1L0.32 -0.13' }]] },
   { power: 'chameleon', voice: 'chameleon', name: 'Chameleon', color: '#3DDBB4', eye: 0.001, still: true, stare: true, idle: 'M-0.06 0.1Q0 0.14 0.06 0.1',
     tip: 'Chameleon: the next of four shapes each time you pick it up. Only its own shape counts.',
-    does: 'It goes round all four shapes, and a colour for each, changing every time you pick it up. It only counts as packed in its own shape: the one the level is short of, going by the row of shapes at the top right.',
+    does: 'It goes round all four shapes, and a colour for each, changing every time you pick it up. It only counts as packed in its own shape, and nothing says which that is. Try them.',
     wear: [['circle', 'white', { cx: -0.13, cy: -0.06, r: 0.07 }], ['circle', 'white', { cx: 0.13, cy: -0.06, r: 0.07 }],
            ['circle', 'eye', { cx: -0.155, cy: -0.08, r: 0.03 }], ['circle', 'eye', { cx: 0.155, cy: -0.04, r: 0.03 }],
            ['path', 'wear thin', { d: 'M0.17 0.14Q0.27 0.12 0.25 0.2Q0.23 0.26 0.18 0.22Q0.16 0.19 0.2 0.18' }]] },
