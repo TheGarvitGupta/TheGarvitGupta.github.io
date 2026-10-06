@@ -1303,6 +1303,9 @@
     if (!lv || !lv.powers || won || shaking || document.hidden || document.querySelector('.sheet.open')) return;
     pieces.forEach(function (p, i) {
       if (!(p.fuse > 0) || shaking) return;
+      // Out of hand and sitting where it fits, it goes out. This is looked at all the time, not only when it
+      // is put down after being moved: one that was only tapped where it sat was never judged, and blew.
+      if (p.good && !(drag && drag.i === i)) { quench(p); sfx.fizz(); return; }
       p.fuse -= 100;
       if (p.fuse <= 0) { boom(i); return; }
       burn(p);
