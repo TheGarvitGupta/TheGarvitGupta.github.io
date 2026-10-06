@@ -1131,6 +1131,13 @@
       placeHandle(); done();
     })(start);
   }
+  // does any part of an outline come within r of a point?
+  function reaches(V, x, y, r) {
+    return V.some(function (a, k) {
+      var b = V[(k + 1) % V.length], ex = b[0] - a[0], ey = b[1] - a[1], u = clamp(((x - a[0]) * ex + (y - a[1]) * ey) / (ex * ex + ey * ey), 0, 1);
+      return Math.hypot(a[0] + ex * u - x, a[1] + ey * u - y) <= r;
+    });
+  }
   // The magnet's reach, drawn round it as a ring that fades: when it is put down, and whenever it pulls.
   var REACH = 1.6;
   function field(m) {
@@ -1218,16 +1225,27 @@
       if (i === sel) field(m);   // just put down: its reach shows for a moment
       pieces.map(function (q, j) { return j; }).filter(function (j) {
         var q = pieces[j];
-        return j !== i && !q.frozen && q.power !== 'ghost' && !(q.power === 'sticky' && q.mate >= 0) && Math.hypot(q.x - m.x, q.y - m.y) <= REACH;
+        return j !== i && !q.frozen && q.power !== 'ghost' && !(q.power === 'sticky' && q.mate >= 0) && reaches(G.verts(q), m.x, m.y, REACH);   // any part of it inside the ring
       }).sort(function (a, b) {
         return Math.hypot(pieces[a].x - m.x, pieces[a].y - m.y) - Math.hypot(pieces[b].x - m.x, pieces[b].y - m.y);   // the nearest first, so those behind close up after it
       }).forEach(function (j) {
         var q = pieces[j], dx = m.x - q.x, dy = m.y - q.y, d = Math.hypot(dx, dy), A = G.verts(q), t = Infinity;
         if (d < 1e-6) return;
         dx /= d; dy /= d;
-        pieces.forEach(function (b, k) { if (k !== j && b.power !== 'ghost' && !(b.power === 'sticky' && b.mate === j)) t = Math.min(t, G.sweep(A, G.verts(b), dx, dy)); });
-        if (t === Infinity || t < 0.03) return;
-        t = Math.min(t, d) - 0.0005;
+        // What it is resting against must not hold it back unless it is being pulled into it: a shape
+        // snapped to a neighbour touches it, and a touch counts as a stop whichever way it is going.
+        // So the way is felt out with the shape drawn a hair small, and then it backs off until it is clear.
+        var slim = grown(G.makeContainer(A), -0.012), stops = [];
+        pieces.forEach(function (b, k) { if (k !== j && b.power !== 'ghost' && !(b.power === 'sticky' && b.mate === j)) stops.push(G.verts(b)); });
+        stops.forEach(function (B) { t = Math.min(t, G.sweep(slim, B, dx, dy)); });
+        if (t === Infinity) return;
+        t = Math.min(t, d);
+        var clash = function (by) {
+          var V = A.map(function (v) { return [v[0] + dx * by, v[1] + dy * by]; });
+          return stops.some(function (B) { var o = G.overlap(V, B); return o && o.depth > G.EPS; });
+        };
+        for (var back = 0; back < 30 && t > 0 && clash(t); back++) t -= 0.002;
+        if (t < 0.03) return;
         q.x += dx * t; q.y += dy * t; carry(j);
         if (!noise.pull) field(m);
         noise.pull = 1;
