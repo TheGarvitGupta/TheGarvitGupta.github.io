@@ -1244,7 +1244,13 @@
           var V = A.map(function (v) { return [v[0] + dx * by, v[1] + dy * by]; });
           return stops.some(function (B) { var o = G.overlap(V, B); return o && o.depth > G.EPS; });
         };
-        for (var back = 0; back < 30 && t > 0 && clash(t); back++) t -= 0.002;
+        // It may have gone a little too far, into what stopped it: by more, the more glancing the meeting.
+        // So the furthest it can go and still be clear is found by halving, between where it is and there.
+        if (clash(0)) return;   // already in something's way: it is not pulled deeper
+        if (clash(t)) {
+          for (var lo = 0, hi = t, n = 0; n < 24; n++) { var mid = (lo + hi) / 2; if (clash(mid)) hi = mid; else lo = mid; }
+          t = lo;
+        }
         if (t < 0.03) return;
         q.x += dx * t; q.y += dy * t; carry(j);
         if (!noise.pull) field(m);
