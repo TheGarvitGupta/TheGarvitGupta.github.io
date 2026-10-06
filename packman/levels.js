@@ -343,7 +343,7 @@ var PackmanLevels = (function () {
       powers: 2,
       sure: ['chameleon'],
       chameleon: 3,   // the brick
-      masked: 'A square goes snug in each of three corners. The chameleon turns 45° and lies along the diagonal, with one end pushed into the empty corner.',
+      masked: 'Give each square a corner of its own. The chameleon gets whatever room is left, and it will not go in straight.',
       intro: 'Three squares and a brick. The box is well short of three across.',
       hint: 'A square goes snug in each of three corners. The brick turns 45° and lies along the diagonal, with its end pushed into the empty corner.',
       container: box(2.775),
