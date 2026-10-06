@@ -67,7 +67,7 @@ body.powers .bin-fill{stroke:#FFC93C}
   color:var(--text); background:var(--card); border:var(--bw) solid var(--ink); border-radius:13px; pointer-events:none}
 #power-note b{font-weight:700}
 .avatar.p-ghost .fill{fill-opacity:.5}
-.avatar .zz{visibility:visible}
+.avatar .zz,.avatar .snooze,.avatar .yawn,.avatar .drool{visibility:visible} .avatar .lid,.avatar.p-sleeper .eye,.avatar.p-sleeper .mouth{visibility:hidden}
 @media (max-width:460px){ #powers-bar::before{display:none} .pwc{font-size:13.5px; padding-right:10px} #power-note{font-size:13px} }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html,body{height:100%; margin:0}
@@ -312,8 +312,19 @@ button{font:inherit; color:inherit; cursor:pointer}
 .piece.glued .fill{stroke:#B85C00}
 .spike{fill:none; stroke:#1596A6; stroke-width:calc(2.4px * var(--u)); stroke-linecap:round}
 .white{fill:#fff; stroke:var(--face); stroke-width:calc(1.5px * var(--u))}
-.zz{fill:none; stroke:#fff; stroke-width:calc(2px * var(--u)); stroke-linecap:round; stroke-linejoin:round; visibility:hidden}
-.piece.asleep .zz,.piece.asleep .shut{visibility:visible} .piece.asleep .eye{visibility:hidden}
+/* the sleeper asleep: a shade darker, eyes shut, mouth open, drooling, and z's that come up one after another */
+.zz{fill:none; stroke:#fff; stroke-width:calc(2.2px * var(--u)); stroke-linecap:round; stroke-linejoin:round}
+.yawn{fill:var(--face)}
+.drool{fill:#BFE9FF; stroke:#fff; stroke-width:calc(1px * var(--u)); stroke-linejoin:round}
+.zz,.snooze,.yawn,.drool{visibility:hidden}
+.piece.asleep .zz,.piece.asleep .snooze,.piece.asleep .yawn,.piece.asleep .drool{visibility:visible}
+.piece.asleep .eye,.piece.asleep .shut,.piece.asleep .wince,.piece.asleep .lid,.piece.asleep .mouth{visibility:hidden}
+.piece.asleep .fill,.piece.asleep .back{fill:#7A5FE0}
+.piece.asleep .zz{animation:zz 2.4s linear infinite} .piece.asleep .z2{animation-delay:.5s} .piece.asleep .z3{animation-delay:1s}
+.piece.asleep .drool{animation:drool 2.4s ease-in-out infinite}
+@keyframes zz{0%,10%{opacity:0} 30%,70%{opacity:1} 95%,100%{opacity:0}}
+@keyframes drool{50%{fill-opacity:.45}}
+@media (prefers-reduced-motion:reduce){ .piece.asleep .zz,.piece.asleep .drool{animation:none} }
 .pole{stroke:var(--face); stroke-width:calc(1.2px * var(--u))} .pole.n{fill:#FF6B6B} .pole.s{fill:#4DA8FF}
 .tooth{fill:#fff; stroke:var(--face); stroke-width:calc(1.5px * var(--u)); stroke-linejoin:round}
 
@@ -612,7 +623,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · <a href="personalities.html">Meet the shapes</a> · v2.18</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · <a href="personalities.html">Meet the shapes</a> · v2.19</span></div>
   </div>
 </div>
 
@@ -672,11 +683,11 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=2.18"></script>
-<script src="levels.js?v=2.18"></script>
-<script src="faces.js?v=2.18"></script>
-<script src="sounds.js?v=2.18"></script>
-<script src="game.js?v=2.18"></script>
+<script src="geom.js?v=2.19"></script>
+<script src="levels.js?v=2.19"></script>
+<script src="faces.js?v=2.19"></script>
+<script src="sounds.js?v=2.19"></script>
+<script src="game.js?v=2.19"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
