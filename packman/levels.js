@@ -4,7 +4,8 @@
 // from easiest to hardest; saved progress goes by name, so they can be reordered.
 // There are three chapters. The first is the seventeen; the second (bonus: true) brings
 // the brick and the hexagon; the third (powers: n) deals n of its shapes a power each time,
-// picked at random, but for any named in sure, which always come.
+// picked at random, but for any named in sure, which always come. A chameleon is dealt to
+// any shape, unless chameleon: n names one; masked is the hint to give when there is a chameleon in the deal.
 // Its first five levels are tidy tilings, to meet the powers on; from the sixth on they are tight packings. Each chapter is numbered on its own.
 var PackmanLevels = (function () {
   'use strict';
@@ -403,7 +404,10 @@ var PackmanLevels = (function () {
       name: 'Tight Bricks',
       powers: 3,
       sure: ['sticky', 'magnet', 'chameleon'],
-      intro: 'Ten Tight again, with two of its pairs welded into bricks. And powers.',
+      chameleon: 6,   // which shape is the chameleon here: the brick along the top wall
+      // the hint with a chameleon about: it says where the chameleon goes, and never what shape it really is
+      masked: 'The chameleon sits at the top left, against the top wall, with a square under it. A brick lies along the bottom wall from the right corner, with a square on top of its end. A square goes in each of the other two corners, and the last two squares turn 45° and run down the diagonal.',
+      intro: 'Ten Tight again, with some of its squares welded into bricks. And powers.',
       hint: 'A brick lies along the top wall from the left corner, with a square under its end. The other brick lies along the bottom wall from the right corner, with a square on top of its end. A square goes in each of the other two corners, and the last two turn 45° and run down the diagonal.',
       container: box(3.713),
       pieces: pieces(6, 0, 2),

@@ -1032,6 +1032,9 @@
       if (w === 'ghost') { out.push({ w: w, t: lv.pieces[Math.floor(Math.random() * lv.pieces.length)] }); return; }
       if (!free.length) return;
       var n = free.pop(), t = lv.pieces[n];
+      if (w === 'chameleon' && lv.chameleon != null && free.concat(n).indexOf(lv.chameleon) >= 0) {   // the level says which shape it is
+        free = free.concat(n).filter(function (k) { return k !== lv.chameleon; }); n = lv.chameleon; t = lv.pieces[n];
+      }
       if (w === 'puffer') {   // and it is the biggest shape going, which has the most neighbours to shove
         var size = { triangle: 0, square: 1, domino: 2, hexagon: 3 }, big = free.concat(n).sort(function (a, b) { return size[lv.pieces[b]] - size[lv.pieces[a]]; })[0];
         free = free.concat(n).filter(function (k) { return k !== big; }); n = big; t = lv.pieces[n];
@@ -1376,6 +1379,7 @@
     } else { scatter(); sfx.deal(pieces.length); }
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
     notePower(null);
+    if (masked()) $('lv-intro').textContent = 'One of these is a chameleon in disguise. Its true shape is for you to find.';   // the usual line would count the shapes out
     judge(); showAngle(); placeHandle(); nag();
     lookForShake();
     if (i === EYE_LEVEL) {
@@ -1474,6 +1478,18 @@
       return { type: lv.pieces[i], x: t.m * s[0] * t.c - s[1] * t.s, y: t.m * s[0] * t.s + s[1] * t.c, angle: norm(t.m * s[2] + t.r) };
     });
   }
+  // is there a chameleon in this deal? Then nothing may say what shapes the level is made of.
+  function masked() { return !!lv.powers && pieces.some(function (p) { return p.power === 'chameleon'; }); }
+  // is this shape already sitting in one of the solution's spots, in any turn of it?
+  function slotsNear(p) { return syms.some(function (t) { return slotsFor(t).some(function (s) { return near(p, s, 0.15, 3); }); }); }
+  // roughly where in the box the chameleon's spot is, in words
+  function whereabouts() {
+    var n = -1;
+    pieces.forEach(function (p, k) { if (p.power === 'chameleon') n = k; });
+    var s = lv.solution[n], u = (s[0] - cb.minX) / (cb.maxX - cb.minX), v = (s[1] - cb.minY) / (cb.maxY - cb.minY);
+    var row = v < 0.38 ? 'top' : v > 0.62 ? 'bottom' : '', col = u < 0.38 ? 'left' : u > 0.62 ? 'right' : '';
+    return row && col ? 'at the ' + row + ' ' + col : row ? 'at the ' + row : col ? 'on the ' + col : 'in the middle';
+  }
   // An empty spot from the solution, for one piece that is not packed yet.
   function pickSpot() {
     var best = null;
@@ -1484,6 +1500,14 @@
       var open = slots.filter(function (s) { return !pieces.some(function (p) { return near(p, s, 0.15, 3); }); });
       if (!best || open.length < best.length) best = open;
     });
+    // With a chameleon about, no spot may be shown that only it could fill, or the outline would
+    // give away its real shape. So a spot is on offer only while a plain shape of that kind is
+    // still waiting to go in. (It also keeps the hint off the ghost, which has no spot at all.)
+    if (masked()) {
+      best = best.filter(function (s) {
+        return pieces.some(function (p) { return !p.power && p.type === s.type && !slotsNear(p); });
+      });
+    }
     var packed = pieces.filter(function (p) { return p.good; }).map(G.verts);
     var clear = best.filter(function (s) {
       var V = G.verts(s);
@@ -1691,15 +1715,19 @@
   }
   function showSpots() {
     var used = spent(), left = Math.max(0, 3 - used.length);
-    $('hint-spot').disabled = !left;
+    var none = !won && masked() && !pickSpot();   // nothing to show that would not unmask the chameleon
+    $('hint-spot').disabled = !left || none;
     $('spots').textContent = left;
-    $('hint-wait').hidden = !!left || won;
+    $('hint-wait').hidden = (!!left && !none) || won;
     if (!left) $('hint-wait').textContent = 'Next hint in ' + wait(used[0] + DAY - Date.now()) + '.';
+    else if (none) $('hint-wait').textContent = 'The only spots left would give the chameleon away.';
   }
 
   function showHint() {
     $('hint-h').textContent = lv.name;
-    $('hint-text').textContent = lv.hint;
+    // The written hint names every shape in the box, the chameleon's real one among them: so with a chameleon in play it is kept back.
+    // It says where the chameleon goes, and nothing of what it is: in the level's own words if it has them, or else only whereabouts.
+    $('hint-text').textContent = masked() ? lv.masked || 'The chameleon belongs ' + whereabouts() + '. The rest of the written hint is sealed: it would give away its true shape. You can still be shown a spot for one of the other shapes.' : lv.hint;
     $('hint-fact').hidden = !lv.fact;
     $('hint-fact').textContent = lv.fact || '';
     $('b-hint').classList.remove('nag');
@@ -1918,6 +1946,7 @@
   $('hint-spot').addEventListener('click', function () {
     if (spent().length >= 3) return;
     var spot = pickSpot();
+    if (!spot && masked()) return;   // nothing to show that would not unmask the chameleon; the hint is not used up
     if (spot) { save.hints[lv.name].push(Date.now()); persist(); }   // three to a level, a day
     closeSheet($('m-hint')); showGhost(spot);
     if (spot) sfx.spot();
