@@ -1135,9 +1135,10 @@
     render(i);
     sfx.morph();
   }
-  // the mine's fuse: lit when it is picked up, three seconds long, and out again the moment it is put down
-  var FUSE = 3000;
-  function light(p) { p.fuse = FUSE; p.shown = FUSE / 1000; p.el.classList.add('lit'); p.badge.textContent = p.shown; sfx.fuse(p.shown); burn(p); }
+  // The mine's fuse: lit when it is picked up, and out again the moment it is put down. It counts three,
+  // two, one, but the three is gone in a blink: there are really only a little over two seconds.
+  var FUSE = 2100;
+  function light(p) { p.fuse = FUSE; p.shown = Math.ceil(FUSE / 1000); p.el.classList.add('lit'); p.badge.textContent = p.shown; sfx.fuse(p.shown); burn(p); }
   function quench(p) { p.fuse = 0; p.el.classList.remove('lit'); p.badge.textContent = ''; burn(p); }
   // The fuse is drawn as long as it has left to burn, with the spark at its end: whole when it is not lit.
   function burn(p) {
