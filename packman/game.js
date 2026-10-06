@@ -550,7 +550,10 @@
     sel = i;
     if (i >= 0) { pieces[i].el.classList.add('sel'); layer.appendChild(pieces[i].el); }
     showAngle(); placeHandle();
-    if (lv && lv.powers) $('lv-intro').textContent = i >= 0 && pieces[i].power ? pieces[i].kit.tip : lv.intro;   // what the one in hand does
+    if (lv && lv.powers) {
+      $('lv-intro').textContent = i >= 0 && pieces[i].power ? pieces[i].kit.tip : lv.intro;   // what the one in hand does
+      Array.prototype.forEach.call($('powers-bar').children, function (c) { c.classList.toggle('on', i >= 0 && c.dataset.w === pieces[i].power); });
+    }
   }
 
   var snored = 0;
@@ -1021,6 +1024,51 @@
     return out.filter(function (g) { return !g || g.w !== 'ghost'; }).concat(ghost);
   }
 
+  // The powers in this deal are set out in a row under the title: each one's face and name,
+  // on a button that opens a sheet saying what they all do. The sheet opens by itself the
+  // first time a power is met, and never again for that power.
+  var powersTimer = 0;
+  function dealt() { return pieces.filter(function (p) { return p.power; }).map(function (p) { return p.power; }); }
+  function listPowers() {
+    var bar = $('powers-bar'), mine = lv.powers ? dealt() : [];
+    clearTimeout(powersTimer);
+    bar.textContent = ''; bar.hidden = !mine.length;
+    mine.forEach(function (w) {
+      var b = document.createElement('button'), kit = POWERS[w];
+      b.className = 'pwc'; b.dataset.w = w;
+      b.setAttribute('aria-label', kit.name + ': what it does');
+      b.appendChild(portrait(kit, kit.color, 'p-' + w)); b.appendChild(document.createTextNode(kit.name));
+      b.addEventListener('click', function () { showPowers(w); });
+      bar.appendChild(b);
+    });
+    save.met = save.met || {};
+    if (mine.some(function (w) { return !save.met[w]; })) powersTimer = setTimeout(meetPowers, 700);
+  }
+  function meetPowers() {
+    clearTimeout(powersTimer);
+    if (won || !lv.powers) return;
+    if (document.querySelector('.sheet.open') || coachOn) { powersTimer = setTimeout(meetPowers, 500); return; }   // wait for whatever is up to be put away
+    showPowers();
+  }
+  // which: the one that was asked about, picked out in the list
+  function showPowers(which) {
+    var list = $('powers-list'), fresh = false;
+    list.textContent = '';
+    dealt().forEach(function (w) {
+      var kit = POWERS[w], li = document.createElement('li'), box = document.createElement('div'), b = document.createElement('b'), d = document.createElement('span');
+      b.textContent = kit.name; d.textContent = kit.does;
+      if (!save.met[w]) { var tag = document.createElement('em'); tag.textContent = 'New'; b.appendChild(tag); fresh = true; }
+      if (w === which) li.className = 'on';
+      box.appendChild(b); box.appendChild(d);
+      li.appendChild(portrait(kit, kit.color, 'p-' + w)); li.appendChild(box);
+      list.appendChild(li);
+      save.met[w] = 1;
+    });
+    persist();
+    $('powers-h').textContent = fresh ? 'New powers' : 'Powers in this box';
+    openSheet($('m-powers'));
+  }
+
   function pose(p) { return [p.x, p.y, p.angle]; }
   function inPlay(p) { return G.zone(G.verts(p), C) !== 'out'; }
   // the sleeper: asleep, and not to be turned, for as long as it is inside the box
@@ -1316,6 +1364,7 @@
       $('clock').textContent = clock(carried);
     } else { scatter(); sfx.deal(pieces.length); }
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
+    listPowers();
     judge(); showAngle(); placeHandle(); nag();
     lookForShake();
     if (i === EYE_LEVEL) {
@@ -1649,10 +1698,14 @@
   // A player's picture: a square block wearing one of the faces. Nobody picks
   // theirs; it comes from their id, so it is the same wherever it is shown.
   function avatar(h, cls) {
-    var kit = OUTFITS[(h >>> 8) % 18],   // the first eighteen: a face added later must not change anybody's picture
-        s = el('svg', 'avatar' + (cls ? ' ' + cls : '')), fill = el('rect', 'fill'), face = el('g', 'face');
+    return portrait(OUTFITS[(h >>> 8) % 18], COLORS[h % COLORS.length], cls);   // the first eighteen: a face added later must not change anybody's picture
+  }
+  // any face, on a square block of any colour
+  function portrait(kit, color, cls) {
+    var s = el('svg', 'avatar' + (cls ? ' ' + cls : '')), fill = el('rect', 'fill'), face = el('g', 'face');
     s.setAttribute('viewBox', '-0.56 -0.56 1.12 1.12'); s.setAttribute('aria-hidden', 'true');
-    s.style.setProperty('--c', COLORS[h % COLORS.length]);
+    s.style.setProperty('--c', color);
+    if (kit.ink) s.style.setProperty('--face', kit.ink);
     fill.setAttribute('x', -0.5); fill.setAttribute('y', -0.5); fill.setAttribute('width', 1); fill.setAttribute('height', 1); fill.setAttribute('rx', 0.14);
     s.appendChild(fill);
     [-0.13, 0.13].forEach(function (x) {
