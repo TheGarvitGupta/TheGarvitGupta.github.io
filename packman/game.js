@@ -1046,7 +1046,7 @@
     return out.filter(function (g) { return !g || g.w !== 'ghost'; }).concat(ghost);
   }
 
-  // While a shape with a power is in hand, a card at the top of the board says what it does: the power's face, its name, and one line.
+  // While a shape with a power is in hand, a card over the level's name says what it does: the power's face, its name, and one line.
   var noted = null;
   // Which card is up, if any. When everything is packed but for a chameleon sitting in a shape
   // that is not its own, the card tells that story, whatever is in hand. Otherwise it is for the
@@ -1055,8 +1055,8 @@
   function card() {
     if (!lv || !lv.powers) return;
     var p = sel >= 0 ? pieces[sel] : null;
-    if (almost) notePower('chameleon', 'Everything fits, but the chameleon is fooling you! It is wearing a disguise. Pick it up until you find its true shape, then pack it to finish.', 'So close!');
-    else if (p && p.power === 'chameleon' && p.fake && !drag) notePower('chameleon', 'It fits, but this is not its real shape, so it does not count. Pick it up again to change it.');
+    if (almost) notePower('chameleon', 'Everything fits, but the chameleon is fooling you: it is in disguise! Find its true shape, then pack it to finish.', 'So close!');
+    else if (p && p.power === 'chameleon' && p.fake && !drag) notePower('chameleon', 'It fits, but this is not its true shape, so it does not count. Pick it up again to change it.');
     else notePower(p ? p.power || null : null);
   }
   // say: something else for the card to say than what the power does; title: and to be headed, in place of the power's name
@@ -1066,9 +1066,9 @@
     noted = key;
     note.hidden = !kit;
     if (!kit) return;
-    var at = kit.tip.indexOf(':'), box = document.createElement('div'), b = document.createElement('b'), d = document.createElement('span'), rest = kit.tip.slice(at + 1).trim();
-    b.textContent = title || kit.name; d.textContent = say || rest.charAt(0).toUpperCase() + rest.slice(1);
-    box.appendChild(b); box.appendChild(d);
+    var at = kit.tip.indexOf(':'), box = document.createElement('p'), b = document.createElement('b'), rest = kit.tip.slice(at + 1).trim();
+    b.textContent = title || kit.name;
+    box.appendChild(b); box.appendChild(document.createTextNode(say || rest.charAt(0).toUpperCase() + rest.slice(1)));
     note.classList.toggle('warn', !!say);
     note.textContent = ''; note.appendChild(portrait(kit, kit.color, 'p-' + w)); note.appendChild(box);
     note.style.animation = 'none'; void note.offsetWidth; note.style.animation = '';   // it hops in afresh for each power
