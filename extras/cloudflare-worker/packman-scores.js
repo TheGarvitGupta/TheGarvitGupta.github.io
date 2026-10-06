@@ -494,7 +494,7 @@ var PackmanGeom = (function () {
 // from easiest to hardest; saved progress goes by name, so they can be reordered.
 // There are three chapters. The first is the seventeen; the second (bonus: true) brings
 // the brick and the hexagon; the third (powers: n) deals n of its shapes a power each time,
-// picked at random, and the angel only where angel: true. Each chapter is numbered on its own.
+// picked at random, and the angel only where angel: true: the last two, the hard ones. Each chapter is numbered on its own.
 var PackmanLevels = (function () {
   'use strict';
 
@@ -849,8 +849,7 @@ var PackmanLevels = (function () {
     {
       name: 'Pantry',
       powers: 3,
-      angel: true,
-      intro: 'Three powers at once, and from here an angel may turn up.',
+      intro: 'Three powers at once from here.',
       hint: 'Stand one brick on end against the right-hand wall, in the bottom corner. Two bricks lie along the top. Two more lie in the middle of the rows below, with a square to their left.',
       container: loosen(rect(4, 3), 1.002),
       pieces: pieces(2, 0, 5),
@@ -859,7 +858,6 @@ var PackmanLevels = (function () {
     {
       name: 'Summit',
       powers: 3,
-      angel: true,
       intro: 'A big triangle: one hexagon and ten small triangles.',
       hint: 'The hexagon sits high, touching both sloping walls, with one triangle above it at the peak. A triangle goes in the gap on each side of it, and seven run along the floor: up, down, up, down, up, down, up.',
       container: loosen([[0, -2 * H / 3], [0.5, H / 3], [-0.5, H / 3]], 4.016),
@@ -870,7 +868,6 @@ var PackmanLevels = (function () {
     {
       name: 'Crate',
       powers: 3,
-      angel: true,
       intro: 'Six bricks and four squares, four rows deep.',
       hint: 'The first and third rows are two bricks end to end. The second and fourth are a brick in the middle with a square at each end.',
       container: box(4.006),
@@ -880,7 +877,6 @@ var PackmanLevels = (function () {
     {
       name: 'Tall Lantern',
       powers: 3,
-      angel: true,
       intro: 'A lantern two rows deep: a brick, two squares and six triangles.',
       hint: 'The brick and the two squares make a block of two rows in the middle. Three triangles cap it at the top and three at the bottom: point, flip, point.',
       container: loosen([[-1, -1], [-0.5, -1 - H], [0.5, -1 - H], [1, -1], [1, 1], [0.5, 1 + H], [-0.5, 1 + H], [-1, 1]], 1.004),
@@ -892,7 +888,7 @@ var PackmanLevels = (function () {
       name: 'Corona',
       powers: 3,
       angel: true,
-      intro: 'One hexagon, and a ring of eighteen triangles round it.',
+      intro: 'One hexagon, and a ring of eighteen triangles round it. An angel may turn up to help.',
       hint: 'The hexagon goes dead centre. Every triangle in the ring points either straight up or straight down, and they alternate all the way round.',
       container: loosen(ngon(6, 2, 0), 1.004),
       pieces: pieces(0, 18, 0, 1),
