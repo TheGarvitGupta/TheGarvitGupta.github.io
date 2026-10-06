@@ -1046,7 +1046,7 @@
     return out.filter(function (g) { return !g || g.w !== 'ghost'; }).concat(ghost);
   }
 
-  // While a shape with a power is in hand, a card over the level's name says what it does: the power's face, its name, and one line.
+  // While a shape with a power is in hand, a card in the strip above the board says what it does: the power's face, its name, and one line.
   var noted = null;
   // Which card is up, if any. When everything is packed but for a chameleon sitting in a shape
   // that is not its own, the card tells that story, whatever is in hand. Otherwise it is for the
@@ -1064,7 +1064,7 @@
     var note = $('power-note'), kit = w && POWERS[w], key = w ? w + '|' + (say || '') : null;
     if (key === noted) return;
     noted = key;
-    note.hidden = !kit;
+    note.hidden = !kit; $('power-idle').hidden = !!kit;
     if (!kit) return;
     var at = kit.tip.indexOf(':'), box = document.createElement('p'), b = document.createElement('b'), rest = kit.tip.slice(at + 1).trim();
     b.textContent = title || kit.name;
