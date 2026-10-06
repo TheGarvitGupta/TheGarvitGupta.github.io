@@ -1015,7 +1015,8 @@
   // level's shapes, with nothing for a plain one. The ghost is no shape of the level's: it
   // is one more, added at the end, of the same kind as one of them.
   function dealPowers() {
-    var pool = ['mine', 'ghost', 'sticky', 'puffer', 'chameleon', 'sleeper', 'magnet'].concat(lv.angel ? ['angel'] : []);
+    // The puffer is only any trouble with a crowd round it, so it comes out in the levels with eight shapes or more.
+    var pool = ['mine', 'ghost', 'sticky', 'chameleon', 'sleeper', 'magnet'].concat(lv.pieces.length >= 8 ? ['puffer'] : [], lv.angel ? ['angel'] : []);
     var asked = LOCAL && /[?&]powers=([a-z,]+)/.exec(location.search);   // on this machine, the ones named in the address
     var out = lv.pieces.map(function () { return 0; }), free = shuffled(out.map(function (z, n) { return n; }));
     (asked ? asked[1].split(',') : shuffled(pool).slice(0, lv.powers)).forEach(function (w) {
@@ -1023,6 +1024,10 @@
       if (w === 'ghost') { out.push({ w: w, t: lv.pieces[Math.floor(Math.random() * lv.pieces.length)] }); return; }
       if (!free.length) return;
       var n = free.pop(), t = lv.pieces[n];
+      if (w === 'puffer') {   // and it is the biggest shape going, which has the most neighbours to shove
+        var size = { triangle: 0, square: 1, domino: 2, hexagon: 3 }, big = free.concat(n).sort(function (a, b) { return size[lv.pieces[b]] - size[lv.pieces[a]]; })[0];
+        free = free.concat(n).filter(function (k) { return k !== big; }); n = big; t = lv.pieces[n];
+      }
       // the chameleon goes round all four shapes, its own first in the list, and starts on any of them
       out[n] = w === 'chameleon' ? { w: w, o: [t].concat(shuffled(Object.keys(TURN).filter(function (k) { return k !== t; }))), n: Math.floor(Math.random() * 4), c: Math.floor(Math.random() * 4) } : { w: w };
     });
@@ -1201,14 +1206,15 @@
       });
     });
 
-    // The puffer, with anything lying over it, puffs up and shoves the lot away.
+    // The puffer puffs up whenever it is put down in the box, and shoves away every shape it is
+    // touching: so it has to go in before its neighbours do. A shape put down on top of it is shoved off too.
     pieces.forEach(function (p, i) {
       if (p.power !== 'puffer' || !inPlay(p)) return;
-      var A = G.verts(p), any = false;
+      var A = G.verts(p), skin = grown(G.makeContainer(A), 0.04), any = false;
       pieces.forEach(function (q, j) {
         if (j === i || q.frozen || q.power === 'ghost' || !inPlay(q)) return;
-        var o = G.overlap(A, G.verts(q));
-        if (!o || o.depth < 0.03) return;
+        var o = G.overlap(i === sel ? skin : A, G.verts(q));   // its own move: a touch is enough. Another's: only if it is lying over it
+        if (!o || (i !== sel && o.depth < 0.03)) return;
         var dx = q.x - p.x, dy = q.y - p.y, d = Math.hypot(dx, dy);
         if (d < 1e-6) { var a = Math.random() * 6.283; dx = Math.cos(a); dy = Math.sin(a); d = 1; }
         unstick(j);
