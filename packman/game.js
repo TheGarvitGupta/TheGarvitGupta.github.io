@@ -1180,10 +1180,35 @@
   // stand round it out to its reach, and every shape inside them is drawn towards it, a little at a time,
   // until something stops it. Put the magnet down and it lets go of everything.
   var REACH = 1.6, waves = null, tugged = false;
+  // And it hums for as long as it is held: a low mains buzz, three notes stacked on one another and
+  // made to flutter. It is the one sound here that goes on, so it is made in place and not in sounds.js.
+  var humming = null;
+  function hum(on) {
+    if (!on) {
+      if (!humming) return;
+      var h = humming; humming = null;
+      try { h.out.gain.cancelScheduledValues(h.ctx.currentTime); h.out.gain.setTargetAtTime(0.0001, h.ctx.currentTime, 0.03); h.all.forEach(function (o) { o.stop(h.ctx.currentTime + 0.2); }); } catch (e) {}
+      return;
+    }
+    if (humming || !actx || actx.state !== 'running') return;
+    var t = actx.currentTime, out = actx.createGain(), all = [];
+    out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.05, t + 0.1);
+    [[60, 'sawtooth', 1], [120, 'square', 0.45], [180, 'triangle', 0.5]].forEach(function (n) {
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = n[1]; o.frequency.value = n[0]; g.gain.value = n[2];
+      o.connect(g); g.connect(out); o.start(t); all.push(o);
+    });
+    var flutter = actx.createOscillator(), depth = actx.createGain();   // the buzz in it: the loudness wobbling thirty times a second
+    flutter.frequency.value = 30; depth.gain.value = 0.02;
+    flutter.connect(depth); depth.connect(out.gain); flutter.start(t); all.push(flutter);
+    out.connect(actx.destination);
+    humming = { ctx: actx, out: out, all: all };
+  }
   function attract() {
     var i = -1;
     if (lv && lv.powers && drag && !won && !shaking) pieces.forEach(function (p, k) { if (p.power === 'magnet' && (drag.mode === 'move' ? drag.i : sel) === k) i = k; });
-    if (i < 0) { if (waves) { waves.parentNode.removeChild(waves); waves = null; tugged = false; } return; }
+    if (i < 0) { if (waves) { waves.parentNode.removeChild(waves); waves = null; tugged = false; } hum(false); return; }
+    hum(!save.mute);
     var m = pieces[i], any = false;
     if (!waves) {
       waves = el('g', 'waves');
@@ -1714,27 +1739,34 @@
     s.addEventListener('click', function (e) { if (e.target === s || e.target.hasAttribute('data-close')) closeSheet(s); });
   });
 
-  // 'Show a spot' is on offer ten times a chapter in any twenty-four hours, to spend on whichever of
-  // its levels they are wanted. Each use is kept by its time, and comes back a day after it was spent.
-  var HINTS = 10, DAY = 864e5, waiter = 0;
-  function spent() {
+  // 'Show a spot' is on offer ten times a chapter, to spend on whichever of its levels they are
+  // wanted. A chapter that is short of its ten gets one back every eight hours. What is kept for a
+  // chapter is how many it has (n), and when the eight hours it is now waiting through began (at).
+  var HINTS = 10, EVERY = 8 * 36e5, waiter = 0;
+  function purse() {
     save.hints = save.hints || {};
-    var key = 'chapter ' + chap(lv), now = Date.now(), used = (save.hints[key] || []).filter(function (t) { return now - t < DAY && t <= now; });
-    save.hints[key] = used;
-    return used;
+    var key = 'chapter ' + chap(lv), h = save.hints[key], now = Date.now();
+    if (!h || Array.isArray(h)) h = save.hints[key] = { n: HINTS - (Array.isArray(h) ? Math.min(h.length, HINTS) : 0), at: now };   // (a list of times, from when each came back after a day)
+    if (h.n < HINTS) {
+      if (!(h.at <= now)) h.at = now;   // a clock that has been put back
+      var back = Math.floor((now - h.at) / EVERY);
+      if (back > 0) { h.n = Math.min(HINTS, h.n + back); h.at += back * EVERY; }
+    }
+    return h;
   }
-  // how long until the oldest one comes back: hours, then minutes inside the last hour, then seconds inside the last minute
+  // How long until the next one comes back: hours, then minutes inside the last hour, then seconds inside the
+  // last minute, each rounded down. With 7 hours 59 minutes to go it says 7 hours.
   function wait(ms) {
-    var n = ms >= 36e5 ? Math.floor(ms / 36e5) : ms >= 6e4 ? Math.floor(ms / 6e4) : Math.max(1, Math.ceil(ms / 1000));
+    var n = ms >= 36e5 ? Math.floor(ms / 36e5) : ms >= 6e4 ? Math.floor(ms / 6e4) : Math.max(1, Math.floor(ms / 1000));
     return n + (ms >= 36e5 ? ' hour' : ms >= 6e4 ? ' minute' : ' second') + (n === 1 ? '' : 's');
   }
   function showSpots() {
-    var used = spent(), left = Math.max(0, HINTS - used.length);
+    var h = purse(), left = h.n;
     var none = !won && masked() && !pickSpot();   // nothing to show that would not unmask the chameleon
     $('hint-spot').disabled = !left || none;
     $('spots').textContent = left;
     $('hint-wait').hidden = (!!left && !none) || won;
-    if (!left) $('hint-wait').textContent = 'Next hint in ' + wait(used[0] + DAY - Date.now()) + '.';
+    if (!left) $('hint-wait').textContent = 'Next hint in ' + wait(h.at + EVERY - Date.now()) + '.';
     else if (none) $('hint-wait').textContent = 'The only spots left would give the chameleon away.';
   }
 
@@ -1959,10 +1991,10 @@
   $('chip').addEventListener('click', showLevels);
   $('b-hint').addEventListener('click', showHint);
   $('hint-spot').addEventListener('click', function () {
-    if (spent().length >= HINTS) return;
+    if (purse().n < 1) return;
     var spot = pickSpot();
     if (!spot && masked()) return;   // nothing to show that would not unmask the chameleon; the hint is not used up
-    if (spot) { spent().push(Date.now()); persist(); }   // ten to a chapter, a day
+    if (spot) { var h = purse(); if (h.n === HINTS) h.at = Date.now(); h.n--; persist(); }   // the wait for one to come back starts when the purse stops being full
     closeSheet($('m-hint')); showGhost(spot);
     if (spot) sfx.spot();
   });
