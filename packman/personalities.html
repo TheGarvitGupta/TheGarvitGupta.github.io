@@ -16,6 +16,12 @@
 *{box-sizing:border-box}
 body{margin:0; padding:28px 18px 56px; font-family:var(--f); color:#2B2140; background:var(--bg); background-image:radial-gradient(rgba(43,33,64,.09) 1.6px, transparent 1.7px); background-size:26px 26px}
 main{max-width:760px; margin:0 auto}
+/* the way back, at the top: a button like the ones in the game's own bar */
+.back{display:inline-flex; align-items:center; gap:8px; height:42px; margin:0 0 20px; padding:0 16px 0 11px; font-size:16px; font-weight:600; color:inherit; text-decoration:none;
+  background:var(--card); border:var(--bw) solid var(--ink); border-radius:14px; transition:transform .12s cubic-bezier(.34,1.56,.64,1)}
+.back svg{width:21px; height:21px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round}
+.back:hover{transform:translateY(-2px)} .back:active{transform:translateY(1px)}
+.back:focus-visible{outline:3px solid #4DA8FF; outline-offset:2px}
 h1{margin:0; font-size:34px; font-weight:700; line-height:1.1}
 .lead{margin:8px 0 0; font-size:16px; font-weight:500; line-height:1.4; color:var(--mut)}
 .cast{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; margin:22px 0 0; padding:0; list-style:none}
@@ -57,6 +63,7 @@ h2{margin:40px 0 0; font-size:26px; font-weight:700; line-height:1.1}
 </head>
 <body>
 <main>
+  <a class="back" href="./" aria-label="Back to Packman"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg>Back to the game</a>
   <h1>Meet the shapes</h1>
   <p class="lead">Every shape in Packman is dealt a personality, and each has a voice. Tap one to hear it.</p>
   <ul id="cast" class="cast"></ul>
