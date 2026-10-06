@@ -402,7 +402,7 @@ var PackmanLevels = (function () {
     {
       name: 'Tight Bricks',
       powers: 3,
-      sure: ['chameleon'],
+      sure: ['sticky', 'magnet', 'chameleon'],
       intro: 'Ten Tight again, with two of its pairs welded into bricks. And powers.',
       hint: 'A brick lies along the top wall from the left corner, with a square under its end. The other brick lies along the bottom wall from the right corner, with a square on top of its end. A square goes in each of the other two corners, and the last two turn 45° and run down the diagonal.',
       container: box(3.713),
