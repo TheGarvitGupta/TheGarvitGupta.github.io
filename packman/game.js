@@ -2011,11 +2011,7 @@
 
   // Starting from nothing: everything this browser remembers of the game is forgotten, and the page is
   // loaded afresh as for a new player. The leaderboard keeps the old scores, under an id nobody has any
-  // more. Unless the button that confirms it is held down for three seconds before it is let go: then
-  // this player's line is taken off the board first. Nothing says so, on the sheet or while the button
-  // is held, and nothing marks the three seconds passing: it is for clearing one's own records out of
-  // other people's way, and not for anyone to find.
-  var deep = false, deepTimer = 0;
+  // more, unless the box on the sheet is ticked: then this player's line is taken off the board as well.
   function forget() {
     // both names the progress has been kept under: left behind, the old one would be read back in as if it were the player's
     try { localStorage.removeItem(STORE); localStorage.removeItem('packer.v1'); } catch (e) {}
@@ -2045,16 +2041,8 @@
     });
   }
   purge();
-  $('reset-ask').addEventListener('click', function () { closeSheet($('m-help')); deep = false; openSheet($('m-reset')); });
-  $('reset-go').addEventListener('pointerdown', function (e) {
-    deep = false; clearTimeout(deepTimer);
-    deepTimer = setTimeout(function () { deep = true; }, 3000);
-  });
-  ['pointerleave', 'pointercancel'].forEach(function (n) { $('reset-go').addEventListener(n, function () { clearTimeout(deepTimer); deep = false; }); });
-  $('reset-go').addEventListener('click', function (e) {
-    clearTimeout(deepTimer);
-    wipe(deep);
-  });
+  $('reset-ask').addEventListener('click', function () { closeSheet($('m-help')); $('reset-board').checked = false; openSheet($('m-reset')); });
+  $('reset-go').addEventListener('click', function () { wipe($('reset-board').checked); });
   var armed = 0;
   function disarm() { clearTimeout(armed); armed = 0; $('b-reset').classList.remove('sure'); }
   $('b-reset').addEventListener('click', function () {
