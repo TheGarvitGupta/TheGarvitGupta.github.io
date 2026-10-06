@@ -54,7 +54,7 @@ var PackmanFaces = [
 var PackmanPowers = [
   { power: 'mine', voice: 'mine', name: 'Mine', color: '#2A2438', ink: '#F1ECFF', idle: 'M-0.06 0.13Q0 0.1 0.06 0.13',
     tip: 'Mine: put it down before the count runs out. Hold it any longer and boom.',
-    does: 'Its fuse burns while you hold it, whether you are carrying it or turning it, and counts down from three, fast: a little over two seconds. Put it down in time, anywhere, and it goes out. Hold on too long and it blows in your hand, tossing out everything it is touching.',
+    does: 'Its fuse burns while you hold it, whether you are carrying it or turning it, and counts down from three, fast: two and a half seconds. Put it down in time, anywhere, and it goes out. Hold on too long and it blows in your hand, tossing out everything it is touching.',
     wear: [['path', 'wear', { d: 'M-0.2 -0.165L-0.08 -0.13M0.2 -0.165L0.08 -0.13' }],
            // the fuse, from the mine out to its tip, where the spark sits; game.js shortens it as it burns
            ['path', 'fuse', { d: 'M-0.02 -0.19Q-0.02 -0.3 0.06 -0.3Q0.13 -0.3 0.16 -0.25', pathLength: 1 }],
