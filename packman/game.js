@@ -1005,7 +1005,8 @@
     hits.forEach(function (h) { if (h !== spared) st[h[0]].hit = st[h[1]].hit = true; });
     for (i = 0; i < n; i++) {
       // And the ghost has to be sharing: sitting by itself in a bit of spare room does not count as packed.
-      st[i].good = st[i].zone === 'in' && !st[i].hit && (pieces[i].power !== 'ghost' || (!!spared && (spared[0] === i || spared[1] === i)));
+      st[i].good = st[i].zone === 'in' && !st[i].hit && (pieces[i].power !== 'ghost' || (!!spared && (spared[0] === i || spared[1] === i))) &&
+        !(pieces[i].power === 'chameleon' && pieces[i].form);   // nor does the chameleon in any shape but its own: a smaller one would make room it has no right to
       if (st[i].good) packed++;
     }
     return { states: st, packed: packed, solved: packed === n };
