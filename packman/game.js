@@ -1015,8 +1015,8 @@
   // level's shapes, with nothing for a plain one. The ghost is no shape of the level's: it
   // is one more, added at the end, of the same kind as one of them.
   function dealPowers() {
-    // The puffer is only any trouble with a crowd round it, so it comes out in the levels with eight shapes or more.
-    var pool = ['mine', 'ghost', 'sticky', 'chameleon', 'sleeper', 'magnet'].concat(lv.pieces.length >= 8 ? ['puffer'] : [], lv.angel ? ['angel'] : []);
+    // The puffer is only any trouble with a crowd round it, so it comes out in the levels with five shapes or more.
+    var pool = ['mine', 'ghost', 'sticky', 'chameleon', 'sleeper', 'magnet'].concat(lv.pieces.length >= 5 ? ['puffer'] : [], lv.angel ? ['angel'] : []);
     var asked = LOCAL && /[?&]powers=([a-z,]+)/.exec(location.search);   // on this machine, the ones named in the address
     var out = lv.pieces.map(function () { return 0; }), free = shuffled(out.map(function (z, n) { return n; }));
     (asked ? asked[1].split(',') : shuffled(pool).slice(0, lv.powers)).forEach(function (w) {
