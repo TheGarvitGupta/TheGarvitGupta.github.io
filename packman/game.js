@@ -480,7 +480,6 @@
       if (p.power === 'sleeper') p.el.classList.toggle('asleep', asleep(p));
       if (p.power === 'chameleon') {   // in the box and in nobody's way, but not in its real shape: the card says why it does not count
         p.fake = !!p.form && s.zone === 'in' && !s.hit;
-        if (i === sel && !drag) notePower('chameleon', p.fake ? 'It fits, but this is not its real shape, so it does not count. Pick it up again to change it.' : '');
       }
       // The ghost sharing a space as it should goes clearer and lies over whatever it shares with; that one gives up its face.
       var shared = !!spared && (spared[0] === i || spared[1] === i) && ev.states[spared[0]].good && ev.states[spared[1]].good;
@@ -503,6 +502,9 @@
       track.classList.toggle('near', ev.packed >= pieces.length - 3 && !ev.solved);
       track.classList.toggle('won', !!ev.solved);
     }
+    // all packed, but for a chameleon in disguise?
+    almost = !ev.solved && pieces.some(function (p) { return p.fake; }) && pieces.every(function (p, i) { return ev.states[i].good || p.fake; });
+    card();
     ev.fitted = fitted;
     showHits();
     return ev;
@@ -560,7 +562,7 @@
     sel = i;
     if (i >= 0) { pieces[i].el.classList.add('sel'); layer.appendChild(pieces[i].el); }
     showAngle(); placeHandle();
-    if (lv && lv.powers) notePower(i >= 0 ? pieces[i].power || null : null);   // what the one in hand does
+    card();   // what the one in hand does
   }
 
   var snored = 0;
@@ -1043,15 +1045,26 @@
 
   // While a shape with a power is in hand, a card at the top of the board says what it does: the power's face, its name, and one line.
   var noted = null;
-  // say: something else for the card to say than what the power does (for the chameleon, put down in the wrong shape)
-  function notePower(w, say) {
+  // Which card is up, if any. When everything is packed but for a chameleon sitting in a shape
+  // that is not its own, the card tells that story, whatever is in hand. Otherwise it is for the
+  // shape in hand, if that has a power.
+  var almost = false;
+  function card() {
+    if (!lv || !lv.powers) return;
+    var p = sel >= 0 ? pieces[sel] : null;
+    if (almost) notePower('chameleon', 'Everything fits, but the chameleon is fooling you! It is wearing a disguise. Pick it up until you find its true shape, then pack it to finish.', 'So close!');
+    else if (p && p.power === 'chameleon' && p.fake && !drag) notePower('chameleon', 'It fits, but this is not its real shape, so it does not count. Pick it up again to change it.');
+    else notePower(p ? p.power || null : null);
+  }
+  // say: something else for the card to say than what the power does; title: and to be headed, in place of the power's name
+  function notePower(w, say, title) {
     var note = $('power-note'), kit = w && POWERS[w], key = w ? w + '|' + (say || '') : null;
     if (key === noted) return;
     noted = key;
     note.hidden = !kit;
     if (!kit) return;
     var at = kit.tip.indexOf(':'), box = document.createElement('div'), b = document.createElement('b'), d = document.createElement('span'), rest = kit.tip.slice(at + 1).trim();
-    b.textContent = kit.name; d.textContent = say || rest.charAt(0).toUpperCase() + rest.slice(1);
+    b.textContent = title || kit.name; d.textContent = say || rest.charAt(0).toUpperCase() + rest.slice(1);
     box.appendChild(b); box.appendChild(d);
     note.classList.toggle('warn', !!say);
     note.textContent = ''; note.appendChild(portrait(kit, kit.color, 'p-' + w)); note.appendChild(box);
@@ -1103,6 +1116,10 @@
   // The chameleon turns into its next shape, and its next colour. It is drawn afresh.
   function morph(p, i) {
     p.form = (p.form + 1) % p.forms.length; p.type = p.forms[p.form]; p.color = CHAM[(p.form + p.tint) % CHAM.length]; p.side = null;
+    // Sticky, glued to it, lets go if the new shape no longer reaches it.
+    pieces.forEach(function (s, k) {
+      if (s.power === 'sticky' && s.mate === i && !G.overlap(grown(G.makeContainer(G.verts(s)), 0.03), G.verts(p))) { unstick(k); sfx.peel(); }
+    });
     layer.removeChild(p.el); p.under.parentNode.removeChild(p.under);
     buildPiece(p, i);
     p.el.classList.remove('fresh');
