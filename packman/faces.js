@@ -59,12 +59,6 @@ var PackmanPowers = [
            // the fuse, from the mine out to its tip, where the spark sits; game.js shortens it as it burns
            ['path', 'fuse', { d: 'M-0.02 -0.19Q-0.02 -0.3 0.06 -0.3Q0.13 -0.3 0.16 -0.25', pathLength: 1 }],
            ['path', 'spark', { d: 'M0 -0.055L0.017 -0.017L0.055 0L0.017 0.017L0 0.055L-0.017 0.017L-0.055 0L-0.017 -0.017Z', transform: 'translate(0.16 -0.25)' }]] },
-  { power: 'angel', voice: 'angel', name: 'Angel', color: '#FFFDF4', eye: 0.001, still: true, stare: true, idle: 'M-0.06 0.09Q0 0.14 0.06 0.09',
-    tip: 'Angel: in its right place it turns to stone, and places more shapes for you.',
-    does: 'Put it exactly where it belongs and it turns to stone for the rest of the level, and puts two more shapes where they belong (one, in a small level). It only turns up in the last five levels, and always in the last two.',
-    wear: [['path', 'wing', { d: 'M-0.24 -0.03Q-0.33 -0.07 -0.31 0.05Q-0.3 0.12 -0.24 0.1ZM0.24 -0.03Q0.33 -0.07 0.31 0.05Q0.3 0.12 0.24 0.1Z' }],
-           ['path', 'wear', { d: 'M-0.18 -0.045Q-0.13 -0.095 -0.08 -0.045M0.08 -0.045Q0.13 -0.095 0.18 -0.045' }],
-           ['ellipse', 'halo', { cx: 0, cy: -0.215, rx: 0.12, ry: 0.038 }]] },
   // the ghost: a pale sheet with hollow eyes, a mouth saying boo, and a wavy hem. It smiles once it has found a shape to share with.
   { power: 'ghost', voice: 'ghost', name: 'Ghost', color: '#F4FBFF', eye: 0.001, still: true, stare: true, idle: 'M0 0.12h0.001',
     tip: 'Ghost: it has no place of its own. Lay it over one other shape, and only one.',

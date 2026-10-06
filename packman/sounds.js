@@ -27,7 +27,6 @@ var PackmanSounds = function (tone) {
     pirate: function () { tone(150, 0.3, { type: 'square', to: 112, vol: 0.05 }); tone(300, 0.3, { type: 'triangle', to: 224, vol: 0.07 }); },
     // the powers of chapter three
     mine: function () { tone(1700, 0.02, { type: 'square', vol: 0.05 }); tone(1700, 0.02, { at: 0.11, type: 'square', vol: 0.05 }); },
-    angel: function () { [1568, 2093, 2637].forEach(function (f, i) { tone(f, 0.3, { at: i * 0.07, vol: 0.045 }); }); },
     ghost: function () { tone(420, 0.18, { to: 640, vol: 0.06 }); tone(640, 0.28, { at: 0.17, to: 370, vol: 0.06 }); },
     sticky: function () { tone(180, 0.07, { type: 'triangle', to: 430, vol: 0.1 }); tone(430, 0.06, { at: 0.07, type: 'triangle', to: 150, vol: 0.1 }); },
     puffer: function () { tone(320, 0.11, { type: 'triangle', to: 950, vol: 0.07 }); },
@@ -68,8 +67,6 @@ var PackmanSounds = function (tone) {
       for (var k = 0; k < 8; k++) tone(500 + Math.random() * 2200, 0.05, { at: k * 0.03, type: 'square', vol: 0.04 });
     },
     fizz: function () { tone(1200, 0.16, { to: 300, vol: 0.05 }); },
-    bless: function () { [784, 988, 1175, 1568, 1976].forEach(function (f, i) { tone(f, i === 4 ? 0.6 : 0.3, { at: i * 0.09, vol: 0.07 }); }); },
-    stone: function () { tone(180, 0.12, { type: 'triangle', to: 90, vol: 0.14 }); },
     glue: function () { tone(260, 0.08, { type: 'triangle', to: 520, vol: 0.09 }); tone(520, 0.1, { at: 0.08, type: 'triangle', to: 200, vol: 0.09 }); },
     peel: function () { tone(300, 0.12, { type: 'triangle', to: 900, vol: 0.06 }); },
     puff: function () { tone(200, 0.18, { to: 1000, vol: 0.1 }); tone(1000, 0.2, { at: 0.16, to: 500, vol: 0.05 }); },
@@ -102,7 +99,7 @@ PackmanSounds.about = [
     ['tap', 'Any button'], ['arm', 'Start over asks to be pressed again'], ['open', 'A sheet opens'], ['close', 'A sheet closes']]],
   ['Powers', [
     ['fuse', 'The mine counts down, faster at the end', [3, 2, 1]], ['boom', 'The mine goes off'], ['fizz', 'The mine is put down in time'],
-    ['bless', 'The angel places two shapes'], ['stone', 'Trying to move the angel once it is stone'], ['glue', 'Sticky glues on'], ['peel', 'Sticky is peeled off'],
+    ['glue', 'Sticky glues on'], ['peel', 'Sticky is peeled off'],
     ['puff', 'The puffer shoves its neighbours'], ['morph', 'The chameleon changes shape'], ['snore', 'Trying to turn the sleeper in the box'], ['pull', 'The magnet pulls a shape in']]],
   ['Winning', [
     ['win', 'A level is packed'], ['best', 'It beat your best time'], ['top', 'You are first on the leaderboard'], ['pop', 'Each firework in the last level\'s party'],

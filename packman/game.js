@@ -369,7 +369,6 @@
     p.el = g; p.pop = pop; p.body = body; p.fill = fill; p.eyes = eyes; p.tf = p.rot = p.look = '';
     outline(p);
     layer.appendChild(g);
-    if (p.frozen) stone(p);
     setTimeout(function () { g.classList.remove('fresh'); }, 620 + i * 28);
   }
 
@@ -450,7 +449,7 @@
   }
 
   function placeHandle() {
-    var show = sel >= 0 && !won && !(drag && drag.mode === 'move') && !pieces[sel].frozen && !asleep(pieces[sel]);
+    var show = sel >= 0 && !won && !(drag && drag.mode === 'move') && !asleep(pieces[sel]);
     handle.toggleAttribute('hidden', !show);
     if (!show) { bubble.classList.remove('show'); return; }
     var p = pieces[sel], k = knobPos(p), from = knobRoot(p);
@@ -529,7 +528,7 @@
       l: lv.name, m: moves, t: t0 ? Math.round((performance.now() - t0) / 1000) : carried,
       p: pieces.map(function (p) { return [+p.x.toFixed(4), +p.y.toFixed(4), p.angle]; }),
       // which shapes have which power, and how each stands: the level is dealt differently every time
-      q: lv.powers ? pieces.map(function (p) { return p.power ? { w: p.power, t: p.type, o: p.forms, n: p.form, c: p.tint, m: p.mate, r: p.rel, f: p.frozen ? 1 : 0 } : 0; }) : undefined
+      q: lv.powers ? pieces.map(function (p) { return p.power ? { w: p.power, t: p.type, o: p.forms, n: p.form, c: p.tint, m: p.mate, r: p.rel } : 0; }) : undefined
     };
     persist();
   }
@@ -564,7 +563,6 @@
   function spin(i, by) {
     if (!by || won) return;
     var p = pieces[i];
-    if (p.frozen) return;
     if (asleep(p)) { var now = performance.now(); if (now - snored > 800) { snored = now; sfx.snore(); } return; }
     if (p.power === 'sticky' && p.mate >= 0) unstick(i);   // turned by hand, it comes away
     startClock();
@@ -630,7 +628,6 @@
       placeHandle();
     } else if (pe) {
       var i = +pe.dataset.i, p = pieces[i];
-      if (p.frozen) { sfx.stone(); select(-1); return; }   // the angel, once it is stone
       if (i !== sel) {
         if (p.power === 'chameleon') morph(p, i);
         p.side = pickSide(p, w);   // the knob comes up beside the cursor or finger, and then keeps its place
@@ -962,7 +959,6 @@
     }
     if (sel < 0) return;
     var p = pieces[sel], step = big ? 0.1 : 0.01, dx = 0, dy = 0;
-    if (p.frozen) return;
     if (k === 'q' || k === '[' || k === '{') { spin(sel, big ? -15 : -1); commit(true); }
     else if (k === 'e' || k === ']' || k === '}') { spin(sel, big ? 15 : 1); commit(true); }
     else if (k === 'arrowleft') dx = -step;
@@ -1020,11 +1016,10 @@
   // is one more, added at the end, of the same kind as one of them.
   function dealPowers() {
     // The puffer is only any trouble with a crowd round it, so it comes out in the levels with five shapes or more.
-    var pool = ['mine', 'ghost', 'sticky', 'chameleon', 'sleeper', 'magnet'].concat(lv.pieces.length >= 5 ? ['puffer'] : [], lv.angel === true ? ['angel'] : []);
+    var pool = ['mine', 'ghost', 'sticky', 'chameleon', 'sleeper', 'magnet'].concat(lv.pieces.length >= 5 ? ['puffer'] : []);
     var asked = LOCAL && /[?&]powers=([a-z,]+)/.exec(location.search);   // on this machine, the ones named in the address
     var out = lv.pieces.map(function () { return 0; }), free = shuffled(out.map(function (z, n) { return n; }));
-    // where the angel is sure to come, it takes one of the places
-    (asked ? asked[1].split(',') : lv.angel === 'sure' ? ['angel'].concat(shuffled(pool).slice(0, lv.powers - 1)) : shuffled(pool).slice(0, lv.powers)).forEach(function (w) {
+    (asked ? asked[1].split(',') : shuffled(pool).slice(0, lv.powers)).forEach(function (w) {
       if (!POWERS[w]) return;
       if (w === 'ghost') { out.push({ w: w, t: lv.pieces[Math.floor(Math.random() * lv.pieces.length)] }); return; }
       if (!free.length) return;
@@ -1059,8 +1054,6 @@
   function inPlay(p) { return G.zone(G.verts(p), C) !== 'out'; }
   // the sleeper: asleep, and not to be turned, for as long as it is inside the box
   function asleep(p) { return p.power === 'sleeper' && G.pointInside(C, p.x, p.y); }
-  // the angel in its right place: stone, and not to be moved again
-  function stone(p) { p.el.classList.add('stone'); p.el.style.setProperty('--c', '#B9B6C6'); }
 
   // Sticky keeps where it sits on the shape it is glued to (s.mate), as seen from that shape.
   function setRel(s) {
@@ -1170,46 +1163,10 @@
   }
 
   // A shape has been put down, or turned. The powers have their say, in this order: the
-  // angel, the puffer, the magnet, then Sticky, then the mine's fuse. If any shape is moved
+  // puffer, the magnet, then Sticky, then the mine's fuse. If any shape is moved
   // by them this returns true, and the move is judged once they have all come to rest.
   function react() {
     var from = pieces.map(pose), noise = {}, ev = evaluate();
-
-    // The angel, put where it belongs, turns to stone, and puts two more shapes (one, in a level of four or fewer) where they
-    // belong: in whichever turn of the solution it is sitting in, and that the board is furthest along with.
-    pieces.forEach(function (p, i) {
-      if (p.power !== 'angel' || p.frozen || !ev.states[i].good) return;
-      var pick = null;
-      syms.forEach(function (t) {
-        var slots = slotsFor(t), k = -1;
-        slots.forEach(function (s, n) { if (k < 0 && near(p, s, 0.12, 3)) k = n; });
-        if (k < 0) return;
-        var filled = slots.filter(function (s) { return pieces.some(function (q) { return near(q, s, 0.15, 3); }); }).length;
-        if (!pick || filled > pick.filled) pick = { slots: slots, k: k, filled: filled };
-      });
-      if (!pick) return;
-      var home = pick.slots[pick.k], used = {};
-      p.x = home.x; p.y = home.y; p.angle += off(home.angle, p.angle, p.type);
-      p.frozen = true; stone(p); carry(i); used[i] = 1; noise.bless = 1;
-      shuffled(pick.slots.filter(function (s, n) { return n !== pick.k && !pieces.some(function (q) { return near(q, s, 0.15, 3); }); })).slice(0, lv.pieces.length >= 5 ? 2 : 1).forEach(function (s) {   // two more, or one in a small level, where two would be most of it
-        var cands = pieces.map(function (q, n) { return n; }).filter(function (n) {
-          var q = pieces[n];
-          return !used[n] && !q.frozen && q.type === s.type && q.power !== 'ghost' && !(q.power === 'chameleon' && q.form) &&
-            !pick.slots.some(function (z) { return near(q, z, 0.15, 3); });
-        });
-        if (!cands.length) return;
-        cands.sort(function (a, b) { return inPlay(pieces[a]) - inPlay(pieces[b]); });   // one still waiting outside, for choice
-        var n = cands[0], q = pieces[n], S = G.verts(s);
-        used[n] = 1; unstick(n);
-        pieces.forEach(function (b, m) {   // whoever is in the way steps out
-          if (m === n || used[m] || b.frozen || b.power === 'ghost') return;
-          var o = G.overlap(S, G.verts(b));
-          if (o && o.depth > G.EPS) { var spot = traySpot(); unstick(m); b.x = spot[0]; b.y = spot[1]; standOff(b); }
-        });
-        q.x = s.x; q.y = s.y; q.angle += off(s.angle, q.angle, q.type);
-        if (q.fuse > 0) quench(q);
-      });
-    });
 
     // The puffer puffs up whenever it is put down in the box, and shoves away every shape it is
     // touching: so it has to go in before its neighbours do. A shape put down on top of it is shoved off too.
@@ -1217,7 +1174,7 @@
       if (p.power !== 'puffer' || !inPlay(p)) return;
       var A = G.verts(p), skin = grown(G.makeContainer(A), 0.04), any = false;
       pieces.forEach(function (q, j) {
-        if (j === i || q.frozen || q.power === 'ghost' || !inPlay(q)) return;
+        if (j === i || q.power === 'ghost' || !inPlay(q)) return;
         var o = G.overlap(i === sel ? skin : A, G.verts(q));   // its own move: a touch is enough. Another's: only if it is lying over it
         if (!o || (i !== sel && o.depth < 0.03)) return;
         var dx = q.x - p.x, dy = q.y - p.y, d = Math.hypot(dx, dy);
@@ -1236,7 +1193,7 @@
       if (i === sel) field(m);   // just put down: its reach shows for a moment
       pieces.map(function (q, j) { return j; }).filter(function (j) {
         var q = pieces[j];
-        return j !== i && !q.frozen && q.power !== 'ghost' && !(q.power === 'sticky' && q.mate >= 0) && reaches(G.verts(q), m.x, m.y, REACH);   // any part of it inside the ring
+        return j !== i && q.power !== 'ghost' && !(q.power === 'sticky' && q.mate >= 0) && reaches(G.verts(q), m.x, m.y, REACH);   // any part of it inside the ring
       }).sort(function (a, b) {
         return Math.hypot(pieces[a].x - m.x, pieces[a].y - m.y) - Math.hypot(pieces[b].x - m.x, pieces[b].y - m.y);   // the nearest first, so those behind close up after it
       }).forEach(function (j) {
@@ -1298,7 +1255,7 @@
     }
     var skin = grown(G.makeContainer(G.verts(p)), 0.06);
     pieces.forEach(function (q, j) {
-      if (q.frozen || (j !== i && !G.overlap(skin, G.verts(q)))) return;
+      if (j !== i && !G.overlap(skin, G.verts(q))) return;
       var spot = traySpot();
       unstick(j); q.x = spot[0]; q.y = spot[1]; standOff(q);
       if (q.fuse > 0) quench(q);
@@ -1367,7 +1324,7 @@
     });
     var kept = save.board;
     if (lv.powers) {
-      (!fresh && kept && kept.l === lv.name && kept.q ? kept.q : dealPowers()).forEach(function (g, n) {
+      (!fresh && kept && kept.l === lv.name && kept.q && kept.q.every(function (g) { return !g || POWERS[g.w]; }) ? kept.q : dealPowers()).forEach(function (g, n) {   // a board saved with a power there no longer is, is dealt afresh
         if (!g) return;
         var p = pieces[n];
         if (!p) {   // the ghost: one shape more than the level has
@@ -1379,7 +1336,6 @@
         p.power = g.w; p.kit = POWERS[g.w]; p.color = p.kit.color;
         if (g.w === 'chameleon') { p.forms = g.o; p.form = g.n; p.tint = g.c; p.type = p.forms[p.form]; p.color = CHAM[(p.form + p.tint) % CHAM.length]; }
         if (g.w === 'sticky') { p.mate = g.m == null ? -1 : g.m; p.rel = g.r || null; }
-        p.frozen = !!g.f;
       });
     }
     layout();

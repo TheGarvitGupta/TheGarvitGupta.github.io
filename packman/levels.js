@@ -4,8 +4,7 @@
 // from easiest to hardest; saved progress goes by name, so they can be reordered.
 // There are three chapters. The first is the seventeen; the second (bonus: true) brings
 // the brick and the hexagon; the third (powers: n) deals n of its shapes a power each time,
-// picked at random. The angel can only be one of them where angel: true, the last five,
-// and always is where angel: 'sure', the last two.
+// picked at random.
 // Its first five levels are tidy tilings, to meet the powers on; from the sixth on they are tight packings. Each chapter is numbered on its own.
 var PackmanLevels = (function () {
   'use strict';
@@ -367,8 +366,7 @@ var PackmanLevels = (function () {
     {
       name: 'Hex Mix',
       powers: 3,
-      angel: true,
-      intro: 'Two squares and two triangles in a honeycomb cell. Three powers from here, and an angel may be one.',
+      intro: 'Two squares and two triangles in a honeycomb cell. Three powers at once from here.',
       hint: 'One square turns 45° and pokes a corner into a corner of the hexagon. The other lies flat against a wall on the far side, at 60°. One triangle lies flat against a wall next to the first square, and the other fills the gap that is left, at 105°.',
       container: ngon(6, 1.291, 0),
       pieces: pieces(2, 2),
@@ -377,7 +375,6 @@ var PackmanLevels = (function () {
     {
       name: 'Mixed Bag',
       powers: 3,
-      angel: true,
       intro: 'One of each: a hexagon, a square and a triangle.',
       hint: 'Turn the hexagon 15° and push it into a corner. The square goes snug in the opposite corner. The triangle squeezes into a third corner at 90°, one side upright against the wall.',
       container: box(2.587),
@@ -387,7 +384,6 @@ var PackmanLevels = (function () {
     {
       name: 'Channel',
       powers: 3,
-      angel: true,
       intro: 'Two bricks and two triangles, in a box too narrow to lay anything flat.',
       hint: 'Stand a brick upright against each side wall: one pushed up into its top corner, the other down into its bottom corner. The triangles go in the channel between them, one at the top at 45° and one at the bottom at 105°.',
       container: box(2.619),
@@ -397,8 +393,7 @@ var PackmanLevels = (function () {
     {
       name: 'Five Points',
       powers: 3,
-      angel: 'sure',
-      intro: 'Five triangles, and none of them sits square. An angel comes to help.',
+      intro: 'Five triangles, and none of them sits square.',
       hint: 'One hangs flat from the middle of the top wall. The other four each have a side standing upright, so they point left or right: one against each side wall, half way up, and two more below them on the floor.',
       container: box(1.812),
       pieces: pieces(0, 5),
@@ -407,7 +402,6 @@ var PackmanLevels = (function () {
     {
       name: 'Tight Bricks',
       powers: 3,
-      angel: 'sure',
       intro: 'Ten Tight again, with two of its pairs welded into bricks. And powers.',
       hint: 'A brick lies along the top wall from the left corner, with a square under its end. The other brick lies along the bottom wall from the right corner, with a square on top of its end. A square goes in each of the other two corners, and the last two turn 45° and run down the diagonal.',
       container: box(3.713),
