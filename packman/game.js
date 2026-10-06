@@ -88,6 +88,11 @@
       bubble = $('bubble'), dock = $('dock'), ang = $('ang');
 
   var save = { v: 3, done: {}, last: '', mute: false, seen: false };
+  // A reset leaves a note for the page that loads after it, which forgets everything once more before it
+  // reads anything: whatever may have been written back in the moment between the two.
+  try {
+    if (sessionStorage.getItem('packman.reset')) { sessionStorage.removeItem('packman.reset'); localStorage.removeItem(STORE); localStorage.removeItem('packer.v1'); }
+  } catch (e) {}
   // progress saved back when the game was called Packer carries over
   try { var raw = JSON.parse(localStorage.getItem(STORE) || localStorage.getItem('packer.v1')); if (raw && raw.done) save = raw; } catch (e) {}
   // Progress used to be kept by level number: ten levels at first, then
@@ -2016,21 +2021,30 @@
     try { localStorage.removeItem(STORE); localStorage.removeItem('packer.v1'); } catch (e) {}
   }
   function wipe(board) {
-    var go = function () {
-      wiped = true;
-      clearInterval(ticker); clearTimeout(shakeTimer); clearTimeout(partyTimer);
-      forget();
-      location.replace(location.pathname + '?reset=' + Date.now());   // a new address, so the browser cannot hand back the old page
-    };
-    if (!board || LOCAL) { go(); return; }
-    // The line comes off the board first, and the reset only goes ahead once the board says it has. If
-    // it cannot be reached, nothing is reset: the id that line is kept under would be thrown away with
-    // the rest, and there would be no taking it off afterwards.
-    fetch(SCORES + '?pid=' + save.pid, { method: 'DELETE' })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) { if (d && d.gone != null) go(); })
-      .catch(function () {});
+    // Taking the line off the board is not waited for. The id it is kept under is put on a list of its
+    // own, which outlives the reset, and the board is asked to drop it now and every time the game is
+    // opened until it says it has: so the reset always happens, and the line goes as soon as the board can be reached.
+    if (board) { try { localStorage.setItem(GONE, JSON.stringify(gone().concat(save.pid))); } catch (e) {} }
+    wiped = true;
+    clearInterval(ticker); clearTimeout(shakeTimer); clearTimeout(partyTimer);
+    forget();
+    try { sessionStorage.setItem('packman.reset', '1'); } catch (e) {}
+    location.replace(location.pathname + '?reset=' + Date.now());   // a new address, so the browser cannot hand back the old page
   }
+  var GONE = 'packman.gone';
+  function gone() { try { var l = JSON.parse(localStorage.getItem(GONE)); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
+  function purge() {
+    if (LOCAL) return;
+    gone().forEach(function (pid) {
+      fetch(SCORES + '?pid=' + pid, { method: 'DELETE' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d || d.gone == null) return;   // not taken off yet: it is asked again next time
+          try { localStorage.setItem(GONE, JSON.stringify(gone().filter(function (p) { return p !== pid; }))); } catch (e) {}
+        }).catch(function () {});
+    });
+  }
+  purge();
   $('reset-ask').addEventListener('click', function () { closeSheet($('m-help')); deep = false; openSheet($('m-reset')); });
   $('reset-go').addEventListener('pointerdown', function (e) {
     deep = false; clearTimeout(deepTimer);
