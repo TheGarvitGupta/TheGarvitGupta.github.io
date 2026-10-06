@@ -492,7 +492,8 @@ var PackmanGeom = (function () {
 // same units as the pieces (every piece has side 1). Each solution is one packed
 // [x, y, angle] per piece, in the order the pieces are listed. The levels run
 // from easiest to hardest; saved progress goes by name, so they can be reordered.
-// There are three chapters. The first is the seventeen; the second (bonus: true) brings
+// There are three chapters, played in this order: the seventeen; then the powers, which are listed
+// last here; then the bricks and hexagons. In this file: the first is the seventeen; the next (bonus: true) brings
 // the brick and the hexagon; the third (powers: n) deals n of its shapes a power each time,
 // picked at random, but for any named in sure, which always come. A chameleon is dealt to
 // any shape, unless chameleon: n names one; masked is the hint to give when there is a chameleon in the deal.
@@ -682,7 +683,7 @@ var PackmanLevels = (function () {
     {
       name: 'Brickwork',
       bonus: true,
-      intro: 'A new shape: the brick, two squares long.',
+      intro: 'No powers here. Four bricks, a square, and a box three across.',
       hint: 'The square goes dead centre. The four bricks chase each other round it, each one lying along a different wall.',
       container: box(3.006),
       pieces: pieces(1, 0, 4),
@@ -691,7 +692,7 @@ var PackmanLevels = (function () {
     {
       name: 'Corners',
       bonus: true,
-      intro: 'Another new shape: the hexagon. It takes up most of the room.',
+      intro: 'A hexagon and three triangles. The hexagon takes up most of the room.',
       hint: 'The hexagon sits in the middle with three of its sides against the walls. A triangle fills each corner.',
       container: loosen([[0, -2 * H / 3], [0.5, H / 3], [-0.5, H / 3]], 3.012),
       pieces: pieces(0, 3, 0, 1),
@@ -766,7 +767,7 @@ var PackmanLevels = (function () {
     {
       name: 'Warm Up',
       powers: 1,
-      intro: 'Some shapes have powers now. Pick one up to see what it does.',
+      intro: 'A new shape, the brick, two squares long. And some shapes have powers now: pick one up to see.',
       hint: 'The brick lies along one wall. The two squares sit side by side along the other.',
       container: box(2.004),
       pieces: pieces(2, 0, 1),
@@ -793,7 +794,7 @@ var PackmanLevels = (function () {
     {
       name: 'Slant',
       powers: 1,
-      intro: 'A leaning box, a hexagon and two triangles.',
+      intro: 'A leaning box, two triangles, and another new shape: the hexagon.',
       hint: 'The hexagon goes in the middle and touches all four walls. A triangle fills each sharp corner.',
       container: loosen([[-1.5, -H], [0.5, -H], [1.5, H], [-0.5, H]], 1.004),
       pieces: pieces(0, 2, 0, 1),

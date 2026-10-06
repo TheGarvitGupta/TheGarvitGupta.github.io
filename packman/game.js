@@ -17,9 +17,11 @@
   var HUES = ['Red', 'Golden', 'Mint', 'Blue', 'Violet', 'Pink', 'Orange', 'Lime', 'Aqua', 'Orchid', 'Peach'];
   var ANIMALS = ['Fox', 'Leopard', 'Otter', 'Panda', 'Tiger', 'Owl', 'Wolf', 'Koala', 'Lynx', 'Heron', 'Badger', 'Falcon',
     'Dolphin', 'Moose', 'Raven', 'Gecko', 'Bison', 'Puffin', 'Hare', 'Seal', 'Yak', 'Crane', 'Lemur', 'Ibex'];
-  // Three chapters, one after another in the list: the seventeen, the new shapes, and the powers.
-  var CHAPTERS = ['Seventeen', 'New shapes', 'Powers'];
-  function chap(l) { return l.powers ? 2 : l.bonus ? 1 : 0; }
+  // Three chapters: the seventeen, then the powers, then the bricks and hexagons. The file lists the
+  // powers last (they were written last), so the levels are put in chapter order here.
+  var CHAPTERS = ['Seventeen', 'Powers', 'Bricks and hexagons'];
+  function chap(l) { return l.powers ? 1 : l.bonus ? 2 : 0; }
+  LEVELS = [0, 1, 2].reduce(function (all, k) { return all.concat(LEVELS.filter(function (l) { return chap(l) === k; })); }, []);
   var FIRST = CHAPTERS.map(function (c, k) { return LEVELS.map(chap).indexOf(k); });   // where each chapter starts
   var MAIN = LEVELS.filter(function (l) { return !chap(l); }).length;   // the seventeen
   function among(n) { return n - FIRST[chap(LEVELS[n])] + 1; }   // a level's number within its chapter
@@ -27,7 +29,7 @@
   var TURN = { square: 90, triangle: 120, domino: 180, hexagon: 60 };   // degrees before a shape looks the same again
   var KNOB = { square: 0.72, triangle: 0.6, domino: 0.72, hexagon: 1.08 };
   var OUTFITS = PackmanFaces;   // what a piece wears: the personalities, in faces.js
-  // The powers of chapter three, by name. Each is a face of its own, also in faces.js.
+  // The powers of chapter two, by name. Each is a face of its own, also in faces.js.
   var POWERS = {};
   PackmanPowers.forEach(function (k) { POWERS[k.power] = k; });
   var CHAM = ['#3DDBB4', '#FF8FCB', '#FFC93C', '#4DA8FF'];   // the chameleon's colours: one for each of the four shapes it goes through
@@ -992,7 +994,7 @@
 
   /* ---------- powers ---------- */
 
-  // In the third chapter some of the shapes are dealt a power: which shapes, and which
+  // In the second chapter some of the shapes are dealt a power: which shapes, and which
   // powers, is different every time. A power is a face of its own (faces.js) and a rule
   // here. Most have their say when a shape is put down: see react.
   var spared = null;   // the ghost and the one shape it is lying over, when that is how things stand
@@ -1370,7 +1372,7 @@
     $('lv-word').textContent = ch ? 'Ch ' + (ch + 1) + ' \u00B7' : 'Level';
     $('lv-num').textContent = among(i);
     $('lv-of').textContent = chapSize(ch);
-    document.body.classList.toggle('powers', ch === 2);   // the third chapter is played at night
+    document.body.classList.toggle('powers', !!lv.powers);   // the chapter of powers is played at night
     $('ribbon').setAttribute('hidden', '');
     $('lv-name').textContent = lv.name;
     $('lv-intro').textContent = lv.intro;
@@ -1745,7 +1747,7 @@
   var HINTS = 10, EVERY = 8 * 36e5, waiter = 0;
   function purse() {
     save.hints = save.hints || {};
-    var key = 'chapter ' + chap(lv), h = save.hints[key], now = Date.now();
+    var key = 'chapter ' + (lv.powers ? 2 : lv.bonus ? 1 : 0), h = save.hints[key], now = Date.now();   // (numbered as the chapters were when hints were first kept this way)
     if (!h || Array.isArray(h)) h = save.hints[key] = { n: HINTS - (Array.isArray(h) ? Math.min(h.length, HINTS) : 0), at: now };   // (a list of times, from when each came back after a day)
     if (h.n < HINTS) {
       if (!(h.at <= now)) h.at = now;   // a clock that has been put back

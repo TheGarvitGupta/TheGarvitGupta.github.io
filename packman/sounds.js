@@ -25,7 +25,7 @@ var PackmanSounds = function (tone) {
     unlucky: function () { tone(640, 0.09, { to: 560, vol: 0.07 }); tone(560, 0.2, { at: 0.09, to: 270, vol: 0.07 }); },
     goof: function () { tone(311, 0.08, { type: 'square', to: 220, vol: 0.045 }); tone(415, 0.12, { at: 0.11, type: 'square', to: 277, vol: 0.045 }); },
     pirate: function () { tone(150, 0.3, { type: 'square', to: 112, vol: 0.05 }); tone(300, 0.3, { type: 'triangle', to: 224, vol: 0.07 }); },
-    // the powers of chapter three
+    // the powers of chapter two
     mine: function () { tone(1700, 0.02, { type: 'square', vol: 0.05 }); tone(1700, 0.02, { at: 0.11, type: 'square', vol: 0.05 }); },
     ghost: function () { tone(420, 0.18, { to: 640, vol: 0.06 }); tone(640, 0.28, { at: 0.17, to: 370, vol: 0.06 }); },
     sticky: function () { tone(180, 0.07, { type: 'triangle', to: 430, vol: 0.1 }); tone(430, 0.06, { at: 0.07, type: 'triangle', to: 150, vol: 0.1 }); },

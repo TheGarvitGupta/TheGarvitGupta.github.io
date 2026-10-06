@@ -48,7 +48,7 @@ var PackmanFaces = [
            ['path', 'fringe', { d: 'M-0.23 -0.17Q0 -0.25 0.26 -0.19L0.265 0.03L0.21 -0.02L0.16 0.04L0.1 -0.01L0.05 0.02L0 -0.07L-0.07 -0.13L-0.15 -0.17Z' }]] }
 ];
 
-// The powers of chapter three. Each is a face like those above, with a power: the name game.js
+// The powers of chapter two. Each is a face like those above, with a power: the name game.js
 // knows it by. tip is the one line shown in the game while it is picked up; does is the longer
 // account on the page that introduces them. They are dealt by power, never as a plain personality.
 var PackmanPowers = [
