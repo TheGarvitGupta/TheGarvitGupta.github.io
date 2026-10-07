@@ -149,6 +149,10 @@ button{font:inherit; color:inherit; cursor:pointer}
   .ib[data-tip]:not(.sure):hover::after,.ib[data-tip]:not(.sure):focus-visible::after{opacity:1; transform:translate(-50%,0); transition:none}
   .tools .ib[data-tip]:last-child:not(.sure):hover::after,.tools .ib[data-tip]:last-child:not(.sure):focus-visible::after{transform:none}
 }
+/* how many hints the chapter has left, on the corner of the hint button */
+.ib .left{position:absolute; right:-7px; top:-8px; min-width:19px; height:19px; padding:0 4px; display:grid; place-items:center; font-size:11.5px; font-weight:700; line-height:1;
+  color:#2B2140; background:var(--sun); border:2px solid var(--ink); border-radius:999px; pointer-events:none}
+.ib .left.none{background:var(--card); color:var(--mut)}
 .ib.dim{color:var(--mut); opacity:.5}
 /* eyesight, while it is on: the button takes the blue the shapes turn */
 .ib[aria-pressed="true"]{background:#7C97C9; color:#2B2140}
@@ -474,7 +478,14 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .sheet.open #win-title{animation:stamp .6s var(--pop) .1s both}
 @keyframes stamp{from{transform:translateY(-22px); opacity:0}}
 
-.grid{display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:14px}
+/* three buttons that take the list of levels straight to a chapter; they stay at the top as it scrolls */
+.jump{position:sticky; top:0; z-index:3; display:flex; gap:6px; margin:12px -6px 0; padding:8px 6px; background:var(--card)}
+.jump button{flex:1; min-width:0; padding:6px 4px 7px; font-weight:600; font-size:13.5px; line-height:1.15; color:var(--text); background:var(--wash);
+  border:var(--bw) solid var(--ink); border-radius:13px; transition:transform .12s var(--pop)}
+.jump button:hover{transform:translateY(-2px)} .jump button:active{transform:translateY(1px)}
+.jump button.on{background:var(--sun); color:#2B2140}
+.jump small{display:block; font-size:11.5px; font-weight:500; opacity:.75}
+.grid{display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:6px}
 .lv{position:relative; aspect-ratio:1; padding:4px 0 0; background:var(--card); border:var(--bw) solid var(--ink); border-radius:16px;
   font-weight:700; font-size:17px; transition:transform .12s var(--pop);
   animation:popgrid .4s var(--pop) both; animation-delay:calc(var(--n) * 35ms)}
@@ -522,7 +533,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   .dock{gap:6px} .spin{gap:5px} .dock .rb{min-width:44px; padding:0 5px; font-size:14.5px} .angle{padding:0 9px 0 4px} .angle input{width:44px}
   .dock .tip{font-size:14px}
   .grid{gap:8px} .lv{border-radius:13px; font-size:15px}
-  .card{padding:20px 16px 18px}
+  .card{padding:20px 16px 18px} .jump button{font-size:12.5px}
 }
 /* six buttons and the name do not fit side by side on a phone: the name gives way, the face stays */
 @media (max-width:460px){ .word{display:none} }
@@ -576,7 +587,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     <nav class="tools">
       <!-- for the board in front of you: look closer, ask for help, start again -->
       <button class="ib" id="b-eye" aria-label="Eyesight: show every shape's true edge" aria-pressed="false" data-tip="Eyesight"><svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
-      <button class="ib" id="b-hint" aria-label="Hint" data-tip="Hint"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5.8 1 .8 1.7h6c0-.7.2-1.2.8-1.7A6.5 6.5 0 0 0 12 2.5z"/></svg></button>
+      <button class="ib" id="b-hint" aria-label="Hint" data-tip="Hint"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5.8 1 .8 1.7h6c0-.7.2-1.2.8-1.7A6.5 6.5 0 0 0 12 2.5z"/></svg><span class="left" id="hints-left" aria-hidden="true"></span></button>
       <button class="ib" id="b-reset" aria-label="Start this level over" data-tip="Start over"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5"/></svg></button>
       <!-- and for the game as a whole: who is winning, the sound, how it works -->
       <button class="ib lead" id="b-board" aria-label="Leaderboard" data-tip="Leaderboard"><svg viewBox="0 0 24 24"><path class="cup" d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 6H4.8a2.6 2.6 0 0 0 2.9 3.3M16.5 6h2.7a2.6 2.6 0 0 1-2.9 3.3M12 13.5V17M9.5 17h5l.8 3.5H8.7z"/></svg></button>
@@ -665,10 +676,11 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <li><span>1</span><div><b>Drag</b> a shape into the box.</div></li>
       <li><span>2</span><div><b>Spin</b> it with its knob<span class="keys"> or <kbd>Q</kbd> <kbd>E</kbd></span><span class="taps"> or two fingers</span>.</div></li>
       <li><span>3</span><div><b>Red dashes</b> mean it doesn’t fit. A <b>smile</b> means it does.</div></li>
+      <li><span>4</span><div><b>Three chapters</b>, all open: tap the level’s number to choose. In chapter 2 some shapes have <b>powers</b>.</div></li>
     </ul>
     <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · <a href="personalities.html">Meet the shapes</a> · v2.64</span></div>
+    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · <a href="personalities.html">Meet the shapes</a> · v2.65</span></div>
     <div><button class="link" id="reset-ask" type="button">Reset all progress</button></div>
   </div>
 </div>
@@ -687,6 +699,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   <div class="card">
     <h2 id="levels-h">Levels</h2>
     <p class="sub" id="levels-sub"></p>
+    <div class="jump" id="jump"></div>
     <div class="grid" id="grid"></div>
     <button class="btn plain" data-close>Close</button>
   </div>
@@ -729,11 +742,11 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=2.64"></script>
-<script src="levels.js?v=2.64"></script>
-<script src="faces.js?v=2.64"></script>
-<script src="sounds.js?v=2.64"></script>
-<script src="game.js?v=2.64"></script>
+<script src="geom.js?v=2.65"></script>
+<script src="levels.js?v=2.65"></script>
+<script src="faces.js?v=2.65"></script>
+<script src="sounds.js?v=2.65"></script>
+<script src="game.js?v=2.65"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

@@ -1425,7 +1425,7 @@
       $('clock').textContent = clock(carried);
     } else { scatter(); sfx.deal(pieces.length); }
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
-    notePower(null);
+    notePower(null); countHints();
     if (masked()) $('lv-intro').textContent = 'One of these is a chameleon in disguise. Its true shape is for you to find.';   // the usual line would count the shapes out
     judge(); showAngle(); placeHandle(); nag();
     lookForShake();
@@ -1767,8 +1767,15 @@
     var n = ms >= 36e5 ? Math.floor(ms / 36e5) : ms >= 6e4 ? Math.floor(ms / 6e4) : Math.max(1, Math.floor(ms / 1000));
     return n + (ms >= 36e5 ? ' hour' : ms >= 6e4 ? ' minute' : ' second') + (n === 1 ? '' : 's');
   }
+  // the number on the hint button: what this chapter has left
+  function countHints() {
+    var n = purse().n, e = $('hints-left');
+    e.textContent = n; e.classList.toggle('none', !n);
+    $('b-hint').setAttribute('aria-label', 'Hint, ' + n + ' left to show a spot');
+  }
   function showSpots() {
     var h = purse(), left = h.n;
+    countHints();
     var none = !won && masked() && !pickSpot();   // nothing to show that would not unmask the chameleon
     $('hint-spot').disabled = !left || none;
     $('spots').textContent = left;
@@ -1956,8 +1963,8 @@
   $('board-rename').addEventListener('click', function () { closeSheet($('m-board')); askName(showBoard); });
 
   function showLevels() {
-    var grid = $('grid'), count = 0;
-    grid.textContent = '';
+    var grid = $('grid'), jump = $('jump'), count = 0, heads = [];
+    grid.textContent = ''; jump.textContent = '';
     LEVELS.forEach(function (l, n) {
       if (n === MAIN) {
         // the prize sits straight after the seventeenth box, so it is plain what earns it
@@ -1972,7 +1979,7 @@
       if (n === FIRST[chap(l)]) {
         var more = document.createElement('div');
         more.className = 'more'; more.textContent = 'Chapter ' + (chap(l) + 1) + ' \u00B7 ' + CHAPTERS[chap(l)];
-        grid.appendChild(more);
+        grid.appendChild(more); heads[chap(l)] = more;
       }
       var b = document.createElement('button'), s = el('svg'), poly = el('polygon'), bb = G.bounds(l.container), done = save.done[l.name];
       if (done) count++;
@@ -1991,6 +1998,21 @@
       grid.appendChild(b);
     });
     $('levels-sub').textContent = (count ? count + ' of ' + LEVELS.length + ' packed. ' : '') + 'Start any chapter. Its levels open one by one.';
+    // a button for each chapter, saying how much of it is packed; it brings that chapter to the top of the list
+    CHAPTERS.forEach(function (name, k) {
+      var b = document.createElement('button'), sm = document.createElement('small');
+      var done = LEVELS.filter(function (l) { return chap(l) === k && save.done[l.name]; }).length;
+      b.type = 'button'; b.textContent = name; sm.textContent = done + ' of ' + chapSize(k);
+      b.appendChild(sm);
+      if (k === chap(lv)) b.className = 'on';
+      b.addEventListener('click', function () {
+        var card = grid.closest('.card');
+        var to = card.scrollTop + heads[k].getBoundingClientRect().top - card.getBoundingClientRect().top - jump.offsetHeight - 4;
+        card.scrollTo({ top: k ? Math.max(0, to) : 0, behavior: calm ? 'auto' : 'smooth' });   // the first chapter: right back to the top
+        Array.prototype.forEach.call(jump.children, function (c) { c.classList.toggle('on', c === b); });
+      });
+      jump.appendChild(b);
+    });
     openSheet($('m-levels'));
     var here = grid.querySelector('.here');
     if (here) setTimeout(function () { here.scrollIntoView({ block: 'center' }); }, 60);
@@ -2002,7 +2024,7 @@
     if (purse().n < 1) return;
     var spot = pickSpot();
     if (!spot && masked()) return;   // nothing to show that would not unmask the chameleon; the hint is not used up
-    if (spot) { var h = purse(); if (h.n === HINTS) h.at = Date.now(); h.n--; persist(); }   // the wait for one to come back starts when the purse stops being full
+    if (spot) { var h = purse(); if (h.n === HINTS) h.at = Date.now(); h.n--; persist(); countHints(); }   // the wait for one to come back starts when the purse stops being full
     closeSheet($('m-hint')); showGhost(spot);
     if (spot) sfx.spot();
   });
