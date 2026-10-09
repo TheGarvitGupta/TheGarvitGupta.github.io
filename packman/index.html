@@ -64,13 +64,13 @@ body.powers #power-row{display:flex}
 #power-note{width:max-content; max-width:100%; max-height:100%; display:flex; align-items:center; gap:11px; padding:5px 18px 6px 8px;
   color:#2B2140; background:var(--sun); border:var(--bw) solid var(--ink); border-radius:16px; animation:note .28s var(--pop) both}
 @keyframes note{from{transform:translateY(-8px) scale(.97); opacity:0}}
-#power-note .avatar{width:34px; height:34px; --u:.033}
+#power-note .avatar{width:34px; height:34px}
 #power-note p{margin:0; font-size:15px; font-weight:500; line-height:1.22}
 #power-note b{margin-right:6px; font-size:16px; font-weight:700}
 @media (prefers-reduced-motion:reduce){ #power-note{animation:none} }
-.avatar.p-ghost .fill{fill-opacity:.88}
+.avatar.p-ghost .fill{fill-opacity:.88; stroke-dasharray:calc(6px * var(--u)) calc(4px * var(--u))}
 .avatar .zz,.avatar .snooze,.avatar .yawn,.avatar .drool{visibility:visible} .avatar .lid,.avatar.p-sleeper .eye,.avatar.p-sleeper .mouth{visibility:hidden}
-@media (max-width:460px){ #power-row{height:60px; margin-top:6px} #power-idle{font-size:13.5px} #power-note{gap:8px; padding:4px 10px 5px 6px; border-radius:14px} #power-note .avatar{width:32px; height:32px; --u:.035} #power-note b{font-size:14px} #power-note p{font-size:12.5px; line-height:1.2} }
+@media (max-width:460px){ #power-row{height:60px; margin-top:6px} #power-idle{font-size:13.5px} #power-note{gap:8px; padding:4px 10px 5px 6px; border-radius:14px} #power-note .avatar{width:32px; height:32px} #power-note b{font-size:14px} #power-note p{font-size:12.5px; line-height:1.2} }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html,body{height:100%; margin:0}
 *{touch-action:none}
@@ -177,9 +177,11 @@ body:has(#stage.eyes) .sky i{opacity:0}   /* and none of them shows round the ta
 .row .btn{margin:0; padding:8px 16px 9px; font-size:15px}
 
 /* leaderboard: the name sheet, a player's block, and the ranked rows */
-.avatar{flex:none; display:block; width:30px; height:30px; --u:.0373}
+/* (A picture is a piece from the board at one fixed size, scaled to fit: game.js gives it its --u. Nothing happens on tapping one.) */
+.avatar{flex:none; display:block; width:30px; height:30px; pointer-events:none}
+.avatar.blink .eye{visibility:hidden} .avatar.blink .shut{visibility:visible}
 .you{display:inline-block; vertical-align:middle}
-#name-face .avatar{width:84px; height:84px; margin:0 auto 10px; --u:.0133; animation:bob 2.6s ease-in-out infinite}
+#name-face .avatar{width:84px; height:84px; margin:0 auto 10px; animation:bob 2.6s ease-in-out infinite}
 #name-form{margin-top:16px}
 #name-form .btn{padding:11px 22px 12px; font-size:18px}
 #name{display:block; width:100%; padding:11px 16px 12px; font:600 19px var(--f); text-align:center; color:var(--text); background:var(--wash);
@@ -211,7 +213,7 @@ body:has(#stage.eyes) .sky i{opacity:0}   /* and none of them shows round the ta
 .note{margin:9px 0 0; font-size:14px; font-weight:500; color:var(--mut)}
 .note[hidden],.note:empty,.lb[hidden]{display:none}
 .whoami{display:flex; align-items:center; justify-content:center; gap:9px; margin:16px 0 0; font-size:15px; font-weight:500}
-@media (max-width:420px){ .ranks li{gap:6px; padding-left:4px; padding-right:8px} .ranks .pos{width:18px} .ranks .avatar{width:24px; height:24px; --u:.0467} .ranks .fig{width:38px; font-size:13px} .ranks .fig.t{width:44px} }
+@media (max-width:420px){ .ranks li{gap:6px; padding-left:4px; padding-right:8px} .ranks .pos{width:18px} .ranks .avatar{width:24px; height:24px} .ranks .fig{width:38px; font-size:13px} .ranks .fig.t{width:44px} }
 
 /* level 17: a little piece runs along a rail towards the prize as the box fills */
 #prize-track{display:flex; align-items:center; gap:8px; margin-top:6px; max-width:420px}
@@ -334,10 +336,13 @@ body:has(#stage.eyes) .sky i{opacity:0}   /* and none of them shows round the ta
 #board.eyes .piece.p-ghost .fill{stroke:#17213F; stroke-width:calc(2px * var(--u)); stroke-dasharray:calc(6px * var(--u)) calc(4px * var(--u))}
 .boo{fill:var(--face)} .piece.good .boo{visibility:hidden}
 .hem{fill:none; stroke:#fff; stroke-width:calc(2px * var(--u)); stroke-linecap:round; stroke-linejoin:round}
-.honey{fill:#E8891A}
+.honey{fill:#E8891A; stroke:#E8891A; stroke-width:.03px; stroke-linejoin:round}
 /* the mine is nearly as dark as the night it is played in: a paler line round it, and a rivet at each corner */
 .p-mine .fill{stroke:#7F74A8} .rivet{fill:#51476B}
 .piece.glued .fill{stroke:#B85C00}
+/* the glue squeezed out between Sticky and what it is stuck to */
+.gum{pointer-events:none} .gum path{fill:none; stroke:#E8891A; stroke-width:.075px; stroke-linecap:round; stroke-linejoin:round} .gum circle{fill:#E8891A}
+#board.eyes .gum{visibility:hidden}
 .spike{fill:none; stroke:#1596A6; stroke-width:calc(2.4px * var(--u)); stroke-linecap:round}
 .white{fill:#fff; stroke:var(--face); stroke-width:calc(1.5px * var(--u))}
 /* the sleeper asleep: a shade darker, eyes shut, mouth open, drooling, and z's that come up one after another */
@@ -613,6 +618,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
       <g id="seams"></g>
       <g id="seals"></g>
       <g id="pieces"></g>
+      <g id="gums"></g>
       <g id="hits"></g>
       <g id="ribbon" hidden></g>
       <path id="ghost" class="ghost" hidden/>
@@ -747,9 +753,9 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 
 <script src="geom.js?v=2.70"></script>
 <script src="levels.js?v=2.70"></script>
-<script src="faces.js?v=2.70"></script>
+<script src="faces.js?v=2.71"></script>
 <script src="sounds.js?v=2.70"></script>
-<script src="game.js?v=2.71"></script>
+<script src="game.js?v=2.73"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

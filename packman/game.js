@@ -382,6 +382,7 @@
     if (tf !== p.tf) p.el.setAttribute('transform', tf);
     p.under.setAttribute('transform', tf + ' ' + rot);
     p.tf = tf; p.rot = rot;
+    gum(p);
   }
 
   // The knob stands straight above a shape to begin with. When the shape is selected, it
@@ -1067,7 +1068,7 @@
     b.textContent = title || kit.name;
     box.appendChild(b); box.appendChild(document.createTextNode(say || rest.charAt(0).toUpperCase() + rest.slice(1)));
     note.classList.toggle('warn', !!say);
-    note.textContent = ''; note.appendChild(portrait(kit, kit.color, 'p-' + w)); note.appendChild(box);
+    note.textContent = ''; note.appendChild(portrait(kit, kit.color)); note.appendChild(box);
     note.style.animation = 'none'; void note.offsetWidth; note.style.animation = '';   // it hops in afresh for each power
   }
 
@@ -1080,6 +1081,50 @@
   function setRel(s) {
     var q = pieces[s.mate], r = -q.angle * Math.PI / 180, dx = s.x - q.x, dy = s.y - q.y;
     s.rel = [dx * Math.cos(r) - dy * Math.sin(r), dx * Math.sin(r) + dy * Math.cos(r), s.angle - q.angle];
+  }
+  // The glue between Sticky and the shape it is stuck to: squeezed out along the join, a line of it with blobs on.
+  // It is worked out once, as seen from Sticky (the two do not move against each other while they are stuck), drawn over
+  // both shapes, and moved with Sticky. Along each of Sticky's sides, wherever the other shape is within reach of it.
+  function gum(s) {
+    if (s.power !== 'sticky') return;
+    if (s.mate < 0 || !s.rel || !pieces[s.mate]) { if (s.gum) { s.gum.parentNode.removeChild(s.gum); s.gum = null; } return; }
+    if (!s.gum) {
+      var q = pieces[s.mate], r = -s.rel[2] * Math.PI / 180, c = Math.cos(r), n = Math.sin(r);
+      var mine = G.verts({ type: s.type, size: s.size, x: 0, y: 0, angle: 0 });
+      var its = G.verts({ type: q.type, size: q.size, x: -(s.rel[0] * c - s.rel[1] * n), y: -(s.rel[0] * n + s.rel[1] * c), angle: -s.rel[2] });
+      function near(pt) {   // the nearest place on the other shape's edge
+        var best = null, least = Infinity;
+        its.forEach(function (a, k) {
+          var b = its[(k + 1) % its.length], ex = b[0] - a[0], ey = b[1] - a[1], t = Math.max(0, Math.min(1, ((pt[0] - a[0]) * ex + (pt[1] - a[1]) * ey) / (ex * ex + ey * ey)));
+          var x = a[0] + ex * t, y = a[1] + ey * t, d = Math.hypot(pt[0] - x, pt[1] - y);
+          if (d < least) { least = d; best = [x, y, d]; }
+        });
+        return best;
+      }
+      var g = el('g', 'gum'), d = '', blobs = [], closest = null, STEP = 0.04, count = 0;
+      mine.forEach(function (a, k) {
+        var b = mine[(k + 1) % mine.length], len = Math.hypot(b[0] - a[0], b[1] - a[1]), on = false;
+        for (var t = 0.1; t <= len - 0.1 + 1e-6; t += STEP) {   // short of the corners, so none of it stands out past the join
+          var pt = [a[0] + (b[0] - a[0]) * t / len, a[1] + (b[1] - a[1]) * t / len], to = near(pt), mid = [(pt[0] + to[0]) / 2, (pt[1] + to[1]) / 2];
+          if (!closest || to[2] < closest[2]) closest = [mid[0], mid[1], to[2]];
+          if (to[2] > 0.07) { on = false; continue; }
+          d += (on ? 'L' : 'M') + mid[0].toFixed(3) + ' ' + mid[1].toFixed(3);
+          if (!on) d += 'L' + mid[0].toFixed(3) + ' ' + mid[1].toFixed(3);
+          on = true;
+          if (count++ % 4 === 1) blobs.push(mid);
+        }
+      });
+      if (!blobs.length && closest) blobs.push(closest);   // touching at a corner only: one blob there
+      if (d) { var line = el('path'); line.setAttribute('d', d); g.appendChild(line); }
+      blobs.forEach(function (m, k) {
+        var o = el('circle');
+        o.setAttribute('cx', m[0].toFixed(3)); o.setAttribute('cy', m[1].toFixed(3)); o.setAttribute('r', [0.06, 0.042, 0.07, 0.05][k % 4]);
+        g.appendChild(o);
+      });
+      $('gums').appendChild(g);
+      s.gum = g;
+    }
+    s.gum.setAttribute('transform', 'translate(' + s.x.toFixed(4) + ' ' + s.y.toFixed(4) + ') rotate(' + s.angle + ')');
   }
   // whatever is glued to shape i goes where it goes, and turns as it turns
   function carry(i) {
@@ -1095,7 +1140,7 @@
   function unstick(i) {
     var freed = false;
     pieces.forEach(function (s, k) {
-      if (s.power === 'sticky' && s.mate >= 0 && (k === i || s.mate === i)) { s.mate = -1; s.rel = null; s.el.classList.remove('glued'); freed = true; }
+      if (s.power === 'sticky' && s.mate >= 0 && (k === i || s.mate === i)) { s.mate = -1; s.rel = null; s.el.classList.remove('glued'); gum(s); freed = true; }
     });
     return freed;
   }
@@ -1119,6 +1164,7 @@
     // Sticky, glued to it, lets go if the new shape no longer reaches it.
     pieces.forEach(function (s, k) {
       if (s.power === 'sticky' && s.mate === i && !G.overlap(grown(G.makeContainer(G.verts(s)), 0.03), G.verts(p))) { unstick(k); sfx.peel(); }
+      else if (s.power === 'sticky' && s.mate === i && s.gum) { s.gum.parentNode.removeChild(s.gum); s.gum = null; gum(s); }   // still stuck, along another join
     });
     layer.removeChild(p.el); p.under.parentNode.removeChild(p.under);
     buildPiece(p, i);
@@ -1288,7 +1334,7 @@
         if (d < least) { least = d; best = j; }
       });
       if (best < 0) return;
-      s.mate = best; setRel(s); s.el.classList.add('glued'); noise.glue = 1;
+      s.mate = best; setRel(s); s.el.classList.add('glued'); gum(s); noise.glue = 1;
     });
 
     // The mine, put down where it fits, goes out.
@@ -1372,7 +1418,7 @@
     bin.setAttribute('class', '');
     bin.style.animation = 'none'; void bin.getBoundingClientRect(); bin.style.animation = '';
 
-    layer.textContent = ''; $('seams').textContent = ''; $('seals').textContent = '';
+    layer.textContent = ''; $('seams').textContent = ''; $('seals').textContent = ''; $('gums').textContent = '';
     var colors = shuffled(COLORS), kits = shuffled(OUTFITS), pips = $('pips');
     pips.textContent = '';
     pieces = lv.pieces.map(function (type, n) {
@@ -1796,37 +1842,75 @@
   function tidy(name) { return String(name || '').replace(/[\u0000-\u001f\u007f<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 18); }
   function nth(n) { var k = n % 100; return n + (k > 10 && k < 14 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'); }
 
-  // A player's picture: a square block wearing one of the faces. Nobody picks
-  // theirs; it comes from their id, so it is the same wherever it is shown.
-  function avatar(h, cls) {
-    return portrait(OUTFITS[(h >>> 8) % 18], COLORS[h % COLORS.length], cls);   // the first eighteen: a face added later must not change anybody's picture
+  // A player's picture: a real shape, as it is in the game, with a face that looks about and blinks. It may be a square
+  // or a triangle (the two that are one square across: a brick or a hexagon would have to be shrunk twice as far to sit in
+  // the same row, and would no longer match), and wear any of the personalities or any of the powers. Nobody picks theirs;
+  // it comes from their id, so it is the same wherever it is shown.
+  // (A face or power added later must not change anybody's picture: these are the ones there were when this was written.)
+  var CAST = OUTFITS.slice(0, 19).concat(PackmanPowers.slice(0, 7)), FORMS = ['square', 'triangle'];
+  function avatar(h) {
+    var kit = CAST[(h >>> 8) % CAST.length];
+    return portrait(kit, kit.color || COLORS[h % COLORS.length], FORMS[(h >>> 24) % FORMS.length]);   // a power, and the goth, come in their own colour
   }
-  // any face, on a square block of any colour
-  function portrait(kit, color, cls) {
-    var s = el('svg', 'avatar' + (cls ? ' ' + cls : '')), fill = el('rect', 'fill'), face = el('g', 'face');
-    s.setAttribute('viewBox', '-0.56 -0.56 1.12 1.12'); s.setAttribute('aria-hidden', 'true');
-    s.style.setProperty('--c', color);
+  // Any face, on any shape of any colour: the piece exactly as the board draws it when a square is SHOWN pixels across,
+  // from the same outline (drawn), the same face and pour (faces.js) and the same lines (--u). Wherever it is put it is that
+  // one drawing, only bigger or smaller, seen through a window the size of the shape.
+  var SHOWN = 52, onShow = [];
+  function portrait(kit, color, type) {
+    type = type || 'square';
+    var P = PackmanPiece, poly = G.SHAPES[type], px = 1 / SHOWN, lo = [Infinity, Infinity], hi = [-Infinity, -Infinity];
+    poly.forEach(function (v) { for (var a = 0; a < 2; a++) { lo[a] = Math.min(lo[a], v[a]); hi[a] = Math.max(hi[a], v[a]); } });
+    var side = Math.max(hi[0] - lo[0], hi[1] - lo[1]);
+    var s = P.el('svg', 'avatar' + (kit.power ? ' p-' + kit.power : ''), { 'aria-hidden': 'true',
+      viewBox: [(lo[0] + hi[0] - side) / 2, (lo[1] + hi[1] - side) / 2, side, side].map(function (n) { return n.toFixed(4); }).join(' ') });
+    s.style.setProperty('--c', color); s.style.setProperty('--u', px.toFixed(5));
     if (kit.ink) s.style.setProperty('--face', kit.ink);
-    fill.setAttribute('x', -0.5); fill.setAttribute('y', -0.5); fill.setAttribute('width', 1); fill.setAttribute('height', 1); fill.setAttribute('rx', 0.14);
-    s.appendChild(fill);
-    var goo = PackmanPiece.pour(kit, 'square', PackmanPiece.block(0.46, 0.1));
+    s.appendChild(P.el('path', 'fill', { d: drawn(type, px) }));
+    var goo = P.pour(kit, type, drawn(type, px, 1.25));   // up to the inside of the line round the shape, as outline() has it
     if (goo) s.appendChild(goo.g);
-    [-0.13, 0.13].forEach(function (x) {
-      var e = el('circle', 'eye');
-      e.setAttribute('cx', x); e.setAttribute('cy', kit.eyeY || -0.06); e.setAttribute('r', kit.eye || 0.048);
-      face.appendChild(e);
-    });
-    var mouth = el('path', 'mouth');
-    mouth.setAttribute('d', kit.idle || 'M-0.07 0.1 Q0 0.15 0.07 0.1');
-    face.appendChild(mouth);
-    (kit.wear || []).forEach(function (w) {
-      var e = el(w[0], w[1]);
-      for (var k in w[2]) e.setAttribute(k, w[2][k]);
-      face.appendChild(e);
-    });
-    s.appendChild(face);
+    var made = P.face(kit, type);
+    s.appendChild(made.face);
+    onShow.push({ svg: s, kit: kit, eyes: made.eyes.querySelectorAll('.eye'), look: '' });
     return s;
   }
+  // The pictures watch the pointer as the shapes on the board do, wherever on the page it is; only the two dots move.
+  // Those on a sheet that is put away are left alone, and those no longer on the page are forgotten.
+  function seen(a) { var sh = a.svg.closest('.sheet'); return !sh || sh.classList.contains('open'); }
+  var peerAt = null, peerFrame = 0;
+  function peer() {
+    peerFrame = 0;
+    onShow = onShow.filter(function (a) { return a.svg.isConnected; });
+    onShow.forEach(function (a) {
+      if (a.kit.still || !seen(a)) return;
+      var tf = '';
+      if (peerAt) {
+        var r = a.svg.getBoundingClientRect(), u = 1 / (r.width || 1), dx = (peerAt[0] - r.left - r.width / 2) * u, dy = (peerAt[1] - r.top - r.height / 2) * u, d = Math.hypot(dx, dy);
+        if (d > 0.3) { var k = Math.min(0.04, d * 0.03) / d; tf = (dx * k).toFixed(3) + ' ' + (dy * k).toFixed(3); }
+      }
+      if (tf === a.look) return;
+      a.look = tf;
+      var by = tf ? tf.split(' ') : [0, 0];
+      Array.prototype.forEach.call(a.eyes, function (e) { e.setAttribute('cx', +e.getAttribute('data-x') + +by[0]); e.setAttribute('cy', +e.getAttribute('data-y') + +by[1]); });
+    });
+  }
+  function peek(e) {
+    if (calm || !onShow.length) return;
+    if (e) peerAt = e.clientX == null ? null : [e.clientX, e.clientY];
+    if (!peerFrame) peerFrame = requestAnimationFrame(peer);
+  }
+  document.addEventListener('pointermove', peek);
+  document.addEventListener('pointerdown', peek);
+  document.documentElement.addEventListener('pointerleave', function () { peek({}); });
+  $('board-ranks').addEventListener('scroll', function () { peek(); }, { passive: true });   // the rows move under a pointer that has not
+  // and now and then some of them blink: not the ones with shades or hollow eyes, nor the one that is asleep
+  setInterval(function () {
+    if (document.hidden) return;
+    var up = onShow.filter(function (a) { return a.svg.isConnected && seen(a) && !a.kit.stare && a.kit.power !== 'sleeper'; });
+    for (var n = Math.ceil(up.length / 12); n > 0; n--) (function (a) {
+      a.svg.classList.add('blink');
+      setTimeout(function () { a.svg.classList.remove('blink'); }, 220);
+    })(up[Math.floor(Math.random() * up.length)]);
+  }, 800);
 
   // Asked once, before anything else, and there is no skipping it: the sheet stays until there is a name.
   // Whoever skipped it when they could is asked again.
