@@ -13,7 +13,9 @@ var PackmanFaces = [
   { voice: 'sweet', name: 'The sweetheart', about: 'Blushes when it fits.', wear: [['ellipse', 'blush', { cx: -0.215, cy: 0.045, rx: 0.05, ry: 0.034 }], ['ellipse', 'blush', { cx: 0.215, cy: 0.045, rx: 0.05, ry: 0.034 }],
            ['path', 'wear thin', { d: 'M-0.17 -0.1L-0.205 -0.13M-0.14 -0.115L-0.15 -0.155M0.17 -0.1L0.205 -0.13M0.14 -0.115L0.15 -0.155' }]] },
   { voice: 'host', name: 'The host', about: 'Dressed for the occasion.', wear: [['path', 'wear solid', { d: 'M0 0.27L-0.1 0.215V0.325ZM0 0.27L0.1 0.215V0.325Z' }], ['circle', 'wear solid', { cx: 0, cy: 0.27, r: 0.022 }]] },
-  { voice: 'tache', name: 'The baritone', about: 'Hums while it waits.', wear: [['path', 'wear solid', { d: 'M0 0.035C-0.04 0 -0.11 0.01 -0.15 0.065C-0.1 0.08 -0.04 0.075 0 0.045C0.04 0.075 0.1 0.08 0.15 0.065C0.11 0.01 0.04 0 0 0.035Z' }]] },
+  { voice: 'tache', name: 'The baritone', about: 'Hums while it waits.', idle: 'M-0.045 0.138Q0 0.165 0.045 0.138',
+    // a handlebar: full under the nose, sweeping out to each side and turning up at the tips; the mouth sits just under it
+    wear: [['path', 'wear solid', { d: 'M0 0.022C0.03 -0.005 0.09 -0.005 0.12 0.035C0.137 0.058 0.16 0.052 0.185 0.02C0.175 0.085 0.125 0.1 0.085 0.09C0.05 0.082 0.02 0.07 0 0.048C-0.02 0.07 -0.05 0.082 -0.085 0.09C-0.125 0.1 -0.175 0.085 -0.185 0.02C-0.16 0.052 -0.137 0.058 -0.12 0.035C-0.09 -0.005 -0.03 -0.005 0 0.022Z', transform: 'translate(0 0.012)' }]] },
   { voice: 'grump', name: 'The grump', about: 'Was fine where it was.', idle: 'M-0.06 0.125H0.06', wear: [['path', 'wear', { d: 'M-0.2 -0.175L-0.08 -0.135M0.2 -0.175L0.08 -0.135' }]] },
   { voice: 'sleepy', name: 'The sleepyhead', about: 'Could be packed lying down.', still: true, eye: 0.036, eyeY: -0.045, idle: 'M-0.035 0.115Q0 0.13 0.035 0.115', wear: [['path', 'wear', { d: 'M-0.185 -0.078H-0.075M0.075 -0.078H0.185' }]] },
   { voice: 'kid', name: 'The kid', about: 'Freckles, and cannot sit still.', wear: [-0.24, -0.2, -0.22, 0.2, 0.24, 0.22].map(function (x, n) { return ['circle', 'wear solid', { cx: x, cy: n % 3 === 2 ? 0.07 : 0.03, r: 0.012 }]; }) },

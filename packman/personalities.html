@@ -30,7 +30,7 @@ h1{margin:0; font-size:34px; font-weight:700; line-height:1.1}
 .cast svg{display:block; width:84px; height:84px; margin:0 auto 14px; overflow:visible}
 .cast b{display:block; font-size:17px; font-weight:600}
 .cast span{display:block; margin-top:2px; font-size:14px; font-weight:500; line-height:1.3; color:var(--mut)}
-.fill{fill:var(--c); stroke:var(--ink); stroke-width:.033; stroke-linejoin:round}
+.fill{fill:var(--c); stroke:var(--ink); stroke-width:.033; stroke-linejoin:round} .big .fill{stroke-width:.055}
 .eye{fill:var(--face)}
 .mouth{fill:none; stroke:var(--face); stroke-width:.024; stroke-linecap:round}
 .m-good,.m-bad,.w-good{visibility:hidden}
@@ -92,8 +92,9 @@ h2{margin:40px 0 0; font-size:26px; font-weight:700; line-height:1.1}
   <ul id="powers" class="cast"></ul>
   <p class="foot"><a href="./">Back to Packman</a></p>
 </main>
-<script src="faces.js?v=2.68"></script>
-<script src="sounds.js?v=2.68"></script>
+<script src="geom.js?v=2.69"></script>
+<script src="faces.js?v=2.69"></script>
+<script src="sounds.js?v=2.69"></script>
 <script>
 (function () {
   'use strict';
@@ -121,10 +122,13 @@ h2{margin:40px 0 0; font-size:26px; font-weight:700; line-height:1.1}
   // A square, as it is in the game: PackmanPiece (in faces.js) builds the face and whatever is poured over it for both.
   // The outline is the game's too: drawn a hair inside its true edge, with the same small corners.
   // With it come the things a power shows in the game: the magnet's waves, the mine's count and the burst when it goes off.
-  function block(kit, color) {
-    var P = PackmanPiece, d = P.block(0.465, 0.08), s = P.el('svg', kit.power ? 'p-' + kit.power : '', { viewBox: '-0.56 -0.56 1.12 1.12', 'aria-hidden': 'true' });
-    s.style.setProperty('--c', kit.color || color);
-    if (kit.ink) s.style.setProperty('--face', kit.ink);
+  // (type: the shape, for the chameleon, which is not always a square. The two long ones are drawn smaller, to fit where a square does.)
+  function block(kit, color, type) {
+    type = type || 'square';
+    var P = PackmanPiece, big = type === 'domino' || type === 'hexagon', d = type === 'square' ? P.block(0.465, 0.08) : edge(type, 0.035, 0.08);
+    var svg = P.el('svg', (kit.power ? 'p-' + kit.power : '') + (big ? ' big' : ''), { viewBox: '-0.56 -0.56 1.12 1.12', 'aria-hidden': 'true' }), s = big ? svg.appendChild(P.el('g', '', { transform: 'scale(0.6)' })) : svg;
+    svg.style.setProperty('--c', color);
+    if (kit.ink) svg.style.setProperty('--face', kit.ink);
     if (kit.power === 'magnet') [0.54, 0.64, 0.74].forEach(function (r, n) { s.appendChild(P.el('circle', 'wave w' + n, { r: r })); });
     if (kit.power === 'mine') {
       var star = '';
@@ -132,12 +136,36 @@ h2{margin:40px 0 0; font-size:26px; font-weight:700; line-height:1.1}
       s.appendChild(P.el('path', 'bang', { d: star + 'Z' }));
     }
     s.appendChild(P.el('path', 'fill', { d: d }));
-    var goo = P.pour(kit, 'square', P.block(0.448, 0.063));   // up to the inside of the line, as in the game
+    var goo = P.pour(kit, type, type === 'square' ? P.block(0.448, 0.063) : edge(type, 0.052, 0.063));   // up to the inside of the line, as in the game
     if (goo) s.appendChild(goo.g);
-    var made = P.face(kit, 'square');
+    var made = P.face(kit, type);
     s.appendChild(made.face);
     var count = kit.power === 'mine' ? s.appendChild(P.el('text', 'count', { y: -0.6, 'text-anchor': 'middle' })) : null;
-    return { kit: kit, svg: s, eyes: made.eyes.querySelectorAll('.eye'), count: count, fuse: 0, look: '' };
+    return { kit: kit, svg: svg, eyes: made.eyes.querySelectorAll('.eye'), count: count, fuse: 0, look: '' };
+  }
+
+  // the outline of one of the game's shapes, drawn in from its true edge by a hair, with its corners rounded by r
+  function edge(type, by, r) {
+    var poly = PackmanGeom.SHAPES[type], n = poly.length, d = '';
+    function unit(a, b) { var l = Math.hypot(b[0] - a[0], b[1] - a[1]); return [(b[0] - a[0]) / l, (b[1] - a[1]) / l]; }
+    var inner = poly.map(function (p, i) {   // each corner moves in along both its sides
+      var u = unit(poly[(i + n - 1) % n], p), v = unit(p, poly[(i + 1) % n]), k = by / (u[0] * v[1] - u[1] * v[0]);
+      return [p[0] + (v[0] - u[0]) * k, p[1] + (v[1] - u[1]) * k];
+    });
+    inner.forEach(function (p, i) {
+      var u = unit(p, inner[(i + n - 1) % n]), v = unit(p, inner[(i + 1) % n]);
+      d += (i ? 'L' : 'M') + (p[0] + u[0] * r).toFixed(4) + ' ' + (p[1] + u[1] * r).toFixed(4) + 'Q' + p[0].toFixed(4) + ' ' + p[1].toFixed(4) + ' ' + (p[0] + v[0] * r).toFixed(4) + ' ' + (p[1] + v[1] * r).toFixed(4);
+    });
+    return d + 'Z';
+  }
+  // The chameleon goes round all four shapes, with a colour for each, as in the game: a new one every time it is picked.
+  var FORMS = ['triangle', 'square', 'domino', 'hexagon'], CHAM = ['#3DDBB4', '#FF8FCB', '#FFC93C', '#4DA8FF'];
+  function morph(c) {
+    c.form = ((c.form || 0) + 1) % FORMS.length;
+    var next = block(c.kit, CHAM[c.form], FORMS[c.form]);
+    c.btn.replaceChild(next.svg, c.svg);
+    c.svg = next.svg; c.eyes = next.eyes; c.look = '';
+    sounds.morph();
   }
 
   // The mine's fuse, as in the game: it counts three, two, one, in two and a half seconds, and then it goes off.
@@ -177,6 +205,7 @@ h2{margin:40px 0 0; font-size:26px; font-weight:700; line-height:1.1}
     flash(c, 'on', 650);
     if (w === 'mine') light(c);
     if (w === 'puffer') sounds.puff();
+    if (w === 'chameleon') morph(c);
     if (w === 'magnet') { if (held) { clearTimeout(c.off.pull); c.btn.classList.add('pull'); } else flash(c, 'pull', 2200); }
   }
   function rest(c) {
@@ -188,7 +217,7 @@ h2{margin:40px 0 0; font-size:26px; font-weight:700; line-height:1.1}
   [[PackmanFaces, 'cast'], [PackmanPowers, 'powers']].forEach(function (group) {
     var cast = document.getElementById(group[1]);
     group[0].forEach(function (kit, n) {
-      var li = document.createElement('li'), btn = document.createElement('button'), b = document.createElement('b'), d = document.createElement('span'), c = block(kit, COLORS[n % COLORS.length]);
+      var li = document.createElement('li'), btn = document.createElement('button'), b = document.createElement('b'), d = document.createElement('span'), c = block(kit, kit.color || COLORS[n % COLORS.length], kit.power === 'chameleon' ? FORMS[0] : '');
       btn.type = 'button';
       b.textContent = kit.name; d.textContent = kit.about || kit.does;
       btn.appendChild(c.svg); btn.appendChild(b); btn.appendChild(d);
