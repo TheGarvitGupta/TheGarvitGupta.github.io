@@ -186,6 +186,7 @@ body:has(#stage.eyes) .sky i{opacity:0}   /* and none of them shows round the ta
   border:var(--bw) solid var(--ink); border-radius:16px; user-select:text; -webkit-user-select:text}
 #name:focus{outline:none; background:var(--card); box-shadow:0 0 0 4px rgba(255,201,60,.55)}
 #name::placeholder{color:var(--mut); opacity:.7}
+#name.no{animation:wiggle .3s}
 .lb{margin-top:16px; text-align:left}
 .lb-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px; font-size:16px}
 .link{padding:0; font:600 14px var(--f); color:var(--mut); background:none; border:0; text-decoration:underline; text-underline-offset:3px; cursor:pointer}
@@ -646,7 +647,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
     <p class="sub">Enter your name to see it on the leaderboard.</p>
     <form id="name-form">
       <input id="name" type="text" maxlength="18" autocomplete="nickname" autocapitalize="words" spellcheck="false" enterkeyhint="done" placeholder="Your name" aria-label="Your name">
-      <div><button class="btn plain" id="name-skip" type="button">Skip</button><button class="btn go" id="name-go" type="submit">Start →</button></div>
+      <div><button class="btn go" id="name-go" type="submit">Start →</button></div>
     </form>
   </div>
 </div>
@@ -748,7 +749,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 <script src="levels.js?v=2.70"></script>
 <script src="faces.js?v=2.70"></script>
 <script src="sounds.js?v=2.70"></script>
-<script src="game.js?v=2.70"></script>
+<script src="game.js?v=2.71"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

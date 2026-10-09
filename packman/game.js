@@ -13,7 +13,8 @@
   var SCORES = 'https://www.garvitgupta.com/api/packman';
   var LOCAL = /^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname);   // served from this machine: read the board, never write to it
   if (LOCAL && /[?&]scores=([^&]+)/.test(location.search)) SCORES = decodeURIComponent(RegExp.$1);   // a stand-in board, for trying things out
-  // Anyone who skips giving a name is a colour and an animal: the colour of their block, so Blue Leopard is blue.
+  // Everyone gives a name. A colour and an animal stand in only until they do, or if the board will not take
+  // the one they gave: the colour of their block, so Blue Leopard is blue.
   var HUES = ['Red', 'Golden', 'Mint', 'Blue', 'Violet', 'Pink', 'Orange', 'Lime', 'Aqua', 'Orchid', 'Peach'];
   var ANIMALS = ['Fox', 'Leopard', 'Otter', 'Panda', 'Tiger', 'Owl', 'Wolf', 'Koala', 'Lynx', 'Heron', 'Badger', 'Falcon',
     'Dolphin', 'Moose', 'Raven', 'Gecko', 'Bison', 'Puffin', 'Hare', 'Seal', 'Yak', 'Crane', 'Lemur', 'Ibex'];
@@ -1720,6 +1721,7 @@
   function openSheet(s) { if (!s.classList.contains('open')) sfx.open(); s.classList.add('open'); var b = s.querySelector('.btn.go:not([hidden])') || s.querySelector('.btn:not([hidden])'); if (b) setTimeout(function () { b.focus({ preventScroll: true }); }, 60); }
   // 'How to pack' counts as seen only once it is closed, so a load nobody looked at does not use it up
   function closeSheet(s) {
+    if (s.id === 'm-name' && nameless()) return wanted();   // no way out of it without a name
     if (s.classList.contains('open')) sfx.close();
     s.classList.remove('open');
     if (s.id === 'm-help' && !save.seen) { save.seen = true; persist(); }
@@ -1826,29 +1828,31 @@
     return s;
   }
 
-  // Asked once, before anything else. Skipping it, or closing it any other way, leaves the stand-in name.
+  // Asked once, before anything else, and there is no skipping it: the sheet stays until there is a name.
+  // Whoever skipped it when they could is asked again.
   var afterName = null;
+  function nameless() { return !save.name || save.name === alias(me); }
+  function wanted() { var f = $('name'); f.classList.remove('no'); void f.offsetWidth; f.classList.add('no'); f.focus(); }
   function askName(then) {
     afterName = then || null;
     $('name-face').textContent = ''; $('name-face').appendChild(avatar(me));
-    $('name').value = save.name && save.name !== alias(me) ? save.name : '';
+    $('name').value = nameless() ? '' : save.name;
     $('name-go').textContent = save.name ? 'Save' : 'Start \u2192';
-    $('name-skip').hidden = !!save.name;
     openSheet($('m-name'));
   }
   function named() {
-    if (!save.name) { save.name = alias(me); persist(); }
     renames = 0; sync();   // tells the board the name, if it has anything under another
     var then = afterName; afterName = null;
     if (then) then();
   }
   $('name-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    save.name = tidy($('name').value) || alias(me); persist();
+    var name = tidy($('name').value);
+    if (!name || name === alias(me)) return wanted();
+    save.name = name; persist();
     $('name').blur();
     closeSheet($('m-name'));
   });
-  $('name-skip').addEventListener('click', function () { save.name = alias(me); persist(); closeSheet($('m-name')); });
 
   function ask(url, body) {
     return fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {})
@@ -2199,7 +2203,7 @@
     if (!save.seen) openSheet($('m-help'));
   };
   sync();
-  if (save.name) opening(); else askName(opening);
+  if (nameless()) askName(opening); else opening();
   persist();
 
   // Developer tools, only when the game is served from this machine.
