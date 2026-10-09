@@ -31,6 +31,7 @@
 
   /* Mode-specific treatments, not just colours. */
   --wash:        radial-gradient(120% 70% at 50% -10%, rgba(255, 246, 224, 0.07), transparent 60%);
+  --ground-ink:  0.15;      /* how strongly the drawing on the page shows */
   --coin-shadow:       drop-shadow(0 10px 18px rgba(0, 0, 0, 0.55));
   --coin-shadow-hover: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.65)) brightness(1.06);
   --coin-shadow-big:   drop-shadow(0 24px 50px rgba(0, 0, 0, 0.7));
@@ -82,6 +83,8 @@
   --gold-soft:   #6f570b;
 
   --wash:        radial-gradient(120% 70% at 50% -10%, rgba(120, 100, 60, 0.06), transparent 60%);
+  /* A gold this dark needs a little more of itself to show on paper. */
+  --ground-ink:  0.2;
   /* Tighter and weaker: on a pale ground a heavy shadow reads as grime. */
   --coin-shadow:       drop-shadow(0 6px 12px rgba(40, 34, 22, 0.24));
   --coin-shadow-hover: drop-shadow(0 12px 20px rgba(40, 34, 22, 0.30)) brightness(1.02);
@@ -133,6 +136,8 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  /* So the drawing below can be as tall as the page, not the window. */
+  position: relative;
 }
 
 /* A single wash of light from above, so the page reads as a lit case rather
@@ -145,6 +150,38 @@ body::before {
   background: var(--wash);
   z-index: 0;
 }
+
+/* What the page is made of: rubbings of coins in the shapes India struck,
+   strewn down the sheet with a cataloguer's marks between them. One large
+   drawing and not a tile, so nothing repeats until the page outruns it.
+
+   There are four sheets, the same coins dealt into different places. The page
+   is seldom long enough to show a whole one, so the inline script in
+   index.html moves on to the next each time the page is opened, and between
+   them a visitor sees every coin. Without JavaScript it is always the first.
+
+   It is black on clear and used as a mask over the theme's gold, so one file
+   serves both modes. It is on the page and not on the fixed wash above it:
+   paper travels with what is mounted on it, light does not. The line is put
+   out of focus in the drawing itself, by tools/rubbings.py, because a CSS blur
+   on a masked element blurs the flat colour and leaves the cut as sharp as
+   ever. */
+body::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--gold-soft);
+  opacity: var(--ground-ink);
+  -webkit-mask: var(--ground) 50% 0 / max(100%, 1100px) auto repeat-y;
+          mask: var(--ground) 50% 0 / max(100%, 1100px) auto repeat-y;
+  z-index: 0;
+}
+
+:root                   { --ground: url("rubbings-1.svg"); }
+:root[data-ground="2"]  { --ground: url("rubbings-2.svg"); }
+:root[data-ground="3"]  { --ground: url("rubbings-3.svg"); }
+:root[data-ground="4"]  { --ground: url("rubbings-4.svg"); }
 
 body > * { position: relative; z-index: 1; }
 

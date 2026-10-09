@@ -14,6 +14,7 @@ the rest of the site.
 coins/
   index.html            The exhibit — the only page
   css/coins.css         Exhibit styles
+  css/rubbings-N.svg    The drawing behind the page, in four sheets; written by tools/rubbings.py
   css/edit.css          Edit-mode styles (never loaded by the public site)
   js/coins.js           Catalogue, grid, filtering, routing
   js/viewer.js          Flip + deep-zoom viewer
@@ -22,6 +23,8 @@ coins/
   js/edit.js            Edit mode — inert unless the local server is running
   data/vocab.json       Mints, rulers, denominations, metals, field definitions
   tools/coins.py        The local server + image pipeline
+  tools/rubbings.py     Draws css/rubbings-N.svg
+  tools/stamp.py        Versions the stylesheet and script URLs
   start                 Launcher
 
   collection/           ← THE DATABASE. Nothing else.
@@ -156,6 +159,25 @@ the photo is centre-cropped square with its background intact.
 Roughly 300KB per full-size image, so ~150MB for a 250-coin collection —
 comfortably inside GitHub Pages' limits. Both dimensions and both quality
 settings are constants at the top of `tools/coins.py`.
+
+---
+
+## The ground
+
+Behind the collection is one large drawing: coins in the shapes India struck —
+scalloped, square, hexagonal, eleven-sided, holed — with wheat, lotus and mint
+marks between them. There are four sheets, the same coins dealt into different
+places, and the page moves on to the next one each time it is opened: it is
+rarely long enough to show a whole sheet, so this is how a visitor gets to see
+every coin. They are drawn by `tools/rubbings.py` and are not edited by hand:
+
+```sh
+python3 coins/tools/rubbings.py
+python3 coins/tools/rubbings.py --specimens /tmp/specimens.html   # each piece, large
+```
+
+How strongly it shows is `--ground-ink` in `css/coins.css`, set once for each
+theme. How soft the line is is `BLUR` at the top of the script.
 
 ---
 
