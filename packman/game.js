@@ -964,8 +964,13 @@
     }
     if (sel < 0) return;
     var p = pieces[sel], step = big ? 0.1 : 0.01, dx = 0, dy = 0;
-    if (k === 'q' || k === '[' || k === '{') { spin(sel, big ? -15 : -1); commit(true); }
-    else if (k === 'e' || k === ']' || k === '}') { spin(sel, big ? 15 : 1); commit(true); }
+    // A shape being carried is put back, at every move of the pointer, to the angle it was picked up at (drag.a0), so that
+    // a turn it took on only to sit against something does not stay with it. A turn from the keys is meant: it is kept.
+    if (/^[qe[\]{}]$/.test(k)) {
+      spin(sel, (k === 'q' || k === '[' || k === '{' ? -1 : 1) * (big ? 15 : 1));
+      if (drag && drag.mode === 'move' && drag.i === sel) drag.a0 = p.angle;
+      commit(true);
+    }
     else if (k === 'arrowleft') dx = -step;
     else if (k === 'arrowright') dx = step;
     else if (k === 'arrowup') dy = -step;

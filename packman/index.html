@@ -299,7 +299,9 @@ body:has(#stage.eyes) .sky i{opacity:0}   /* and none of them shows round the ta
 .piece.held{cursor:grabbing}
 .fill{fill:var(--c); stroke:var(--ink); stroke-width:calc(2.5px * var(--u)); stroke-linejoin:round}
 .piece.sel .fill{stroke-width:calc(4px * var(--u))}
-.piece.bad .fill{stroke:var(--bad); stroke-width:calc(3.5px * var(--u)); stroke-dasharray:calc(7px * var(--u)) calc(5px * var(--u))}
+/* A shape that does not fit has red dashes round it: round its true edge, which is a few pixels outside the shape as it is drawn.
+   So what it is into shows without eyesight: the dashes of two shapes that overlap run into each other, and into the box's wall. */
+#board:not(.eyes) .piece.bad .safe{visibility:visible; fill:none !important; stroke:var(--bad); stroke-width:calc(3px * var(--u)); stroke-dasharray:calc(7px * var(--u)) calc(5px * var(--u)); stroke-linejoin:round}
 
 .face,.back,.goo{pointer-events:none} .back{fill:var(--c)}
 .eye{fill:var(--face)}
@@ -310,7 +312,7 @@ body:has(#stage.eyes) .sky i{opacity:0}   /* and none of them shows round the ta
 .mouth{fill:none; stroke:var(--face); stroke-width:calc(2px * var(--u)); stroke-linecap:round}
 .m-good,.m-bad,.w-good{visibility:hidden}
 .piece.good .m-good,.piece.good .w-good{visibility:visible} .piece.good .m-idle,.piece.good .w-idle{visibility:hidden}
-.piece.bad .m-bad{visibility:visible; fill:var(--face)} .piece.bad .m-idle{visibility:hidden}
+.piece.bad .m-bad{visibility:visible; fill:var(--face)} .piece.bad .m-idle,.piece.bad .w-idle{visibility:hidden}   /* squashed, it has only the round mouth: no tongue or teeth left over from the one it had */
 .wear{fill:none; stroke:var(--face); stroke-width:calc(2px * var(--u)); stroke-linecap:round; stroke-linejoin:round}
 .wear.thin{stroke-width:calc(1.5px * var(--u))} .wear.solid{fill:var(--face); stroke-width:calc(1px * var(--u))}
 .blush{fill:#D6305F; fill-opacity:.32}
@@ -755,7 +757,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 <script src="levels.js?v=2.70"></script>
 <script src="faces.js?v=2.72"></script>
 <script src="sounds.js?v=2.70"></script>
-<script src="game.js?v=2.73"></script>
+<script src="game.js?v=2.75"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
