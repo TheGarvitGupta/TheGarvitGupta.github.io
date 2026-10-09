@@ -339,7 +339,7 @@ var PackmanPiece = (function () {
       if (document.hidden) return;
       var left = 3;
       Array.prototype.forEach.call(document.querySelectorAll('svg .drip'), function (d) {
-        if (d.busy || left < 1 || Math.random() > 0.4 || d.closest('.glued') || getComputedStyle(d).visibility === 'hidden') return;   // (glued: stuck to another shape, in the game, its glue is holding and has stopped running; hidden: on a sheet that is put away, or under eyesight, or the drool of a sleeper that is awake)
+        if (d.busy || left < 1 || Math.random() > 0.4 || d.closest('.glued, .avatar') || getComputedStyle(d).visibility === 'hidden') return;   // (glued: stuck to another shape, in the game, its glue is holding and has stopped running; avatar: a picture of a shape, on the leaderboard and such, which is not to drip over what is under it; hidden: on a sheet that is put away, or under eyesight, or the drool of a sleeper that is awake)
         var top = at(d, +d.getAttribute('x'), +d.getAttribute('y'));
         if (!top || top.y < 0 || top.y > innerHeight) return;   // nor one that is off the page
         left--; begin(d);
