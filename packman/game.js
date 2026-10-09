@@ -861,14 +861,16 @@
     if (level === EYE_LEVEL) return;   // that level is played with it on, and it cannot be put away there
     eye(!eyeOn);
     if (eyeOn) sfx.eyeOn(); else sfx.eyeOff();
-    save.eyes = eyeOn; persist();   // and it stays however it was left, from level to level and visit to visit
+    if (!lv.powers) { save.eyes = eyeOn; persist(); }   // and it stays however it was left, from level to level and visit to visit; but not among the powers
   });
 
   // The eighth level is where eyesight is learnt. The first time, everything dims but its
   // button and a note under it says what it is for; there is no closing that, and pressing
   // the button is the way on. The level is then played with eyesight on, every time, and
   // the button will not turn it off. When that level is packed, or left, eyesight goes off.
-  // Everywhere else it is the player's to choose, and it stays as they leave it.
+  // Everywhere else it is the player's to choose, and it stays as they leave it; except in the
+  // chapter of powers, where it hides which shape has which power. There it is for a look and
+  // no more: every level starts without it, and what is chosen there is not kept.
   var coachOn = false, coachTimer = 0;
   function seatCoach() {
     var r = $('b-eye').getBoundingClientRect(), pad = 5, c = $('coach'), spot = c.querySelector('.spot'), say = $('coach-say'), blk = c.querySelectorAll('.blk');
@@ -1432,7 +1434,7 @@
     if (i === EYE_LEVEL) {
       if (save.eyes) { save.eyes = false; persist(); }   // whatever was chosen before, the level after this one starts without it
       if (save.eyeTip) eye(true); else { eye(false); coachTimer = setTimeout(offerEyes, 900); }
-    } else eye(!!save.eyes);   // as it was left
+    } else eye(!lv.powers && !!save.eyes);   // as it was left; but a level of powers always starts without it, so the powers are seen first
     if (i === EYE_LEVEL) $('b-eye').removeAttribute('data-tip'); else $('b-eye').setAttribute('data-tip', 'Eyesight');   // no label where it cannot be changed
   }
 
