@@ -584,7 +584,7 @@
     Array.prototype.forEach.call(panel.querySelectorAll(".spec"), function (row) {
       var field = fieldByKey(row.dataset.key);
       if (!field) return;
-      var dd = row.querySelector("dd");
+      var dd = row.querySelector("td");
       row.classList.add("is-editable");
       mountControl(coin, field, dd);
 
@@ -834,7 +834,7 @@
       var changed = !!(u && (u.whole || u.fields[row.dataset.key]));
       row.classList.toggle("is-unsaved", changed);
       // The mark is a colour and a bar, so say it for anyone not seeing either.
-      var dt = row.querySelector("dt");
+      var dt = row.querySelector("th");
       if (dt) dt.title = changed ? "Unsaved" : "";
     });
     // The mark used to sit on the obverse/reverse buttons, which are gone now

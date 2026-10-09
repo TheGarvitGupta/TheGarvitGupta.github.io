@@ -208,8 +208,8 @@ merge `coins` into `master` to take it live.
 
 Tap the "o" in the **Coins** wordmark and it turns into a coin from the
 collection, is tossed, calls heads or tails, and turns back into the letter.
-In the grid and the viewer, coins lean toward a mouse pointer and catch the
-light. On a phone, swipe sideways on the coin to move to the next or previous
+In the grid, coins lean toward a mouse pointer and catch the light; opened
+large, they hold still. On a phone, swipe sideways on the coin to move to the next or previous
 one. The tilt and the toss's flight stand down under `prefers-reduced-motion`.
 
 Double-click toggles between fit and 250%. Scroll or pinch to zoom, drag to pan.

@@ -105,8 +105,8 @@
 .spec.is-editable { padding-right: 2rem; }
 
 .spec.is-new { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: 1rem; padding: 0.5rem 0; }
-.spec.is-new dt { color: var(--gold); font-size: 0.875rem; }
-.spec.is-new dd { margin: 0; }
+.spec.is-new th { color: var(--gold); font-size: 0.875rem; }
+.spec.is-new td { margin: 0; }
 
 .spec-remove {
   position: absolute;
@@ -466,8 +466,8 @@
   border-radius: 1px;
   background: #f59e0b;
 }
-.spec.is-unsaved dt { color: #b8860b; }
-:root[data-theme="dark"] .spec.is-unsaved dt { color: #fbbf24; }
+.spec.is-unsaved th { color: #b8860b; }
+:root[data-theme="dark"] .spec.is-unsaved th { color: #fbbf24; }
 
 /* An unreplaced photograph is marked on its own caption — the Obverse and
    Reverse buttons that used to carry this are gone, both faces being on show

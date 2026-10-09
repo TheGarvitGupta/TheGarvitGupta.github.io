@@ -74,27 +74,6 @@
     });
   }
 
-  /**
-   * The viewer's faces get the same light as the grid. Their photograph changes
-   * — thumbnail first, then the full file, then another coin — so the glint's
-   * mask is taken from whatever the face is showing as the pointer arrives.
-   */
-  function bindViewerLight() {
-    var frame = document.getElementById("stage-frame");
-    if (!frame) return;
-    Array.prototype.forEach.call(frame.querySelectorAll(".face"), function (f) {
-      var glint = document.createElement("span");
-      glint.className = "face-glint";
-      glint.setAttribute("aria-hidden", "true");
-      f.appendChild(glint);
-      f.addEventListener("pointerenter", function () {
-        var img = f.querySelector("img");
-        if (img && img.currentSrc) glint.style.setProperty("--mask", 'url("' + img.currentSrc + '")');
-      });
-    });
-    bindTilt(frame, ".face", 9);
-  }
-
   /* ── The coin in the wordmark ───────────────────────────────────────────── */
 
   function tossable() {
@@ -247,7 +226,6 @@
       if (grid) bindTilt(grid, ".coin-btn", 14, function (btn) {
         return btn.querySelector(".coin-disc") || btn;
       });
-      bindViewerLight();
     }
     buildWordmarkCoin();
   });

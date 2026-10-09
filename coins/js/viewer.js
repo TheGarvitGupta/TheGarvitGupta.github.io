@@ -4,9 +4,9 @@
    Both faces side by side on a wide screen; on a narrow one, the coin turns
    over between them.
 
-   Looking closely opens the photograph in its own tab rather than
-   reimplementing zoom: the browser's is better, and the image can then be
-   saved, printed or sent on. What is left here is the turn between faces.
+   A sheet over the collection. Inside it only three things respond to a
+   click: previous, next and the cross. The faces themselves are for looking
+   at — they do not open, turn or react to the pointer.
    ========================================================================= */
 
 window.Viewer = (function () {
@@ -16,6 +16,7 @@ window.Viewer = (function () {
   var current = null;   // the coin being shown
   var face = "obv";     // which side is toward the viewer, on narrow screens
   var lastFocus = null;
+  var pageTitle = "";   // the collection's own title, put back when a coin closes
   var reduced = false;
   // On a wide screen both faces show at once — a coin is two sides of one
   // object and comparing them is the point. Turning it over is for narrow
@@ -30,17 +31,6 @@ window.Viewer = (function () {
     var r = (!reduced && !spread && face === "rev") ? 180 : 0;
     el.flipper.style.transform = "rotateY(" + r + "deg)";
     el.flipper.classList.toggle("is-flipped", face === "rev");
-  }
-
-  /**
-   * Looking closely means opening the photograph itself, in its own tab. The
-   * browser's own zoom is better than anything reimplemented here, and the
-   * image can then be saved, printed or sent to someone.
-   */
-  function openFull(which) {
-    if (!current) return;
-    var url = window.Coins.imgSrc(current, which, "full");
-    if (url) window.open(url, "_blank", "noopener");
   }
 
   /* ── Flip ───────────────────────────────────────────────────────────────── */
@@ -100,7 +90,16 @@ window.Viewer = (function () {
 
     el.title.textContent = C.title(coin);
 
-    el.notes.textContent = coin.notes || "";
+    // Real paragraphs, one to each block of the note. A single element with
+    // the line breaks kept by CSS looks the same, but is one run of text to
+    // anything that reads the page by its structure.
+    el.notes.textContent = "";
+    (coin.notes || "").split(/\n\s*\n/).forEach(function (para) {
+      if (!para.trim()) return;
+      var p = document.createElement("p");
+      p.textContent = para.trim();
+      el.notes.appendChild(p);
+    });
     el.notes.hidden = !coin.notes;
 
     var groups = C.specs(coin);
@@ -115,15 +114,22 @@ window.Viewer = (function () {
       h.textContent = g.label;
       section.appendChild(h);
 
-      var dl = document.createElement("dl");
-      dl.style.margin = "0";
+      // A table, because that is what it is: a name and a value to a row. It
+      // is laid out by the stylesheet exactly as the list it replaces was, but
+      // anything that reads the page by its structure now gets two columns
+      // and not a run of alternating lines.
+      var table = document.createElement("table");
+      table.className = "spec-table";
+      var dl = document.createElement("tbody");
+      table.appendChild(dl);
       g.rows.forEach(function (row) {
-        var wrap = document.createElement("div");
+        var wrap = document.createElement("tr");
         wrap.className = "spec" + (row.empty ? " is-empty" : "");
         wrap.dataset.key = row.key;
-        var dt = document.createElement("dt");
+        var dt = document.createElement("th");
+        dt.scope = "row";
         dt.textContent = row.label;
-        var dd = document.createElement("dd");
+        var dd = document.createElement("td");
         dd.innerHTML = row.html;
         if (row.note) {
           var gloss = document.createElement("span");
@@ -135,7 +141,7 @@ window.Viewer = (function () {
         wrap.appendChild(dd);
         dl.appendChild(wrap);
       });
-      section.appendChild(dl);
+      section.appendChild(table);
       el.specs.appendChild(section);
     });
 
@@ -166,13 +172,17 @@ window.Viewer = (function () {
     renderDetail(coin);
     updateNav();
 
-    // Each coin turns in to face you as it arrives, including on Next and
-    // Previous. Taking the class off and reading layout restarts the animation.
+    // The coin turns in to face you when the sheet opens, and only then. Going
+    // to the next or previous one simply changes the coin: turning every time
+    // made leafing through the collection a row of the same flourish.
     el.flipper.classList.remove("is-arriving");
-    void el.flipper.offsetWidth;
-    el.flipper.classList.add("is-arriving");
+    if (el.root.hidden) {
+      void el.flipper.offsetWidth;   // reading layout restarts the animation
+      el.flipper.classList.add("is-arriving");
+    }
 
     el.root.hidden = false;
+    document.title = window.Coins.title(coin) + " \u2014 " + pageTitle;
     document.body.style.overflow = "hidden";
     paint(false);
     el.root.focus();
@@ -183,6 +193,12 @@ window.Viewer = (function () {
     if (el.root.hidden) return;   // arriving at the grid from the grid
 
     el.root.hidden = true;
+    // Nothing of the last coin is left in the page once it is shut, so the
+    // collection itself is never mistaken for an article about one coin.
+    el.era.textContent = el.title.textContent = el.notes.textContent = el.specs.textContent = "";
+    el.imgObv.removeAttribute("src");
+    el.imgRev.removeAttribute("src");
+    document.title = pageTitle;
     document.body.style.overflow = "";
     current = null;
     window.Coins.route(!fromHistory);
@@ -207,20 +223,6 @@ window.Viewer = (function () {
   }
 
   /* ── Input ──────────────────────────────────────────────────────────────── */
-
-  function bindStage() {
-    // Side by side, a face opens its own photograph. Stacked, the coin turns
-    // over — which is the only way to see the other side on a narrow screen.
-    ["face-obv", "face-rev"].forEach(function (cls) {
-      var node = el.frame.querySelector("." + cls);
-      if (!node) return;
-      node.addEventListener("click", function () {
-        if (spread) openFull(cls === "face-rev" ? "rev" : "obv");
-        else flip();
-      });
-    });
-  }
-
 
   /**
    * Swiping sideways anywhere in the viewer moves to the next or previous
@@ -279,7 +281,7 @@ window.Viewer = (function () {
     el.root.addEventListener("pointercancel", function () { start = null; settle(true); });
 
     // The lift at the end of a swipe also counts as a tap on whatever is under
-    // it — a face would open its photograph. Swallow that one.
+    // it. Swallow that one.
     el.root.addEventListener("click", function (e) {
       if (!swiped) return;
       swiped = false;
@@ -317,6 +319,7 @@ window.Viewer = (function () {
   /* ── Setup ──────────────────────────────────────────────────────────────── */
 
   function init() {
+    pageTitle = document.title;
     el.root = document.getElementById("viewer");
     el.frame = document.getElementById("stage-frame");
     el.flipper = document.getElementById("flipper");
@@ -342,10 +345,9 @@ window.Viewer = (function () {
 
     el.prev.addEventListener("click", function () { step(-1); });
     el.next.addEventListener("click", function () { step(1); });
-    el.root.addEventListener("click", function (e) { if (e.target === el.root) close(); });
+    document.getElementById("viewer-close").addEventListener("click", function () { close(); });
     document.addEventListener("keydown", onKey);
 
-    bindStage();
     bindSwipe();
 
     // Re-check the prev/next bounds when filtering changes what's on screen.

@@ -44,6 +44,7 @@
                    var(--gold-soft) 50%, #ffffff 56%, #f2f0ec 66%, #f2f0ec 100%);
   --bar-bg:      rgba(11, 11, 13, 0.86);
   --viewer-bg:   rgba(6, 6, 8, 0.96);
+  --scrim:       rgba(0, 0, 0, 0.58);      /* what the page is dimmed with behind a coin */
   --panel-bg:    rgba(22, 22, 26, 0.94);
   --hover-tint:  rgba(255, 255, 255, 0.05);
   --active-tint: rgba(255, 255, 255, 0.08);
@@ -54,6 +55,14 @@
   --sans:  "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   --topbar-h: 3.25rem;
+  /* How much of the page shows round an open coin. */
+  --pop-gap: clamp(0.75rem, 2.4vw, 2rem);
+  /* And how much of the sheet shows round the details card inside it. */
+  --detail-gap: 0.875rem;
+  --detail-w: 27rem;        /* the details' half of the sheet, margin included */
+  --stage-foot: 3rem;       /* under the coin, for its captions */
+  --nav-size: 3.5rem;       /* previous and next */
+  --pop-radius: 1.125rem;   /* one corner for the sheet and the card in it */
   --sort-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23918e88' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6.5 9.75L12 15.25l5.5-5.5'/%3E%3C/svg%3E");
 
   --shell:   min(1440px, 100% - 3rem);
@@ -96,6 +105,7 @@
                    #876a0c 50%, #6b5f45 56%, #1b1a17 66%, #1b1a17 100%);
   --bar-bg:      rgba(245, 243, 239, 0.88);
   --viewer-bg:   rgba(243, 241, 236, 0.97);
+  --scrim:       rgba(40, 34, 22, 0.34);
   --panel-bg:    rgba(255, 255, 255, 0.96);
   --hover-tint:  rgba(0, 0, 0, 0.05);
   --active-tint: rgba(0, 0, 0, 0.08);
@@ -1044,32 +1054,84 @@ body.filters-open .drawer { transform: none; }
 
 /* ── Viewer ───────────────────────────────────────────────────────────────── */
 
+/* A coin opens over the collection, not instead of it. This used to take the
+   whole window, which made it a second page with no visible way back — the
+   collection was gone, and the only exits were Escape and a Home button that
+   did not say it closed anything. Now it is a sheet laid on the page: the
+   collection stays in view round its edges, dimmed, and there is a cross in
+   the corner. */
 .viewer {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: var(--viewer-bg);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  animation: viewer-in 0.32s var(--ease) both;
+  padding: calc(var(--topbar-h) + var(--pop-gap)) var(--pop-gap) var(--pop-gap);
+  background: var(--scrim);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  animation: viewer-in 0.28s var(--ease) both;
 }
 .viewer[hidden] { display: none; }
 
 @keyframes viewer-in { from { opacity: 0; } to { opacity: 1; } }
 
+/* Two halves: the photographs on the left, the details card on the right. In
+   the markup the photographs are inside the card (see index.html for why), so
+   the stage is taken out of the flow and laid over the left half, and the card
+   is pushed to the right. The card must stay unpositioned for that to work:
+   the stage answers to the sheet, so the card's own scrolling neither clips
+   it nor carries it along. */
 .viewer-body {
+  position: relative;
   height: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 27rem);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--pop-radius);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  animation: sheet-in 0.36s var(--ease) both;
 }
 
+@keyframes sheet-in {
+  from { opacity: 0; transform: translateY(0.75rem) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* On the viewer and not inside the sheet, so it stays in its corner when the
+   sheet's contents scroll under it on a narrow screen. */
+.viewer-close {
+  position: absolute;
+  /* In the corner of the details card, which is itself set in from the sheet. */
+  top: calc(var(--topbar-h) + var(--pop-gap) + var(--detail-gap) + 0.55rem);
+  right: calc(var(--pop-gap) + var(--detail-gap) + 0.55rem);
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  width: 2.875rem;
+  height: 2.875rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--ink-dim);
+  transition: color 0.15s, transform 0.15s;
+}
+.viewer-close svg {
+  width: 1.25rem; height: 1.25rem;
+  fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round;
+}
+.viewer-close:hover { color: var(--ink); transform: scale(1.06); }
+
 .stage {
-  position: relative;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: var(--detail-w);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: clamp(1.5rem, 4vw, 3.5rem);
+  /* The sides hold the arrows, with a little air between them and the coin. */
+  padding: clamp(1.5rem, 4vw, 3.5rem) calc(var(--nav-size) + 1.25rem);
   min-width: 0;
   /* Scroll rather than clip. The controls sit under the coin, and with the
      coin sized off the viewport height they were being cut off entirely on a
@@ -1087,7 +1149,7 @@ body.filters-open .drawer { transform: none; }
   flex-shrink: 0;
   aspect-ratio: 1;
   perspective: 1600px;
-  cursor: pointer;          /* stacked: the coin turns over */
+  cursor: default;
 }
 
 .flipper {
@@ -1123,32 +1185,48 @@ body.filters-open .drawer { transform: none; }
 /* Blurred thumb standing in until the full-resolution file has decoded. */
 .face img.is-placeholder { filter: var(--coin-shadow-big) blur(6px); }
 
+/* A bare chevron, but in a box big enough to hit without aiming: the glyph is
+   what you see, the three and a half rem round it is what you can press. */
 .viewer-nav {
   position: absolute;
   z-index: 5;
   display: grid;
   place-items: center;
-  width: 3rem;
-  height: 3rem;
+  width: var(--nav-size);
+  height: var(--nav-size);
+  padding: 0;
   background: none;
   border: 0;
-  color: var(--ink-faint);
+  color: var(--ink-dim);
   transition: color 0.2s, transform 0.2s;
+}
+.viewer-nav svg {
+  width: 1.5rem; height: 1.5rem;
+  fill: none; stroke: currentColor; stroke-width: 1.9;
+  stroke-linecap: butt; stroke-linejoin: miter;
 }
 .viewer-nav:hover { color: var(--ink); }
 
-.viewer-nav   { top: 50%; margin-top: -1.5rem; font-size: 2.5rem; line-height: 1; }
-.viewer-prev  { left: 0.5rem; }
-.viewer-next  { left: auto; right: calc(27rem + 0.5rem); }
-.viewer-nav:hover { transform: scale(1.15); }
+/* Half way down the sheet, which starts below the bar. */
+.viewer-nav   { top: calc(50% + var(--topbar-h) / 2); margin-top: calc(var(--nav-size) / -2); }
+.viewer-prev  { left: calc(var(--pop-gap) + 0.5rem); }
+.viewer-next  { left: auto; right: calc(var(--pop-gap) + var(--detail-w) + 0.5rem); }
+.viewer-nav:hover { transform: scale(1.08); }
 .viewer-nav[disabled] { opacity: 0.2; pointer-events: none; }
 
 /* ── Detail panel ─────────────────────────────────────────────────────────── */
 
+/* A card set into the sheet the same way the sheet is set into the page: a
+   margin round it and its own corners, not a column run hard against the
+   edge. */
 .detail {
   overflow-y: auto;
+  width: calc(var(--detail-w) - var(--detail-gap));
+  height: calc(100% - var(--detail-gap) * 2);
+  margin: var(--detail-gap) var(--detail-gap) var(--detail-gap) auto;
   padding: clamp(2rem, 4vw, 3.5rem) clamp(1.5rem, 3vw, 2.75rem);
-  border-left: 1px solid var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--pop-radius);
   background: var(--bg-sunk);
 }
 
@@ -1176,6 +1254,8 @@ body.filters-open .drawer { transform: none; }
   white-space: pre-wrap;
 }
 .detail-notes:empty { display: none; }
+.detail-notes p { margin: 0; }
+.detail-notes p + p { margin-top: 1.8em; }
 
 .detail-specs { margin-top: 2.5rem; padding-left: 0.8rem; margin-left: -0.8rem; }
 
@@ -1191,6 +1271,9 @@ body.filters-open .drawer { transform: none; }
   color: var(--ink-faint);
 }
 
+/* A table in the markup, set out as a grid: the rows keep their own two
+   columns whatever the others hold, and edit mode can hang controls off one. */
+.spec-table, .spec-table tbody { display: block; width: 100%; }
 .spec {
   display: grid;
   grid-template-columns: 8.5rem minmax(0, 1fr);
@@ -1199,8 +1282,9 @@ body.filters-open .drawer { transform: none; }
   font-size: 0.875rem;
   align-items: baseline;
 }
-.spec dt { color: var(--ink-faint); }
-.spec dd { margin: 0; color: var(--ink); font-variant-numeric: tabular-nums; }
+.spec th, .spec td { display: block; padding: 0; text-align: left; font-weight: inherit; }
+.spec th { color: var(--ink-faint); }
+.spec td { color: var(--ink); font-variant-numeric: tabular-nums; }
 
 /* A gloss under a value: what a die axis means, which mint a star stands for.
    Shown to everyone, since a visitor who does not collect coins needs it more
@@ -1236,11 +1320,11 @@ body.filters-open .drawer { transform: none; }
     /* Gutters wide enough to hold the arrows, so they sit beside the coin
        rather than on top of it; the frame is sized against this padded box and
        takes the remaining width on its own. */
-    --stage-gutter: 3rem;
+    --stage-gutter: calc(var(--nav-size) + 0.5rem);
     --stage-top: 3.5rem;
     /* The frame is as wide as the padded stage and holds two faces side by
        side, so its height is that width over the spread aspect ratio. */
-    --frame-h: calc((100vw - var(--stage-gutter) * 2) / 2.1);
+    --frame-h: calc((100vw - var(--pop-gap) * 2 - var(--stage-gutter) * 2) / 2.1);
   }
 
   /*
@@ -1253,34 +1337,43 @@ body.filters-open .drawer { transform: none; }
      is shown at full height and the details simply follow underneath.
   */
   .viewer-body {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
     height: 100%;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
+  /* The stage goes across the top, as tall as the coin and its captions need,
+     and the card starts where it ends. */
   .stage {
+    bottom: auto;
+    right: 0;
+    height: calc(var(--stage-top) + var(--frame-h) + var(--stage-foot));
+    justify-content: flex-start;
     /* The captions hang 1.7rem below the frame, so a 1rem floor left them
        sitting on the details panel with the divider drawn through them. */
-    padding: var(--stage-top) var(--stage-gutter) 3rem;
+    padding: var(--stage-top) var(--stage-gutter) var(--stage-foot);
     overflow: visible;
   }
   .detail {
-    border-left: 0;
-    border-top: 1px solid var(--line);
+    width: auto;
+    height: auto;
+    margin: calc(var(--stage-top) + var(--frame-h) + var(--stage-foot)) var(--detail-gap) var(--detail-gap);
     overflow: visible;
+  }
+  /* The card is under the coin here, so the cross goes back to the sheet's own corner. */
+  .viewer-close {
+    top: calc(var(--topbar-h) + var(--pop-gap) + 0.7rem);
+    right: calc(var(--pop-gap) + 0.7rem);
   }
 
   /* Level with the middle of the coin, near the top of the screen. They used
      to sit at the very bottom — a thumb's travel from the thing they act on,
      and below the fold as soon as the details had any height to them. */
   .viewer-nav {
-    top: calc(var(--topbar-h) + var(--stage-top) + var(--frame-h) / 2);
+    top: calc(var(--topbar-h) + var(--pop-gap) + var(--stage-top) + var(--frame-h) / 2);
     bottom: auto;
-    margin-top: -1.5rem;
   }
-  .viewer-prev { left: 0; }
-  .viewer-next { left: auto; right: 0; }
+  .viewer-prev { left: calc(var(--pop-gap) + 0.25rem); }
+  .viewer-next { left: auto; right: calc(var(--pop-gap) + 0.25rem); }
 }
 
 @media (max-width: 560px) {
@@ -1327,9 +1420,7 @@ body.filters-open .drawer { transform: none; }
   perspective: none;
   cursor: default;
 }
-/* Each face opens its own photograph — a plain hand, since nothing magnifies
-   in place. */
-.viewer.is-spread .face { cursor: pointer; }
+.viewer.is-spread .face { cursor: default; }
 
 .viewer.is-spread .flipper {
   display: flex;
@@ -1351,8 +1442,10 @@ body.filters-open .drawer { transform: none; }
 }
 .viewer.is-spread .face-rev { transform: none; }
 
-.viewer.is-spread .face::after {
-  content: attr(data-label);
+.face { margin: 0; }
+.face figcaption { display: none; }
+.viewer.is-spread .face figcaption {
+  display: block;
   position: absolute;
   left: 0;
   right: 0;
@@ -1435,8 +1528,6 @@ body.filters-open .drawer { transform: none; }
   box-shadow: none;
 }
 
-/* Everything that used to assume nothing was above it. */
-.viewer-body  { padding-top: var(--topbar-h); }
 
 @media (max-width: 620px) {
   :root { --topbar-h: 3rem; }
@@ -1452,8 +1543,9 @@ body.filters-open .drawer { transform: none; }
      gutters, so the coins take that width back — which is most of the spacing
      fix: two faces across a narrow screen need every millimetre. */
   .viewer-nav { display: none; }
-  :root { --stage-gutter: 1.25rem; --stage-top: 1.5rem; }
-  .stage { padding-bottom: 2.5rem; }
+  :root { --stage-gutter: 1.25rem; --stage-top: 1.5rem; --pop-gap: 0.5rem; --detail-gap: 0.5rem; --pop-radius: 0.875rem; }
+  .viewer-close { top: calc(var(--topbar-h) + var(--pop-gap) + 0.5rem); right: calc(var(--pop-gap) + 0.5rem); }
+  :root { --stage-foot: 2.5rem; }
   .detail { padding-top: 1.75rem; }
 
   .topbar-inner { gap: 0.5rem; }
@@ -1583,44 +1675,17 @@ body.filters-open .drawer { transform: none; }
   to   { opacity: 1; transform: perspective(1200px) rotateY(0deg) scale(1); }
 }
 
-/* ── Light on the viewer's faces ──────────────────────────────────────────── */
-/* The same lean and glint as the grid, gentler, since the coin is so much
-   bigger. The photograph and its glint share one transform so the light stays
-   on the metal as it turns. */
-
-.viewer.is-spread .face { isolation: isolate; }
-.viewer.is-spread .face img,
-.face-glint {
-  transform: perspective(1400px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: transform 0.5s var(--ease);
+/* The enlarged faces are for looking at and nothing else: they do not lean,
+   catch the light or open anything. In the sheet, only previous, next and the
+   cross do something. */
+.stage, .stage * {
+  -webkit-user-select: none;
+          user-select: none;
+  -webkit-touch-callout: none;      /* no save-image sheet on a long press */
 }
-.viewer.is-spread .face.is-tilting img,
-.face.is-tilting .face-glint { transition-duration: 0.12s; }
-
-.face-glint {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  -webkit-mask: var(--mask) center / contain no-repeat;
-          mask: var(--mask) center / contain no-repeat;
-  background:
-    radial-gradient(circle at var(--gx, 35%) var(--gy, 25%),
-      rgba(255, 252, 240, 0.6), rgba(255, 252, 240, 0.12) 20%, rgba(255, 252, 240, 0) 42%),
-    linear-gradient(115deg,
-      transparent calc(var(--gx, 50%) - 30%),
-      rgba(255, 248, 225, 0.22) var(--gx, 50%),
-      transparent calc(var(--gx, 50%) + 30%));
-  mix-blend-mode: screen;
-  opacity: 0;
-  transition: opacity 0.35s var(--ease), transform 0.5s var(--ease);
-}
-.face.is-tilting .face-glint { opacity: 1; }
 
 /* Sideways drags anywhere in the viewer belong to viewer.js, for moving
    between coins; up and down still scroll the page to the details. */
 .viewer, .viewer * { touch-action: pan-y; }
 .viewer input, .viewer textarea, .viewer select { touch-action: auto; }
 
-@media (prefers-reduced-motion: reduce) {
-  .face-glint { display: none; }
-}
