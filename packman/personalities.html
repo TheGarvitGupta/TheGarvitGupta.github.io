@@ -30,10 +30,10 @@ h1{margin:0; font-size:34px; font-weight:700; line-height:1.1}
 .cast svg{display:block; width:84px; height:84px; margin:0 auto 10px; overflow:visible}
 .cast b{display:block; font-size:17px; font-weight:600}
 .cast span{display:block; margin-top:2px; font-size:14px; font-weight:500; line-height:1.3; color:var(--mut)}
-.fill{fill:var(--c); stroke:var(--ink); stroke-width:.03}
+.fill{fill:var(--c); stroke:var(--ink); stroke-width:.033; stroke-linejoin:round}
 .eye{fill:var(--face)}
 .mouth{fill:none; stroke:var(--face); stroke-width:.024; stroke-linecap:round}
-.m-good{visibility:hidden} .on .m-good{visibility:visible} .on .m-idle{visibility:hidden}
+.m-good,.m-bad,.shut,.wince{visibility:hidden} .on .m-good{visibility:visible} .on .m-idle{visibility:hidden}
 .on svg{animation:hop .45s cubic-bezier(.3,1.6,.5,1)}
 @keyframes hop{30%{transform:translateY(-10px) scale(1.08)} 60%{transform:translateY(0) scale(.96,1.04)}}
 .wear{fill:none; stroke:var(--face); stroke-width:.024; stroke-linecap:round; stroke-linejoin:round}
@@ -77,7 +77,6 @@ h2{margin:40px 0 0; font-size:26px; font-weight:700; line-height:1.1}
 <script>
 (function () {
   'use strict';
-  var NS = 'http://www.w3.org/2000/svg';
   var COLORS = ['#FF6B6B', '#FFC93C', '#3DDBB4', '#4DA8FF', '#9B7BFF', '#FF8FCB', '#FF9F45', '#B5E655', '#45D9E6', '#D987F5', '#FFB59E'];
   var actx = null;
   // the same one-note player the game has
@@ -99,22 +98,16 @@ h2{margin:40px 0 0; font-size:26px; font-weight:700; line-height:1.1}
     if (!actx) { var AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); }
     if (actx && actx.state !== 'running') actx.resume();
   }
-  function el(tag, cls, attrs) {
-    var e = document.createElementNS(NS, tag);
-    if (cls) e.setAttribute('class', cls);
-    for (var k in attrs) e.setAttribute(k, attrs[k]);
-    return e;
-  }
-  // a square block wearing the face, the way the game draws one
+  // A square, as it is in the game: PackmanPiece (in faces.js) builds the face and whatever is poured over it for both.
+  // The outline is the game's too: drawn a hair inside its true edge, with the same small corners.
   function block(kit, color) {
-    var s = el('svg', kit.power ? 'p-' + kit.power : '', { viewBox: '-0.56 -0.56 1.12 1.12', 'aria-hidden': 'true' });
+    var P = PackmanPiece, d = P.block(0.465, 0.08), s = P.el('svg', kit.power ? 'p-' + kit.power : '', { viewBox: '-0.56 -0.56 1.12 1.12', 'aria-hidden': 'true' });
     s.style.setProperty('--c', kit.color || color);
     if (kit.ink) s.style.setProperty('--face', kit.ink);
-    s.appendChild(el('rect', 'fill', { x: -0.5, y: -0.5, width: 1, height: 1, rx: 0.14 }));
-    [-0.13, 0.13].forEach(function (x) { s.appendChild(el('circle', 'eye', { cx: x, cy: kit.eyeY || -0.06, r: kit.eye || 0.048 })); });
-    s.appendChild(el('path', 'mouth m-idle', { d: kit.idle || 'M-0.07 0.1 Q0 0.15 0.07 0.1' }));
-    s.appendChild(el('path', 'mouth m-good', { d: 'M-0.12 0.07 Q0 0.24 0.12 0.07' }));
-    (kit.wear || []).forEach(function (w) { s.appendChild(el(w[0], w[1], w[2])); });
+    s.appendChild(P.el('path', 'fill', { d: d }));
+    var goo = P.pour(kit, 'square', P.block(0.448, 0.063));   // up to the inside of the line, as in the game
+    if (goo) s.appendChild(goo.g);
+    s.appendChild(P.face(kit, 'square').face);
     return s;
   }
   [[PackmanFaces, 'cast'], [PackmanPowers, 'powers']].forEach(function (group) {

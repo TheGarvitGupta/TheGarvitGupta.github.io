@@ -56,9 +56,10 @@
   // that touch still show a sliver of table between them; collisions use the
   // true shape. Gap and corner rounding are in screen pixels, so they look the
   // same at any zoom.
-  function drawn(type, px) {
-    px = px || 1 / view.scale;
-    return rounded(grown(G.makeContainer(G.SHAPES[type]), -2.6 * px), Math.min(6 * px, 0.12));
+  // (by: that many pixels further in still, for what is drawn on a shape and must stop short of its line)
+  function drawn(type, px, by) {
+    px = px || 1 / view.scale; by = by || 0;
+    return rounded(grown(G.makeContainer(G.SHAPES[type]), -(2.6 + by) * px), Math.min((6 - by) * px, 0.12));
   }
   // The box's outline is drawn just outside the real walls, so a piece resting
   // against a wall shows the same sliver of gap as two pieces side by side.
@@ -308,7 +309,7 @@
   /* ---------- drawing ---------- */
 
   function buildPiece(p, i) {
-    var g = el('g', 'piece fresh'), pop = el('g', 'pop'), body = el('g', 'body'), fill = el('path', 'fill'), face = el('g', 'face');
+    var g = el('g', 'piece fresh'), pop = el('g', 'pop'), body = el('g', 'body'), fill = el('path', 'fill');
     g.dataset.i = i;
     if (p.power) g.classList.add('p-' + p.power);
     if (p.mate >= 0) g.classList.add('glued');
@@ -316,32 +317,8 @@
     if (p.kit && p.kit.ink) g.style.setProperty('--face', p.kit.ink);
     g.style.setProperty('--d', (60 + i * 28) + 'ms');
     var kit = p.kit || OUTFITS[0];
-    if (p.type === 'triangle') face.setAttribute('transform', 'translate(0 0.03) scale(0.74)');
-    if (p.type === 'hexagon') face.setAttribute('transform', 'scale(1.3)');
-    var eyes = el('g', 'eyes');
-    [-0.13, 0.13].forEach(function (x) {
-      var e = el('circle', 'eye');
-      e.setAttribute('cx', x); e.setAttribute('cy', kit.eyeY || -0.06); e.setAttribute('r', kit.eye || 0.048);
-      e.setAttribute('data-x', x); e.setAttribute('data-y', kit.eyeY || -0.06);
-      eyes.appendChild(e);
-    });
-    var shut = el('path', 'shut');
-    shut.setAttribute('d', 'M-0.18 -0.06H-0.08M0.08 -0.06H0.18');
-    eyes.appendChild(shut);
-    var wince = el('path', 'wince');   // screwed-up eyes, for when it is squashed
-    wince.setAttribute('d', 'M-0.18 -0.11L-0.09 -0.06L-0.18 -0.01M0.18 -0.11L0.09 -0.06L0.18 -0.01');
-    eyes.appendChild(wince);
-    face.appendChild(eyes);
-    var idle = el('path', 'mouth m-idle'), good = el('path', 'mouth m-good'), bad = el('circle', 'mouth m-bad');
-    idle.setAttribute('d', kit.idle || 'M-0.07 0.1 Q0 0.15 0.07 0.1');
-    good.setAttribute('d', 'M-0.12 0.07 Q0 0.24 0.12 0.07');
-    bad.setAttribute('cx', 0); bad.setAttribute('cy', 0.13); bad.setAttribute('r', 0.045);
-    face.appendChild(idle); face.appendChild(good); face.appendChild(bad);
-    (kit.wear || []).forEach(function (w) {
-      var e = el(w[0], w[1]);
-      for (var k in w[2]) e.setAttribute(k, w[2][k]);
-      face.appendChild(e);
-    });
+    var made = PackmanPiece.face(kit, p.type), face = made.face, eyes = made.eyes;   // drawn as every page that shows a shape draws one: in faces.js
+    p.goo = PackmanPiece.pour(kit, p.type, '');   // what it has poured over it, if anything: outline() cuts it to the shape
     // A patch of the piece's own colour lies behind the face. Safari repaints
     // only part of a face that changes; redrawing this patch along with it
     // makes the whole face get painted, over colour and never over a gap.
@@ -365,7 +342,7 @@
     p.under.style.fill = BLUES[p.blue];
     if (p.power === 'ghost') p.under.setAttribute('class', 'seam ghostly');   // under eyesight the ghost is an outline, not a block
     $('seams').appendChild(p.under);
-    body.appendChild(safe); body.appendChild(fill); body.appendChild(back); body.appendChild(face);
+    body.appendChild(safe); body.appendChild(fill); if (p.goo) body.appendChild(p.goo.g); body.appendChild(back); body.appendChild(face);
     pop.appendChild(body); g.appendChild(pop);
     if (p.power === 'mine') {   // the seconds left on its fuse, over its head
       p.badge = el('text', 'count');
@@ -389,6 +366,7 @@
   function outline(p) {
     var d = drawn(p.type);
     p.fill.setAttribute('d', d);
+    if (p.goo) p.goo.edge.setAttribute('d', drawn(p.type, 0, 1.25));   // up to the inside of the line round the shape, and not over it
   }
 
   // Pieces are moved with transform attributes, not CSS transforms: Safari
@@ -1826,6 +1804,8 @@
     if (kit.ink) s.style.setProperty('--face', kit.ink);
     fill.setAttribute('x', -0.5); fill.setAttribute('y', -0.5); fill.setAttribute('width', 1); fill.setAttribute('height', 1); fill.setAttribute('rx', 0.14);
     s.appendChild(fill);
+    var goo = PackmanPiece.pour(kit, 'square', PackmanPiece.block(0.46, 0.1));
+    if (goo) s.appendChild(goo.g);
     [-0.13, 0.13].forEach(function (x) {
       var e = el('circle', 'eye');
       e.setAttribute('cx', x); e.setAttribute('cy', kit.eyeY || -0.06); e.setAttribute('r', kit.eye || 0.048);

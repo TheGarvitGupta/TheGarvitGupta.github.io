@@ -4,6 +4,7 @@
 // inside the body, so no outfit changes the shape the player has to pack. voice names its sound
 // in sounds.js; name and about are for the page that introduces them (personalities.html).
 // New ones go at the end: the leaderboard's pictures are dealt from the first eighteen.
+// A power may also have pour: something drawn on the body itself, edge to edge, for each shape.
 var PackmanFaces = [
   { voice: 'plain', name: 'The regular', about: 'No fuss. Here to be packed.' },
   { voice: 'specs', name: 'The bookworm', about: 'Has read the rules. Twice.', wear: [['circle', 'wear', { cx: -0.13, cy: -0.06, r: 0.088 }], ['circle', 'wear', { cx: 0.13, cy: -0.06, r: 0.088 }], ['path', 'wear', { d: 'M-0.042 -0.07Q0 -0.09 0.042 -0.07' }]] },
@@ -70,8 +71,15 @@ var PackmanPowers = [
   { power: 'sticky', voice: 'sticky', name: 'Sticky', color: '#FFB52E', idle: 'M-0.09 0.08Q0 0.17 0.09 0.08',
     tip: 'Sticky: glues to what it touches and rides along. Pick it up to peel it off.',
     does: 'In the box it glues itself to the nearest shape it touches, and goes wherever that one goes. Pick it up to peel it off.',
-    wear: [['rect', 'honey', { x: -0.25, y: -0.285, width: 0.5, height: 0.095, rx: 0.04 }], ['rect', 'honey', { x: -0.03, y: -0.23, width: 0.06, height: 0.15, rx: 0.03 }],
-           ['rect', 'honey', { x: 0.15, y: -0.23, width: 0.055, height: 0.1, rx: 0.027 }], ['rect', 'honey', { x: -0.21, y: -0.23, width: 0.05, height: 0.075, rx: 0.025 }]] },
+    // Honey, poured over the top of whatever shape it is and running down: blobs along the top edge as [x, y, r],
+    // drips below them as [x, y, width, height], and a glint at [x, y, rx, ry]. It is cut off at the shape's own edge.
+    pour: {
+      square: { blobs: [[-0.39, -0.5, 0.13], [-0.14, -0.5, 0.17], [0.12, -0.5, 0.12], [0.36, -0.5, 0.19]], drips: [[-0.185, -0.4, 0.09, 0.145], [0.315, -0.38, 0.09, 0.185]], glint: [-0.36, 0.34, 0.07, 0.03] },
+      domino: { blobs: [[-0.9, -0.5, 0.14], [-0.66, -0.5, 0.18], [-0.4, -0.5, 0.12], [-0.15, -0.5, 0.17], [0.1, -0.5, 0.13], [0.35, -0.5, 0.18], [0.62, -0.5, 0.12], [0.86, -0.5, 0.19]],
+                drips: [[-0.705, -0.4, 0.09, 0.16], [0.305, -0.4, 0.09, 0.12], [0.815, -0.38, 0.09, 0.2]], glint: [-0.84, 0.34, 0.07, 0.03] },
+      hexagon: { blobs: [[-0.45, -0.866, 0.2], [-0.15, -0.866, 0.25], [0.17, -0.866, 0.19], [0.45, -0.866, 0.26]], drips: [[-0.21, -0.72, 0.12, 0.24], [0.39, -0.7, 0.12, 0.32]], glint: [-0.5, 0.56, 0.09, 0.04] },
+      triangle: { blobs: [[0, -0.577, 0.33]], drips: [[-0.115, -0.3, 0.07, 0.15], [0.05, -0.3, 0.07, 0.1]], glint: [-0.28, 0.2, 0.05, 0.022] }
+    } },
   { power: 'puffer', voice: 'puffer', name: 'Puffer', color: '#45D9E6', eye: 0.056, idle: 'M-0.034 0.135A0.034 0.04 0 1 0 0.034 0.135A0.034 0.04 0 1 0 -0.034 0.135',
     tip: 'Puffer: put it down and it puffs up, shoving away whatever it touches.',
     does: 'Every time it is put down in the box it puffs up and shoves away every shape it is touching. Put it in first, and build round it.',
@@ -100,3 +108,51 @@ var PackmanPowers = [
     wear: [['rect', 'pole n', { x: -0.31, y: -0.12, width: 0.08, height: 0.2, rx: 0.02 }], ['rect', 'pole s', { x: 0.23, y: -0.12, width: 0.08, height: 0.2, rx: 0.02 }],
            ['path', 'wear thin', { d: 'M-0.1 -0.2Q0 -0.27 0.1 -0.2M-0.06 -0.165Q0 -0.205 0.06 -0.165' }]] }
 ];
+
+// How a shape is drawn, for the game and for every page that shows one: the same parts, built the same way.
+var PackmanPiece = (function () {
+  var NS = 'http://www.w3.org/2000/svg', made = 0;
+  function el(name, cls, at) {
+    var e = document.createElementNS(NS, name);
+    if (cls) e.setAttribute('class', cls);
+    for (var k in at) e.setAttribute(k, at[k]);
+    return e;
+  }
+  // a square about the origin, h from its middle to a side, with corners rounded by r: the outline of a block
+  function block(h, r) {
+    var a = h - r;
+    return 'M' + -a + ' ' + -h + 'H' + a + 'Q' + h + ' ' + -h + ' ' + h + ' ' + -a + 'V' + a + 'Q' + h + ' ' + h + ' ' + a + ' ' + h + 'H' + -a + 'Q' + -h + ' ' + h + ' ' + -h + ' ' + a + 'V' + -a + 'Q' + -h + ' ' + -h + ' ' + -a + ' ' + -h + 'Z';
+  }
+  // The face a kit gives a shape: two eyes, with the shut and the screwed-up pair that stand in for them,
+  // the three mouths (at rest, packed, squashed), and whatever it wears. face is the lot; eyes is the group to move.
+  function face(kit, type) {
+    var f = el('g', 'face'), eyes = el('g', 'eyes');
+    if (type === 'triangle') f.setAttribute('transform', 'translate(0 0.03) scale(0.74)');
+    if (type === 'hexagon') f.setAttribute('transform', 'scale(1.3)');
+    [-0.13, 0.13].forEach(function (x) {
+      eyes.appendChild(el('circle', 'eye', { cx: x, cy: kit.eyeY || -0.06, r: kit.eye || 0.048, 'data-x': x, 'data-y': kit.eyeY || -0.06 }));
+    });
+    eyes.appendChild(el('path', 'shut', { d: 'M-0.18 -0.06H-0.08M0.08 -0.06H0.18' }));
+    eyes.appendChild(el('path', 'wince', { d: 'M-0.18 -0.11L-0.09 -0.06L-0.18 -0.01M0.18 -0.11L0.09 -0.06L0.18 -0.01' }));   // screwed-up eyes, for when it is squashed
+    f.appendChild(eyes);
+    f.appendChild(el('path', 'mouth m-idle', { d: kit.idle || 'M-0.07 0.1 Q0 0.15 0.07 0.1' }));
+    f.appendChild(el('path', 'mouth m-good', { d: 'M-0.12 0.07 Q0 0.24 0.12 0.07' }));
+    f.appendChild(el('circle', 'mouth m-bad', { cx: 0, cy: 0.13, r: 0.045 }));
+    (kit.wear || []).forEach(function (w) { f.appendChild(el(w[0], w[1], w[2])); });
+    return { face: f, eyes: eyes };
+  }
+  // What a kit pours over a shape of this type, if anything, cut off at the outline d. It lies on the body, under the face.
+  // g is the group to draw; edge is the outline it is cut to, to be given a new d whenever the shape is drawn at another size.
+  function pour(kit, type, d) {
+    var po = kit.pour && kit.pour[type];
+    if (!po) return null;
+    var g = el('g', 'goo'), clip = el('clipPath', '', { id: 'goo' + (++made) }), edge = el('path', '', { d: d }), all = el('g', '', { 'clip-path': 'url(#goo' + made + ')' });
+    clip.appendChild(edge); g.appendChild(clip);
+    po.blobs.forEach(function (b) { all.appendChild(el('circle', 'honey', { cx: b[0], cy: b[1], r: b[2] })); });
+    po.drips.forEach(function (b) { all.appendChild(el('rect', 'honey', { x: b[0], y: b[1], width: b[2], height: b[3], rx: b[2] / 2 })); });
+    all.appendChild(el('ellipse', 'shine', { cx: po.glint[0], cy: po.glint[1], rx: po.glint[2], ry: po.glint[3] }));
+    g.appendChild(all);
+    return { g: g, edge: edge };
+  }
+  return { el: el, block: block, face: face, pour: pour };
+})();

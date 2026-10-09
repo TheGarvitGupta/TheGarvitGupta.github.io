@@ -285,7 +285,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 #board.eyes .safe,#board.eyes #true-box{visibility:visible}
 #board.eyes .bin-fill{visibility:hidden}
 #board.eyes .piece .fill{fill:transparent; stroke:transparent; pointer-events:all}
-#board.eyes .piece .face,#board.eyes .piece .face *,#board.eyes .piece .back{visibility:hidden}
+#board.eyes .piece .face,#board.eyes .piece .face *,#board.eyes .piece .back,#board.eyes .piece .goo{visibility:hidden}
 /* An overlap: orange-red against the blue, the pair that stays apart for nearly every kind of colour blindness. */
 .hit{fill:#FF4A1C; pointer-events:none}
 .bin-fill{fill:var(--bin); stroke:var(--ink); stroke-width:calc(4px * var(--u)); stroke-linejoin:round; transition:fill .35s}
@@ -301,7 +301,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 .piece.sel .fill{stroke-width:calc(4px * var(--u))}
 .piece.bad .fill{stroke:var(--bad); stroke-width:calc(3.5px * var(--u)); stroke-dasharray:calc(7px * var(--u)) calc(5px * var(--u))}
 
-.face,.back{pointer-events:none} .back{fill:var(--c)}
+.face,.back,.goo{pointer-events:none} .back{fill:var(--c)}
 .eye{fill:var(--face)}
 /* Faces change by visibility, never display: taking a shape out of the page leaves marks in Safari */
 .shut,.wince{visibility:hidden; fill:none; stroke:var(--face); stroke-width:calc(2.6px * var(--u)); stroke-linecap:round; stroke-linejoin:round}
@@ -742,11 +742,11 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=2.66"></script>
-<script src="levels.js?v=2.66"></script>
-<script src="faces.js?v=2.66"></script>
-<script src="sounds.js?v=2.66"></script>
-<script src="game.js?v=2.66"></script>
+<script src="geom.js?v=2.67"></script>
+<script src="levels.js?v=2.67"></script>
+<script src="faces.js?v=2.67"></script>
+<script src="sounds.js?v=2.67"></script>
+<script src="game.js?v=2.67"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
