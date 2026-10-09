@@ -14,7 +14,7 @@ the rest of the site.
 coins/
   index.html            The exhibit — the only page
   css/coins.css         Exhibit styles
-  css/rubbings-N.svg    The drawing behind the page, in four sheets; written by tools/rubbings.py
+  css/rubbings-Nx.svg   The drawing behind the page: four sheets, three layers each; written by tools/rubbings.py
   css/edit.css          Edit-mode styles (never loaded by the public site)
   js/coins.js           Catalogue, grid, filtering, routing
   js/viewer.js          Flip + deep-zoom viewer
@@ -23,7 +23,7 @@ coins/
   js/edit.js            Edit mode — inert unless the local server is running
   data/vocab.json       Mints, rulers, denominations, metals, field definitions
   tools/coins.py        The local server + image pipeline
-  tools/rubbings.py     Draws css/rubbings-N.svg
+  tools/rubbings.py     Draws css/rubbings-Nx.svg
   tools/specimens.html  Every piece of that drawing, large; written by the same script
   tools/stamp.py        Versions the stylesheet and script URLs
   start                 Launcher
@@ -170,7 +170,11 @@ scalloped, square, hexagonal, eleven-sided, holed — with wheat, lotus and mint
 marks between them. There are four sheets, the same coins dealt into different
 places, and the page moves on to the next one each time it is opened: it is
 rarely long enough to show a whole sheet, so this is how a visitor gets to see
-every coin. They are drawn by `tools/rubbings.py` and are not edited by hand:
+every coin. Each sheet is cut into three layers (`a`, `b`, `c`) which the page
+drifts against each other, a few pixels and a fraction of a degree over a
+minute or two, so the coins shift very slightly; it stands still under
+`prefers-reduced-motion`. They are drawn by `tools/rubbings.py` and are not
+edited by hand:
 
 ```sh
 python3 coins/tools/rubbings.py

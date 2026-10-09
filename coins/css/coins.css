@@ -160,29 +160,55 @@ body::before {
    index.html moves on to the next each time the page is opened, and between
    them a visitor sees every coin. Without JavaScript it is always the first.
 
-   It is black on clear and used as a mask over the theme's gold, so one file
-   serves both modes. It is on the page and not on the fixed wash above it:
+   It is black on clear and used as a mask over the theme's gold, so one set of
+   files serves both modes. It is on the page and not on the fixed wash above it:
    paper travels with what is mounted on it, light does not. The line is put
    out of focus in the drawing itself, by tools/rubbings.py, because a CSS blur
    on a masked element blurs the flat colour and leaves the cut as sharp as
    ever. */
-body::after {
-  content: "";
+.ground {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   pointer-events: none;
-  background: var(--gold-soft);
   opacity: var(--ground-ink);
-  -webkit-mask: var(--ground) 50% 0 / max(100%, 1100px) auto repeat-y;
-          mask: var(--ground) 50% 0 / max(100%, 1100px) auto repeat-y;
   z-index: 0;
 }
 
-:root                   { --ground: url("rubbings-1.svg"); }
-:root[data-ground="2"]  { --ground: url("rubbings-2.svg"); }
-:root[data-ground="3"]  { --ground: url("rubbings-3.svg"); }
-:root[data-ground="4"]  { --ground: url("rubbings-4.svg"); }
+/* Each sheet is cut into three, with neighbouring coins on different pieces,
+   and the three are let drift: a few pixels and a fraction of a degree, each
+   to its own slow clock, none of them in step. Turning a whole piece about a
+   point that is not its middle moves every coin on it a slightly different
+   way, so they seem to shift singly. It is meant to be found out, not seen —
+   if you can watch it happen, it is too much. */
+.ground i {
+  position: absolute;
+  inset: -1.5rem;
+  background: var(--gold-soft);
+  -webkit-mask: var(--sheet) 50% 1.5rem / max(100% - 3rem, 1100px) auto repeat-y;
+          mask: var(--sheet) 50% 1.5rem / max(100% - 3rem, 1100px) auto repeat-y;
+  animation: drift 97s ease-in-out infinite alternate;
+  will-change: transform;
+}
+.ground i:nth-child(1) { --sheet: var(--ground-a); --dx: 5px;  --dy: -3px; --turn: 0.22deg;  transform-origin: 28% 18rem; }
+.ground i:nth-child(2) { --sheet: var(--ground-b); --dx: -4px; --dy: 4px;  --turn: -0.28deg; transform-origin: 74% 34rem; animation-duration: 131s; animation-delay: -40s; }
+.ground i:nth-child(3) { --sheet: var(--ground-c); --dx: 3px;  --dy: 5px;  --turn: 0.18deg;  transform-origin: 50% 56rem; animation-duration: 113s; animation-delay: -75s; }
 
+@keyframes drift {
+  from { transform: translate(calc(var(--dx) * -1), calc(var(--dy) * -1)) rotate(calc(var(--turn) * -1)); }
+  to   { transform: translate(var(--dx), var(--dy)) rotate(var(--turn)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ground i { animation: none; }
+}
+
+:root                   { --ground-a: url("rubbings-1a.svg"); --ground-b: url("rubbings-1b.svg"); --ground-c: url("rubbings-1c.svg"); }
+:root[data-ground="2"]  { --ground-a: url("rubbings-2a.svg"); --ground-b: url("rubbings-2b.svg"); --ground-c: url("rubbings-2c.svg"); }
+:root[data-ground="3"]  { --ground-a: url("rubbings-3a.svg"); --ground-b: url("rubbings-3b.svg"); --ground-c: url("rubbings-3c.svg"); }
+:root[data-ground="4"]  { --ground-a: url("rubbings-4a.svg"); --ground-b: url("rubbings-4b.svg"); --ground-c: url("rubbings-4c.svg"); }
+
+/* Everything else on the page sits above the wash and the drawing. */
 body > * { position: relative; z-index: 1; }
 
 img { max-width: 100%; display: block; }
@@ -929,11 +955,13 @@ body.filters-open .drawer { transform: none; }
           mask: var(--mask) center / contain no-repeat;
   background:
     radial-gradient(circle at var(--gx, 35%) var(--gy, 25%),
-      rgba(255, 252, 240, 0.85), rgba(255, 252, 240, 0.2) 22%, rgba(255, 252, 240, 0) 46%),
+      rgba(255, 252, 240, 0.4), rgba(255, 252, 240, 0.1) 22%, rgba(255, 252, 240, 0) 46%),
     linear-gradient(115deg,
       transparent calc(var(--gx, 50%) - 30%),
-      rgba(255, 248, 225, 0.3) var(--gx, 50%),
+      rgba(255, 248, 225, 0.14) var(--gx, 50%),
       transparent calc(var(--gx, 50%) + 30%));
+  /* About half what it was: at full strength the hot spot read as a torch
+     held to the coin rather than the room's light crossing it. */
   /* Screen only ever brightens, so it reads as light on the metal rather than
      as a white film laid over the photograph. */
   mix-blend-mode: screen;

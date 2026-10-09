@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draw the ground the collection sits on: coins/css/rubbings-1.svg and on.
+"""Draw the ground the collection sits on: coins/css/rubbings-1a.svg and on.
 
 One large drawing rather than a tile, so nothing on the page repeats: coins of
 the shapes India struck, laid out the way the coins themselves are, strewn down
@@ -257,6 +257,7 @@ TOP = 5        # how many of those a visitor sees without scrolling
 KINDS = ["rupee", "hex", "anna", "square", "two", "pice", "two", "ten", "half", "five",
          "rupee", "hex", "pice", "ten", "anna"]
 SHEETS = 4
+LAYERS = 3     # each sheet is cut into this many, which the page drifts apart
 
 
 def dealt(variant):
@@ -284,25 +285,33 @@ def dealt(variant):
     return order
 
 
-def rubbings(blur=BLUR, variant=0):
+def rubbings(blur=BLUR, variant=0, layer=None):
+    """One sheet, or with `layer` one of the LAYERS it is split into.
+
+    The page drifts the layers against each other, very slowly, so the coins
+    shift a little in relation to one another. Neighbours go on different
+    layers; that is all the split is for.
+    """
     W, H = 1600, 2400
     lay = [(x, y, R, kind, turn) for (x, y, R, turn), kind in zip(PLACES, dealt(variant))]
     lay.insert(2, (lay[1][0], lay[1][1] + H, lay[1][2], lay[1][3], lay[1][4]))
-    kinds = sorted({l[3] for l in lay})
-    defs = "<defs>" + "".join(f"<g id='k-{k}'>{face(k)}</g>" for k in kinds) + "</defs>"
+    where = {(x, y): i % LAYERS for i, (x, y, *_) in enumerate(PLACES)}
+    parts = []                         # (layer, drawing)
+    add = lambda n, drawing: parts.append((n % LAYERS, drawing))
 
     # Compass sweeps from the engraver's table, running under everything.
     b = "<g stroke-dasharray='2 8' opacity='.55'>"
     for cx, cy, r in ((-420, 980, 1180), (2010, 1880, 1290), (760, -980, 1720), (1280, 3320, 1500)):
         b += f"<circle cx='{cx}' cy='{cy}' r='{r}'/><circle cx='{cx}' cy='{cy}' r='{r + 14}' stroke-dasharray='none' opacity='.5'/>"
-    b += "</g>"
+    add(0, b + "</g>")
 
     for x, y, R, kind, turn in lay:
         k = R / 100
         # Fainter toward the middle of the page, where the collection itself sits.
         depth = .5 + .5 * min(1, abs(x - W / 2) / (W * .42))
         L = R * 1.14
-        b += (f"<g transform='translate({x} {y}) rotate({turn})' opacity='{depth:.2f}'>"
+        add(where[(x, y if y <= H else y - H)],
+            f"<g transform='translate({x} {y}) rotate({turn})' opacity='{depth:.2f}'>"
               f"<use href='#k-{kind}' transform='scale({k:.3f})' stroke-width='{.9/k:.3f}'/>"
               # The centre lines it was set out on, run a little past the rim.
               f"<path d='M{f(-L)} 0H{f(L)}M0 {f(-L)}V{f(L)}' stroke-dasharray='14 5 2 5' opacity='.5'/>"
@@ -334,10 +343,10 @@ def rubbings(blur=BLUR, variant=0):
                 + (f"<path d='M{-w/2 + 4} 0H{w/2 - 4}' stroke-width='16' stroke-dasharray='{dash}'/>" if dash else
                    f"<path d='M{-w/2 + 6} 0H{w/2 - 6}'/>")
                 + "</g>")
-    b += edge(800, 850, 190, -7, "reeded edge", "1 3.2")
-    b += edge(1085, 2335, 170, 5, "security edge", "1 2 1 9")
-    b += edge(560, 1010, 130, 9, "plain edge", "")
-    b += edge(1255, 1065, 120, -12, "reeded edge", "1 3.2")
+    add(1, edge(800, 850, 190, -7, "reeded edge", "1 3.2"))
+    add(2, edge(1085, 2335, 170, 5, "security edge", "1 2 1 9"))
+    add(3, edge(560, 1010, 130, 9, "plain edge", ""))
+    add(4, edge(1255, 1065, 120, -12, "reeded edge", "1 3.2"))
 
     # Studies of the devices themselves, the way an engraver works one up
     # large before cutting it small.
@@ -353,11 +362,11 @@ def rubbings(blur=BLUR, variant=0):
                     return (f"<g transform='translate({x} {y})'><g transform='rotate({rng.uniform(-9, 9):.1f}) scale({scale:.3f})' "
                             f"stroke-width='{.9/scale:.3f}'>{inner}</g></g>")
         return ""
-    b += study(lotus_spray(), 2.6, 26, 37, "lotus, with bud and leaf", (900, 1700))
-    b += study(wheat_awned(), 2.6, 27, 37, "ear of wheat, bearded", (1500, 2360))
-    b += study(wheat_curl(), 2.4, 22, 36, "ear of wheat", (540, 2360))
-    b += study(lotus_spray(), 2.0, 26, 37, "lotus", (1700, 2360))
-    b += study(wheat_curl(), 2.0, 22, 36, "ear of wheat", (560, 1300))
+    add(5, study(lotus_spray(), 2.6, 26, 37, "lotus, with bud and leaf", (900, 1700)))
+    add(6, study(wheat_awned(), 2.6, 27, 37, "ear of wheat, bearded", (1500, 2360)))
+    add(7, study(wheat_curl(), 2.4, 22, 36, "ear of wheat", (540, 2360)))
+    add(8, study(lotus_spray(), 2.0, 26, 37, "lotus", (1700, 2360)))
+    add(9, study(wheat_curl(), 2.0, 22, 36, "ear of wheat", (560, 1300)))
 
     # And the mints' own marks, let fall in whatever room is left.
     def mark(x, y, kind, s):
@@ -377,8 +386,12 @@ def rubbings(blur=BLUR, variant=0):
             x, y = gx + rng.uniform(10, step - 10), gy + rng.uniform(10, step - 10)
             sz = rng.uniform(4.5, 8)
             if rng.random() < .62 and clear(x - sz - 4, y - sz - 4, x + sz + 4, y + sz + 4, pad=20):
-                b += f"<g opacity='{rng.uniform(.45, .9):.2f}'>{mark(x, y, rng.choice((0, 0, 1, 1, 2, 2, 3, 4)), sz)}</g>"
+                add(gx // step + 2 * (gy // step),
+                    f"<g opacity='{rng.uniform(.45, .9):.2f}'>{mark(x, y, rng.choice((0, 0, 1, 1, 2, 2, 3, 4)), sz)}</g>")
 
+    b = "".join(d for n, d in parts if layer is None or n == layer)
+    kinds = sorted({l[3] for l in lay if "#k-" + l[3] + "'" in b})
+    defs = "<defs>" + "".join(f"<g id='k-{k}'>{face(k)}</g>" for k in kinds) + "</defs>"
     return sheet(W, H, b, defs, sw=.9, blur=blur)
 
 
@@ -462,11 +475,13 @@ def specimens(path):
 
 def main() -> int:
     for v in range(SHEETS):
-        svg = rubbings(variant=v)
-        xml.dom.minidom.parseString(svg)      # a slip in a path is easier to find here than in a browser
-        path = COINS / "css" / f"rubbings-{v + 1}.svg"
-        path.write_text(svg)
-        print(f"wrote {path.relative_to(COINS.parent)} ({len(svg) // 1024}KB): top is {', '.join(dealt(v)[:TOP])}")
+        size = 0
+        for n in range(LAYERS):
+            svg = rubbings(variant=v, layer=n)
+            xml.dom.minidom.parseString(svg)      # a slip in a path is easier to find here than in a browser
+            (COINS / "css" / f"rubbings-{v + 1}{'abc'[n]}.svg").write_text(svg)
+            size += len(svg)
+        print(f"wrote coins/css/rubbings-{v + 1}[abc].svg ({size // 1024}KB): top is {', '.join(dealt(v)[:TOP])}")
     specimens(COINS / "tools" / "specimens.html")
     return 0
 
