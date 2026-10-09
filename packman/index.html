@@ -35,6 +35,7 @@
   --card:#FFFFFF; --bin:#FFFFFF; --wash:rgba(43,33,64,.06);
   --coral:#FF6B6B; --sun:#FFC93C; --mint:#3DDBB4; --sky:#4DA8FF; --grape:#9B7BFF; --pink:#FF8FCB; --tang:#FF9F45;
   --face:#2B2140; --bad:#E5263A; --win:#C9F7E6; --around:#2F3A5C;
+  --rim:#2B2140;   /* the line round the box, and round the pips that count what is in it: it has to show against the page, so it is pale on a dark one */
   --f:"Fredoka", ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", system-ui, -apple-system, "Segoe UI", sans-serif;
   --bw:2.5px; --pop:cubic-bezier(.34,1.56,.64,1);
 }
@@ -42,26 +43,18 @@
   :root{
     --bg:#1F1A30; --dot:rgba(255,244,222,.07);
     --ink:#0D0A17; --text:#FFF4DE; --mut:#A99FC4;
-    --card:#2E2746; --bin:#3A3158; --wash:rgba(255,244,222,.08);
-    --win:#255E55;
+    --card:#2E2746; --bin:#4A4070; --wash:rgba(255,244,222,.08);
+    --win:#255E55; --rim:#B9AEE6;
   }
 }
-/* The chapter of powers has a sky of its own, with stars and a gold-rimmed box: a pale violet morning
-   in the light theme, and night in the dark one. */
+/* The chapter of powers is played at night, whatever the theme: a dark sky with stars, and a gold-rimmed box. */
 body.powers{
-  --bg:#EDE6FF; --card:#FFFFFF; --bin:#FFFFFF; --mut:#75699A; --wash:rgba(74,53,138,.08);
-  background-image:radial-gradient(rgba(108,84,200,.5) 1px, transparent 1.5px), radial-gradient(rgba(242,164,20,.75) 1.4px, transparent 2px), radial-gradient(rgba(108,84,200,.22) 1px, transparent 1.5px);
+  --bg:#221A4E; --ink:#0D0A17; --text:#FFF4DE; --mut:#B9AEE6; --rim:#B9AEE6; --dot:rgba(255,244,222,.07);
+  --card:#2E2563; --bin:#40358A; --wash:rgba(255,244,222,.09); --win:#2E7D6E;
+  background-image:radial-gradient(rgba(255,255,255,.6) 1px, transparent 1.5px), radial-gradient(rgba(255,201,60,.55) 1.4px, transparent 2px), radial-gradient(rgba(255,255,255,.28) 1px, transparent 1.5px);
   background-size:53px 47px, 131px 113px, 29px 31px; background-position:0 0, 40px 60px, 13px 17px;
 }
-@media (prefers-color-scheme: dark){
-  body.powers{
-    --bg:#221A4E; --ink:#0D0A17; --text:#FFF4DE; --mut:#B9AEE6;
-    --card:#2E2563; --bin:#40358A; --wash:rgba(255,244,222,.09); --win:#2E7D6E;
-    background-image:radial-gradient(rgba(255,255,255,.6) 1px, transparent 1.5px), radial-gradient(rgba(255,201,60,.55) 1.4px, transparent 2px), radial-gradient(rgba(255,255,255,.28) 1px, transparent 1.5px);
-  }
-}
-body.powers .bin-fill{stroke:#F2A414}
-@media (prefers-color-scheme: dark){ body.powers .bin-fill{stroke:#FFC93C} }
+body.powers .bin-fill{stroke:#FFC93C}
 /* In the chapter of powers a strip between the level's name and the board is kept for the power in hand:
    its face, its name and one line, on a gold card. The strip is always there, so nothing moves when the
    card comes and goes, and it covers neither the name nor the board. Empty, it says what it is for. */
@@ -91,11 +84,12 @@ body{
 button{font:inherit; color:inherit; cursor:pointer}
 [hidden]{display:none !important}
 
-/* drifting shapes behind everything */
+/* soft blobs drifting behind everything: none of them a shape the game is played with, so none can be taken for a piece */
 .sky{position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0}
-.sky i{position:absolute; display:block; opacity:.16; animation:drift 26s ease-in-out infinite alternate}
-.sky i.s{border-radius:18%}
-.sky i.t{clip-path:polygon(50% 0,100% 100%,0 100%)}
+.sky i{position:absolute; display:block; opacity:.14; transition:opacity .25s; animation:drift 26s ease-in-out infinite alternate}
+.sky i.s{border-radius:58% 42% 55% 45% / 48% 58% 42% 52%}
+.sky i.t{border-radius:42% 58% 46% 54% / 56% 44% 56% 44%}
+body:has(#stage.eyes) .sky i{opacity:0}   /* and none of them shows round the table while eyesight is on */
 .sky i:nth-child(1){width:120px; height:120px; left:-30px; top:16%; background:var(--sky); animation-duration:31s}
 .sky i:nth-child(2){width:90px; height:80px; right:6%; top:9%; background:var(--sun); animation-duration:24s; animation-delay:-8s}
 .sky i:nth-child(3){width:150px; height:132px; right:-40px; bottom:12%; background:var(--pink); animation-duration:36s; animation-delay:-14s}
@@ -156,9 +150,10 @@ button{font:inherit; color:inherit; cursor:pointer}
 .ib.dim{color:var(--mut); opacity:.5}
 /* eyesight, while it is on: the button takes the blue the shapes turn */
 .ib[aria-pressed="true"]{background:#7C97C9; color:#2B2140}
-/* the leaderboard: the same button, in trophy gold */
-.ib.lead{background:var(--sun); color:#2B2140}
-.ib.lead .cup{fill:#fff}
+/* the leaderboard: the same button as the rest, with a gold cup */
+.ib.lead .cup{fill:var(--sun)}
+/* the three for the board in front of you stand a little apart from the three for the game as a whole */
+@media (min-width:600px){ .tools #b-board{margin-left:10px} }
 .ib.nag{background:var(--sun); color:#2B2140; box-shadow:0 0 0 4px rgba(255,201,60,.4); animation:nudge 1.6s ease-in-out infinite}
 .ib.off .on-only{display:none}
 .ib:not(.off) .off-only{display:none}
@@ -175,7 +170,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 .chip b{font-weight:700; font-size:17px}
 .title{flex:1; min-width:0}
 .title h1{margin:0; font-size:21px; font-weight:700; line-height:1.15}
-.title p{margin:1px 0 0; font-size:14.5px; color:var(--mut); line-height:1.25;
+.title p{margin:2px 0 0; font-size:15.5px; color:var(--text); opacity:.8; line-height:1.25;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
 /* the hint's choices on one line, the way on at the right */
 .row{display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; margin-top:16px}
@@ -237,8 +232,8 @@ button{font:inherit; color:inherit; cursor:pointer}
 /* how many are packed is plain from the squares; the words stay for screen readers only */
 .unseen{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap}
 #pips{display:flex; flex-wrap:wrap; justify-content:flex-end; gap:4px; max-width:150px; margin-left:auto}
-#pips i{width:13px; height:13px; border:2px solid var(--ink); border-radius:4px; background:var(--wash); transition:background .15s}
-#pips i.t{border:0; width:15px; background:var(--ink); clip-path:polygon(50% 0,100% 100%,0 100%); position:relative}
+#pips i{width:13px; height:13px; border:2px solid var(--rim); border-radius:4px; background:var(--wash); transition:background .15s}
+#pips i.t{border:0; width:15px; background:var(--rim); clip-path:polygon(50% 0,100% 100%,0 100%); position:relative}
 #pips i.t::after{content:""; position:absolute; inset:3.5px 3px 2px; background:var(--bg); clip-path:inherit; transition:background .15s}
 #pips i.d{width:24px} #pips i.h{border-radius:50%}
 /* the chameleon's place in the row: no shape, only a question mark */
@@ -246,16 +241,18 @@ button{font:inherit; color:inherit; cursor:pointer}
 #pips i.q::after{content:"?"; position:absolute; inset:0; display:grid; place-items:center; font:700 9px/1 var(--f); font-style:normal; color:var(--text)}
 #pips i.q.on::after{color:#2B2140}
 #pips i.on{background:var(--mint); animation:pip .4s var(--pop)}
-#pips i.t.on{background:var(--ink)}
+#pips i.t.on{background:var(--rim)}
 #pips i.t.on::after{background:var(--mint)}
 @keyframes pip{50%{transform:translateY(-4px)}}
 #best{font-size:12.5px; font-weight:500; color:var(--mut); font-variant-numeric:tabular-nums; white-space:nowrap}
 #stats{margin-top:4px; font-size:13.5px; font-weight:500; color:var(--mut); font-variant-numeric:tabular-nums; white-space:nowrap}
 
 /* board */
-#stage{position:relative; flex:1; min-height:0; margin:8px 0; border-radius:22px}
-/* under eyesight the table round the box is dark: the box is white and the shapes are blues, and both stand clear of it */
-#stage.eyes{background-color:var(--around)}
+#stage{position:relative; flex:1; min-height:0; margin:8px 0}
+/* under eyesight the table round the box is dark: the box is white and the shapes are blues, and both stand clear of it.
+   The table runs from one side of the window to the other, and comes and goes in a moment. */
+#stage::before{content:""; position:absolute; inset:0 -50vw; z-index:-1; background:var(--around); opacity:0; transition:opacity .2s; pointer-events:none}
+#stage.eyes::before{opacity:1}
 #board{position:absolute; inset:0; width:100%; height:100%; touch-action:none; overflow:visible; display:block}
 #board{--u:.02}
 /* Introducing eyesight, on the second level: all dark but the button, with a note hanging under it.
@@ -288,7 +285,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 #board.eyes .piece .face,#board.eyes .piece .face *,#board.eyes .piece .back,#board.eyes .piece .goo{visibility:hidden}
 /* An overlap: orange-red against the blue, the pair that stays apart for nearly every kind of colour blindness. */
 .hit{fill:#FF4A1C; pointer-events:none}
-.bin-fill{fill:var(--bin); stroke:var(--ink); stroke-width:calc(4px * var(--u)); stroke-linejoin:round; transition:fill .35s}
+.bin-fill{fill:var(--bin); stroke:var(--rim); stroke-width:calc(4px * var(--u)); stroke-linejoin:round; transition:fill .35s}
 /* nothing inside the board animates with CSS transforms: Safari can leave smears behind */
 #bin{animation:fadein .5s both}
 #bin.win .bin-fill{fill:var(--win)}
@@ -337,6 +334,8 @@ button{font:inherit; color:inherit; cursor:pointer}
 .boo{fill:var(--face)} .piece.good .boo{visibility:hidden}
 .hem{fill:none; stroke:#fff; stroke-width:calc(2px * var(--u)); stroke-linecap:round; stroke-linejoin:round}
 .honey{fill:#E8891A}
+/* the mine is nearly as dark as the night it is played in: a paler line round it, and a rivet at each corner */
+.p-mine .fill{stroke:#7F74A8} .rivet{fill:#51476B}
 .piece.glued .fill{stroke:#B85C00}
 .spike{fill:none; stroke:#1596A6; stroke-width:calc(2.4px * var(--u)); stroke-linecap:round}
 .white{fill:#fff; stroke:var(--face); stroke-width:calc(1.5px * var(--u))}
@@ -359,7 +358,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 .wave.w0{fill:rgba(77,168,255,.10)} .wave.w1{animation-delay:.22s} .wave.w2{animation-delay:.44s; stroke-dasharray:calc(7px * var(--u)) calc(6px * var(--u))}
 @keyframes ripple{0%{opacity:0} 35%{opacity:.9} 100%{opacity:0}}   /* (not 'wave': that is the name's, in the bar) */
 @media (prefers-reduced-motion:reduce){ .wave{animation:none; opacity:.6} }
-.pole{stroke:var(--face); stroke-width:calc(1.2px * var(--u))} .pole.n{fill:#FF6B6B} .pole.s{fill:#4DA8FF}
+.pole{stroke:var(--face); stroke-width:calc(1.5px * var(--u))} .pole.n{fill:#FF6B6B} .pole.s{fill:#4DA8FF}
 .tooth{fill:#fff; stroke:var(--face); stroke-width:calc(1.5px * var(--u)); stroke-linejoin:round}
 /* light on the cool one: glancing off its shades, and a sparkle on its teeth */
 .glare{fill:none; stroke:#fff; stroke-width:calc(1.6px * var(--u)); stroke-linecap:round; opacity:.9} .glint{fill:#fff}
@@ -409,6 +408,7 @@ button{font:inherit; color:inherit; cursor:pointer}
   opacity:0; transition:opacity .2s}
 .dock.idle .tip{opacity:1}
 .dock.won .tip{opacity:0}
+body.powers .dock.idle .tip{opacity:0}   /* among the powers the strip over the board already says what to pick up */
 .dock .onward{position:absolute; inset:0; margin:auto; width:max-content; height:max-content; padding:8px 20px 9px; font-size:17px; white-space:nowrap; animation:beckon 1s ease-in-out infinite alternate}
 
 /* sheets */
@@ -744,11 +744,11 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=2.69"></script>
-<script src="levels.js?v=2.69"></script>
-<script src="faces.js?v=2.69"></script>
-<script src="sounds.js?v=2.69"></script>
-<script src="game.js?v=2.69"></script>
+<script src="geom.js?v=2.70"></script>
+<script src="levels.js?v=2.70"></script>
+<script src="faces.js?v=2.70"></script>
+<script src="sounds.js?v=2.70"></script>
+<script src="game.js?v=2.70"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

@@ -252,7 +252,10 @@
   // Where loose pieces wait: beside the box on a wide screen, under it on a tall one.
   function trays() {
     var m = view.land ? 0.85 : 0.7, gap = view.land ? 0.85 : 0.75;
-    return view.land ? [[view.x + m, view.y + m, cb.minX - gap, view.y + view.h - m], [cb.maxX + gap, view.y + m, view.x + view.w - m, view.y + view.h - m]]
+    // On a wide screen the trays keep near the box, as wide as the shapes of this level need and no wider:
+    // they are dealt round it, not out at the far edges of the window.
+    var rows = Math.floor(Math.max(view.h - 2 * m, 0) / 1.3) + 1, cols = Math.ceil(lv.pieces.length / (2 * rows)), reach = Math.max(1.5, (cols - 1) * 1.5 + 1);
+    return view.land ? [[Math.max(view.x + m, cb.minX - gap - reach), view.y + m, cb.minX - gap, view.y + view.h - m], [cb.maxX + gap, view.y + m, Math.min(view.x + view.w - m, cb.maxX + gap + reach), view.y + view.h - m]]
       : [[view.x + m, cb.maxY + gap, view.x + view.w - m, view.y + view.h - m]];
   }
   // A long shape dealt close to the box would lie across its wall. It is moved off, the way the tray lies.

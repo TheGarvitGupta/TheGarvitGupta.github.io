@@ -6,7 +6,8 @@
 // New ones go at the end: the leaderboard's pictures are dealt from the first eighteen.
 // Something worn that goes with the mouth (teeth, a tongue) is drawn twice, as w-idle and as w-good: one for the mouth at rest and
 // one for the smile of a shape that is packed, each where that mouth is. Only one of the two is ever shown.
-// A power may also have pour: something drawn on the body itself, edge to edge, for each shape.
+// A power may also have pour: what is drawn on the body itself, edge to edge, for each of the four shapes. Its parts are written
+// as wear is, but in the shape's own units, and are cut off at the shape's edge.
 var PackmanFaces = [
   { voice: 'plain', name: 'The regular', about: 'No fuss. Here to be packed.' },
   { voice: 'specs', name: 'The bookworm', about: 'Has read the rules. Twice.', wear: [['circle', 'wear', { cx: -0.13, cy: -0.06, r: 0.088 }], ['circle', 'wear', { cx: 0.13, cy: -0.06, r: 0.088 }], ['path', 'wear', { d: 'M-0.042 -0.07Q0 -0.09 0.042 -0.07' }]] },
@@ -69,7 +70,15 @@ var PackmanPowers = [
     wear: [['path', 'wear', { d: 'M-0.2 -0.165L-0.08 -0.13M0.2 -0.165L0.08 -0.13' }],
            // the fuse, from the mine out to its tip, where the spark sits; game.js shortens it as it burns
            ['path', 'fuse', { d: 'M-0.02 -0.19Q-0.02 -0.3 0.06 -0.3Q0.13 -0.3 0.16 -0.25', pathLength: 1 }],
-           ['path', 'spark', { d: 'M0 -0.055L0.017 -0.017L0.055 0L0.017 0.017L0 0.055L-0.017 0.017L-0.055 0L-0.017 -0.017Z', transform: 'translate(0.16 -0.25)' }]] },
+           ['path', 'spark', { d: 'M0 -0.055L0.017 -0.017L0.055 0L0.017 0.017L0 0.055L-0.017 0.017L-0.055 0L-0.017 -0.017Z', transform: 'translate(0.16 -0.25)' }]],
+    // a rivet at every corner
+    pour: {
+      square: [['circle', 'rivet', { cx: -0.366, cy: -0.366, r: 0.035 }], ['circle', 'rivet', { cx: 0.366, cy: -0.366, r: 0.035 }], ['circle', 'rivet', { cx: 0.366, cy: 0.366, r: 0.035 }], ['circle', 'rivet', { cx: -0.366, cy: 0.366, r: 0.035 }]],
+      domino: [['circle', 'rivet', { cx: -0.83, cy: -0.415, r: 0.035 }], ['circle', 'rivet', { cx: 0.83, cy: -0.415, r: 0.035 }], ['circle', 'rivet', { cx: 0.83, cy: 0.415, r: 0.035 }], ['circle', 'rivet', { cx: -0.83, cy: 0.415, r: 0.035 }]],
+      hexagon: [['circle', 'rivet', { cx: 0.81, cy: 0, r: 0.035 }], ['circle', 'rivet', { cx: 0.405, cy: 0.701, r: 0.035 }], ['circle', 'rivet', { cx: -0.405, cy: 0.701, r: 0.035 }], ['circle', 'rivet', { cx: -0.81, cy: 0, r: 0.035 }], ['circle', 'rivet', { cx: -0.405, cy: -0.701, r: 0.035 }], ['circle', 'rivet', { cx: 0.405, cy: -0.701, r: 0.035 }]],
+      triangle: [['circle', 'rivet', { cx: 0, cy: -0.387, r: 0.035 }], ['circle', 'rivet', { cx: 0.335, cy: 0.194, r: 0.035 }], ['circle', 'rivet', { cx: -0.335, cy: 0.194, r: 0.035 }]]
+    } },
+
   // the ghost: a pale sheet with hollow eyes, a mouth saying boo, and a wavy hem. It smiles once it has found a shape to share with.
   { power: 'ghost', voice: 'ghost', name: 'Ghost', color: '#F4FBFF', eye: 0.001, still: true, stare: true, idle: 'M0 0.12h0.001',
     tip: 'Ghost: it has no place of its own. Lay it over one other shape, and only one.',
@@ -81,20 +90,25 @@ var PackmanPowers = [
   { power: 'sticky', voice: 'sticky', name: 'Sticky', color: '#FFB52E', idle: 'M-0.09 0.08Q0 0.17 0.09 0.08',
     tip: 'Sticky: glues to what it touches and rides along. Pick it up to peel it off.',
     does: 'In the box it glues itself to the nearest shape it touches, and goes wherever that one goes. Pick it up to peel it off.',
-    // Honey, poured over the top of whatever shape it is and running down: blobs along the top edge as [x, y, r],
-    // drips below them as [x, y, width, height], and a glint at [x, y, rx, ry]. It is cut off at the shape's own edge.
+    // Honey, poured over the top of whatever shape it is and running down: blobs along the top edge, drips below them, and a glint.
     pour: {
-      square: { blobs: [[-0.39, -0.5, 0.13], [-0.14, -0.5, 0.17], [0.12, -0.5, 0.12], [0.36, -0.5, 0.19]], drips: [[-0.185, -0.4, 0.09, 0.145], [0.315, -0.38, 0.09, 0.185]], glint: [-0.36, 0.34, 0.07, 0.03] },
-      domino: { blobs: [[-0.9, -0.5, 0.14], [-0.66, -0.5, 0.18], [-0.4, -0.5, 0.12], [-0.15, -0.5, 0.17], [0.1, -0.5, 0.13], [0.35, -0.5, 0.18], [0.62, -0.5, 0.12], [0.86, -0.5, 0.19]],
-                drips: [[-0.705, -0.4, 0.09, 0.16], [0.305, -0.4, 0.09, 0.12], [0.815, -0.38, 0.09, 0.2]], glint: [-0.84, 0.34, 0.07, 0.03] },
-      hexagon: { blobs: [[-0.45, -0.866, 0.2], [-0.15, -0.866, 0.25], [0.17, -0.866, 0.19], [0.45, -0.866, 0.26]], drips: [[-0.21, -0.72, 0.12, 0.24], [0.39, -0.7, 0.12, 0.32]], glint: [-0.5, 0.56, 0.09, 0.04] },
-      triangle: { blobs: [[0, -0.577, 0.33]], drips: [[-0.115, -0.3, 0.07, 0.15], [0.05, -0.3, 0.07, 0.1]], glint: [-0.28, 0.2, 0.05, 0.022] }
+      square: [['circle', 'honey', { cx: -0.39, cy: -0.5, r: 0.13 }], ['circle', 'honey', { cx: -0.14, cy: -0.5, r: 0.17 }], ['circle', 'honey', { cx: 0.12, cy: -0.5, r: 0.12 }], ['circle', 'honey', { cx: 0.36, cy: -0.5, r: 0.19 }], ['rect', 'honey', { x: -0.185, y: -0.4, width: 0.09, height: 0.145, rx: 0.045 }], ['rect', 'honey', { x: 0.315, y: -0.38, width: 0.09, height: 0.185, rx: 0.045 }], ['ellipse', 'shine', { cx: -0.36, cy: 0.34, rx: 0.07, ry: 0.03 }]],
+      domino: [['circle', 'honey', { cx: -0.9, cy: -0.5, r: 0.14 }], ['circle', 'honey', { cx: -0.66, cy: -0.5, r: 0.18 }], ['circle', 'honey', { cx: -0.4, cy: -0.5, r: 0.12 }], ['circle', 'honey', { cx: -0.15, cy: -0.5, r: 0.17 }], ['circle', 'honey', { cx: 0.1, cy: -0.5, r: 0.13 }], ['circle', 'honey', { cx: 0.35, cy: -0.5, r: 0.18 }], ['circle', 'honey', { cx: 0.62, cy: -0.5, r: 0.12 }], ['circle', 'honey', { cx: 0.86, cy: -0.5, r: 0.19 }], ['rect', 'honey', { x: -0.705, y: -0.4, width: 0.09, height: 0.16, rx: 0.045 }], ['rect', 'honey', { x: 0.305, y: -0.4, width: 0.09, height: 0.12, rx: 0.045 }], ['rect', 'honey', { x: 0.815, y: -0.38, width: 0.09, height: 0.2, rx: 0.045 }], ['ellipse', 'shine', { cx: -0.84, cy: 0.34, rx: 0.07, ry: 0.03 }]],
+      hexagon: [['circle', 'honey', { cx: -0.45, cy: -0.866, r: 0.2 }], ['circle', 'honey', { cx: -0.15, cy: -0.866, r: 0.25 }], ['circle', 'honey', { cx: 0.17, cy: -0.866, r: 0.19 }], ['circle', 'honey', { cx: 0.45, cy: -0.866, r: 0.26 }], ['rect', 'honey', { x: -0.21, y: -0.72, width: 0.12, height: 0.24, rx: 0.06 }], ['rect', 'honey', { x: 0.39, y: -0.7, width: 0.12, height: 0.32, rx: 0.06 }], ['ellipse', 'shine', { cx: -0.5, cy: 0.56, rx: 0.09, ry: 0.04 }]],
+      triangle: [['circle', 'honey', { cx: 0, cy: -0.577, r: 0.33 }], ['rect', 'honey', { x: -0.115, y: -0.3, width: 0.07, height: 0.15, rx: 0.035 }], ['rect', 'honey', { x: 0.05, y: -0.3, width: 0.07, height: 0.1, rx: 0.035 }], ['ellipse', 'shine', { cx: -0.28, cy: 0.2, rx: 0.05, ry: 0.022 }]]
     } },
   { power: 'puffer', voice: 'puffer', name: 'Puffer', color: '#45D9E6', eye: 0.056, idle: 'M-0.034 0.135A0.034 0.04 0 1 0 0.034 0.135A0.034 0.04 0 1 0 -0.034 0.135',
     tip: 'Puffer: put it down and it puffs up, shoving away whatever it touches.',
     does: 'Every time it is put down in the box it puffs up and shoves away every shape it is touching. Put it in first, and build round it.',
-    wear: [['circle', 'blush', { cx: -0.23, cy: 0.05, r: 0.055 }], ['circle', 'blush', { cx: 0.23, cy: 0.05, r: 0.055 }],
-           ['path', 'spike', { d: 'M-0.12 -0.2L-0.14 -0.26M0 -0.21V-0.275M0.12 -0.2L0.14 -0.26M-0.27 -0.1L-0.32 -0.13M0.27 -0.1L0.32 -0.13' }]] },
+    wear: [['circle', 'blush', { cx: -0.23, cy: 0.05, r: 0.055 }], ['circle', 'blush', { cx: 0.23, cy: 0.05, r: 0.055 }]],
+    // spines, all the way round, pointing in from every side
+    pour: {
+      square: [['path', 'spike', { d: 'M-0.25 -0.45L-0.25 -0.36M0 -0.45L0 -0.36M0.25 -0.45L0.25 -0.36M0.45 -0.25L0.36 -0.25M0.45 0L0.36 0M0.45 0.25L0.36 0.25M0.25 0.45L0.25 0.36M0 0.45L0 0.36M-0.25 0.45L-0.25 0.36M-0.45 0.25L-0.36 0.25M-0.45 0L-0.36 0M-0.45 -0.25L-0.36 -0.25' }]],
+      domino: [['path', 'spike', { d: 'M-0.8 -0.45L-0.8 -0.36M-0.4 -0.45L-0.4 -0.36M0 -0.45L0 -0.36M0.4 -0.45L0.4 -0.36M0.8 -0.45L0.8 -0.36M0.95 -0.25L0.86 -0.25M0.95 0L0.86 0M0.95 0.25L0.86 0.25M0.8 0.45L0.8 0.36M0.4 0.45L0.4 0.36M0 0.45L0 0.36M-0.4 0.45L-0.4 0.36M-0.8 0.45L-0.8 0.36M-0.95 0.25L-0.86 0.25M-0.95 0L-0.86 0M-0.95 -0.25L-0.86 -0.25' }]],
+      hexagon: [['path', 'spike', { d: 'M0.832 0.192L0.754 0.147M0.707 0.408L0.629 0.363M0.582 0.625L0.504 0.58M0.25 0.816L0.25 0.726M0 0.816L0 0.726M-0.25 0.816L-0.25 0.726M-0.582 0.625L-0.504 0.58M-0.707 0.408L-0.629 0.363M-0.832 0.192L-0.754 0.147M-0.832 -0.192L-0.754 -0.147M-0.707 -0.408L-0.629 -0.363M-0.582 -0.625L-0.504 -0.58M-0.25 -0.816L-0.25 -0.726M0 -0.816L0 -0.726M0.25 -0.816L0.25 -0.726M0.582 -0.625L0.504 -0.58M0.707 -0.408L0.629 -0.363M0.832 -0.192L0.754 -0.147' }]],
+      triangle: [['path', 'spike', { d: 'M0.057 -0.379L-0.021 -0.334M0.207 -0.119L0.129 -0.074M0.357 0.14L0.279 0.185M0.3 0.239L0.3 0.149M-0.3 0.239L-0.3 0.149M-0.357 0.14L-0.279 0.185M-0.207 -0.119L-0.129 -0.074M-0.057 -0.379L0.021 -0.334' }]]
+    } },
+
   { power: 'chameleon', voice: 'chameleon', name: 'Chameleon', color: '#3DDBB4', eye: 0.001, still: true, stare: true, idle: 'M-0.06 0.1Q0 0.14 0.06 0.1',
     tip: 'Chameleon: a disguiser. It changes shape each time you pick it up, and only counts in its one true shape.',
     does: 'A disguiser, here to throw you off. It may be dealt as any of the four shapes, and goes round them all, with a colour for each, changing every time you pick it up. It only counts as packed in its real shape, and nothing says which that is.',
@@ -115,8 +129,14 @@ var PackmanPowers = [
   { power: 'magnet', voice: 'magnet', name: 'Magnet', color: '#D5DAE3', eye: 0.05, idle: 'M-0.08 0.09Q0 0.16 0.08 0.09',
     tip: 'Magnet: while you hold it, it drags every shape nearby towards it. Put it down and it lets go.',
     does: 'It is only a magnet while you are holding it. Waves stand round it, and every shape inside them slides towards it until something stops it. Put it down and it is an ordinary shape again.',
-    wear: [['rect', 'pole n', { x: -0.31, y: -0.12, width: 0.08, height: 0.2, rx: 0.02 }], ['rect', 'pole s', { x: 0.23, y: -0.12, width: 0.08, height: 0.2, rx: 0.02 }],
-           ['path', 'wear thin', { d: 'M-0.1 -0.2Q0 -0.27 0.1 -0.2M-0.06 -0.165Q0 -0.205 0.06 -0.165' }]] }
+    wear: [['path', 'wear thin', { d: 'M-0.1 -0.2Q0 -0.27 0.1 -0.2M-0.06 -0.165Q0 -0.205 0.06 -0.165' }]],
+    // its two poles: one end of the shape red and the other blue
+    pour: {
+      square: [['rect', 'pole n', { x: -1.3, y: -1, width: 1, height: 2 }], ['rect', 'pole s', { x: 0.3, y: -1, width: 1, height: 2 }]],
+      domino: [['rect', 'pole n', { x: -1.3, y: -1, width: 0.6, height: 2 }], ['rect', 'pole s', { x: 0.7, y: -1, width: 1, height: 2 }]],
+      hexagon: [['rect', 'pole n', { x: -1.3, y: -1, width: 0.68, height: 2 }], ['rect', 'pole s', { x: 0.62, y: -1, width: 1, height: 2 }]],
+      triangle: [['rect', 'pole n', { x: -1.3, y: -1, width: 1.04, height: 2 }], ['rect', 'pole s', { x: 0.26, y: -1, width: 1, height: 2 }]]
+    } }
 ];
 
 // How a shape is drawn, for the game and for every page that shows one: the same parts, built the same way.
@@ -158,9 +178,7 @@ var PackmanPiece = (function () {
     if (!po) return null;
     var g = el('g', 'goo'), clip = el('clipPath', '', { id: 'goo' + (++made) }), edge = el('path', '', { d: d }), all = el('g', '', { 'clip-path': 'url(#goo' + made + ')' });
     clip.appendChild(edge); g.appendChild(clip);
-    po.blobs.forEach(function (b) { all.appendChild(el('circle', 'honey', { cx: b[0], cy: b[1], r: b[2] })); });
-    po.drips.forEach(function (b) { all.appendChild(el('rect', 'honey', { x: b[0], y: b[1], width: b[2], height: b[3], rx: b[2] / 2 })); });
-    all.appendChild(el('ellipse', 'shine', { cx: po.glint[0], cy: po.glint[1], rx: po.glint[2], ry: po.glint[3] }));
+    po.forEach(function (w) { all.appendChild(el(w[0], w[1], w[2])); });
     g.appendChild(all);
     return { g: g, edge: edge };
   }
