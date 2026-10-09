@@ -152,7 +152,7 @@ h2{margin:40px 0 0; font-size:26px; font-weight:700; line-height:1.1}
     c.fuse = FUSE; c.shown = Math.ceil(FUSE / 1000); c.btn.classList.add('lit'); c.count.textContent = c.shown; sounds.fuse(c.shown); burn(c);
     c.tick = setInterval(function () {
       c.fuse -= 100;
-      if (c.fuse <= 0) { quench(c); sounds.boom(); flash(c, 'boom', 700); return; }
+      if (c.fuse <= 0) { c.fuse = 1; quench(c); sounds.boom(); flash(c, 'boom', 700); return; }   // (quench only puts out a fuse that is still burning)
       burn(c);
       var left = Math.ceil(c.fuse / 1000);
       if (left !== c.shown) { c.shown = left; c.count.textContent = left; sounds.fuse(left); }
