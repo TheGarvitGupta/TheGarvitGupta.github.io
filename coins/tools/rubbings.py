@@ -16,10 +16,8 @@ it again gives the same sheets. Run it after changing anything below:
 
     python3 coins/tools/rubbings.py
 
-To look at each piece on its own, sharp and large, write the specimens page
-somewhere and open it:
-
-    python3 coins/tools/rubbings.py --specimens /tmp/specimens.html
+It also writes coins/tools/specimens.html, which shows each piece on its own,
+sharp and large, and then every sheet unblurred.
 """
 
 import math
@@ -469,8 +467,7 @@ def main() -> int:
         path = COINS / "css" / f"rubbings-{v + 1}.svg"
         path.write_text(svg)
         print(f"wrote {path.relative_to(COINS.parent)} ({len(svg) // 1024}KB): top is {', '.join(dealt(v)[:TOP])}")
-    if "--specimens" in sys.argv:
-        specimens(sys.argv[sys.argv.index("--specimens") + 1])
+    specimens(COINS / "tools" / "specimens.html")
     return 0
 
 

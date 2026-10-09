@@ -24,6 +24,7 @@ coins/
   data/vocab.json       Mints, rulers, denominations, metals, field definitions
   tools/coins.py        The local server + image pipeline
   tools/rubbings.py     Draws css/rubbings-N.svg
+  tools/specimens.html  Every piece of that drawing, large; written by the same script
   tools/stamp.py        Versions the stylesheet and script URLs
   start                 Launcher
 
@@ -173,8 +174,11 @@ every coin. They are drawn by `tools/rubbings.py` and are not edited by hand:
 
 ```sh
 python3 coins/tools/rubbings.py
-python3 coins/tools/rubbings.py --specimens /tmp/specimens.html   # each piece, large
 ```
+
+The same run writes `tools/specimens.html`, which shows each coin and device on
+its own, sharp and large, and then every sheet unblurred. It is published at
+`garvitgupta.com/coins/tools/specimens.html`.
 
 How strongly it shows is `--ground-ink` in `css/coins.css`, set once for each
 theme. How soft the line is is `BLUR` at the top of the script.
