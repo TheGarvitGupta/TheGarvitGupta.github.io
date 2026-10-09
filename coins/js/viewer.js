@@ -102,48 +102,52 @@ window.Viewer = (function () {
     });
     el.notes.hidden = !coin.notes;
 
+    // One table for all of it, a body to each group with the group's name
+    // across its first row. It is laid out by the stylesheet exactly as the
+    // headed lists it replaces were, but anything that reads the page by its
+    // structure gets a single table whose columns line up from top to bottom,
+    // where three separate ones each took their own widths.
     var groups = C.specs(coin);
     el.specs.textContent = "";
+    var table = document.createElement("table");
+    table.className = "spec-table";
     groups.forEach(function (g) {
-      var section = document.createElement("section");
-      section.className = "spec-group";
-      section.dataset.group = g.id;
+      var body = document.createElement("tbody");
+      body.className = "spec-group";
+      body.dataset.group = g.id;
 
-      var h = document.createElement("h3");
+      var head = document.createElement("tr");
+      head.className = "spec-head";
+      var h = document.createElement("th");
       h.className = "spec-group-label";
+      h.colSpan = 2;
+      h.scope = "rowgroup";
       h.textContent = g.label;
-      section.appendChild(h);
+      head.appendChild(h);
+      body.appendChild(head);
 
-      // A table, because that is what it is: a name and a value to a row. It
-      // is laid out by the stylesheet exactly as the list it replaces was, but
-      // anything that reads the page by its structure now gets two columns
-      // and not a run of alternating lines.
-      var table = document.createElement("table");
-      table.className = "spec-table";
-      var dl = document.createElement("tbody");
-      table.appendChild(dl);
       g.rows.forEach(function (row) {
         var wrap = document.createElement("tr");
         wrap.className = "spec" + (row.empty ? " is-empty" : "");
         wrap.dataset.key = row.key;
-        var dt = document.createElement("th");
-        dt.scope = "row";
-        dt.textContent = row.label;
-        var dd = document.createElement("td");
-        dd.innerHTML = row.html;
+        var th = document.createElement("th");
+        th.scope = "row";
+        th.textContent = row.label;
+        var td = document.createElement("td");
+        td.innerHTML = row.html;
         if (row.note) {
           var gloss = document.createElement("span");
           gloss.className = "spec-note";
           gloss.textContent = row.note;
-          dd.appendChild(gloss);
+          td.appendChild(gloss);
         }
-        wrap.appendChild(dt);
-        wrap.appendChild(dd);
-        dl.appendChild(wrap);
+        wrap.appendChild(th);
+        wrap.appendChild(td);
+        body.appendChild(wrap);
       });
-      section.appendChild(table);
-      el.specs.appendChild(section);
+      table.appendChild(body);
     });
+    if (groups.length) el.specs.appendChild(table);
 
     // Edit mode listens for this to hang its controls off the rendered panel.
     document.dispatchEvent(new CustomEvent("viewer:rendered", { detail: { coin: coin } }));

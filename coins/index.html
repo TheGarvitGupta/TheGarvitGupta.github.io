@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/coins.css?v=7003412a">
+<link rel="stylesheet" href="css/coins.css?v=70988bbe">
 
 <!-- Set the theme before first paint, so there's no flash of the wrong one.
      Deliberately inline and synchronous; an external file would be too late.
@@ -213,16 +213,27 @@
 
       <div class="stage" id="stage">
         <div class="stage-frame" id="stage-frame">
-          <div class="flipper" id="flipper">
-            <figure class="face face-obv">
-              <img id="img-obv" alt="" draggable="false" itemprop="image">
-              <figcaption>Obverse</figcaption>
-            </figure>
-            <figure class="face face-rev">
-              <img id="img-rev" alt="" draggable="false" itemprop="image">
-              <figcaption>Reverse</figcaption>
-            </figure>
-          </div>
+          <!-- A table of one row, so a reader view sets the two faces side by
+               side as the page does and not one above the other. On screen the
+               stylesheet dissolves the table and lays the figures out itself. -->
+          <table class="flipper" id="flipper">
+            <tbody>
+              <tr>
+                <td>
+                  <figure class="face face-obv">
+                    <img id="img-obv" alt="" draggable="false" itemprop="image">
+                    <figcaption>Obverse</figcaption>
+                  </figure>
+                </td>
+                <td>
+                  <figure class="face face-rev">
+                    <img id="img-rev" alt="" draggable="false" itemprop="image">
+                    <figcaption>Reverse</figcaption>
+                  </figure>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -232,10 +243,10 @@
   </article>
 </div>
 
-<script src="js/coins.js?v=7003412a"></script>
-<script src="js/viewer.js?v=7003412a"></script>
-<script src="js/flair.js?v=7003412a"></script>
-<script src="js/edit.js?v=7003412a"></script>
+<script src="js/coins.js?v=70988bbe"></script>
+<script src="js/viewer.js?v=70988bbe"></script>
+<script src="js/flair.js?v=70988bbe"></script>
+<script src="js/edit.js?v=70988bbe"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

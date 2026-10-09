@@ -1152,7 +1152,11 @@ body.filters-open .drawer { transform: none; }
   cursor: default;
 }
 
+/* A table in the markup (see index.html); here its rows and cells are
+   dissolved so the two figures are its own children as far as layout goes. */
+.flipper tbody, .flipper tr, .flipper td { display: contents; }
 .flipper {
+  display: block;
   position: absolute;
   inset: 0;
   transform-style: preserve-3d;
@@ -1261,9 +1265,13 @@ body.filters-open .drawer { transform: none; }
 
 .spec-group + .spec-group { margin-top: 2rem; }
 
+.spec-head { display: block; }
 .spec-group-label {
+  display: block;
   margin: 0 0 0.75rem;
-  padding-bottom: 0.5rem;
+  padding: 0 0 0.5rem;
+  text-align: left;
+  font-weight: bold;
   border-bottom: 1px solid var(--line);
   font-size: 0.625rem;
   letter-spacing: 0.24em;
@@ -1274,6 +1282,7 @@ body.filters-open .drawer { transform: none; }
 /* A table in the markup, set out as a grid: the rows keep their own two
    columns whatever the others hold, and edit mode can hang controls off one. */
 .spec-table, .spec-table tbody { display: block; width: 100%; }
+.spec-table { border-spacing: 0; }
 .spec {
   display: grid;
   grid-template-columns: 8.5rem minmax(0, 1fr);
