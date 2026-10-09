@@ -308,8 +308,8 @@ button{font:inherit; color:inherit; cursor:pointer}
 .piece.blink .eye,.piece.bad .eye{visibility:hidden} .piece.blink .shut,.piece.bad .wince{visibility:visible}
 .piece.bad.blink .shut{visibility:hidden}
 .mouth{fill:none; stroke:var(--face); stroke-width:calc(2px * var(--u)); stroke-linecap:round}
-.m-good,.m-bad{visibility:hidden}
-.piece.good .m-good{visibility:visible} .piece.good .m-idle{visibility:hidden}
+.m-good,.m-bad,.w-good{visibility:hidden}
+.piece.good .m-good,.piece.good .w-good{visibility:visible} .piece.good .m-idle,.piece.good .w-idle{visibility:hidden}
 .piece.bad .m-bad{visibility:visible; fill:var(--face)} .piece.bad .m-idle{visibility:hidden}
 .wear{fill:none; stroke:var(--face); stroke-width:calc(2px * var(--u)); stroke-linecap:round; stroke-linejoin:round}
 .wear.thin{stroke-width:calc(1.5px * var(--u))} .wear.solid{fill:var(--face); stroke-width:calc(1px * var(--u))}
@@ -361,6 +361,8 @@ button{font:inherit; color:inherit; cursor:pointer}
 @media (prefers-reduced-motion:reduce){ .wave{animation:none; opacity:.6} }
 .pole{stroke:var(--face); stroke-width:calc(1.2px * var(--u))} .pole.n{fill:#FF6B6B} .pole.s{fill:#4DA8FF}
 .tooth{fill:#fff; stroke:var(--face); stroke-width:calc(1.5px * var(--u)); stroke-linejoin:round}
+/* light on the cool one: glancing off its shades, and a sparkle on its teeth */
+.glare{fill:none; stroke:#fff; stroke-width:calc(1.6px * var(--u)); stroke-linecap:round; opacity:.9} .glint{fill:#fff}
 
 .ghost{pointer-events:none; fill:var(--sun); fill-opacity:.3; stroke:var(--text); stroke-width:calc(2.5px * var(--u)); stroke-linejoin:round;
   stroke-dasharray:calc(6px * var(--u)) calc(5px * var(--u)); animation:beckon 1.2s ease-in-out infinite alternate}
@@ -742,11 +744,11 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=2.67"></script>
-<script src="levels.js?v=2.67"></script>
-<script src="faces.js?v=2.67"></script>
-<script src="sounds.js?v=2.67"></script>
-<script src="game.js?v=2.67"></script>
+<script src="geom.js?v=2.68"></script>
+<script src="levels.js?v=2.68"></script>
+<script src="faces.js?v=2.68"></script>
+<script src="sounds.js?v=2.68"></script>
+<script src="game.js?v=2.68"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

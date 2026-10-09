@@ -25,15 +25,17 @@ main{max-width:760px; margin:0 auto}
 h1{margin:0; font-size:34px; font-weight:700; line-height:1.1}
 .lead{margin:8px 0 0; font-size:16px; font-weight:500; line-height:1.4; color:var(--mut)}
 .cast{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; margin:22px 0 0; padding:0; list-style:none}
-.cast button{display:flex; flex-direction:column; align-items:center; width:100%; height:100%; padding:16px 10px 14px; font:inherit; color:inherit; text-align:center; background:var(--card); border:var(--bw) solid var(--ink); border-radius:20px; cursor:pointer; -webkit-tap-highlight-color:transparent}
+.cast button{display:flex; flex-direction:column; align-items:center; width:100%; height:100%; padding:22px 10px 14px; font:inherit; color:inherit; text-align:center; background:var(--card); border:var(--bw) solid var(--ink); border-radius:20px; cursor:pointer; -webkit-tap-highlight-color:transparent}
 .cast button:hover{transform:translateY(-1px)} .cast button:active{transform:translateY(1px)}
-.cast svg{display:block; width:84px; height:84px; margin:0 auto 10px; overflow:visible}
+.cast svg{display:block; width:84px; height:84px; margin:0 auto 14px; overflow:visible}
 .cast b{display:block; font-size:17px; font-weight:600}
 .cast span{display:block; margin-top:2px; font-size:14px; font-weight:500; line-height:1.3; color:var(--mut)}
 .fill{fill:var(--c); stroke:var(--ink); stroke-width:.033; stroke-linejoin:round}
 .eye{fill:var(--face)}
 .mouth{fill:none; stroke:var(--face); stroke-width:.024; stroke-linecap:round}
-.m-good,.m-bad,.shut,.wince{visibility:hidden} .on .m-good{visibility:visible} .on .m-idle{visibility:hidden}
+.m-good,.m-bad,.w-good{visibility:hidden}
+.shut,.wince{visibility:hidden; fill:none; stroke:var(--face); stroke-width:.035; stroke-linecap:round; stroke-linejoin:round}
+.blink .eye{visibility:hidden} .blink .shut{visibility:visible} .on .m-good,.on .w-good{visibility:visible} .on .m-idle,.on .w-idle,.on .boo{visibility:hidden}
 .on svg{animation:hop .45s cubic-bezier(.3,1.6,.5,1)}
 @keyframes hop{30%{transform:translateY(-10px) scale(1.08)} 60%{transform:translateY(0) scale(.96,1.04)}}
 .wear{fill:none; stroke:var(--face); stroke-width:.024; stroke-linecap:round; stroke-linejoin:round}
@@ -44,8 +46,26 @@ h1{margin:0; font-size:34px; font-weight:700; line-height:1.1}
 .plaster{fill:#F7DDB8; stroke:var(--face); stroke-width:.018}
 .fringe{fill:#17121F; stroke:#17121F; stroke-width:.018; stroke-linejoin:round}
 .tooth{fill:#fff; stroke:var(--face); stroke-width:.018; stroke-linejoin:round}
+.glare{fill:none; stroke:#fff; stroke-width:.02; stroke-linecap:round; opacity:.9} .glint{fill:#fff}
 .fuse{fill:none; stroke:#C9BA98; stroke-width:.024; stroke-linecap:round}
 .spark{fill:#FFC93C; stroke:#FF6B2C; stroke-width:.012; stroke-linejoin:round}
+/* the mine, lit: the spark flickers and the seconds left stand over its head; and when it goes off, a burst behind it as it is thrown */
+.lit .spark{animation:flick .24s steps(2) infinite}
+@keyframes flick{50%{fill:#FF4A1C}}
+.count{font:700 .34px var(--f); fill:#FF4A1C; stroke:#fff; stroke-width:.07px; paint-order:stroke; pointer-events:none}
+.bang{fill:#FFC93C; stroke:#FF6B2C; stroke-width:.035; stroke-linejoin:round; opacity:0; pointer-events:none}
+.boom .bang{animation:bang .6s ease-out}
+@keyframes bang{0%{opacity:1; transform:scale(.4) rotate(0deg)} 60%{opacity:1; transform:scale(1.15) rotate(12deg)} 100%{opacity:0; transform:scale(1.35) rotate(16deg)}}
+.cast .boom svg{animation:blast .6s cubic-bezier(.3,1.4,.5,1)}
+@keyframes blast{20%{transform:translateY(-16px) rotate(-14deg) scale(1.14)} 55%{transform:translateY(2px) rotate(6deg) scale(.96)}}
+/* the magnet's waves, while it is pulling: three rings, coming and going one after another */
+.wave{fill:none; stroke:#4D9BFF; stroke-width:.03; opacity:0; pointer-events:none}
+.wave.w0{fill:rgba(77,168,255,.10)} .wave.w2{stroke-dasharray:.09 .08}
+.pull .wave{animation:ripple 1.1s ease-in-out infinite} .pull .wave.w1{animation-delay:.22s} .pull .wave.w2{animation-delay:.44s}
+@keyframes ripple{0%{opacity:0} 35%{opacity:.9} 100%{opacity:0}}
+/* the puffer does not hop: it puffs up */
+.on svg.p-puffer{animation:swell .42s ease-in-out}
+@keyframes swell{50%{transform:scale(1.28)}}
 .shine{fill:#fff; fill-opacity:.8} .p-ghost .fill{fill-opacity:.88; stroke-dasharray:.06 .04}
 .boo{fill:var(--face)} .hem{fill:none; stroke:#fff; stroke-width:.024; stroke-linecap:round; stroke-linejoin:round}
 .honey{fill:#E8891A}
@@ -58,30 +78,30 @@ h1{margin:0; font-size:34px; font-weight:700; line-height:1.1}
 h2{margin:40px 0 0; font-size:26px; font-weight:700; line-height:1.1}
 .foot{margin-top:26px; font-size:14px; font-weight:500; color:var(--mut)} .foot a{color:inherit}
 @media (max-width:380px){ .cast{grid-template-columns:1fr 1fr; gap:10px} }
-@media (prefers-reduced-motion:reduce){ .on svg{animation:none} }
+@media (prefers-reduced-motion:reduce){ .on svg,.on svg.p-puffer,.cast .boom svg{animation:none} .pull .wave{animation:none; opacity:.6} }
 </style>
 </head>
 <body>
 <main>
   <a class="back" href="./" aria-label="Back to Packman"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg>Back to the game</a>
   <h1>Meet the shapes</h1>
-  <p class="lead">Every shape in Packman is dealt a personality, and each has a voice. Tap one to hear it.</p>
+  <p class="lead">Every shape in Packman is dealt a personality, and each has a voice. Point at one, or tap it, to hear it.</p>
   <ul id="cast" class="cast"></ul>
   <h2>The powers</h2>
-  <p class="lead">In chapter two some shapes are dealt a power, different every time. Tap one to hear it.</p>
+  <p class="lead">In chapter two some shapes are dealt a power, different every time. Point at one, or tap it, to see what it does.</p>
   <ul id="powers" class="cast"></ul>
   <p class="foot"><a href="./">Back to Packman</a></p>
 </main>
-<script src="faces.js?v=2.67"></script>
-<script src="sounds.js?v=2.67"></script>
+<script src="faces.js?v=2.68"></script>
+<script src="sounds.js?v=2.68"></script>
 <script>
 (function () {
   'use strict';
   var COLORS = ['#FF6B6B', '#FFC93C', '#3DDBB4', '#4DA8FF', '#9B7BFF', '#FF8FCB', '#FF9F45', '#B5E655', '#45D9E6', '#D987F5', '#FFB59E'];
-  var actx = null;
+  var actx = null, live = false;   // live: the page has been tapped or clicked, which is when a browser first lets it make a sound
   // the same one-note player the game has
   function tone(freq, dur, opts) {
-    if (!actx) return;
+    if (!actx || !live) return;
     opts = opts || {};
     var t = actx.currentTime + (opts.at || 0), o = actx.createOscillator(), g = actx.createGain();
     o.type = opts.type || 'sine';
@@ -100,32 +120,118 @@ h2{margin:40px 0 0; font-size:26px; font-weight:700; line-height:1.1}
   }
   // A square, as it is in the game: PackmanPiece (in faces.js) builds the face and whatever is poured over it for both.
   // The outline is the game's too: drawn a hair inside its true edge, with the same small corners.
+  // With it come the things a power shows in the game: the magnet's waves, the mine's count and the burst when it goes off.
   function block(kit, color) {
     var P = PackmanPiece, d = P.block(0.465, 0.08), s = P.el('svg', kit.power ? 'p-' + kit.power : '', { viewBox: '-0.56 -0.56 1.12 1.12', 'aria-hidden': 'true' });
     s.style.setProperty('--c', kit.color || color);
     if (kit.ink) s.style.setProperty('--face', kit.ink);
+    if (kit.power === 'magnet') [0.54, 0.64, 0.74].forEach(function (r, n) { s.appendChild(P.el('circle', 'wave w' + n, { r: r })); });
+    if (kit.power === 'mine') {
+      var star = '';
+      for (var k = 0; k < 24; k++) { var a = k * Math.PI / 12, r = k % 2 ? 0.6 : 0.82; star += (k ? 'L' : 'M') + (r * Math.cos(a)).toFixed(3) + ' ' + (r * Math.sin(a)).toFixed(3); }
+      s.appendChild(P.el('path', 'bang', { d: star + 'Z' }));
+    }
     s.appendChild(P.el('path', 'fill', { d: d }));
     var goo = P.pour(kit, 'square', P.block(0.448, 0.063));   // up to the inside of the line, as in the game
     if (goo) s.appendChild(goo.g);
-    s.appendChild(P.face(kit, 'square').face);
-    return s;
+    var made = P.face(kit, 'square');
+    s.appendChild(made.face);
+    var count = kit.power === 'mine' ? s.appendChild(P.el('text', 'count', { y: -0.6, 'text-anchor': 'middle' })) : null;
+    return { kit: kit, svg: s, eyes: made.eyes.querySelectorAll('.eye'), count: count, fuse: 0, look: '' };
   }
+
+  // The mine's fuse, as in the game: it counts three, two, one, in two and a half seconds, and then it goes off.
+  var FUSE = 2500;
+  function burn(c) {
+    var line = c.svg.querySelector('.fuse'), left = c.fuse > 0 ? c.fuse / FUSE : 1, at = line.getPointAtLength(line.getTotalLength() * left);
+    line.setAttribute('stroke-dasharray', left.toFixed(3) + ' 1');
+    c.svg.querySelector('.spark').setAttribute('transform', 'translate(' + at.x.toFixed(4) + ' ' + at.y.toFixed(4) + ')');
+  }
+  function light(c) {
+    if (c.fuse > 0) return;
+    c.fuse = FUSE; c.shown = Math.ceil(FUSE / 1000); c.btn.classList.add('lit'); c.count.textContent = c.shown; sounds.fuse(c.shown); burn(c);
+    c.tick = setInterval(function () {
+      c.fuse -= 100;
+      if (c.fuse <= 0) { quench(c); sounds.boom(); flash(c, 'boom', 700); return; }
+      burn(c);
+      var left = Math.ceil(c.fuse / 1000);
+      if (left !== c.shown) { c.shown = left; c.count.textContent = left; sounds.fuse(left); }
+    }, 100);
+  }
+  function quench(c, fizz) {
+    if (!(c.fuse > 0)) return;
+    if (fizz && c.fuse < FUSE - 400) sounds.fizz();
+    clearInterval(c.tick); c.fuse = 0; c.btn.classList.remove('lit'); c.count.textContent = ''; burn(c);
+  }
+  // a class put on a card for a moment, and started over if it is already there
+  function flash(c, name, ms) {
+    c.off = c.off || {};
+    c.btn.classList.remove(name); void c.btn.offsetWidth; c.btn.classList.add(name);
+    clearTimeout(c.off[name]); c.off[name] = setTimeout(function () { c.btn.classList.remove(name); }, ms);
+  }
+  // What a shape does when it is picked: it speaks and hops, and a power does its thing. Under a mouse that is
+  // while the pointer is over it (held: the mine burns and the magnet pulls until the pointer leaves); a tap does the same, once.
+  function act(c, held) {
+    var w = c.kit.power;
+    sounds.voice(c.kit.voice);
+    flash(c, 'on', 650);
+    if (w === 'mine') light(c);
+    if (w === 'puffer') sounds.puff();
+    if (w === 'magnet') { if (held) { clearTimeout(c.off.pull); c.btn.classList.add('pull'); } else flash(c, 'pull', 2200); }
+  }
+  function rest(c) {
+    if (c.kit.power === 'mine') quench(c, true);
+    c.btn.classList.remove('pull');
+  }
+
+  var all = [];
   [[PackmanFaces, 'cast'], [PackmanPowers, 'powers']].forEach(function (group) {
-  var cast = document.getElementById(group[1]);
-  group[0].forEach(function (kit, n) {
-    var li = document.createElement('li'), btn = document.createElement('button'), b = document.createElement('b'), d = document.createElement('span'), off = 0;
-    btn.type = 'button';
-    b.textContent = kit.name; d.textContent = kit.about || kit.does;
-    btn.appendChild(block(kit, COLORS[n % COLORS.length])); btn.appendChild(b); btn.appendChild(d);
-    btn.addEventListener('click', function () {
-      wake();
-      sounds.voice(kit.voice);
-      btn.classList.remove('on'); void btn.offsetWidth; btn.classList.add('on');   // start the hop over if it is tapped again
-      clearTimeout(off); off = setTimeout(function () { btn.classList.remove('on'); }, 650);
+    var cast = document.getElementById(group[1]);
+    group[0].forEach(function (kit, n) {
+      var li = document.createElement('li'), btn = document.createElement('button'), b = document.createElement('b'), d = document.createElement('span'), c = block(kit, COLORS[n % COLORS.length]);
+      btn.type = 'button';
+      b.textContent = kit.name; d.textContent = kit.about || kit.does;
+      btn.appendChild(c.svg); btn.appendChild(b); btn.appendChild(d);
+      c.btn = btn; c.off = {};
+      btn.addEventListener('click', function () { live = true; wake(); act(c, c.over); });
+      btn.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') { c.over = true; if (live) wake(); act(c, true); } });
+      btn.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') { c.over = false; rest(c); } });
+      li.appendChild(btn); cast.appendChild(li);
+      all.push(c);
     });
-    li.appendChild(btn); cast.appendChild(li);
   });
-  });
+
+  // Every face watches the pointer, as in the game: only the two dots move. The ones that never look about there do not here.
+  var gazeAt = null, gazeFrame = 0;
+  function gaze() {
+    gazeFrame = 0;
+    all.forEach(function (c) {
+      var tf = '';
+      if (gazeAt && !c.kit.still) {
+        var r = c.svg.getBoundingClientRect(), u = 1.12 / r.width, dx = (gazeAt[0] - r.left - r.width / 2) * u, dy = (gazeAt[1] - r.top - r.height / 2) * u, dist = Math.hypot(dx, dy);
+        if (dist > 0.3) { var k = Math.min(0.04, dist * 0.03) / dist; tf = (dx * k).toFixed(3) + ' ' + (dy * k).toFixed(3); }
+      }
+      if (tf === c.look) return;
+      c.look = tf;
+      var by = tf ? tf.split(' ') : [0, 0];
+      Array.prototype.forEach.call(c.eyes, function (e) { e.setAttribute('cx', +e.getAttribute('data-x') + +by[0]); e.setAttribute('cy', +e.getAttribute('data-y') + +by[1]); });
+    });
+  }
+  function watch(e) { gazeAt = e ? [e.clientX, e.clientY] : null; if (!gazeFrame) gazeFrame = requestAnimationFrame(gaze); }
+  document.addEventListener('pointermove', watch);
+  document.addEventListener('pointerdown', function (e) { live = true; wake(); watch(e); });
+  document.addEventListener('keydown', function () { live = true; wake(); });
+  document.documentElement.addEventListener('pointerleave', function () { watch(null); });
+  addEventListener('scroll', function () { if (gazeAt && !gazeFrame) gazeFrame = requestAnimationFrame(gaze); }, { passive: true });
+
+  // and now and then one of them blinks: not the ones with shades or hollow eyes, nor the one that is asleep
+  setInterval(function () {
+    if (document.hidden) return;
+    var c = all[Math.floor(Math.random() * all.length)];
+    if (c.kit.stare || c.kit.power === 'sleeper') return;
+    c.svg.classList.add('blink');
+    setTimeout(function () { c.svg.classList.remove('blink'); }, 220);
+  }, 500);
 })();
 </script>
 </body>

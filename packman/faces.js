@@ -4,6 +4,8 @@
 // inside the body, so no outfit changes the shape the player has to pack. voice names its sound
 // in sounds.js; name and about are for the page that introduces them (personalities.html).
 // New ones go at the end: the leaderboard's pictures are dealt from the first eighteen.
+// Something worn that goes with the mouth (teeth, a tongue) is drawn twice, as w-idle and as w-good: one for the mouth at rest and
+// one for the smile of a shape that is packed, each where that mouth is. Only one of the two is ever shown.
 // A power may also have pour: something drawn on the body itself, edge to edge, for each shape.
 var PackmanFaces = [
   { voice: 'plain', name: 'The regular', about: 'No fuss. Here to be packed.' },
@@ -16,9 +18,15 @@ var PackmanFaces = [
   { voice: 'sleepy', name: 'The sleepyhead', about: 'Could be packed lying down.', still: true, eye: 0.036, eyeY: -0.045, idle: 'M-0.035 0.115Q0 0.13 0.035 0.115', wear: [['path', 'wear', { d: 'M-0.185 -0.078H-0.075M0.075 -0.078H0.185' }]] },
   { voice: 'kid', name: 'The kid', about: 'Freckles, and cannot sit still.', wear: [-0.24, -0.2, -0.22, 0.2, 0.24, 0.22].map(function (x, n) { return ['circle', 'wear solid', { cx: x, cy: n % 3 === 2 ? 0.07 : 0.03, r: 0.012 }]; }) },
   { voice: 'wide', name: 'The wide-eyed one', about: 'Has never seen a box before.', eye: 0.062, idle: 'M-0.04 0.115Q0 0.14 0.04 0.115' },
-  // the cool one: shades, and a smirk. Nothing to blink or look with behind them.
-  { voice: 'cool', name: 'The cool one', about: 'Shades on. Indoors.', still: true, stare: true, idle: 'M-0.05 0.11Q0.03 0.15 0.08 0.09',
-    wear: [['path', 'wear solid', { d: 'M-0.235 -0.115H-0.03L-0.05 -0.02Q-0.13 0.03 -0.21 -0.02ZM0.03 -0.115H0.235L0.21 -0.02Q0.13 0.03 0.05 -0.02Z' }], ['path', 'wear', { d: 'M-0.03 -0.1H0.03' }]] },
+  // the cool one: shades with the light glancing off them, and a grin full of teeth with a sparkle at the corner. Nothing to blink or look with behind them.
+  { voice: 'cool', name: 'The cool one', about: 'Shades on. Indoors.', still: true, stare: true, idle: 'M-0.075 0.09H0.095',
+    wear: [['path', 'wear solid', { d: 'M-0.235 -0.115H-0.03L-0.05 -0.02Q-0.13 0.03 -0.21 -0.02ZM0.03 -0.115H0.235L0.21 -0.02Q0.13 0.03 0.05 -0.02Z' }], ['path', 'wear', { d: 'M-0.03 -0.1H0.03' }],
+           ['path', 'glare', { d: 'M-0.195 -0.05L-0.165 -0.092M-0.158 -0.04L-0.143 -0.062M0.07 -0.05L0.1 -0.092M0.107 -0.04L0.122 -0.062' }],
+           ['path', 'tooth w-idle', { d: 'M-0.065 0.09H0.085Q0.08 0.165 0.01 0.165Q-0.06 0.165 -0.065 0.09ZM-0.015 0.09V0.162M0.035 0.09V0.162' }],
+           ['path', 'glint w-idle', { d: 'M0 -0.055L0.013 -0.013L0.055 0L0.013 0.013L0 0.055L-0.013 0.013L-0.055 0L-0.013 -0.013Z', transform: 'translate(0.095 0.1)' }],
+           // and packed, the grin is the whole of its smile
+           ['path', 'tooth w-good', { d: 'M-0.12 0.07Q0 0.24 0.12 0.07ZM-0.04 0.07V0.145M0 0.07V0.155M0.04 0.07V0.145' }],
+           ['path', 'glint w-good', { d: 'M0 -0.055L0.013 -0.013L0.055 0L0.013 0.013L0 0.055L-0.013 0.013L-0.055 0L-0.013 -0.013Z', transform: 'translate(0.115 0.09)' }]] },
   // the gentleman: a monocle on a chain, and one raised eyebrow
   { voice: 'gent', name: 'The gentleman', about: 'Ahem. After you.', idle: 'M-0.05 0.12H0.05',
     wear: [['circle', 'wear', { cx: 0.13, cy: -0.06, r: 0.095 }], ['path', 'wear thin', { d: 'M0.205 0Q0.255 0.1 0.2 0.21' }], ['path', 'wear', { d: 'M0.065 -0.185Q0.13 -0.22 0.195 -0.185' }]] },
@@ -26,7 +34,7 @@ var PackmanFaces = [
   { voice: 'cat', name: 'The cat', about: 'Fits, therefore sits.', idle: 'M-0.06 0.095Q-0.03 0.135 0 0.095Q0.03 0.135 0.06 0.095',
     wear: [['path', 'wear thin', { d: 'M-0.2 0.04L-0.27 0.02M-0.2 0.075L-0.27 0.085M0.2 0.04L0.27 0.02M0.2 0.075L0.27 0.085' }], ['path', 'wear solid', { d: 'M-0.024 0.03H0.024L0 0.058Z' }]] },
   // the cheeky one: tongue out
-  { voice: 'cheeky', name: 'The cheeky one', about: 'Tongue out at the box.', idle: 'M-0.08 0.09Q0 0.15 0.08 0.09', wear: [['path', 'tongue', { d: 'M-0.012 0.122V0.165A0.036 0.036 0 0 0 0.06 0.165V0.112Z' }]] },
+  { voice: 'cheeky', name: 'The cheeky one', about: 'Tongue out at the box.', idle: 'M-0.08 0.09Q0 0.15 0.08 0.09', wear: [['path', 'tongue w-idle', { d: 'M-0.012 0.122V0.165A0.036 0.036 0 0 0 0.06 0.165V0.112Z' }], ['path', 'tongue w-good', { d: 'M-0.012 0.156V0.2A0.036 0.036 0 0 0 0.06 0.2V0.136Z' }]] },
   // the smitten one: hearts where the eyes would be
   { voice: 'smitten', name: 'The smitten one', about: 'In love with its neighbour.', eye: 0.001, still: true, stare: true, idle: 'M-0.06 0.1Q0 0.16 0.06 0.1',
     wear: [-0.13, 0.13].map(function (x) {
@@ -39,7 +47,7 @@ var PackmanFaces = [
   { voice: 'unlucky', name: 'The unlucky one', about: 'Dropped once too often.', idle: 'M-0.07 0.12Q-0.035 0.09 0 0.12Q0.035 0.15 0.07 0.12',
     wear: [['rect', 'plaster', { x: 0.09, y: -0.215, width: 0.15, height: 0.062, rx: 0.031, transform: 'rotate(-18 0.165 -0.184)' }], ['path', 'wear thin', { d: 'M0.15 -0.2L0.16 -0.165M0.18 -0.21L0.19 -0.175' }]] },
   // the goofy one: two front teeth
-  { voice: 'goof', name: 'The goof', about: 'Two teeth and a big laugh.', idle: 'M-0.09 0.1Q0 0.14 0.09 0.1', wear: [['path', 'tooth', { d: 'M-0.034 0.118V0.168H0.034V0.118M0 0.122V0.168' }]] },
+  { voice: 'goof', name: 'The goof', about: 'Two teeth and a big laugh.', idle: 'M-0.09 0.1Q0 0.14 0.09 0.1', wear: [['path', 'tooth w-idle', { d: 'M-0.034 0.118V0.168H0.034V0.118M0 0.122V0.168' }], ['path', 'tooth w-good', { d: 'M-0.034 0.153V0.205H0.034V0.153M0 0.157V0.205' }]] },
   // the pirate: a patch on a strap
   { voice: 'pirate', name: 'The pirate', about: 'Arr. Stow it in the hold.', idle: 'M-0.05 0.11Q0.03 0.15 0.08 0.09',
     wear: [['path', 'wear thin', { d: 'M-0.27 -0.16L-0.19 -0.1M-0.07 -0.09L0.27 -0.175' }], ['ellipse', 'wear solid', { cx: -0.13, cy: -0.055, rx: 0.078, ry: 0.068 }]] },
