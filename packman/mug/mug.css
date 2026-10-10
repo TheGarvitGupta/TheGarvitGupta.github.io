@@ -14,19 +14,8 @@
   transform:rotateY(calc(var(--i) * 6.0deg)) translateZ(99.863px) rotateX(6.582deg);
   clip-path:polygon(9.00% 0, 91.00% 0, 100% 100%, 0 100%); backface-visibility:hidden}
 .mug .stave{background:url(art.svg) calc(var(--i) * -10.4816px) 0 / 628.893px 100%}
-/* the light stays where it is while the mug turns: each stave darkens as it goes round to the side, and shines as it passes the light */
-.mug .stave::before,.mug .stave::after{content:""; inset:0; animation:mug-dark 9s linear infinite; animation-delay:calc(var(--i) * -0.1500s)}
-.mug .stave::before{background:#16153C}
-/* (the shine is brightest on the glaze, which is glass, and softer on the bare clay below it) */
-.mug .stave::after{background:linear-gradient(#fff 0 25%, rgba(255,255,255,.72) 31% 88%, #fff 93%); animation-name:mug-shine}
-@keyframes mug-dark{0%{opacity:.03} 6%{opacity:.07} 12.5%{opacity:.17} 19%{opacity:.34} 25%,75%{opacity:.58} 81%{opacity:.3} 87.5%{opacity:.1} 94%{opacity:.02} 100%{opacity:.03}}
-/* a hard bright streak where the light strikes it, a soft glow either side of that, and a thin second light on the far edge: it is glazed, and wet-looking */
-@keyframes mug-shine{0%,13%{opacity:0} 16.5%{opacity:.2} 19%{opacity:.05} 21%,82%{opacity:0} 86%{opacity:.14} 88.6%{opacity:.3} 89.8%{opacity:.78} 91.2%{opacity:.86} 92.4%{opacity:.4} 94.5%{opacity:.16} 98%,100%{opacity:0}}
 /* the inside: the same staves seen from within, glazed, darker down towards the floor */
 .mug .inner{transform:rotateY(calc(var(--i) * 6.0deg)) translateZ(95.863px) rotateX(6.582deg) rotateY(180deg); background:linear-gradient(#6C8DDB, #4467BF 45%, #2B4796)}
-.mug .inner::before{content:""; inset:0; background:#101A4A; animation:mug-in 9s linear infinite; animation-delay:calc(var(--i) * -0.1500s)}
-.mug .inner::after{content:""; inset:0; background:linear-gradient(#fff, rgba(255,255,255,0) 55%); animation:mug-wet 9s linear infinite; animation-delay:calc(var(--i) * -0.1500s)}
-@keyframes mug-wet{0%,34%{opacity:0} 38%{opacity:.5} 40.5%{opacity:.18} 43%,100%{opacity:0}}   /* the light caught on the inside of the far wall */
 @keyframes mug-in{0%,100%{opacity:.3} 25%{opacity:.14} 50%{opacity:0} 62%{opacity:.05} 75%{opacity:.2}}
 /* the floor inside, the rim round the top, and the foot it stands on */
 .mug .floor,.mug .rim,.mug .foot{border-radius:50%; transform:rotateX(90deg)}
@@ -46,4 +35,20 @@
 .mug .seg b:nth-child(1){transform:translateZ(10px)} .mug .seg b:nth-child(2){transform:translateZ(-10px)}
 .mug .seg b:nth-child(3),.mug .seg b:nth-child(4){top:-10px; height:20px}                           /* its back and its belly */
 .mug .seg b:nth-child(3){transform:rotateX(90deg) translateZ(6.5px); background:linear-gradient(var(--c) 0 28%, #fff 44% 56%, var(--c) 72%)} .mug .seg b:nth-child(4){transform:rotateX(90deg) translateZ(-6.5px); background:var(--e)}
-@media (prefers-reduced-motion:reduce){ .mug .turn{animation:none; transform:rotateY(-32deg)} .mug .stave::before,.mug .stave::after,.mug .inner::before,.mug .inner::after,.mug .rim::after{animation-play-state:paused} }
+/* The light. It stays where it is while the mug turns, and a mug is the same shape from every side: so the light is one
+   flat picture laid over it, cut to the mug's outline, and nothing in it moves. Dark round towards each side, a hard bright
+   streak where the light strikes, a thin second light on the far edge; and the same, gentler, in the mouth. */
+.mug .light,.mug .well{left:0; top:0; width:340px; height:340px; transform:scale(var(--k)); transform-origin:0 0; transform-style:flat; pointer-events:none}
+.mug .light{clip-path:polygon(61.3px 74.9px, 61.4px 77.8px, 62.6px 80.7px, 64.8px 83.5px, 68.1px 86.3px, 72.3px 89.0px, 77.6px 91.5px, 83.7px 93.8px, 90.7px 96.0px, 98.5px 97.9px, 107.0px 99.6px, 116.0px 101.0px, 125.5px 102.1px, 135.5px 102.9px, 145.6px 103.4px, 155.9px 103.5px, 166.2px 103.4px, 176.4px 102.9px, 186.3px 102.1px, 195.9px 101.0px, 205.0px 99.6px, 213.5px 97.9px, 221.4px 96.0px, 228.4px 93.8px, 234.7px 91.5px, 240.0px 89.0px, 244.3px 86.3px, 247.7px 83.5px, 250.0px 80.7px, 251.3px 77.8px, 251.5px 74.9px, 270.1px 244.3px, 269.9px 248.5px, 268.5px 252.7px, 265.8px 256.8px, 261.9px 260.8px, 256.7px 264.7px, 250.4px 268.4px, 243.0px 271.8px, 234.6px 275.0px, 225.2px 277.8px, 215.0px 280.2px, 204.1px 282.3px, 192.6px 283.9px, 180.7px 285.1px, 168.5px 285.8px, 156.1px 286.0px, 143.8px 285.8px, 131.6px 285.1px, 119.7px 283.9px, 108.2px 282.3px, 97.4px 280.2px, 87.3px 277.8px, 78.0px 275.0px, 69.6px 271.8px, 62.3px 268.4px, 56.1px 264.7px, 51.1px 260.8px, 47.3px 256.8px, 44.7px 252.7px, 43.3px 248.5px, 43.3px 244.3px);
+  background:linear-gradient(90deg, rgba(20,19,58,.66) 12.7%, rgba(20,19,58,.3) 17.4%, rgba(20,19,58,.06) 24.1%, transparent 32.7%, transparent 46.1%, rgba(20,19,58,.12) 58.1%, rgba(20,19,58,.42) 70.1%, rgba(20,19,58,.74) 79.5%)}
+/* (the streak is at its brightest on the glaze, which is glass, and softer on the bare clay under it) */
+.mug .light::after{content:""; inset:0;
+  background:
+    linear-gradient(92.5deg, transparent 21.4%, rgba(255,255,255,.16) 26.1%, rgba(255,255,255,.9) 29.1%, rgba(255,255,255,.95) 31.1%, rgba(255,255,255,.2) 34.7%, transparent 40.8%),
+    linear-gradient(85.5deg, transparent 69.4%, rgba(255,255,255,.34) 73.1%, transparent 76.1%);
+  -webkit-mask-image:linear-gradient(#000 35.7%, rgba(0,0,0,.6) 40.7%, rgba(0,0,0,.6) 75.4%, #000 79.2%); mask-image:linear-gradient(#000 35.7%, rgba(0,0,0,.6) 40.7%, rgba(0,0,0,.6) 75.4%, #000 79.2%)}
+.mug .well{clip-path:ellipse(86.6px 28.2px at 156.4px 74.9px);
+  background:
+    radial-gradient(ellipse 43.3px 21.2px at 120.0px 67.8px, rgba(255,255,255,.5), rgba(255,255,255,0) 70%),
+    linear-gradient(rgba(16,26,74,0) 13.7%, rgba(16,26,74,.5) 30.3%)}
+@media (prefers-reduced-motion:reduce){ .mug .turn{animation:none; transform:rotateY(-32deg)} .mug .rim::after{animation-play-state:paused} }

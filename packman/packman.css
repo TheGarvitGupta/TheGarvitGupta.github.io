@@ -419,6 +419,14 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   border:var(--bw) dashed var(--ink); border-radius:14px; background:var(--wash)}
 .gift svg{flex:none; width:34px; height:34px} .gift b{color:var(--coral)} #help-prize{flex:none; display:flex}
 .gift .mug{--k:.24; margin:-10px -6px -10px -10px}   /* (the mug: see mug/mug.css) */
+/* The mug is a button: a tap is a closer look. Then it has the sheet to itself, grown to fill it, with Close under it. */
+.mug-tap{flex:none; display:flex; margin:0; padding:0; border:0; border-radius:14px; background:none; cursor:zoom-in; -webkit-tap-highlight-color:transparent; transition:transform .15s var(--pop)}
+.mug-tap:hover{transform:scale(1.1) rotate(-3deg)} .mug-tap:active{transform:scale(.96)} .mug-tap:focus-visible{outline:3px solid #4DA8FF; outline-offset:2px}
+#board-mug{display:none}
+.card.mugged{display:flex; flex-direction:column; align-items:center; overflow:hidden}
+.card.mugged > *{display:none} .card.mugged > [data-close]{display:inline-block; flex:none; margin-top:0}
+.card.mugged > #board-mug{display:grid; place-items:center; flex:1; min-height:0; width:100%; cursor:zoom-out}   /* (it grows into its place from the small one's: see mugUp in game.js) */
+.card.mugged > [data-close]{animation:fadein .3s .2s both}
 /* a mug nobody can see is not kept turning */
 .sheet:not(.open) .mug *,.sheet:not(.open) .mug *::before,.sheet:not(.open) .mug *::after{animation-play-state:paused}
 .stats.all{margin-top:8px} .stats.all div{background:var(--sun); color:#2B2140; min-width:142px} .stats.all small{color:#2B2140}

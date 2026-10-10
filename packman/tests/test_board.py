@@ -185,3 +185,38 @@ async def test_the_prize_on_the_leaderboard_is_the_mug_and_turns_only_while_it_i
     if await page.evaluate('!!document.querySelector(".sheet.open")'): await page.click('.sheet.open [data-close]'); await tick(page, 500)
     assert await page.evaluate('getComputedStyle(document.querySelector("#board-prize .turn")).animationPlayState') == 'paused', 'with the leaderboard put away the mug is still turning'
     assert not page.errors, page.errors
+
+async def test_a_tap_on_the_mug_is_a_closer_look_and_close_goes_back(t):
+    """The mug takes the whole of the leaderboard's sheet, with nothing left but Close; Close puts the leaderboard back, and Close again puts the sheet away."""
+    LOOK = '''(function () { var card = document.querySelector('#m-board .card'), c = card.getBoundingClientRect(), big = document.querySelector('#board-mug .mug'), b = big && big.getBoundingClientRect();
+      var seen = [].filter.call(card.children, function (e) { return e.getBoundingClientRect().height > 0; }).map(function (e) { return e.id || e.tagName.toLowerCase() + (e.hasAttribute('data-close') ? '[close]' : ''); });
+      return { open: (document.querySelector('.sheet.open') || {}).id || null, mugged: card.classList.contains('mugged'), seen: seen, card: [c.width, c.height], big: b ? [b.width, b.height] : null,
+               inside: !b || (b.left >= c.left && b.right <= c.right && b.top >= c.top && b.bottom <= c.bottom), mugs: document.querySelectorAll('#m-board .mug').length,
+               small: document.querySelector('#board-prize .mug').getBoundingClientRect().width }; })()'''
+    for size in ({'width': 393, 'height': 852}, {'width': 1280, 'height': 800}, {'width': 360, 'height': 640}):
+        page = await player(await t.page(board={'top': people(8), 'of': 9, 'levels': 50}, calm=False, **size))
+        await page.evaluate('document.querySelector(".dev").hidden = true')   # (this machine's own buttons lie over the foot of a tall sheet)
+        await page.click('#b-board'); await tick(page, 800)
+        before = await page.evaluate(LOOK)
+        assert before['seen'][-1] == 'button[close]' and 'board-ranks' in before['seen'] and not before['mugged'] and before['big'] is None, before
+        await page.click('#mug-tap'); await tick(page, 900); await page.wait_for_timeout(700)   # (it grows in real time, whatever the page's clock says)
+        up = await page.evaluate(LOOK)
+        assert up['mugged'] and up['seen'] == ['board-mug', 'button[close]'], 'with the mug up close the sheet shows %s' % up['seen']
+        assert up['big'] and up['big'][0] > 2.5 * before['small'] and up['big'][0] > 200, 'the mug up close is %s wide, and was %s' % (up['big'], before['small'])
+        assert up['inside'], 'the mug up close runs out of the sheet'
+        assert up['card'][1] >= before['card'][1] - 1 and abs(up['card'][0] - before['card'][0]) < 1, 'the sheet changed from %s to %s' % (before['card'], up['card'])
+        mid = await page.evaluate('(function () { var m = document.querySelector("#board-mug .mug"); return m.getAnimations().length; })()')
+        assert mid >= 1, 'the mug is put in its place at once, with nothing to carry it there'
+        await page.click('#m-board [data-close]'); await tick(page, 600)
+        back = await page.evaluate(LOOK)
+        assert back['open'] == 'm-board' and not back['mugged'] and back['seen'] == before['seen'] and back['mugs'] == 1 and abs(back['card'][1] - before['card'][1]) < 1, back
+        # in again; a tap on the big mug goes back too, and so does Escape
+        await page.click('#mug-tap'); await tick(page, 900); await page.click('#board-mug'); await tick(page, 600)
+        assert not (await page.evaluate(LOOK))['mugged']
+        await page.click('#mug-tap'); await tick(page, 900); await page.keyboard.press('Escape'); await tick(page, 600)
+        again = await page.evaluate(LOOK)
+        assert again['open'] == 'm-board' and not again['mugged'], again
+        await page.click('#m-board [data-close]'); await tick(page, 600)
+        assert (await page.evaluate(LOOK))['open'] is None, 'Close on the leaderboard itself does not put it away'
+        assert not page.errors, page.errors
+        await page.context.close()

@@ -111,19 +111,8 @@ CSS = '''/* The prize mug, turning: a real object in the browser's own 3D, of HT
   transform:rotateY(calc(var(--i) * %(step)sdeg)) translateZ(%(apo).3fpx) rotateX(%(lean).3fdeg);
   clip-path:polygon(%(pinch).2f%% 0, %(pinch2).2f%% 0, 100%% 100%%, 0 100%%); backface-visibility:hidden}
 .mug .stave{background:url(art.svg) calc(var(--i) * -%(pitch).4fpx) 0 / %(round).3fpx 100%%}
-/* the light stays where it is while the mug turns: each stave darkens as it goes round to the side, and shines as it passes the light */
-.mug .stave::before,.mug .stave::after{content:""; inset:0; animation:mug-dark %(turn)ss linear infinite; animation-delay:calc(var(--i) * -%(lag).4fs)}
-.mug .stave::before{background:#16153C}
-/* (the shine is brightest on the glaze, which is glass, and softer on the bare clay below it) */
-.mug .stave::after{background:linear-gradient(#fff 0 25%%, rgba(255,255,255,.72) 31%% 88%%, #fff 93%%); animation-name:mug-shine}
-@keyframes mug-dark{0%%{opacity:.03} 6%%{opacity:.07} 12.5%%{opacity:.17} 19%%{opacity:.34} 25%%,75%%{opacity:.58} 81%%{opacity:.3} 87.5%%{opacity:.1} 94%%{opacity:.02} 100%%{opacity:.03}}
-/* a hard bright streak where the light strikes it, a soft glow either side of that, and a thin second light on the far edge: it is glazed, and wet-looking */
-@keyframes mug-shine{0%%,13%%{opacity:0} 16.5%%{opacity:.2} 19%%{opacity:.05} 21%%,82%%{opacity:0} 86%%{opacity:.14} 88.6%%{opacity:.3} 89.8%%{opacity:.78} 91.2%%{opacity:.86} 92.4%%{opacity:.4} 94.5%%{opacity:.16} 98%%,100%%{opacity:0}}
 /* the inside: the same staves seen from within, glazed, darker down towards the floor */
 .mug .inner{transform:rotateY(calc(var(--i) * %(step)sdeg)) translateZ(%(apo2).3fpx) rotateX(%(lean).3fdeg) rotateY(180deg); background:linear-gradient(#6C8DDB, #4467BF 45%%, #2B4796)}
-.mug .inner::before{content:""; inset:0; background:#101A4A; animation:mug-in %(turn)ss linear infinite; animation-delay:calc(var(--i) * -%(lag).4fs)}
-.mug .inner::after{content:""; inset:0; background:linear-gradient(#fff, rgba(255,255,255,0) 55%%); animation:mug-wet %(turn)ss linear infinite; animation-delay:calc(var(--i) * -%(lag).4fs)}
-@keyframes mug-wet{0%%,34%%{opacity:0} 38%%{opacity:.5} 40.5%%{opacity:.18} 43%%,100%%{opacity:0}}   /* the light caught on the inside of the far wall */
 @keyframes mug-in{0%%,100%%{opacity:.3} 25%%{opacity:.14} 50%%{opacity:0} 62%%{opacity:.05} 75%%{opacity:.2}}
 /* the floor inside, the rim round the top, and the foot it stands on */
 .mug .floor,.mug .rim,.mug .foot{border-radius:50%%; transform:rotateX(90deg)}
@@ -143,10 +132,26 @@ CSS = '''/* The prize mug, turning: a real object in the browser's own 3D, of HT
 .mug .seg b:nth-child(1){transform:translateZ(10px)} .mug .seg b:nth-child(2){transform:translateZ(-10px)}
 .mug .seg b:nth-child(3),.mug .seg b:nth-child(4){top:-10px; height:20px}                           /* its back and its belly */
 .mug .seg b:nth-child(3){transform:rotateX(90deg) translateZ(6.5px); background:linear-gradient(var(--c) 0 28%%, #fff 44%% 56%%, var(--c) 72%%)} .mug .seg b:nth-child(4){transform:rotateX(90deg) translateZ(-6.5px); background:var(--e)}
-@media (prefers-reduced-motion:reduce){ .mug .turn{animation:none; transform:rotateY(-32deg)} .mug .stave::before,.mug .stave::after,.mug .inner::before,.mug .inner::after,.mug .rim::after{animation-play-state:paused} }
+/* The light. It stays where it is while the mug turns, and a mug is the same shape from every side: so the light is one
+   flat picture laid over it, cut to the mug's outline, and nothing in it moves. Dark round towards each side, a hard bright
+   streak where the light strikes, a thin second light on the far edge; and the same, gentler, in the mouth. */
+.mug .light,.mug .well{left:0; top:0; width:340px; height:340px; transform:scale(var(--k)); transform-origin:0 0; transform-style:flat; pointer-events:none}
+.mug .light{clip-path:polygon(%(outline)s);
+  background:linear-gradient(90deg, rgba(20,19,58,.66) %(e0).1f%%, rgba(20,19,58,.3) %(e1).1f%%, rgba(20,19,58,.06) %(e2).1f%%, transparent %(e3).1f%%, transparent %(e4).1f%%, rgba(20,19,58,.12) %(e5).1f%%, rgba(20,19,58,.42) %(e6).1f%%, rgba(20,19,58,.74) %(e7).1f%%)}
+/* (the streak is at its brightest on the glaze, which is glass, and softer on the bare clay under it) */
+.mug .light::after{content:""; inset:0;
+  background:
+    linear-gradient(%(tipl).1fdeg, transparent %(s1).1f%%, rgba(255,255,255,.16) %(s2).1f%%, rgba(255,255,255,.9) %(s3).1f%%, rgba(255,255,255,.95) %(s4).1f%%, rgba(255,255,255,.2) %(s5).1f%%, transparent %(s6).1f%%),
+    linear-gradient(%(tipr).1fdeg, transparent %(r1).1f%%, rgba(255,255,255,.34) %(r2).1f%%, transparent %(r3).1f%%);
+  -webkit-mask-image:linear-gradient(#000 %(g0).1f%%, rgba(0,0,0,.6) %(g1).1f%%, rgba(0,0,0,.6) %(g2).1f%%, #000 %(g3).1f%%); mask-image:linear-gradient(#000 %(g0).1f%%, rgba(0,0,0,.6) %(g1).1f%%, rgba(0,0,0,.6) %(g2).1f%%, #000 %(g3).1f%%)}
+.mug .well{clip-path:ellipse(%(wrx).1fpx %(wry).1fpx at %(wx).1fpx %(wy).1fpx);
+  background:
+    radial-gradient(ellipse %(wrx2).1fpx %(wry2).1fpx at %(gx).1fpx %(gy).1fpx, rgba(255,255,255,.5), rgba(255,255,255,0) 70%%),
+    linear-gradient(rgba(16,26,74,0) %(w0).1f%%, rgba(16,26,74,.5) %(w1).1f%%)}
+@media (prefers-reduced-motion:reduce){ .mug .turn{animation:none; transform:rotateY(-32deg)} .mug .rim::after{animation-play-state:paused} }
 '''
 
-MUG = '<span class="mug" role="img" aria-label="A ceramic mug with a great wave on it, turning"><span class="tilt"><span class="turn"><i class="foot"></i><i class="floor"></i>%(inners)s%(staves)s<span class="handle">%(handle)s</span><i class="rim"></i></span></span></span>'
+MUG = '<span class="mug" role="img" aria-label="A ceramic mug with a great wave on it, turning"><span class="tilt"><span class="turn"><i class="foot"></i><i class="floor"></i>%(inners)s%(staves)s<span class="handle">%(handle)s</span><i class="rim"></i></span></span><i class="light"></i><i class="well"></i></span>'
 
 PAGE = '''<!DOCTYPE html>
 <html lang="en">
@@ -172,11 +177,41 @@ p{margin:0} p small{display:block; font-weight:500; font-size:14px; color:#7A6F9
 </html>
 '''
 
+SCALE, RISE, TILT, EYE, AT = 1.16, 82.0, 19.0, 2600.0, (0.46 * 340, 170.0)   # as .mug and .tilt have it, in the styles above
+
+def seen(x, y, z):
+    """Where a point of the mug (x across, y down from the rim, z towards the eye before it is tilted) falls in the mug's box of 340."""
+    t = math.radians(TILT)
+    y2, z2 = y * math.cos(t) + z * math.sin(t), -y * math.sin(t) + z * math.cos(t)
+    px, py, pz = AT[0] + SCALE * x, AT[1] + SCALE * (y2 - RISE), SCALE * z2
+    f = EYE / (EYE - pz)
+    return 170 + (px - 170) * f, 170 + (py - 170) * f
+
+def light():
+    """The outline of the mug's wall as it is seen, and where across and down it the lights and darks fall."""
+    arc = [math.radians(a) for a in range(-90, 91, 6)]
+    top = [seen(RT * math.sin(a), 0, RT * math.cos(a)) for a in arc]
+    foot = [seen(RB * math.sin(a), H, RB * math.cos(a)) for a in reversed(arc)]
+    left, right = min(p[0] for p in foot), max(p[0] for p in foot)
+    def across(f): return (left + f * (right - left)) / 340 * 100        # a share of the way across the mug, as a share of the box
+    ytop, ybot = min(p[1] for p in top), max(p[1] for p in foot)
+    def down(f): return (ytop + f * (ybot - ytop)) / 340 * 100
+    lean = math.degrees(math.atan((RB - RT) * SCALE / (ybot - ytop)))    # how far the wall leans, as it is seen
+    cx, cy = seen(0, 0, 0)
+    rx = RT * SCALE - 8.5; ry = rx * math.sin(math.radians(TILT))
+    return dict(outline=', '.join('%.1fpx %.1fpx' % q for q in top + foot),
+                tipl=90 + lean * 0.45, s1=across(.13), s2=across(.2), s3=across(.245), s4=across(.275), s5=across(.33), s6=across(.42),
+                tipr=90 - lean * 0.8, r1=across(.85), r2=across(.905), r3=across(.95),
+                e0=across(0), e1=across(.07), e2=across(.17), e3=across(.3), e4=across(.5), e5=across(.68), e6=across(.86), e7=across(1),
+                g0=down(.22), g1=down(.3), g2=down(.86), g3=down(.92),
+                wrx=rx, wry=ry, wx=cx, wy=cy, wrx2=rx * 0.5, wry2=ry * 0.75, gx=cx - rx * 0.42, gy=cy - ry * 0.25, w0=(cy - ry) / 340 * 100, w1=(cy + ry) / 340 * 100)
+
 def parts():
     pinch = (1 - RT / RB) / 2 * 100
     return dict(turn=TURN, half=-WIDE / 2 - 0.8, wide=WIDE + 1.6,   # (a little wider than its share, so no light shows between two of them)
                 slant=SLANT, drop=H - SLANT, step=360 / N, apo=RB * math.cos(math.pi / N), apo2=RB * math.cos(math.pi / N) - 4,
                 lean=LEAN, pinch=pinch, pinch2=100 - pinch, pitch=WIDE, round=ROUND, lag=TURN / N, floor=H - 14 - 95, foot=H - 99 - 1, rimr=RT + 1, rimd=2 * RT + 2, hat=-90,
+                **light(),
                 staves=''.join('<i class="stave" style="--i:%d"></i>' % i for i in range(N)), inners=''.join('<i class="inner" style="--i:%d"></i>' % i for i in range(N)), handle=handle())
 
 if __name__ == '__main__':
