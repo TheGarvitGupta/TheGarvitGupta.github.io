@@ -69,6 +69,25 @@ var PackmanGeom = (function () {
     return { poly: poly, walls: walls };
   }
 
+  // A level may have more than one box on its board. Then the container is a list of convex ones
+  // (parts), and each shape is judged by the box it is in, or the nearest: see part.
+  function makeBoxes(polys) {
+    var parts = polys.map(makeContainer), poly = [], walls = [];
+    parts.forEach(function (c) { poly = poly.concat(c.poly); walls = walls.concat(c.walls); });
+    return { poly: poly, walls: walls, parts: parts };
+  }
+  // The box a point belongs to: the one it is inside, or failing that the one it is least far out of.
+  function part(C, x, y) {
+    if (!C.parts) return C;
+    var best = null, least = Infinity;
+    C.parts.forEach(function (c) {
+      var m = -Infinity;
+      c.walls.forEach(function (w) { m = Math.max(m, x * w.nx + y * w.ny - w.d); });
+      if (m < least) { least = m; best = c; }
+    });
+    return best;
+  }
+
   // How far a polygon pokes through one wall (negative when clear of it).
   function excess(A, w) {
     var m = -Infinity;
@@ -77,6 +96,7 @@ var PackmanGeom = (function () {
   }
 
   function pointInside(C, x, y) {
+    if (C.parts) return C.parts.some(function (c) { return pointInside(c, x, y); });
     for (var i = 0; i < C.walls.length; i++) {
       var w = C.walls[i];
       if (x * w.nx + y * w.ny > w.d) return false;
@@ -86,6 +106,10 @@ var PackmanGeom = (function () {
 
   // 'in' fully inside, 'out' clear of the container, 'edge' straddling a wall.
   function zone(A, C) {
+    if (C.parts) {
+      var all = C.parts.map(function (c) { return zone(A, c); });
+      return all.indexOf('in') >= 0 ? 'in' : all.indexOf('edge') >= 0 ? 'edge' : 'out';
+    }
     var worst = -Infinity;
     for (var i = 0; i < C.walls.length; i++) { var e = excess(A, C.walls[i]); if (e > worst) worst = e; }
     if (worst <= EPS) return 'in';
@@ -115,6 +139,7 @@ var PackmanGeom = (function () {
   function settle(pieces, i, C) {
     var p = pieces[i];
     if (!pointInside(C, p.x, p.y)) return false;
+    C = part(C, p.x, p.y);
     var x0 = p.x, y0 = p.y, others = [], j, k, A, e, o;
     for (j = 0; j < pieces.length; j++) {
       if (j === i) continue;
@@ -283,6 +308,8 @@ var PackmanGeom = (function () {
   function magnet(pieces, i, C, keep) {
     var p = pieces[i];
     if (!pointInside(C, p.x, p.y)) return false;
+    var whole = C;
+    C = part(C, p.x, p.y);
     var x0 = p.x, y0 = p.y, a0 = p.angle, targets = [], others = [], j, k;
     for (k = 0; k < C.walls.length; k++) {
       var w = C.walls[k];
@@ -325,7 +352,7 @@ var PackmanGeom = (function () {
     if (grid !== null) best = { turn: grid };
     if (best) p.angle = a0 + Math.round(best.turn);
 
-    settle(pieces, i, C);              // out of any shallow overlap first
+    settle(pieces, i, whole);          // out of any shallow overlap first
     var moved = seat(p, others, C);
     if (!best && !moved && p.x === x0 && p.y === y0) return false;
     // The turn and the pull are one snap. A piece that would be straightened but is still
@@ -365,6 +392,7 @@ var PackmanGeom = (function () {
 
   function relaxAll(Q, home, C, iters) {
     var n = Q.length, V = Q.map(verts), worst = 0, i, j, k;
+    var W = home.map(function (h) { return part(C, h.x, h.y).walls; });   // each shape's own box
     function shift(i, dx, dy) {
       Q[i].x += dx; Q[i].y += dy;
       for (var m = 0; m < V[i].length; m++) { V[i][m][0] += dx; V[i][m][1] += dy; }
@@ -372,9 +400,9 @@ var PackmanGeom = (function () {
     for (var it = 0; it < iters; it++) {
       worst = 0;
       for (i = 0; i < n; i++) {
-        for (k = 0; k < C.walls.length; k++) {
-          var e = excess(V[i], C.walls[k]);
-          if (e > 0) { worst = Math.max(worst, e); shift(i, -C.walls[k].nx * e, -C.walls[k].ny * e); }
+        for (k = 0; k < W[i].length; k++) {
+          var e = excess(V[i], W[i][k]);
+          if (e > 0) { worst = Math.max(worst, e); shift(i, -W[i][k].nx * e, -W[i][k].ny * e); }
         }
         for (j = i + 1; j < n; j++) {
           var o = overlap(V[i], V[j]);
@@ -394,7 +422,7 @@ var PackmanGeom = (function () {
     // how much overlap is left, in total
     var left = 0;
     for (i = 0; i < n; i++) {
-      for (k = 0; k < C.walls.length; k++) left += Math.max(0, excess(V[i], C.walls[k]));
+      for (k = 0; k < W[i].length; k++) left += Math.max(0, excess(V[i], W[i][k]));
       for (j = i + 1; j < n; j++) { var q = overlap(V[i], V[j]); if (q) left += q.depth; }
     }
     return { worst: worst, left: left };
@@ -463,7 +491,7 @@ var PackmanGeom = (function () {
 
   return {
     H: H, EPS: EPS, SHAPES: SHAPES,
-    verts: verts, overlap: overlap, makeContainer: makeContainer, excess: excess,
+    verts: verts, overlap: overlap, makeContainer: makeContainer, makeBoxes: makeBoxes, part: part, excess: excess,
     pointInside: pointInside, zone: zone, evaluate: evaluate, settle: settle, magnet: magnet, place: place, shake: shake, bounds: bounds, sweep: sweep
   };
 })();

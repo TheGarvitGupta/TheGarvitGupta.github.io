@@ -20,9 +20,9 @@
     'Dolphin', 'Moose', 'Raven', 'Gecko', 'Bison', 'Puffin', 'Hare', 'Seal', 'Yak', 'Crane', 'Lemur', 'Ibex'];
   // Three chapters: the seventeen, then the powers, then the bricks and hexagons. The file lists the
   // powers last (they were written last), so the levels are put in chapter order here.
-  var CHAPTERS = ['Seventeen', 'Powers', 'Bricks and hexagons'];
-  function chap(l) { return l.powers ? 1 : l.bonus ? 2 : 0; }
-  LEVELS = [0, 1, 2].reduce(function (all, k) { return all.concat(LEVELS.filter(function (l) { return chap(l) === k; })); }, []);
+  var CHAPTERS = ['Seventeen', 'Powers', 'Bricks and hexagons', 'Twists'];
+  function chap(l) { return l.twist ? 3 : l.powers ? 1 : l.bonus ? 2 : 0; }   // (the fourth has powers on some levels and none on others)
+  LEVELS = [0, 1, 2, 3].reduce(function (all, k) { return all.concat(LEVELS.filter(function (l) { return chap(l) === k; })); }, []);
   var FIRST = CHAPTERS.map(function (c, k) { return LEVELS.map(chap).indexOf(k); });   // where each chapter starts
   var MAIN = LEVELS.filter(function (l) { return !chap(l); }).length;   // the seventeen
   function among(n) { return n - FIRST[chap(LEVELS[n])] + 1; }   // a level's number within its chapter
@@ -64,7 +64,8 @@
   }
   // The box's outline is drawn just outside the real walls, so a piece resting
   // against a wall shows the same sliver of gap as two pieces side by side.
-  function binPath(px) { return rounded(grown(C, 3.4 * px), Math.min(9 * px, 0.16)); }
+  function binPath(px) { return boxes().map(function (c) { return rounded(grown(c, 3.4 * px), Math.min(9 * px, 0.16)); }).join(''); }
+  function boxes() { return C.parts || [C]; }   // a level has one box as a rule; Duality has two
   function grown(Cn, by) {
     var w = Cn.walls, n = w.length, out = [];
     for (var k = 0; k < n; k++) {
@@ -220,9 +221,14 @@
     var px = 1 / view.scale;
     board.style.setProperty('--u', px);   // one screen pixel, in board units, for stroke widths
     bin.firstElementChild.setAttribute('d', binPath(px));
-    $('true-box').setAttribute('d', loop(C.poly));   // for eyesight: the box exactly as judged
+    $('true-box').setAttribute('d', boxes().map(function (c) { return loop(c.poly); }).join(''));   // for eyesight: the box exactly as judged
     pieces.forEach(function (p) { if (p.fill) outline(p); });
     if (ghost) $('ghost').setAttribute('d', ghostPath(ghost.type));
+    if (fence && lv.divide == null) { fence.parentNode.removeChild(fence); fence = null; }
+    if (lv.divide != null) {
+      if (!fence) { fence = el('line', 'fence'); board.insertBefore(fence, bin); }
+      fence.setAttribute('x1', lv.divide); fence.setAttribute('x2', lv.divide); fence.setAttribute('y1', view.y); fence.setAttribute('y2', view.y + view.h);
+    }
     $('knob').setAttribute('r', 11 * px);
     $('knob-hit').setAttribute('r', 22 * px);
     $('knob-dot').setAttribute('r', 4 * px);
@@ -234,7 +240,10 @@
   function keepInView(p) {
     p.x = clamp(p.x, view.x + 0.4, view.x + view.w - 0.4);
     p.y = clamp(p.y, view.y + 0.4, view.y + view.h - 0.4);
+    // An entangled shape on a board with a line down it keeps to its own side, clear of the line.
+    if (p.half) p.x = p.half < 0 ? Math.min(p.x, lv.divide - FENCE) : Math.max(p.x, lv.divide + FENCE);
   }
+  var FENCE = 0.74, fence = null;   // as near the line as such a shape's middle may come: no corner of it crosses, however it is turned
 
   // The angles at which a shape of this kind has a side square to one of this box's walls,
   // counted once each (a square looks the same every 90 degrees, and so on).
@@ -297,8 +306,14 @@
       cell *= 0.85;
     }
     slots = shuffled(slots);
+    // a shape that keeps to one side of the board is dealt on that side; the others take what is left
+    var deal = pieces.map(function (p) {
+      if (!p.half) return null;
+      for (var k = 0; k < slots.length; k++) if ((slots[k][0] - lv.divide) * p.half > FENCE) return slots.splice(k, 1)[0];
+      return null;
+    });
     pieces.forEach(function (p, i) {
-      var s = slots[i % slots.length], j = Math.min(0.12, cell / 8);
+      var s = deal[i] || slots[i % slots.length], j = Math.min(0.12, cell / 8);
       p.x = s[0] + (Math.random() - 0.5) * j;
       p.y = s[1] + (Math.random() - 0.5) * j;
       // Dealt straight, or, on a level that scrambles them, at any of the angles that put one
@@ -383,6 +398,7 @@
     p.under.setAttribute('transform', tf + ' ' + rot);
     p.tf = tf; p.rot = rot;
     gum(p);
+    if (sel >= 0 && (i === sel || (pieces[sel].kin || []).some(function (k) { return k.i === i; }))) tether();
   }
 
   // The knob stands straight above a shape to begin with. When the shape is selected, it
@@ -431,7 +447,7 @@
       for (var j = 0; j < pieces.length; j++) {
         if (j !== i && G.makeContainer(G.verts(pieces[j])).walls.every(function (wl) { return k[0] * wl.nx + k[1] * wl.ny - wl.d < room; })) return 2;   // on another shape
       }
-      return inBox && !C.walls.every(function (wl) { return k[0] * wl.nx + k[1] * wl.ny - wl.d < -room; }) ? 1 : 0;   // over the wall, or beyond it
+      return inBox && !G.part(C, p.x, p.y).walls.every(function (wl) { return k[0] * wl.nx + k[1] * wl.ny - wl.d < -room; }) ? 1 : 0;   // over the wall, or beyond it
     }
     var best = tries[0], worst = 3;
     tries.forEach(function (side) { var t = trouble(side); if (t < worst) { worst = t; best = side; } });
@@ -561,7 +577,7 @@
     if (sel >= 0 && pieces[sel]) { pieces[sel].el.classList.remove('sel'); }
     sel = i;
     if (i >= 0) { pieces[i].el.classList.add('sel'); layer.appendChild(pieces[i].el); }
-    showAngle(); placeHandle();
+    showAngle(); placeHandle(); tether();
     card();   // what the one in hand does
   }
 
@@ -574,11 +590,30 @@
     startClock();
     p.angle += by;
     carry(i);
+    turnTwin(p, by);
     clearTimeout(shakeTimer);
     // Turning a shape turns it and nothing more: it is not nudged clear of its neighbours
     // or pulled against them. All of that belongs to dragging.
     render(i); placeHandle(); showAngle(); tick();
     if (norm(p.angle) % 15 === 0) haptic();
+  }
+  // An entangled shape's kin turn whenever it does, wherever they are: by as much, or (geared) as much the other way.
+  function turnTwin(p, by) {
+    if (!p.kin || !by) return;
+    p.kin.forEach(function (k) { pieces[k.i].angle += by * k.s; carry(k.i); render(k.i); });
+  }
+  // A dotted thread runs from the shape in hand to each of its kin, and they are marked as the one in hand is.
+  var threads = [];
+  function tether() {
+    var p = sel >= 0 ? pieces[sel] : null, kin = p && p.kin ? p.kin.map(function (k) { return pieces[k.i]; }) : [];
+    Array.prototype.forEach.call(layer.querySelectorAll('.twin'), function (e) { if (!kin.some(function (q) { return q.el === e; })) e.classList.remove('twin'); });
+    while (threads.length > kin.length) { var gone = threads.pop(); gone.parentNode.removeChild(gone); }
+    kin.forEach(function (q, n) {
+      q.el.classList.add('twin');
+      if (!threads[n]) { threads[n] = el('line', 'thread'); board.insertBefore(threads[n], layer); }
+      var t = threads[n];
+      t.setAttribute('x1', p.x.toFixed(4)); t.setAttribute('y1', p.y.toFixed(4)); t.setAttribute('x2', q.x.toFixed(4)); t.setAttribute('y2', q.y.toFixed(4));
+    });
   }
   function spinTo(i, deg) { spin(i, ((deg - pieces[i].angle) % 360 + 540) % 360 - 180); }
 
@@ -691,7 +726,8 @@
     p.x = w.x + drag.ox; p.y = w.y + drag.oy; p.angle = drag.a0;
     keepInView(p);
     var S = lv.powers ? solid(p) : pieces, stuck = G.place(S, S.indexOf(p), C) === 'snap';
-    if (p.power === 'sleeper' && p.angle !== drag.a0 && asleep(p)) { p.angle = drag.a0; G.settle(S, S.indexOf(p), C); stuck = false; }   // not even a snap turns it in there
+    // not even a snap turns the sleeper in there; nor an entangled shape anywhere, or its twin would be turned in passing
+    if (p.angle !== drag.a0 && ((p.power === 'sleeper' && asleep(p)) || p.kin)) { p.angle = drag.a0; G.settle(S, S.indexOf(p), C); stuck = false; }
     if (p.power === 'ghost' && onto(p)) stuck = true;
     if (intoGhost(drag.i)) stuck = true;
     if (stuck && !drag.stuck) { sfx.snap(); haptic(); }
@@ -817,11 +853,11 @@
       fill(seals, 'seal', [pt(lo, -back), pt(hi, -back), pt(hi, gap(hi) + back), pt(lo, gap(lo) + back)], colour);   // lapped a little under each side
     }
     var E = V.map(function (A, i) { return inPlay[i] ? edges(A) : null; });
-    var boxEdges = edges(C.poly).map(function (w) { return { a: w.b, b: w.a, nx: -w.nx, ny: -w.ny }; });   // a wall faces inwards
+    var boxEdges = [].concat.apply([], boxes().map(function (c) { return edges(c.poly); })).map(function (w) { return { a: w.b, b: w.a, nx: -w.nx, ny: -w.ny }; });   // a wall faces inwards
     V.forEach(function (A, i) {
       if (!inPlay[i]) return;
       var blue = BLUES[pieces[i].blue];
-      C.walls.forEach(function (w) { fill(hits, 'hit', cut(A, w, true)); });
+      G.part(C, pieces[i].x, pieces[i].y).walls.forEach(function (w) { fill(hits, 'hit', cut(A, w, true)); });
       var airy = pieces[i].power === 'ghost';   // nothing is filled in round the ghost: it is not drawn as a block
       if (!airy) E[i].forEach(function (e) { boxEdges.forEach(function (f) { seal(e, f, blue); }); });
       for (var j = i + 1; j < V.length; j++) {
@@ -1034,17 +1070,19 @@
     // The puffer is only any trouble with a crowd round it, so it comes out in the levels with five shapes or more.
     var pool = ['mine', 'ghost', 'sticky', 'chameleon', 'sleeper', 'magnet'].concat(lv.pieces.length >= 5 ? ['puffer'] : []);
     var asked = LOCAL && /[?&]powers=([a-z,]+)/.exec(location.search);   // on this machine, the ones named in the address
-    var out = lv.pieces.map(function () { return 0; }), free = shuffled(out.map(function (z, n) { return n; }));
+    var tied = [].concat.apply([], (lv.twins || []).concat(lv.gears || []));   // entangled shapes are left as they are
+    var out = lv.pieces.map(function () { return 0; }), free = shuffled(out.map(function (z, n) { return n; }).filter(function (n) { return tied.indexOf(n) < 0; }));
     var sure = lv.sure || [];   // the ones a level always has; the rest of its powers are drawn
     (asked ? asked[1].split(',') : sure.concat(shuffled(pool.filter(function (w) { return sure.indexOf(w) < 0; })).slice(0, lv.powers - sure.length))).forEach(function (w) {
       if (!POWERS[w]) return;
-      if (w === 'ghost') { out.push({ w: w, t: lv.pieces[Math.floor(Math.random() * lv.pieces.length)] }); return; }
+      if (w === 'ghost') { out.push({ w: w, t: lv.ghost || lv.pieces[Math.floor(Math.random() * lv.pieces.length)] }); return; }   // (a level may say what kind its ghost is)
       if (!free.length) return;
       var n = free.pop(), t = lv.pieces[n];
-      if (w === 'chameleon' && lv.chameleon != null && free.concat(n).indexOf(lv.chameleon) >= 0) {   // the level says which shape it is
-        free = free.concat(n).filter(function (k) { return k !== lv.chameleon; }); n = lv.chameleon; t = lv.pieces[n];
+      var named = w === 'chameleon' && lv.chameleon != null ? lv.chameleon : lv.pin && lv.pin[w] != null ? lv.pin[w] : null;
+      if (named !== null && free.concat(n).indexOf(named) >= 0) {   // the level says which shape it is
+        free = free.concat(n).filter(function (k) { return k !== named; }); n = named; t = lv.pieces[n];
       }
-      if (w === 'puffer') {   // and it is the biggest shape going, which has the most neighbours to shove
+      else if (w === 'puffer') {   // and it is the biggest shape going, which has the most neighbours to shove
         var size = { triangle: 0, square: 1, domino: 2, hexagon: 3 }, big = free.concat(n).sort(function (a, b) { return size[lv.pieces[b]] - size[lv.pieces[a]]; })[0];
         free = free.concat(n).filter(function (k) { return k !== big; }); n = big; t = lv.pieces[n];
       }
@@ -1404,7 +1442,7 @@
     var was = save.done[lv.name];
     $('best').hidden = !was;
     if (was) $('best').textContent = 'Your best: ' + clock(was.t) + ' · ' + was.m + (was.m === 1 ? ' move' : ' moves');
-    C = G.makeContainer(lv.container); cb = G.bounds(lv.container);
+    C = lv.containers ? G.makeBoxes(lv.containers) : G.makeContainer(lv.container); cb = G.bounds(lv.container);
     clearTimeout(partyTimer); $('finale').classList.remove('show');
     $('go-next').hidden = true; dock.classList.remove('won');
     won = false; drag = null; sel = -1; dirty = false; moves = 0; t0 = 0; elapsed = 0; carried = 0;
@@ -1438,6 +1476,24 @@
       pips.appendChild(pip);
       return { type: type, size: 1, x: 0, y: 0, angle: 0, color: kits[n % kits.length].color || colors[n % colors.length], kit: kits[n % kits.length], good: false };
     });
+    // Entangled shapes come in sets (twins), the shapes of a set alike: one colour, one face. Each keeps its angle
+    // from the others for good: the difference between the spots they have in the solution. In a geared
+    // set (gears) each shape after the first turns against the first, and it is their sum that is kept.
+    [[lv.twins || [], 1], [lv.gears || [], -1]].forEach(function (kind) {
+      kind[0].forEach(function (set) {
+        var sign = set.map(function (n, k) { return k ? kind[1] : 1; });
+        set.forEach(function (i, a) {
+          pieces[i].kit = pieces[set[0]].kit; pieces[i].color = pieces[set[0]].color;
+          pieces[i].kin = [];
+          if (lv.divide != null) pieces[i].half = lv.solution[i][0] < lv.divide ? -1 : 1;
+          set.forEach(function (j, b) {
+            if (j === i) return;
+            var s = sign[a] * sign[b];   // q turns s times as p does, and q.angle - s * p.angle stays at k
+            pieces[i].kin.push({ i: j, s: s, k: lv.solution[j][2] - s * lv.solution[i][2] });
+          });
+        });
+      });
+    });
     var kept = save.board;
     if (lv.powers) {
       (!fresh && kept && kept.l === lv.name && kept.q && kept.q.every(function (g) { return !g || POWERS[g.w]; }) ? kept.q : dealPowers()).forEach(function (g, n) {   // a board saved with a power there no longer is, is dealt afresh
@@ -1465,8 +1521,12 @@
       pieces.forEach(function (p, n) { p.x = kept.p[n][0]; p.y = kept.p[n][1]; p.angle = kept.p[n][2]; keepInView(p); });
       moves = kept.m || 0; carried = kept.t || 0;
       $('clock').textContent = clock(carried);
-    } else { scatter(); sfx.deal(pieces.length); }
+    } else {
+      scatter(); sfx.deal(pieces.length);
+      pieces.forEach(function (p, n) { (p.kin || []).forEach(function (k) { if (k.i > n) pieces[k.i].angle = k.s * p.angle + k.k; }); });
+    }
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
+    tether();
     notePower(null); countHints();
     if (masked()) $('lv-intro').textContent = 'One of these is a chameleon in disguise. Its true shape is for you to find.';   // the usual line would count the shapes out
     judge(); showAngle(); placeHandle(); nag();
@@ -1502,7 +1562,7 @@
       // would shake, find nothing finished, and shake again, for ever.
       var was = pieces.map(pose);
       pieces.forEach(function (p, i) { p.x = to[i].x; p.y = to[i].y; p.angle = to[i].angle; });
-      var fine = evaluate().solved;
+      var fine = evaluate().solved && pieces.every(function (p) { return (p.kin || []).every(function (k) { return pieces[k.i].angle - k.s * p.angle === k.k; }); });   // (and no twin is turned without the other)
       pieces.forEach(function (p, i) { p.x = was[i][0]; p.y = was[i][1]; p.angle = was[i][2]; });
       if (!fine) return;
       shake(to);
@@ -1620,9 +1680,9 @@
   function intoGhost(i) {
     var p = pieces[i];
     if (!ghost || !near(p, ghost, 0.34, 25)) return false;
-    var x = p.x, y = p.y, a = p.angle;
-    p.x = ghost.x; p.y = ghost.y; p.angle += off(ghost.angle, p.angle, p.type);
-    if (evaluate().states[i].good) return true;
+    var x = p.x, y = p.y, a = p.angle, by = off(ghost.angle, p.angle, p.type);
+    p.x = ghost.x; p.y = ghost.y; p.angle += by;
+    if (evaluate().states[i].good) { turnTwin(p, by); return true; }
     p.x = x; p.y = y; p.angle = a;
     return false;
   }
@@ -1795,7 +1855,7 @@
   var HINTS = 10, EVERY = 8 * 36e5, waiter = 0;
   function purse() {
     save.hints = save.hints || {};
-    var key = 'chapter ' + (lv.powers ? 2 : lv.bonus ? 1 : 0), h = save.hints[key], now = Date.now();   // (numbered as the chapters were when hints were first kept this way)
+    var key = 'chapter ' + (lv.twist ? 3 : lv.powers ? 2 : lv.bonus ? 1 : 0), h = save.hints[key], now = Date.now();   // (numbered as the chapters were when hints were first kept this way)
     if (!h || Array.isArray(h)) h = save.hints[key] = { n: HINTS - (Array.isArray(h) ? Math.min(h.length, HINTS) : 0), at: now };   // (a list of times, from when each came back after a day)
     if (h.n < HINTS) {
       if (!(h.at <= now)) h.at = now;   // a clock that has been put back
@@ -2066,7 +2126,7 @@
         more.className = 'more'; more.textContent = 'Chapter ' + (chap(l) + 1) + ' \u00B7 ' + CHAPTERS[chap(l)];
         grid.appendChild(more); heads[chap(l)] = more;
       }
-      var b = document.createElement('button'), s = el('svg'), poly = el('polygon'), bb = G.bounds(l.container), done = save.done[l.name];
+      var b = document.createElement('button'), s = el('svg'), bb = G.bounds(l.container), done = save.done[l.name];
       if (done) count++;
       var shut = !unlocked(n);
       b.className = 'lv' + (done ? ' done' : '') + (n === level ? ' here' : '') + (shut ? ' locked' : '');
@@ -2075,8 +2135,8 @@
       b.setAttribute('aria-label', label(n) + (shut ? ', locked until the one before it is packed' : ', ' + l.name + (done ? ', packed in ' + clock(done.t) : '')));
       b.title = shut ? 'Pack the one before it first' : l.name + (done ? ' · best ' + clock(done.t) : '');
       s.setAttribute('viewBox', bb.minX + ' ' + bb.minY + ' ' + (bb.maxX - bb.minX) + ' ' + (bb.maxY - bb.minY));
-      poly.setAttribute('points', pts(l.container));
-      s.appendChild(poly); b.appendChild(s);
+      (l.containers || [l.container]).forEach(function (c) { var poly = el('polygon'); poly.setAttribute('points', pts(c)); s.appendChild(poly); });
+      b.appendChild(s);
       b.appendChild(document.createTextNode(among(n)));
       if (done || shut) { var t = document.createElement('span'); t.className = 'tick'; t.textContent = done ? '✓' : '\uD83D\uDD12'; b.appendChild(t); }
       b.addEventListener('click', function () { closeSheet($('m-levels')); startLevel(n); });
@@ -2311,7 +2371,7 @@
       select(-1);
       pieces.forEach(function (p, i) {
         while (p.power === 'chameleon' && p.form) morph(p, i);
-        var s = lv.solution[i] || lv.solution[lv.pieces.indexOf(p.type)];   // the ghost lies over one of its own kind
+        var s = lv.solution[i] || lv.solution[lv.pieces.indexOf(p.type)] || lv.haunt;   // the ghost lies over one of its own kind, or where the level says
         p.x = s[0]; p.y = s[1]; p.angle = s[2]; render(i);
       });
       startClock(); commit(true, true);

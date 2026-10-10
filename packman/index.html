@@ -299,6 +299,9 @@ body:has(#stage.eyes) .sky i{opacity:0}   /* and none of them shows round the ta
 .piece.held{cursor:grabbing}
 .fill{fill:var(--c); stroke:var(--ink); stroke-width:calc(2.5px * var(--u)); stroke-linejoin:round}
 .piece.sel .fill{stroke-width:calc(4px * var(--u))}
+.piece.twin .fill{stroke-width:calc(4px * var(--u))}   /* the entangled twin of the one in hand, and the thread between the two */
+.fence{stroke:var(--rim); stroke-width:calc(2px * var(--u)); stroke-dasharray:calc(6px * var(--u)) calc(8px * var(--u)); stroke-linecap:round; pointer-events:none; opacity:.4}   /* the line down a board that entangled shapes may not cross */
+.thread{stroke:var(--rim); stroke-width:calc(2.5px * var(--u)); stroke-dasharray:calc(1px * var(--u)) calc(7px * var(--u)); stroke-linecap:round; fill:none; pointer-events:none; opacity:.75}
 /* A shape that does not fit has red dashes round it: round its true edge, which is a few pixels outside the shape as it is drawn.
    So what it is into shows without eyesight: the dashes of two shapes that overlap run into each other, and into the box's wall. */
 #board:not(.eyes) .piece.bad .safe{visibility:visible; fill:none !important; stroke:var(--bad); stroke-width:calc(3px * var(--u)); stroke-dasharray:calc(7px * var(--u)) calc(5px * var(--u)); stroke-linejoin:round}
@@ -753,11 +756,11 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   </div>
 </div>
 
-<script src="geom.js?v=2.70"></script>
-<script src="levels.js?v=2.70"></script>
-<script src="faces.js?v=2.72"></script>
-<script src="sounds.js?v=2.70"></script>
-<script src="game.js?v=2.77"></script>
+<script src="geom.js?v=2.82"></script>
+<script src="levels.js?v=2.86"></script>
+<script src="faces.js?v=2.80"></script>
+<script src="sounds.js?v=2.80"></script>
+<script src="game.js?v=2.82"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

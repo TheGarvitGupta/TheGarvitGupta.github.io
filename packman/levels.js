@@ -2,8 +2,8 @@
 // same units as the pieces (every piece has side 1). Each solution is one packed
 // [x, y, angle] per piece, in the order the pieces are listed. The levels run
 // from easiest to hardest; saved progress goes by name, so they can be reordered.
-// There are three chapters, played in this order: the seventeen; then the powers, which are listed
-// last here; then the bricks and hexagons. In this file: the first is the seventeen; the next (bonus: true) brings
+// There are four chapters, played in this order: the seventeen; then the powers; then the bricks and
+// hexagons; then the twists, which are listed last here. In this file: the first is the seventeen; the next (bonus: true) brings
 // the brick and the hexagon; the third (powers: n) deals n of its shapes a power each time,
 // picked at random, but for any named in sure, which always come. A chameleon is dealt to
 // any shape, unless chameleon: n names one; masked is the hint to give when there is a chameleon in the deal.
@@ -417,6 +417,124 @@ var PackmanLevels = (function () {
       container: box(3.713),
       pieces: pieces(6, 0, 2),
       solution: [[-1.3565, -0.3565, 0], [1.3565, 0.3565, 0], [1.3565, -1.3565, 0], [-1.3565, 1.3565, 0], [-0.2071, 0.2012, 45], [0.5, -0.5059, 45], [-0.8565, -1.3565, 0], [0.8565, 1.3565, 0]]
+    },
+    // The fourth chapter (twist: true): tight packings, each with one idea of its own, and powers on some of them.
+    // pin gives a power to one shape by number. A level may have two boxes (containers); sets of entangled shapes
+    // that turn together (twins) or against each other (gears); and a line no entangled shape may cross (divide).
+,
+,
+,
+,
+,
+,
+,
+,
+,
+    {
+      name: 'Haojun\u2019s Gears',
+      twist: true,
+      gears: [[0, 1], [2, 3]],   // geared pairs: one turns against the other
+      intro: 'Windmill again, in pairs. Shapes that look alike are geared: turn one, and the other turns the opposite way.',
+      hint: 'A pinwheel. Each triangle lies with one side flat against a different wall, pushed along to one end of it, all four going the same way round. The two of a pair go against opposite walls, top and bottom or left and right: get one flat against its wall and the other is right too.',
+      container: box(1.584),
+      pieces: pieces(0, 4),
+      solution: [[0.2876, 0.5003, 0], [-0.2876, -0.5003, 60], [0.5003, -0.2876, 30], [-0.5003, 0.2876, 90]]
+    },
+    {
+      name: 'Split Decision',
+      twist: true,
+      intro: 'Two boxes, two squares, five triangles. Work out which shapes go in which box.',
+      hint: 'The smaller box takes a square and two triangles: the square against the middle of the right-hand wall, one triangle flat on the floor and one hanging flat from the ceiling, their points meeting beside it. The bigger box takes the rest: the square snug in the top-left corner, a triangle hanging upside-down beneath it, one flat against the right-hand wall at 30°, and the last in the bottom corner at 105°.',
+      containers: [box(1.783).map(function (p) { return [p[0] - 1.386, p[1]]; }), box(1.872).map(function (p) { return [p[0] + 1.3415, p[1]]; })],
+      container: box(1.783).map(function (p) { return [p[0] - 1.386, p[1]]; }).concat(box(1.872).map(function (p) { return [p[0] + 1.3415, p[1]]; })),
+      pieces: pieces(2, 5),
+      solution: [[-0.998, 0, 0], [0.9084, -0.4331, 0], [-1.774, 0.599, 0], [-1.774, -0.599, 180], [0.9268, 0.3557, 60], [1.7169, 0.4147, 105], [1.9857, -0.4147, 30]]
+    },
+    {
+      name: 'Short Fuse',
+      twist: true,
+      powers: 1,
+      sure: ['mine'],
+      pin: { mine: 3 },   // one of the bricks
+      intro: 'Two bricks and three triangles. One brick is a mine, and neither will go in straight.',
+      hint: 'Lay the two bricks side by side as one big square, both turned to 120°, so the big square stands on a corner and touches all four walls. Triangles fill three of the gaps it leaves against the walls. Turn the mine in short goes, outside the box, and its fuse never runs out.',
+      container: box(2.74),
+      pieces: pieces(0, 3, 2),
+      solution: [[0.866, 1.0774, 240], [1.0774, -0.866, 150], [-0.866, -1.0773, 180], [0.433, 0.25, 300], [-0.433, -0.25, 120]]
+    },
+    {
+      name: 'Sleepwalker',
+      twist: true,
+      powers: 1,
+      sure: ['sleeper'],
+      pin: { sleeper: 8 },   // the brick
+      intro: 'Ten Tight once more, with one brick. The brick is a sleeper, and it will not lie straight.',
+      hint: 'Turn the brick to 45° outside the box, then carry it in and lay it corner to corner through the middle. Three squares make an L in one corner beside it, three in the opposite corner, and one goes in each of the other two.',
+      container: box(3.713),
+      pieces: pieces(8, 0, 1),
+      solution: [[-1.3565, -1.3565, 0], [-0.3565, -1.3565, 0], [-1.3565, -0.3565, 0], [1.3565, 1.3565, 0], [0.3565, 1.3565, 0], [1.3565, 0.3565, 0], [1.3565, -1.3565, 0], [-1.3565, 1.3565, 0], [0.1464, -0.1523, 135]]
+    },
+    {
+      name: 'Keystone',
+      twist: true,
+      powers: 2,
+      sure: ['puffer'],
+      pin: { puffer: 6 },   // the hexagon
+      intro: 'Seven shapes, and the hexagon is a puffer: it goes in first, with nothing to line it up against.',
+      hint: 'The hexagon goes in before anything else: turned 15° off straight and pushed into the top-right corner. Two squares stack down the left wall from the top corner, and the third goes in the bottom-right corner. The three triangles fill the bottom-left: one flat on the floor, one above it against the left wall at 60°, and one leaning at 45° between them and the hexagon.',
+      container: box(2.944),
+      pieces: pieces(3, 3, 0, 1),
+      solution: [[0.9677, 0.9681, 0], [-0.9666, 0.0334, 0], [-0.9659, -0.9666, 0], [-0.9685, 0.8281, 300], [0.08, 0.7987, 45], [-0.5048, 1.1798, 120], [0.5025, -0.5025, 15]]
+    },
+    {
+      name: 'Double Bluff',
+      twist: true,
+      powers: 2,
+      sure: ['chameleon', 'magnet'],
+      chameleon: 1,   // the triangle on the floor
+      masked: 'The chameleon sits on the floor in the bottom-left corner. The brick stands upright against the left wall above it, in the top corner, with the square beside it against the ceiling. The hexagon turns 15° off straight and goes into the bottom-right corner, and a triangle lies in the top-right corner, pointing left.',
+      intro: 'One of each, and one more. Counting the shapes will not tell you which.',
+      hint: 'The brick stands upright against the left wall, in the top corner, with the square beside it against the ceiling. Turn the hexagon 15° off straight and push it into the bottom-right corner. One triangle lies in the top-right corner, pointing left; the other sits on the floor in the bottom-left.',
+      container: box(2.892),
+      pieces: pieces(1, 2, 1, 1),
+      solution: [[0.0578, -0.9422, 90], [-0.5867, 1.1457, 240], [1.1353, -0.8924, 270], [-0.9422, -0.4422, 90], [0.4763, 0.4763, 105]]
+    },
+    {
+      name: 'Eleven Bricks',
+      twist: true,
+      powers: 3,
+      sure: ['magnet', 'chameleon'],
+      chameleon: 7,   // the brick standing against the side wall
+      masked: 'The chameleon stands upright against the left wall, in the bottom corner. A brick lies along the floor beside it. A square goes in each top corner, and the other five squares lean 40° in a clump.',
+      intro: 'Eleven again, with four of its squares welded into two bricks. And powers.',
+      hint: 'One brick stands upright against the left wall, in the bottom corner. The other lies along the floor beside it. A square goes in each top corner, and the other five squares lean 40° in a clump.',
+      container: box(3.885),
+      pieces: pieces(7, 0, 2),
+      solution: [[-1.4431, -1.443, 0], [1.4431, -1.4432, 0], [-0.675, -0.4857, 40], [0.0212, 0.2403, 40], [1.2381, 0.4424, 40], [0.7116, -0.4858, 40], [0.0154, -1.2118, 40], [-1.4425, 0.9425, 90], [0.0575, 1.443, 0]]
+    },
+    {
+      name: 'Duality',
+      twist: true,
+      powers: 1,
+      twins: [[4, 5], [0, 6], [1, 7]],   // entangled pairs: each turns when the other does
+      divide: -0.0155,   // a line half way between the boxes: an entangled shape keeps to the side its spot is on
+      intro: 'Two boxes. Shapes that look alike are entangled: turn one and its twin turns too. Neither can cross the line.',
+      hint: 'The square box is Five Alive: four squares in the corners and one in the middle at 45°. The honeycomb is Pinwheel: three squares flat against every other wall, at 0°, 30° and 60°. Each pair of twins is split by the line, one in each box. The twin of the square in the middle sits straight in the honeycomb; the twins of the two that lean there sit straight in corners of the square box.',
+      containers: [box(2.713).map(function (p) { return [p[0] - 1.822, p[1]]; }), ngon(6, 1.372, 0).map(function (p) { return [p[0] + 1.8065, p[1]]; })],
+      container: box(2.713).map(function (p) { return [p[0] - 1.822, p[1]]; }).concat(ngon(6, 1.372, 0).map(function (p) { return [p[0] + 1.8065, p[1]]; })),   // every corner of both, for the board's bounds
+      pieces: pieces(8, 0),
+      solution: [[-2.6785, -0.8565, 0], [-0.9655, -0.8565, 0], [-2.6785, 0.8565, 0], [-0.9655, 0.8565, 0], [-1.822, 0, 45], [1.617, 0.6822, 0], [1.3035, -0.5052, 30], [2.486, -0.1872, 60]]
+    },
+    {
+      name: 'Trinity',
+      twist: true,
+      twins: [[2, 3, 1], [0, 5, 4]],   // entangled threes: all turn when one does
+      intro: 'Tripod and Pinwheel, side by side. The squares are entangled in threes: turn one and the other two turn with it.',
+      hint: 'Each box takes three squares flat against three walls, at 0°, 30° and 60°. In each set of three, two squares match and the third is 30° off. Put the matching two in different boxes. One set gives both boxes their straight square and the triangle its 30°; the other gives both their 60° and the honeycomb its 30°.',
+      containers: [loosen([[0, -2 * H / 3], [0.5, H / 3], [-0.5, H / 3]], 3.245).map(function (p) { return [p[0] - 1.822, p[1] + 0.468]; }), ngon(6, 1.372, 0).map(function (p) { return [p[0] + 2.0725, p[1]]; })],
+      container: loosen([[0, -2 * H / 3], [0.5, H / 3], [-0.5, H / 3]], 3.245).map(function (p) { return [p[0] - 1.822, p[1] + 0.468]; }).concat(ngon(6, 1.372, 0).map(function (p) { return [p[0] + 2.0725, p[1]]; })),
+      pieces: pieces(6, 0),
+      solution: [[-1.1738, 0.7173, 60], [-1.9277, -0.2225, 30], [-2.3607, 0.8935, 0], [1.883, 0.6822, 0], [1.5695, -0.5052, 30], [2.752, -0.1872, 60]]
     }
   ];
 })();
