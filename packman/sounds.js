@@ -88,22 +88,3 @@ var PackmanSounds = function (tone) {
     }
   };
 };
-// What each one is for, in the order of the list above: for the sound board (sounds.html).
-PackmanSounds.about = [
-  ['Handling a shape', [
-    ['pick', 'Picking a shape up, before each had a voice of its own'], ['drop', 'Putting it down outside the box, or starting a level over'], ['snap', 'It snaps against a wall or a neighbour'],
-    ['tick', 'Each notch as it turns'], ['bad', 'Put down where it does not fit'],
-    ['fit', 'A shape goes in. The note climbs through the level', [0.1, 0.5, 1]]]],
-  ['The board', [
-    ['deal', 'A new level: the shapes are dealt out', [4, 9]], ['rattle', 'The box shakes a near-finished packing into place'], ['spot', 'A hint shows one spot'],
-    ['eyeOn', 'Eyesight on'], ['eyeOff', 'Eyesight off'], ['chime', 'Eyesight is introduced']]],
-  ['Buttons and sheets', [
-    ['tap', 'Any button'], ['arm', 'Start over asks to be pressed again'], ['open', 'A sheet opens'], ['close', 'A sheet closes']]],
-  ['Powers', [
-    ['fuse', 'The mine counts down, faster at the end', [3, 2, 1]], ['boom', 'The mine goes off'], ['fizz', 'The mine is put down in time'],
-    ['glue', 'Sticky glues on'], ['peel', 'Sticky is peeled off'],
-    ['puff', 'The puffer shoves its neighbours'], ['morph', 'The chameleon changes shape'], ['snore', 'Trying to turn the sleeper in the box'], ['pull', 'The magnet pulls a shape in']]],
-  ['Winning', [
-    ['win', 'A level is packed'], ['best', 'It beat your best time'], ['top', 'You are first on the leaderboard'], ['pop', 'Each firework in the last level\'s party'],
-    ['fanfare', 'All seventeen packed']]]
-];

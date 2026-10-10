@@ -561,7 +561,6 @@
     persist();
   }
 
-  function snapshot() { return pieces.map(function (p) { return [p.x, p.y, p.angle]; }); }
 
   function startClock() {
     if (t0 || won) return;
