@@ -148,6 +148,10 @@ body {
   overflow-x: hidden;
   /* So the drawing below can be as tall as the page, not the window. */
   position: relative;
+  /* And never shorter than the window: on a tall screen a short page would
+     otherwise end, and the drawing with it, partway down. */
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* A single wash of light from above, so the page reads as a lit case rather
