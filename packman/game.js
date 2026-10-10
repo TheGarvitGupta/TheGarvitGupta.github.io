@@ -2483,7 +2483,7 @@
     [['Solver', solve], ['Hard reset', function () {
       if (!window.confirm('Clear all Packman progress on this browser?')) return;
       wipe(false);
-    }]].forEach(function (b) {
+    }], ['Moments', function () { location.href = 'tools/states.html'; }]].forEach(function (b) {   // (the game's big moments, each played live: tools/states.html)
       var btn = document.createElement('button');
       btn.textContent = b[0]; btn.addEventListener('click', b[1]);
       dev.appendChild(btn);

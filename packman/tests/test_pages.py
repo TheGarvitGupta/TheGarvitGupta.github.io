@@ -56,3 +56,12 @@ async def test_the_card_on_the_front_page_packs(t):
     assert r['there'] and r['drawn'] > 5, 'no Packman card is drawn on the front page: %s' % r
     mine = [e for e in page.errors if 'packman' in e.lower()]
     assert not mine, mine
+
+async def test_the_way_to_the_big_moments_is_only_on_this_machine(t):
+    """On localhost a button at the bottom left leads to tools/states.html. A player on the real site has no such button."""
+    page = await t.page()
+    assert await page.evaluate('[].some.call(document.querySelectorAll(".dev button"), function (b) { return b.textContent === "Moments"; })'), 'no Moments button on localhost'
+    await page.click('.dev button:has-text("Moments")'); await page.wait_for_url('**/tools/states.html*')
+    assert await page.evaluate('document.querySelectorAll("iframe").length') == 2 and not page.errors, page.errors
+    live = await t.page(live=True)
+    assert await live.evaluate('!document.querySelector(".dev") && !/states\\.html/.test(document.documentElement.innerHTML)'), 'a player on the real site is shown the way to the moments'
