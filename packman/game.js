@@ -2033,13 +2033,19 @@
     list.textContent = '';
     var mine = false;
     function cell(li, tag, cls, text) { var e = document.createElement(tag); e.className = cls; e.textContent = text; li.appendChild(e); return e; }
+    // The first three wear a medal in place of their number: gold, silver, bronze, with the number on it.
+    function medal(pos) {
+      return '<svg viewBox="0 0 26 28" role="img" aria-label="' + nth(pos) + '"><path class="tail" d="M5.5 1.5h6l3 9h-6zM20.5 1.5h-6l-3 9h6z"/>' +
+        '<circle class="disc" cx="13" cy="17" r="9"/><circle class="ring" cx="13" cy="17" r="6.3"/><text x="13" y="20.6">' + pos + '</text></svg>';
+    }
     function line(pos, r, own) {
       var li = document.createElement('li');
-      cell(li, 'b', 'pos', pos);
+      var place = cell(li, 'b', 'pos', pos);
+      if (pos <= 3) { place.innerHTML = medal(pos); li.className = 'top t' + pos; }
       li.appendChild(avatar(r.a));
       cell(li, 'span', 'who', own ? called() : r.name);
       cell(li, 'span', 'fig', r.n); cell(li, 'span', 'fig', r.m); cell(li, 'span', 'fig t', clock(r.t));
-      if (own) { li.className = 'me'; mine = true; }
+      if (own) { li.className += ' me'; mine = true; }
       list.appendChild(li);
     }
     var rows = (data.top || []).slice(0, limit);
@@ -2402,6 +2408,7 @@
   if (LOCAL) {   // for the tests (tests/), and for trying things out
     window.Packman.commit = commit; window.Packman.render = render; window.Packman.level = function () { return lv; };
     window.Packman.play = function (name) { startLevel(LEVELS.map(function (l) { return l.name; }).indexOf(name), true); };
+    window.Packman.me = function () { return me; };   // the number a player's row on the board is known by
   }
   if (REEL) {   // what reel/reel.js works the game with
     window.Packman.select = select; window.Packman.wake = wake; window.Packman.sfx = sfx;

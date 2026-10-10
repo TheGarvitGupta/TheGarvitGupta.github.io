@@ -40,7 +40,7 @@ SEED = """
 """
 
 async def opened(browser, base, path='/packman/', level='Home', save=None, store='packman.v1', width=393, height=852, scale=1,
-                 dark=False, calm=True, seed=7, still=True):
+                 dark=False, calm=True, seed=7, still=True, board=None):
     """A page of the site. Nothing leaves this machine but the request for the lettering: the counter of visits and
     the leaderboard are cut off. With still, the page's clock stands at a fixed moment and moves only when told to
     (page.clock.run_for); with calm, the page is told the player wants no animation, so no picture catches one midway."""
@@ -53,6 +53,13 @@ async def opened(browser, base, path='/packman/', level='Home', save=None, store
     page.errors = []
     page.on('pageerror', lambda e: page.errors.append('error: ' + str(e)))
     page.on('response', lambda r: page.errors.append('%d %s' % (r.status, r.url)) if r.status >= 400 else None)
+    if board is not None:   # a stand-in leaderboard: whatever is asked of it, this is the answer, and what was asked is kept
+        page.asked = []
+        async def answer(route):
+            page.asked.append((route.request.method, route.request.url, route.request.post_data))
+            await route.fulfill(status=200, content_type='application/json', body=json.dumps(board(route.request) if callable(board) else board))
+        await ctx.route(lambda url: url.startswith(base + '/__board'), answer)   # (not the page itself, whose address ends with the board's)
+        path += ('&' if '?' in path else '?') + 'scores=' + base + '/__board'
     if still:
         await page.clock.install(time=1760000000000)
         await page.clock.pause_at(1760000001000)
