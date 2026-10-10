@@ -114,17 +114,24 @@ CSS = '''/* The prize mug, turning: a real object in the browser's own 3D, of HT
 /* the light stays where it is while the mug turns: each stave darkens as it goes round to the side, and shines as it passes the light */
 .mug .stave::before,.mug .stave::after{content:""; inset:0; animation:mug-dark %(turn)ss linear infinite; animation-delay:calc(var(--i) * -%(lag).4fs)}
 .mug .stave::before{background:#16153C}
-.mug .stave::after{background:#fff; animation-name:mug-shine}
+/* (the shine is brightest on the glaze, which is glass, and softer on the bare clay below it) */
+.mug .stave::after{background:linear-gradient(#fff 0 25%%, rgba(255,255,255,.72) 31%% 88%%, #fff 93%%); animation-name:mug-shine}
 @keyframes mug-dark{0%%{opacity:.03} 6%%{opacity:.07} 12.5%%{opacity:.17} 19%%{opacity:.34} 25%%,75%%{opacity:.58} 81%%{opacity:.3} 87.5%%{opacity:.1} 94%%{opacity:.02} 100%%{opacity:.03}}
-@keyframes mug-shine{0%%,80%%{opacity:0} 86%%{opacity:.1} 90.5%%{opacity:.3} 95%%{opacity:.08} 99%%,100%%{opacity:0}}
+/* a hard bright streak where the light strikes it, a soft glow either side of that, and a thin second light on the far edge: it is glazed, and wet-looking */
+@keyframes mug-shine{0%%,13%%{opacity:0} 16.5%%{opacity:.2} 19%%{opacity:.05} 21%%,82%%{opacity:0} 86%%{opacity:.14} 88.6%%{opacity:.3} 89.8%%{opacity:.78} 91.2%%{opacity:.86} 92.4%%{opacity:.4} 94.5%%{opacity:.16} 98%%,100%%{opacity:0}}
 /* the inside: the same staves seen from within, glazed, darker down towards the floor */
 .mug .inner{transform:rotateY(calc(var(--i) * %(step)sdeg)) translateZ(%(apo2).3fpx) rotateX(%(lean).3fdeg) rotateY(180deg); background:linear-gradient(#6C8DDB, #4467BF 45%%, #2B4796)}
 .mug .inner::before{content:""; inset:0; background:#101A4A; animation:mug-in %(turn)ss linear infinite; animation-delay:calc(var(--i) * -%(lag).4fs)}
+.mug .inner::after{content:""; inset:0; background:linear-gradient(#fff, rgba(255,255,255,0) 55%%); animation:mug-wet %(turn)ss linear infinite; animation-delay:calc(var(--i) * -%(lag).4fs)}
+@keyframes mug-wet{0%%,34%%{opacity:0} 38%%{opacity:.5} 40.5%%{opacity:.18} 43%%,100%%{opacity:0}}   /* the light caught on the inside of the far wall */
 @keyframes mug-in{0%%,100%%{opacity:.3} 25%%{opacity:.14} 50%%{opacity:0} 62%%{opacity:.05} 75%%{opacity:.2}}
 /* the floor inside, the rim round the top, and the foot it stands on */
 .mug .floor,.mug .rim,.mug .foot{border-radius:50%%; transform:rotateX(90deg)}
 .mug .floor{left:-95px; top:%(floor).1fpx; width:190px; height:190px; background:radial-gradient(#2A4796, #1E3478)}
 .mug .rim{left:-%(rimr).1fpx; top:-%(rimr).1fpx; width:%(rimd).1fpx; height:%(rimd).1fpx; border:7px solid #A9C0F1; box-shadow:0 0 0 1.5px #5571C2, inset 0 0 0 1.5px #5571C2}
+/* light along the rim: it does not turn with the mug, so it is turned back the other way as fast */
+.mug .rim::after{content:""; inset:-7px; border-radius:50%%; border:7px solid transparent; border-left-color:rgba(255,255,255,.85); border-bottom-color:rgba(255,255,255,.3); filter:blur(.6px); animation:mug-back %(turn)ss linear infinite}
+@keyframes mug-back{from{transform:rotate(-35deg)} to{transform:rotate(-395deg)}}
 .mug .foot{left:-99px; top:%(foot).1fpx; width:198px; height:198px; background:#1B3070}
 /* the handle: it stands out from the side away from the picture, and goes round with the mug */
 .mug .handle{left:0; top:0; width:0; height:0; transform:rotateY(%(hat)sdeg)}
@@ -135,8 +142,8 @@ CSS = '''/* The prize mug, turning: a real object in the browser's own 3D, of HT
 .mug .seg b:nth-child(1),.mug .seg b:nth-child(2){top:-6.5px; height:13px; background:var(--d)}      /* its two flat sides */
 .mug .seg b:nth-child(1){transform:translateZ(10px)} .mug .seg b:nth-child(2){transform:translateZ(-10px)}
 .mug .seg b:nth-child(3),.mug .seg b:nth-child(4){top:-10px; height:20px}                           /* its back and its belly */
-.mug .seg b:nth-child(3){transform:rotateX(90deg) translateZ(6.5px); background:var(--c)} .mug .seg b:nth-child(4){transform:rotateX(90deg) translateZ(-6.5px); background:var(--e)}
-@media (prefers-reduced-motion:reduce){ .mug .turn{animation:none; transform:rotateY(-32deg)} .mug .stave::before,.mug .stave::after,.mug .inner::before{animation-play-state:paused} }
+.mug .seg b:nth-child(3){transform:rotateX(90deg) translateZ(6.5px); background:linear-gradient(var(--c) 0 28%%, #fff 44%% 56%%, var(--c) 72%%)} .mug .seg b:nth-child(4){transform:rotateX(90deg) translateZ(-6.5px); background:var(--e)}
+@media (prefers-reduced-motion:reduce){ .mug .turn{animation:none; transform:rotateY(-32deg)} .mug .stave::before,.mug .stave::after,.mug .inner::before,.mug .inner::after,.mug .rim::after{animation-play-state:paused} }
 '''
 
 MUG = '<span class="mug" role="img" aria-label="A ceramic mug with a great wave on it, turning"><span class="tilt"><span class="turn"><i class="foot"></i><i class="floor"></i>%(inners)s%(staves)s<span class="handle">%(handle)s</span><i class="rim"></i></span></span></span>'
