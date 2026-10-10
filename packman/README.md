@@ -35,7 +35,7 @@ packman/
     pack.py             Searches for the tightest box a set of shapes will pack into, to make a level from
     check.html          Puts every level's own solution through the judge
 
-  tests/                See Testing, below
+  tests/                The tests: run.py runs them all (see Testing, below)
 ```
 
 Outside this folder:
@@ -71,7 +71,8 @@ built file.
 **A new level.** Add it to `levels.js` with a solution; `tools/pack.py` finds
 tight ones. Progress is saved by the level's name, so levels can be reordered
 but a rename loses players' progress on that level. Open `tools/check.html` to
-see that the solution packs, then rebuild and deploy the worker.
+see that the solution packs, or run the tests, which ask much more of it; then
+rebuild and deploy the worker.
 
 ---
 
@@ -86,7 +87,8 @@ all for trying things out:
 - two buttons stand at the bottom left: **Solver**, which packs the level, and **Hard reset**;
 - `?powers=mine,ghost` deals those powers in place of a random pick;
 - `?scores=<address>` uses a stand-in leaderboard;
-- `?reel` has the game play itself (see `reel/`), with progress of its own.
+- `?reel` has the game play itself (see `reel/`), with progress of its own;
+- `Packman` in the console has more on it: `play(name)` opens a level, `level()` is the one open, `pieces()` its shapes.
 
 Sound being off on localhost is not a fault: mute is saved per address.
 
@@ -94,63 +96,65 @@ Sound being off on localhost is not a fault: mute is saved per address.
 
 ## Testing
 
-Everything here runs on this machine with Python and Playwright driving a real
-browser (`pip install playwright numpy pillow`, with Chrome installed). There
-is no build step and no Node. Nothing runs by itself on a push yet.
+```sh
+python3 packman/tests/run.py              # everything, in Chrome: about two and a half minutes
+python3 packman/tests/run.py levels geom  # only those sets
+python3 packman/tests/run.py game:hint    # only the tests of a set with "hint" in their names
+python3 packman/tests/run.py --webkit     # in WebKit, the engine Safari is built on: about eight minutes
+```
+
+Run it before a push. It needs Python with Playwright driving a real browser
+(`pip install playwright numpy pillow`, with Chrome installed; `playwright
+install webkit` for the last). There is no build step and no Node. Nothing
+runs by itself on a push yet.
+
+A test is a function named `test_...` in a file `tests/test_*.py`, and passes
+unless it raises; its name is the sentence it checks. `tests/harness.py` is
+what they stand on: it serves the site, opens a page with the deal, the clock
+and the saved game fixed, cuts off everything but this machine, and works the
+game with a mouse as a player does.
 
 ### What there is
 
-| What it checks | Where | How it is run |
-| --- | --- | --- |
-| Every level's own solution packs, by the game's judge | `tools/check.html` | Opened in a browser: fifty lines, each `OK` |
-| A change that should not alter how anything looks has not | `tests/shots.py` | By hand: `take` a set of pictures before and after, then `diff` them. 28 cases: levels of every chapter, phone and desktop, light and dark, eyesight, powers, the sheets, a win, "Meet the shapes" |
-| No score reaches the board unless it packs | the worker | In production: it runs the judge on every score sent |
+| Set | What it checks |
+| --- | --- |
+| `files` | Every file a page asks for is there. Scripts and styles have cache numbers, the same on every page, and a file changed since the last push has a new one. The built worker is what `build-worker.py` would write now. The scripts keep to ES5, with nothing left from debugging. |
+| `levels` | Fifty levels in four chapters, each chapter together. Names all different; every level has its line and its hint; every box is convex. Every solution has a place for each shape, packs by the game's judge, and does not use up the hair of tolerance. Powers and shapes a level names exist: pinned powers, the chameleon, entangled sets of one kind, enough free shapes for the powers dealt. Entangled shapes can be packed on their own side of the line. |
+| `geom` | `geom.js` on cases with known answers: the shapes' sizes, turning, how deep two shapes overlap and which way out, inside and outside a box, the judge's count, two boxes on one board, settling, putting a shape down, sweeping. Every level packed by a simple machine that drops each shape on its place, and every finished board pushed a hair out and shaken home: both but for Eleven and Eleven Bricks, which are listed as the two that want a player's care. |
+| `sounds` | Every sound and every voice is made of notes that can be played, the browser's own audio takes them, and every personality and power has a voice of its own. |
+| `game` | In the real page: all fifty levels open on a phone, a small phone and a desktop, with the right shapes and powers dealt, on the screen, outside the box, entangled ones on their own side. A shape goes where it is carried and turns by the buttons. A level packed by hand with the mouse is won and saved, and is still there when the page is opened again. The marks light for the shape that went in. An overlap does not count. Start over, eyesight, hints (the spot shown is one from the solution, and is counted), every sheet, choosing a level from the list, and the welcome for a new player. |
+| `powers` | Begun: Short Fuse deals a mine to each brick whatever the deal, and packs. |
+| `pages` | "Meet the shapes" draws every personality and power, and they react. The reel plays through to its card, writes nothing to a player's saved game, and is not loaded for a player. The card on the site's front page draws. |
 
-`tests/harness.py` is what the tests stand on: it serves the site, opens a page
-with the deal, the clock and the saved game fixed, and cuts off everything but
-this machine. Two sets of pictures from the same files are the same to the
-pixel.
+By hand:
+
+| What it checks | Where | How |
+| --- | --- | --- |
+| A change that should not alter how anything looks has not | `tests/shots.py` | `take` a set of pictures before and after, then `diff` them. 28 cases: levels of every chapter, phone and desktop, light and dark, eyesight, powers, the sheets, a win, "Meet the shapes". Two sets from the same files are the same to the pixel. |
+| Every level's own solution packs | `tools/check.html` | Opened in a browser: fifty lines, each `OK`. (The `levels` set does the same.) |
+
+And in production the worker runs the judge on every score sent, so none reaches the board unless it packs.
 
 ### What is wanted
 
-In the order it is being built. Each is to be a part of one command,
-`python3 packman/tests/run.py`, that says what passed and what failed.
+In the order it is to be built:
 
-1. **The files hang together.** Every file a page asks for exists; the cache
-   numbers agree between pages; a file changed since the last push has had its
-   number raised; the built worker is what `build-worker.py` would write now;
-   the scripts keep to ES5.
-2. **The levels are sound.** Names are all different; each chapter has the
-   number of levels it says; a solution has a place for every shape and packs
-   with room to spare; what a level names (a pinned power, entangled sets, the
-   line in Duality) points at shapes that exist and are of one kind; a solution
-   to a level of entangled shapes can be reached with them turning together,
-   each on its own side.
-3. **The geometry is right.** `geom.js` by itself, on cases with known
-   answers: what overlaps and by how much, what is inside a box and what is
-   over a wall, two boxes on one board, settling and the magnet, and that a
-   packing nudged a hair still counts.
-4. **The game plays.** In a real browser: every level opens without an error,
-   on a phone and a desktop; a shape can be picked up, moved and turned; a
-   level packed by hand is won, saved, and opens the next; the marks at the top
-   right light for the shape that went in; start over, hints and eyesight do
-   what they say; progress survives a reload.
-5. **Each power does what it says.** The mine goes off if held; Sticky glues;
+1. **The rest of the powers.** The mine goes off if held; Sticky glues;
    the sleeper cannot be turned in the box; the magnet pulls; the ghost shares
-   a space; the puffer shoves; the chameleon changes. And the twists:
-   entangled shapes turn together, geared ones against each other, and none
-   crosses the line.
-6. **The leaderboard.** With a stand-in board: a win sends the right score
+   a space; the puffer shoves; the chameleon changes and only counts in its own shape.
+2. **The twists.** Entangled shapes turn together and geared ones against
+   each other; none crosses the line; a level of two boxes is won only with both packed.
+3. **The leaderboard.** With a stand-in board: a win sends the right score
    once; the standing is shown; a board that is down does not spoil a win;
    nothing is sent from this machine. And the worker itself, run in a browser
    against a stand-in database: it takes every level's solution, and turns
    away one that overlaps, one for a level that does not exist, and one sent
    twice.
-7. **The other pages.** "Meet the shapes" draws every personality and power;
-   the reel plays through to its card; the card on the main page packs.
-8. **Safari.** The same run in WebKit, which Playwright has: most of the
-   game's odd bugs have been Safari's.
-9. **Every sound plays** without an error, against a stand-in for the browser's audio.
+4. **As a player on the real site sees it.** The tests run on localhost, where
+   every level is open and no score is sent. The same page served under
+   another name: levels open one by one as they are won, and the prize after the seventeenth.
+5. **Safari, all of it.** Two of the `pages` tests are skipped in WebKit: the
+   harness loses the reel's frame there, and the front page does not finish loading with the clock held.
 
 Wanted, and not planned in detail:
 

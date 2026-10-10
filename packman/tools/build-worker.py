@@ -35,7 +35,13 @@ head = """// Cloudflare Worker — the Packman leaderboard.
 //   DELETE FROM scores WHERE name = 'someone';           -- take a player off the board
 """
 
-out = "\n\n".join([head.rstrip("\n"), read("packman/geom.js"), read("packman/levels.js"), read("extras/cloudflare-worker/packman-scores.src.js")]) + "\n"
 dest = os.path.join(root, "extras/cloudflare-worker/packman-scores.js")
-open(dest, "w", encoding="utf-8").write(out)
-print("wrote", os.path.relpath(dest, root), len(out), "bytes")
+
+def build():
+    """The worker as it should be now (the tests compare the file that is there with this)."""
+    return "\n\n".join([head.rstrip("\n"), read("packman/geom.js"), read("packman/levels.js"), read("extras/cloudflare-worker/packman-scores.src.js")]) + "\n"
+
+if __name__ == "__main__":
+    out = build()
+    open(dest, "w", encoding="utf-8").write(out)
+    print("wrote", os.path.relpath(dest, root), len(out), "bytes")
