@@ -1906,7 +1906,7 @@
 
   // A sheet opens with its way on (.go) in focus, or failing that its first button.
   function openSheet(s) { if (!s.classList.contains('open')) sfx.open(); s.classList.add('open'); var b = s.querySelector('.btn.go:not([hidden])') || s.querySelector('.btn:not([hidden])'); if (b) setTimeout(function () { b.focus({ preventScroll: true }); }, 60); }
-  // 'How to pack' counts as seen only once it is closed, so a load nobody looked at does not use it up
+  // The welcome counts as seen only once it is closed, so a load nobody looked at does not use it up
   function closeSheet(s) {
     if (s.id === 'm-board' && mugged() && !mugGoing) return mugUp(false);   // from a closer look at the prize, the way out is back to the leaderboard
     if (s.id === 'm-name' && nameless()) return wanted();   // no way out of it without a name
@@ -2234,6 +2234,20 @@
     }).then(function () { list.classList.remove('wait'); });
     openSheet($('m-board'));
   }
+  // The welcome shows the prize as the leaderboard does, and who the first three are just now. If the board cannot be
+  // asked, the rows are left out.
+  function showHelp() {
+    var list = $('help-ranks');
+    if (!list.children.length) list.classList.add('wait');
+    ask(SCORES + '?top=3').then(function (d) {
+      if (!d.top) throw 0;
+      ranks(list, { top: d.top }, 3);
+      list.classList.remove('none');
+    }).catch(function () {
+      list.textContent = ''; list.classList.add('none');
+    }).then(function () { list.classList.remove('wait'); });
+    openSheet($('m-help'));
+  }
   $('win-lb-all').addEventListener('click', function () { closeSheet($('m-win')); showBoard(); });
   $('board-rename').addEventListener('click', function () { closeSheet($('m-board')); askName(showBoard); });
 
@@ -2294,7 +2308,7 @@
     if (spot) sfx.spot();
   });
   $('b-board').addEventListener('click', showBoard);
-  $('b-help').addEventListener('click', function () { openSheet($('m-help')); });
+  $('b-help').addEventListener('click', showHelp);
 
   // Starting from nothing: everything this browser remembers of the game is forgotten, and the page is
   // loaded afresh as for a new player. The leaderboard keeps the old scores, under an id nobody has any
@@ -2345,7 +2359,8 @@
   $('win-next').addEventListener('click', function () { closeSheet($('m-win')); startLevel(Math.min(level + 1, LEVELS.length - 1)); });
   $('prize-done').addEventListener('click', function () { if (save.top3) save.top3.done = true; persist(); closeSheet($('m-win')); });
   // On the leaderboard, where the prize is spoken of, there it is, turning: the mug, a thing of CSS alone (mug/, made by tools/mug.py).
-  if (PRIZE) { $('board-prize').innerHTML = '<button class="mug-tap" id="mug-tap" type="button" aria-label="A closer look at the prize">' + PackmanMug + '</button><span>Finish in the <b>top 3</b> and win a <b>prize</b>, shipped to your door.</span>'; $('board-prize').hidden = false; }
+  if (PRIZE) { $('board-prize').innerHTML = '<button class="mug-tap" id="mug-tap" type="button" aria-label="A closer look at the prize">' + PackmanMug + '</button><span>Finish in the <b>top 3</b> and win a <b>prize</b>, shipped to your door.</span>'; $('board-prize').hidden = false;
+    $('help-prize').innerHTML = PackmanMug + '<span>Finish in the <b>top 3</b> and win a <b>prize</b>, shipped to your door.</span>'; $('help-prize').hidden = false; }
   // A tap on the mug is a closer look at it. It grows, smoothly, from where it stands in its line until it has the whole of the
   // leaderboard's sheet, which keeps its size (or grows, if it was a short one), with nothing left but Close under it. Close
   // then, or a tap on the mug, or Escape, and it shrinks back to its line and the leaderboard is as it was.
@@ -2383,7 +2398,6 @@
   }
   if (PRIZE) $('mug-tap').addEventListener('click', function () { mugUp(true); });
   $('board-mug').addEventListener('click', function () { mugUp(false); });
-  $('help-prize').innerHTML = GIFT;
   $('prize-gift').innerHTML = GIFT;
   $('go-next').addEventListener('click', function () { startLevel(Math.min(level + 1, LEVELS.length - 1)); });
   $('win-again').addEventListener('click', function () { closeSheet($('m-win')); startLevel(level, true); });
@@ -2516,10 +2530,10 @@
   // Whatever else was due to open (how to pack, the party for a finished game) waits for it.
   var opening = function () {
     if (PRIZE && save.top3 && !save.top3.done) setTimeout(latePrize, 700);
-    else if (SHOW === 'welcome') openSheet($('m-help'));
+    else if (SHOW === 'welcome') showHelp();
     else if (SHOW === 'board') showBoard();
     else if (SHOW) setTimeout(solve, 1100);   // a look at a moment: the level is packed for whoever is looking, and what follows is the game's own doing
-    if (!save.seen) openSheet($('m-help'));
+    if (!save.seen) showHelp();
   };
   sync();
   if (nameless()) askName(opening); else opening();

@@ -21,17 +21,6 @@ $(window).scroll(function () {
 		particlesHidden = shouldHide;
 	}
 
-	/* Animate lede sections as they enter view */
-	$(".lede-parent").each(function (i) {
-		if (($(this).offset().top - scroll - window.innerHeight) <= -300) {
-			$(".lede-image").eq(i).addClass("animated fadeIn");
-			$(".text-3-ed").eq(i).addClass("animated fadeInDown");
-			$(".text-2-ed").eq(i).addClass("animated fadeInDown");
-			$(".text-1-ed").eq(i).addClass("animated fadeInDown");
-			$(this).find(".lede-button").addClass("animated fadeInLeft");
-		}
-	});
-
 	/* Garvit Gupta image */
 	if (($(".garvit-gupta").offset().top - scroll - window.innerHeight) <= -300) {
 		$(".garvit-gupta").addClass("animated fadeIn");

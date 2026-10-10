@@ -393,7 +393,6 @@ body.powers .dock.idle .tip{opacity:0}   /* among the powers the strip over the 
 .btn:disabled{opacity:.5; cursor:default; transform:none} .btn:disabled .badge{background:var(--card)}
 .btn.plain{background:var(--card); color:var(--text); font-weight:600; font-size:16px; padding:9px 16px 10px}
 .btn.danger{background:var(--coral)}
-#reset-ask{margin-top:12px; font-size:13px}
 .tick-row{display:flex; align-items:center; justify-content:center; gap:9px; margin:14px 0 2px; font-size:15.5px; font-weight:500; cursor:pointer}
 .tick-row input{width:20px; height:20px; margin:0; accent-color:var(--coral); cursor:pointer}
 .btn.plain.star{background:var(--sun); color:#2B2140; font-weight:700; font-size:18px; padding:11px 22px 12px}
@@ -403,12 +402,22 @@ body.powers .dock.idle .tip{opacity:0}   /* among the powers the strip over the 
 .how li > span{flex:none; width:32px; height:32px; display:grid; place-items:center; font-weight:700; font-size:15px; color:#2B2140;
   border:var(--bw) solid var(--ink); border-radius:12px}
 .how li:nth-child(1) > span{background:var(--coral)} .how li:nth-child(2) > span{background:var(--sun)}
-.how li:nth-child(3) > span{background:var(--mint)} .how li:nth-child(4) > span{background:var(--sky)}
+.how li:nth-child(3) > span{background:var(--mint)}
 .taps{display:none}
 @media (hover:none) and (pointer:coarse){ .keys{display:none} .taps{display:inline} }
 kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:2px solid var(--ink); border-radius:7px; background:var(--wash)}
-.credit{display:inline-block; margin-top:14px; font-size:13.5px; color:var(--mut)}
-.credit a{color:inherit}
+/* the welcome: its headline is a whole sentence; the first three on the leaderboard under the prize, in the room three rows take;
+   and under the way in, three small buttons on one line */
+#help-h{font-size:27px; text-wrap:balance}
+#help-ranks{min-height:141px; margin-top:8px}
+#help-ranks.none{display:none}
+.more{display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-top:18px}
+.mini{flex:none; display:flex; align-items:center; gap:5px; padding:5px 9px 6px 7px; font:600 12.5px var(--f); line-height:1.2; white-space:nowrap; text-decoration:none;
+  color:var(--text); background:var(--card); border:2px solid var(--ink); border-radius:10px; cursor:pointer; transition:transform .12s var(--pop)}
+.mini:hover{transform:translateY(-2px)} .mini:active{transform:translateY(1px)}
+.mini svg{flex:none; width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round}
+/* on a phone the three still share the line: smaller, and the first is the name alone */
+@media (max-width:440px){ #help-ranks{min-height:123px} .more{gap:4px} .mini{gap:4px; padding:4px 7px 5px 6px; font-size:12px} .mini svg{width:13px; height:13px} .mini .by{display:none} }
 
 .stats{display:flex; justify-content:center; gap:10px; margin:14px 0 2px}
 .stats div{min-width:92px; padding:8px 10px 9px; border:var(--bw) solid var(--ink); border-radius:14px; background:var(--wash)}
@@ -417,7 +426,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .stats small{font-size:13px; color:var(--mut)}
 .gift{display:flex; align-items:center; gap:10px; margin:10px 0 2px; padding:8px 12px; text-align:left; font-size:14.5px; line-height:1.3;
   border:var(--bw) dashed var(--ink); border-radius:14px; background:var(--wash)}
-.gift svg{flex:none; width:34px; height:34px} .gift b{color:var(--coral)} #help-prize{flex:none; display:flex}
+.gift b{color:var(--coral)}
 .gift .mug{--k:.24; margin:-10px -6px -10px -10px}   /* (the mug: see mug/mug.css) */
 /* The mug is a button: a tap is a closer look. Then it has the sheet to itself, grown to fill it, with Close under it. */
 .mug-tap{flex:none; display:flex; margin:0; padding:0; border:0; border-radius:14px; background:none; cursor:zoom-in; -webkit-tap-highlight-color:transparent; transition:transform .15s var(--pop)}
@@ -567,7 +576,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   .card .fact{margin-top:8px; padding:8px 12px; font-size:13.5px}
   .btn{margin-top:9px; padding:8px 18px 9px; font-size:16px} .btn.plain{padding:7px 14px 8px; font-size:15px}
   .how{margin:6px 0 0} .how li{padding:3px 0; font-size:14.5px} .how li > span{width:30px; height:30px; border-radius:9px}
-  .grid{grid-template-columns:repeat(9,1fr); gap:7px; margin-top:8px} .credit{margin-top:8px}
+  .grid{grid-template-columns:repeat(9,1fr); gap:7px; margin-top:8px} .more{margin-top:9px} #help-h{font-size:22px}
 }
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none !important; transition:none !important}

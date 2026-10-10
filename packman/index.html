@@ -30,7 +30,7 @@
 
 <link rel="stylesheet" href="faces.css?v=2.99">
 <link rel="stylesheet" href="mug/mug.css?v=3.11">
-<link rel="stylesheet" href="packman.css?v=3.11">
+<link rel="stylesheet" href="packman.css?v=3.12">
 </head>
 <body>
 
@@ -136,18 +136,20 @@
 
 <div class="sheet" id="m-help" role="dialog" aria-modal="true" aria-labelledby="help-h">
   <div class="card">
-    <h2 id="help-h">How to pack</h2>
-    <p class="sub">Fit every shape inside the box.</p>
+    <h2 id="help-h">Fit every shape in the box.</h2>
     <ul class="how">
       <li><span>1</span><div><b>Drag</b> a shape into the box.</div></li>
       <li><span>2</span><div><b>Spin</b> it with its knob<span class="keys"> or <kbd>Q</kbd> <kbd>E</kbd></span><span class="taps"> or two fingers</span>.</div></li>
       <li><span>3</span><div><b>Red dashes</b> mean it doesn’t fit. A <b>smile</b> means it does.</div></li>
-      <li><span>4</span><div><b>Four chapters</b>, all open. Tap the level number to switch.</div></li>
     </ul>
-    <p class="gift"><span id="help-prize"></span><span>Reach the <b>top 3</b> on the leaderboard and win a <b>prize</b>, shipped to your door.</span></p>
-    <button class="btn" data-close>Let’s pack</button>
-    <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · <a href="personalities.html">Meet the shapes</a></span></div>
-    <div><button class="link" id="reset-ask" type="button">Reset all progress</button></div>
+    <p class="gift" id="help-prize" hidden></p>
+    <ol class="ranks" id="help-ranks"></ol>
+    <button class="btn go" data-close>Start →</button>
+    <div class="more">
+      <a class="mini" href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg><span><span class="by">Game by </span>Garvit Gupta</span></a>
+      <a class="mini" href="personalities.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M9 10v.2M15 10v.2M8.5 14.5a4.5 4.5 0 0 0 7 0"/></svg>Meet the shapes</a>
+      <button class="mini" id="reset-ask" type="button" aria-label="Reset all progress"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5"/></svg>Reset</button>
+    </div>
   </div>
 </div>
 
@@ -219,7 +221,7 @@
 <script src="faces.js?v=2.80"></script>
 <script src="sounds.js?v=2.98"></script>
 <script src="mug/mug.js?v=3.11"></script>
-<script src="game.js?v=3.11"></script>
+<script src="game.js?v=3.12"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

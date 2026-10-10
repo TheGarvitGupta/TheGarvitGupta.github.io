@@ -247,7 +247,7 @@ async def test_the_end_of_the_game_comes_once(t):
 async def test_the_prize_is_for_the_first_three_wherever_it_is_spoken_of(t):
     page, r = await moment(t, 'welcome', wait=1500)
     assert 'top 3' in r['text'] and 'Pack all 17' not in r['text'], 'the welcome still gives the prize for the seventeen'
-    assert 'Four chapters' in r['text']
+    assert 'Four chapters' not in r['text'] and 'Start' in r['text']
     page = await t.bare('geom.js', 'levels.js')
     said = await page.evaluate('PackmanLevels.filter(function (l) { return /prize/i.test(l.intro + " " + l.hint); }).map(function (l) { return l.name; })')
     assert said == [], 'these levels still speak of a prize: %s' % said

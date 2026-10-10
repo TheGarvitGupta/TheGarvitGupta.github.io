@@ -12,7 +12,6 @@
     height: 448px;
     position: absolute;
     width: 696px;
-    opacity: 0;
     background-color: rgba(0, 0, 0, 0.1);
     background-image: url("../images/work/status_tiles_lead.jpg");
     background-size: cover;
@@ -48,14 +47,12 @@
     font-size: 13px;
     line-height: 13px;
     text-align: right;
-    opacity: 0;
 }
 .text-2-ed {
     color: #fff;
     font-family: 'Montserrat', sans-serif;
     padding: 20px;
     font-size: 28px;
-    opacity: 0;
 }
 .text-3-ed {
     color: #fff;
@@ -65,7 +62,10 @@
     color: #B2DFDB;
     padding-top: 0;
     font-weight: 300;
-    opacity: 0;
+}
+/* a card's words are written twice: at length, and in a line or two for a phone (css/responsive.css) */
+.text-short {
+    display: none;
 }
 .lede-button {
     position: absolute;
@@ -75,7 +75,6 @@
     display: block;
     background-color: #000;
     z-index: 500;
-    opacity: 0;
     border-radius: 6px;
     overflow: hidden;
 }
@@ -520,7 +519,7 @@
     .path-detail.on .path-fill { transition: none; }
 }
 
-/* The Packman tile: a level that packs itself, drawn by js/packman-tile.js */
+/* The Packman tile: the game playing itself, drawn by js/packman-tile.js */
 .lede-image.packman-tile {
     background-color: #FFF4DE;
     background-image: radial-gradient(rgba(43, 33, 64, 0.11) 1.2px, transparent 1.5px);
@@ -561,6 +560,17 @@
 }
 .pk-shut {
     stroke-width: 0.034px;
+}
+/* the name on the card the tile ends on, lettered as the game letters it */
+.pk-word {
+    font-family: 'Fredoka', ui-rounded, 'Arial Rounded MT Bold', 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.15px;
+    letter-spacing: 0.02px;
+    stroke: #2B2140;
+    stroke-width: 0.1px;
+    stroke-linejoin: round;
+    paint-order: stroke fill;
 }
 .pk-blush {
     fill: #D6305F;
