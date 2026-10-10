@@ -195,3 +195,59 @@ async def test_a_win_of_short_fuse_is_a_win_of_minefield(t):
     await drag(page, 0, (await pieces(page))[0]['x'] + 0.2, (await pieces(page))[0]['y']); await tick(page, 500)   # (anything, so the game is saved again)
     done = (await state(page))['save']['done']
     assert done.get('Minefield') == {'t': 61.5, 'm': 9} and 'Short Fuse' not in done and 'Home' in done, done
+
+# ---- the big moments, each shown by the game itself (?show=..., on this machine) ----
+
+async def moment(t, show, wait=9000, **how):
+    page = await t.page('/packman/?show=' + show, save=False, calm=False, **how)
+    await tick(page, wait)
+    r = await page.evaluate('''({ sheet: (document.querySelector('.sheet.open') || {}).id || null, title: document.getElementById('win-title').textContent, sub: document.getElementById('win-sub').textContent,
+      prize: !document.getElementById('win-prize').hidden, crowd: document.querySelectorAll('#grand-crowd .hop').length, name: document.querySelector('#grand-name .word') ? document.querySelector('#grand-name .word').textContent : '',
+      banner: document.getElementById('finale').textContent, grandUp: document.getElementById('grand').classList.contains('show'), star: document.getElementById('win-share').classList.contains('star'),
+      text: document.body.innerText, own: localStorage.getItem('packman.v1') })''')
+    assert not page.errors, page.errors
+    assert r['own'] is None, 'a look at a moment wrote to the player\'s own saved game'
+    return page, r
+
+async def test_the_seventeenth_has_its_party_and_no_prize(t):
+    page, r = await moment(t, 'seventeen')
+    assert r['sheet'] == 'm-win' and r['title'] == 'Seventeen!' and 'hard one' in r['sub'] and 'ongrats' in r['sub'], r['sub']
+    assert not r['prize'] and r['crowd'] == 0, 'the seventeenth shows the prize, or the end of the game'
+    assert 'That was the hard one' in r['banner']
+
+async def test_the_end_of_the_game_has_the_big_one(t):
+    for size in ({'width': 393, 'height': 852}, {'width': 1280, 'height': 800}):
+        page = await t.page('/packman/?show=finished', save=False, calm=False, settle=0, **size)
+        await tick(page, 3500)
+        mid = await page.evaluate('''(function () { var c = document.getElementById('grand'), W = innerWidth, H = innerHeight, name = document.getElementById('grand-name').getBoundingClientRect();
+          var out = [].filter.call(document.querySelectorAll('#grand-crowd .hop'), function (g) { var r = g.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+            return x < 0 || y < 0 || x > W || y > H || (x > name.left && x < name.right && y > name.top && y < name.bottom); }).length;
+          return { up: c.classList.contains('show'), n: document.querySelectorAll('#grand-crowd .hop').length, word: document.querySelector('#grand-name .word').textContent, out: out,
+                   wide: name.width, fits: name.left >= 0 && name.right <= W, say: c.innerText }; })()''')
+        assert mid['up'] and mid['word'] == 'Packman' and 'finished the game' in mid['say'], mid
+        assert mid['n'] >= 12, 'only %d shapes come to the party' % mid['n']
+        assert mid['out'] == 0, '%d of the shapes are off the screen or on top of the name' % mid['out']
+        assert mid['fits'], 'the name is wider than the screen'
+        await tick(page, 6000)
+        end = await page.evaluate('''({ up: document.getElementById('grand').classList.contains('show'), sheet: (document.querySelector('.sheet.open') || {}).id, title: document.getElementById('win-title').textContent,
+          sub: document.getElementById('win-sub').textContent, star: document.getElementById('win-share').classList.contains('star') })''')
+        assert not end['up'] and end['sheet'] == 'm-win' and end['title'] == 'Packman!' and 'finished the game' in end['sub'] and end['star'], end
+        assert not page.errors, page.errors
+        await page.context.close()
+
+async def test_the_end_of_the_game_comes_once(t):
+    """Packing a level again when everything is already packed is an ordinary win."""
+    page = await player(await t.page(level='Four Square', save=saved('Four Square', finished=True, done={'x': 1})))
+    await page.evaluate('(function () { var s = JSON.parse(localStorage.getItem("packman.v1")); s.done = {}; PackmanLevels.forEach(function (l) { s.done[l.name] = { t: 9, m: 9 }; }); localStorage.setItem("packman.v1", JSON.stringify(s)); })()')
+    await page.reload(); await tick(page, 3000); await player(page)
+    for i, s in enumerate(await page.evaluate('Packman.level().solution')): await drag(page, i, s[0], s[1])
+    await tick(page, 4000)
+    assert await page.evaluate('document.getElementById("win-title").textContent') != 'Packman!' and await page.evaluate('document.querySelectorAll("#grand-crowd .hop").length') == 0
+
+async def test_the_prize_is_for_the_first_three_wherever_it_is_spoken_of(t):
+    page, r = await moment(t, 'welcome', wait=1500)
+    assert 'top 3' in r['text'] and 'Pack all 17' not in r['text'], 'the welcome still gives the prize for the seventeen'
+    assert 'Four chapters' in r['text']
+    page = await t.bare('geom.js', 'levels.js')
+    said = await page.evaluate('PackmanLevels.filter(function (l) { return /prize/i.test(l.intro + " " + l.hint); }).map(function (l) { return l.name; })')
+    assert said == [], 'these levels still speak of a prize: %s' % said

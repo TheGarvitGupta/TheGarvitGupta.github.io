@@ -99,3 +99,73 @@ async def test_nothing_is_sent_from_this_machine(t):
     for i, s in enumerate(await page.evaluate('Packman.level().solution')): await drag(page, i, s[0], s[1])
     await tick(page, 3000)
     assert sent(page) == [], 'on localhost the board was sent %s' % sent(page)
+
+# ---- taking a place among the first three ----
+
+def moved(was, now, holder='Sonam'):
+    """A stand-in board on which the player stands at was before their win is sent and at now after it (None: not on the board)."""
+    def rows(mine):
+        top = [{'name': n, 'n': 40 - 5 * i, 'm': 500, 't': 3000, 'a': 500 + i} for i, n in enumerate(['Haojun', 'KKG', holder, 'Sam', 'abc', 'wes'])]
+        if mine: top.insert(mine - 1, {'name': 'Ada', 'n': 99, 'm': 1, 't': 1, 'a': 0})
+        return top
+    def answer(request):
+        if request.method == 'GET': return {'top': rows(None if was is None else was), 'of': 9, 'levels': 50, **({'rank': was} if was else {})}
+        return {'top': rows(now), 'of': 9, 'rank': now, 'levels': 50}
+    return answer
+
+async def after_win(t, board, **more):
+    page = await player(await t.page(level='Four Square', live=True, board=board, save=saved('Four Square', name='Ada', **more)))
+    for i, s in enumerate(await page.evaluate('PackmanLevels[0].solution')): await drag(page, i, s[0], s[1])
+    await tick(page, 3500)
+    r = await page.evaluate('''({ coup: document.getElementById('win-coup').hidden ? null : document.getElementById('coup-say').textContent, cls: document.getElementById('win-coup').className,
+      medal: (document.querySelector('#coup-medal svg') || { getAttribute: function () { return null; } }).getAttribute('aria-label'),
+      prize: !document.getElementById('win-prize').hidden, save: JSON.parse(localStorage.getItem('packman.v1')), sheet: (document.querySelector('.sheet.open') || {}).id })''')
+    assert r['sheet'] == 'm-win' and not page.errors, (r['sheet'], page.errors)
+    return page, r
+
+async def test_fourth_past_third_overthrows_and_wins_the_prize_once(t):
+    page, r = await after_win(t, moved(4, 3))
+    assert r['coup'] and 'overthrew Sonam' in r['coup'] and '3rd' in r['coup'], 'the win sheet says: %s' % r['coup']
+    assert r['medal'] == '3rd' and 't3' in r['cls']
+    assert r['prize'], 'in among the first three for the first time, and no prize is shown'
+    assert r['save']['top3']['rank'] == 3 and r['save']['top3']['over'] == 'Sonam' and not r['save']['top3'].get('done')
+    # and it is shown again when the game is next opened, until Done is pressed on it
+    await page.reload(); await tick(page, 2500)
+    assert await page.evaluate('document.querySelector(".sheet.open").id + "|" + !document.getElementById("win-prize").hidden + "|" + document.getElementById("win-title").textContent') == 'm-win|true|Top three!'
+    await page.click('#prize-done'); await tick(page, 500)
+    await page.reload(); await tick(page, 2500)
+    assert await page.evaluate('!document.querySelector(".sheet.open")'), 'Done was pressed on the prize and it is shown again'
+
+async def test_the_prize_is_not_won_twice(t):
+    """Fallen out of the three and back in: an overthrow again, and no second prize."""
+    page, r = await after_win(t, moved(4, 3), top3={'rank': 3, 'over': 'Sam', 'at': 1, 'done': True})
+    assert r['coup'] and 'overthrew Sonam' in r['coup'] and not r['prize'], r
+
+async def test_third_past_second_and_second_past_first_overthrow_without_a_prize(t):
+    page, r = await after_win(t, moved(3, 2, holder='Bo'))
+    assert r['coup'] and 'overthrew KKG' in r['coup'] and '2nd' in r['coup'] and r['medal'] == '2nd' and not r['prize'], r
+    await page.context.close()
+    page, r = await after_win(t, moved(2, 1))
+    assert r['coup'] and 'overthrew Haojun' in r['coup'] and '1st' in r['coup'] and r['medal'] == '1st' and not r['prize'], r
+
+async def test_from_far_down_straight_into_second(t):
+    page, r = await after_win(t, moved(6, 2))
+    assert r['coup'] and 'overthrew KKG' in r['coup'] and r['prize'], r
+
+async def test_a_first_score_that_lands_in_the_three_counts(t):
+    page, r = await after_win(t, moved(None, 3))
+    assert r['coup'] and 'overthrew Sonam' in r['coup'] and r['prize'], r
+
+async def test_no_overthrow_when_the_place_does_not_change_or_is_outside_the_three(t):
+    for was, now in ((3, 3), (1, 1), (6, 4), (5, 5)):
+        page, r = await after_win(t, moved(was, now))
+        assert r['coup'] is None and not r['prize'] and 'top3' not in r['save'], 'from %s to %s: %s' % (was, now, r['coup'])
+        await page.context.close()
+
+async def test_no_overthrow_is_claimed_when_the_board_could_not_be_asked_first(t):
+    """If where the player stood before is not known, nothing is said: they may have been there all along."""
+    def answer(request):
+        if request.method == 'GET': return {'error': 'busy'}
+        return moved(4, 3)(request)
+    page, r = await after_win(t, answer)
+    assert r['coup'] is None and not r['prize'], r

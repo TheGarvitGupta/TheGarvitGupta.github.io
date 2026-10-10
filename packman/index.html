@@ -29,7 +29,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
 
 <link rel="stylesheet" href="faces.css?v=2.99">
-<link rel="stylesheet" href="packman.css?v=3.02">
+<link rel="stylesheet" href="packman.css?v=3.04">
 </head>
 <body>
 
@@ -60,7 +60,7 @@
 
   <section class="hud">
     <button class="chip" id="chip" aria-label="Choose a level"><span id="lv-word">Level</span> <b id="lv-num">1</b> / <span id="lv-of">17</span></button>
-    <div class="title" id="title"><h1 id="lv-name"></h1><p id="lv-intro"></p><div id="prize-track" hidden aria-hidden="true"><div class="rail"><i id="rail-fill"></i><b id="rail-run"><svg viewBox="0 0 20 20"><rect x="1.5" y="1.5" width="17" height="17" rx="4" fill="#FF6B6B" stroke="#2B2140" stroke-width="2"/><circle cx="7.3" cy="8.6" r="1.4" fill="#2B2140"/><circle cx="12.7" cy="8.6" r="1.4" fill="#2B2140"/><path d="M7 12.4q3 2.8 6 0" fill="none" stroke="#2B2140" stroke-width="1.5" stroke-linecap="round"/></svg></b></div><span class="goal"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg></span></div></div>
+    <div class="title" id="title"><h1 id="lv-name"></h1><p id="lv-intro"></p></div>
     <div class="meter"><div id="pips" aria-hidden="true"></div><div id="stats"><span id="count" class="unseen" aria-live="polite"></span><span id="clock">0:00</span></div><div id="best" hidden></div></div>
   </section>
 
@@ -115,6 +115,7 @@
 <div class="sheet" id="m-board" role="dialog" aria-modal="true" aria-labelledby="board-h">
   <div class="card">
     <h2 id="board-h">Leaderboard</h2>
+    <p class="gift" id="board-prize" hidden></p>
     <ol class="ranks" id="board-ranks"></ol>
     <p class="note" id="board-note"></p>
     <p class="whoami"><span class="you" id="board-face"></span><span>You are <b id="board-name"></b></span><button class="link" id="board-rename" type="button">Change name</button></p>
@@ -139,9 +140,9 @@
       <li><span>1</span><div><b>Drag</b> a shape into the box.</div></li>
       <li><span>2</span><div><b>Spin</b> it with its knob<span class="keys"> or <kbd>Q</kbd> <kbd>E</kbd></span><span class="taps"> or two fingers</span>.</div></li>
       <li><span>3</span><div><b>Red dashes</b> mean it doesn’t fit. A <b>smile</b> means it does.</div></li>
-      <li><span>4</span><div><b>Three chapters</b>, all open. Tap the level number to switch.</div></li>
+      <li><span>4</span><div><b>Four chapters</b>, all open. Tap the level number to switch.</div></li>
     </ul>
-    <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Pack all 17 and win a <b>prize</b>, shipped to your door.</span></p>
+    <p class="gift"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg><span>Reach the <b>top 3</b> on the leaderboard and win a <b>prize</b>, shipped to your door.</span></p>
     <button class="btn" data-close>Let’s pack</button>
     <div><span class="credit">A little game by <a href="/">Garvit Gupta</a> · <a href="personalities.html">Meet the shapes</a></span></div>
     <div><button class="link" id="reset-ask" type="button">Reset all progress</button></div>
@@ -174,6 +175,11 @@
   <p id="finale-sum">Every box, packed.</p>
 </div>
 
+<div id="grand" aria-hidden="true">
+  <svg id="grand-crowd"></svg>
+  <div class="grand-mid"><div class="grand-name" id="grand-name"></div><p class="grand-say">You’ve finished the game!</p><p class="grand-sum" id="grand-sum"></p></div>
+</div>
+
 <div class="sheet" id="m-win" role="dialog" aria-modal="true" aria-labelledby="win-title">
   <div class="card">
     <h2 id="win-title">Packed!</h2>
@@ -187,10 +193,11 @@
       <div><b id="all-time">0:00</b><small>total time</small></div>
       <div><b id="all-moves">0</b><small>total moves</small></div>
     </div>
+    <div class="coup" id="win-coup" hidden><span id="coup-medal"></span><p id="coup-say"></p></div>
     <div class="prize" id="win-prize" hidden>
       <span class="gi" id="prize-gift"></span>
       <b>You have won a prize!</b>
-      <p>Send a screenshot of this page to Garvit!</p>
+      <p>You made the top three. Send a screenshot of this page to Garvit!</p>
       <small>You’ll receive your prize in up to 2 weeks.</small>
       <button id="prize-done">Done</button>
     </div>
@@ -206,10 +213,10 @@
 </div>
 
 <script src="geom.js?v=2.82"></script>
-<script src="levels.js?v=3.01"></script>
+<script src="levels.js?v=3.04"></script>
 <script src="faces.js?v=2.80"></script>
 <script src="sounds.js?v=2.98"></script>
-<script src="game.js?v=3.03"></script>
+<script src="game.js?v=3.04"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

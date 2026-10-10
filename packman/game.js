@@ -7,13 +7,26 @@
   var COLORS = ['#FF6B6B', '#FFC93C', '#3DDBB4', '#4DA8FF', '#9B7BFF', '#FF8FCB', '#FF9F45', '#B5E655', '#45D9E6', '#D987F5', '#FFB59E'];
   var PRAISE = ['Packed!', 'Snug!', 'Tidy!', 'Nailed it!', 'So neat!', 'Boxed!'];
   var STORE = 'packman.v1';
-  // Whoever packs all seventeen is asked to send Garvit a screenshot. Set false and the prize is not mentioned.
+  // Whoever gets in among the first three on the leaderboard is asked to send Garvit a screenshot, the first time they do. Set false and the prize is not mentioned.
   var PRIZE = true;
   // The leaderboard lives in a Cloudflare Worker (extras/cloudflare-worker/packman-scores.js).
   var SCORES = 'https://www.garvitgupta.com/api/packman';
   var LOCAL = /^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname);   // served from this machine: read the board, never write to it
   var REEL = LOCAL && /[?&]reel\b/.test(location.search);   // the game playing itself, to be filmed (reel/): it keeps its own progress, apart from the player's
   if (REEL) STORE = 'packman.reel';
+  // A look at one of the game's big moments, on this machine: ?show=seventeen, finished, coup3, coup2, coup1, prize, welcome or board (tools/states.html shows them all).
+  // It has a saved game of its own, made afresh each time: whatever the moment needs to have been packed already.
+  var SHOW = LOCAL && (/[?&]show=([a-z0-9]+)/.exec(location.search) || [])[1];
+  if (SHOW) {
+    STORE = 'packman.show';
+    (function () {
+      var all = PackmanLevels, on = SHOW === 'seventeen' ? 'Seventeen' : SHOW === 'finished' ? all[all.length - 1].name : 'Four Square', done = {};
+      all.forEach(function (l, n) { if (l.name !== on && (SHOW === 'finished' || (SHOW === 'seventeen' && n < 17))) done[l.name] = { t: 40 + n * 7, m: 8 + n }; });
+      var seed = { v: 3, done: done, last: on, name: 'Packer', pid: 'show-0000-0000-0000-0000', seen: true, eyeTip: 1 };
+      if (SHOW === 'prize') seed.top3 = { rank: 3, over: 'Sonam', at: 0 };
+      try { localStorage.setItem(STORE, JSON.stringify(seed)); } catch (e) {}
+    })();
+  }
   if (LOCAL && /[?&]scores=([^&]+)/.test(location.search)) SCORES = decodeURIComponent(RegExp.$1);   // a stand-in board, for trying things out
   // Everyone gives a name. A colour and an animal stand in only until they do, or if the board will not take
   // the one they gave: the colour of their block, so Blue Leopard is blue.
@@ -521,12 +534,6 @@
     });
     for (var k = 0; k < pips.length; k++) pips[k].classList.toggle('on', !!lit[k]);
     $('count').textContent = shown + ' of ' + pieces.length + ' packed';
-    if (level === MAIN - 1) {
-      var along = ev.packed / pieces.length * 100, track = $('prize-track');
-      $('rail-fill').style.width = along + '%'; $('rail-run').style.setProperty('--at', along / 100);
-      track.classList.toggle('near', ev.packed >= pieces.length - 3 && !ev.solved);
-      track.classList.toggle('won', !!ev.solved);
-    }
     // all packed, but for a chameleon in disguise?
     almost = !ev.solved && pieces.some(function (p) { return p.fake; }) && pieces.every(function (p, i) { return ev.states[i].good || p.fake; });
     card();
@@ -1449,12 +1456,11 @@
   function startLevel(i, fresh) {
     level = i; lv = LEVELS[i];
     coach(false); clearTimeout(coachTimer);
-    $('prize-track').hidden = level !== MAIN - 1;
     var was = save.done[lv.name];
     $('best').hidden = !was;
     if (was) $('best').textContent = 'Your best: ' + clock(was.t) + ' · ' + was.m + (was.m === 1 ? ' move' : ' moves');
     C = lv.containers ? G.makeBoxes(lv.containers) : G.makeContainer(lv.container); cb = G.bounds(lv.container);
-    clearTimeout(partyTimer); $('finale').classList.remove('show');
+    clearTimeout(partyTimer); $('finale').classList.remove('show'); $('grand').classList.remove('show'); shareAll = false;
     $('go-next').hidden = true; dock.classList.remove('won');
     won = false; drag = null; sel = -1; dirty = false; moves = 0; t0 = 0; elapsed = 0; carried = 0;
     clearInterval(ticker);
@@ -1732,21 +1738,25 @@
     if (faster) sfx.best();
     cheer();
     var finale = level === MAIN - 1 && !again;
-    confetti(finale ? 320 : again && !faster ? 50 : 150);
+    // The whole game, the first time the last of its levels is packed, whichever level that is: that is the big one. The seventeenth has a party of its own, a smaller one.
+    var whole = !save.finished && LEVELS.every(function (l) { return save.done[l.name]; });
+    if (whole) { save.finished = true; persist(); finale = false; }
+    confetti(whole ? 320 : finale ? 190 : again && !faster ? 50 : 150);
     setTimeout(function () { if (won) tieRibbon(); }, calm ? 0 : 550);
 
     var all = LEVELS.every(function (l) { return chap(l) || save.done[l.name]; }), total = { t: 0, m: 0 };
     if (all) LEVELS.forEach(function (l) { if (!chap(l)) { total.t += save.done[l.name].t; total.m += save.done[l.name].m; } });
-    var sum = all ? 'All seventeen: ' + clock(total.t) + ' · ' + total.m + ' moves' : 'Every box, packed.';
-    $('finale-sum').textContent = sum;
-    if (finale) party();
-    $('win-all').hidden = !(all && level === MAIN - 1); $('win-one').hidden = !$('win-all').hidden;   // the last win shows the totals alone
-    $('win-prize').hidden = !(PRIZE && all && level === MAIN - 1);
+    if (whole) { total = { t: 0, m: 0 }; LEVELS.forEach(function (l) { total.t += save.done[l.name].t; total.m += save.done[l.name].m; }); }   // of every level there is
+    $('finale-sum').textContent = 'That was the hard one.';
+    $('grand-sum').textContent = 'All ' + LEVELS.length + ' levels: ' + clock(total.t) + ' · ' + total.m + ' moves';
+    if (whole) grand(); else if (finale) party();
+    $('win-all').hidden = !(whole || (all && level === MAIN - 1)); $('win-one').hidden = !$('win-all').hidden;   // the last win shows the totals alone
+    shareAll = whole; $('win-share').classList.toggle('star', whole);   // and its way on is to tell somebody
     $('all-time').textContent = clock(total.t);
     $('all-moves').textContent = total.m;
-    $('win-title').textContent = finale ? 'Seventeen!' : faster ? 'New best!' : PRAISE[Math.floor(Math.random() * PRAISE.length)];
-    $('win-sub').textContent = finale
-      ? (all ? 'That was the hard one, and that makes all seventeen. Take a bow.' : 'That was the hard one. Take a bow.')
+    $('win-title').textContent = whole ? 'Packman!' : finale ? 'Seventeen!' : faster ? 'New best!' : PRAISE[Math.floor(Math.random() * PRAISE.length)];
+    $('win-sub').textContent = whole ? 'You\u2019ve finished the game: all ' + LEVELS.length + ' levels, packed. Go on, tell somebody.'
+      : finale ? 'This was a hard one. Congrats on finishing it!'
       : faster ? lv.name + ', packed ' + clock(prev.t - elapsed) + ' faster than your best.'
       : again ? lv.name + ', packed again. Your best is still ' + clock(prev.t) + '.'
       : label(level) + ', ' + lv.name + ', is all packed up.';
@@ -1759,44 +1769,71 @@
     $('win-next').hidden = level === LEVELS.length - 1;
     // once the win sheet is put away, the way on stays in the bar at the bottom
     $('go-next').hidden = level === LEVELS.length - 1; dock.classList.add('won');
-    setTimeout(function () { if (won) openSheet($('m-win')); }, calm ? 200 : finale ? 4600 : again ? 1250 : 1700);
+    setTimeout(function () { if (won) openSheet($('m-win')); }, calm ? (whole ? 3200 : 200) : whole ? 6600 : finale ? 3300 : again ? 1250 : 1700);
   }
 
-  // The last box of the seventeen gets the works: a banner, a fanfare,
-  // fireworks going off all over the screen, and the pieces doing wave after wave.
-  var partyTimer = 0;
-  function party(preview) {
-    var banner = $('finale'), n = 0;
+  // The last box of the seventeen gets a banner, a handful of fireworks and one more wave from the pieces.
+  // (It had the works once. They are kept now for the end of the whole game: see grand.)
+  var partyTimer = 0, shareAll = false;
+  function party() {
+    var banner = $('finale');
     banner.classList.add('show');
-    setTimeout(function () { banner.classList.remove('show'); }, calm ? 2600 : 4200);
+    setTimeout(function () { banner.classList.remove('show'); }, calm ? 2400 : 3000);
     if (calm) return;
-    setTimeout(function () { if (won || preview) sfx.fanfare(); }, 500);
-    if (navigator.vibrate && touchy) { try { navigator.vibrate([30, 60, 30, 60, 30, 60, 120]); } catch (e) {} }
+    if (navigator.vibrate && touchy) { try { navigator.vibrate([30, 60, 30]); } catch (e) {} }
+    rockets(5, 34, 360);
+  }
+  // Fireworks, one after another, all over the top of the screen.
+  function rockets(many, size, gap, waves) {
+    var n = 0;
     (function rocket() {
-      if (!(won || preview) || n >= 13) return;
-      burst(innerWidth * (0.12 + Math.random() * 0.76), innerHeight * (0.12 + Math.random() * 0.45), 44);
+      if (!won || n >= many) return;
+      burst(innerWidth * (0.12 + Math.random() * 0.76), innerHeight * (0.12 + Math.random() * 0.45), size);
       sfx.pop();
-      if (n % 4 === 3) { confetti(110); cheer(); }
+      if (n % 4 === 3) { if (waves) confetti(70); cheer(); }
       n++;
-      partyTimer = setTimeout(rocket, 240 + Math.random() * 220);
+      partyTimer = setTimeout(rocket, gap + Math.random() * 220);
     })();
   }
 
-  // Anyone who has packed all seventeen gets the party, the totals and the
-  // prize every time they open the game, until they press Done on the prize.
-  function lateParty(preview) {
-    var total = { t: 0, m: 0 }, last = save.done[LEVELS[MAIN - 1].name] || { t: 0, m: 0 };
-    LEVELS.forEach(function (l) { var d = save.done[l.name]; if (!chap(l) && d) { total.t += d.t; total.m += d.m; } });
-    $('finale-sum').textContent = 'All seventeen: ' + clock(total.t) + ' · ' + total.m + ' moves';
-    $('win-title').textContent = 'Seventeen!';
-    $('win-sub').textContent = 'You packed all seventeen. Take a bow.';
-    $('win-best').parentNode.classList.remove('new');
-    $('win-time').textContent = clock(last.t); $('win-moves').textContent = last.m; $('win-best').textContent = clock(last.t);
-    $('win-all').hidden = false; $('win-one').hidden = true; $('all-time').textContent = clock(total.t); $('all-moves').textContent = total.m;
-    $('win-prize').hidden = !PRIZE;
-    $('win-fact').hidden = true; $('win-next').hidden = true;
-    party(true); confetti(220);
-    setTimeout(function () { openSheet($('m-win')); }, calm ? 2800 : 4600);
+  // The end of the whole game gets the works. A card comes up over the board with the game's name on it; every kind of
+  // shape, each with a face, runs in from off the screen, gathers round the name and bounces there; a fanfare plays, and
+  // fireworks go off over the lot. Then the win sheet, whose way on is to tell somebody.
+  var HUES = ['#FF6B6B', '#FFC93C', '#3DDBB4', '#4DA8FF', '#9B7BFF', '#FF8FCB', '#FF9F45', '#B5E655', '#45D9E6', '#D987F5', '#FFB59E'];
+  function grand() {
+    var card = $('grand'), svg = $('grand-crowd'), E = PackmanPiece.el, name = $('grand-name'), logo = document.querySelector('.logo');
+    // a square of the crowd, in pixels: so that the name and a ring of shapes round it fit the screen, upright or on its side
+    var unit = Math.min(innerWidth / 8.2, innerHeight / 9.5, 96), W = innerWidth / unit, Hh = innerHeight / unit, tall = Hh > W;
+    card.style.setProperty('--s', (unit * (tall ? 0.92 : 0.95)).toFixed(1) + 'px');
+    name.textContent = ''; name.appendChild(logo.querySelector('svg').cloneNode(true)); name.appendChild(logo.querySelector('.word').cloneNode(true));
+    svg.textContent = '';
+    svg.setAttribute('viewBox', [-W / 2, -Hh / 2, W, Hh].map(function (v) { return v.toFixed(3); }).join(' '));
+    svg.style.setProperty('--u', (1 / unit).toFixed(5));
+    var faces = shuffled(PackmanFaces.filter(function (k) { return !k.color; })), many = tall ? 12 : 16;
+    var rx = Math.min(W / 2 - 0.8, 5.9), ry = Math.min(Hh / 2 - 1.1, tall ? 5.2 : 3.55);
+    for (var n = 0; n < many; n++) {
+      // round an oval, the long shapes kept to its top and bottom where there is room for them beside the name
+      var a = (n + 0.5) / many * 2 * Math.PI, up = Math.abs(Math.sin(a)), x = rx * Math.cos(a), y = ry * Math.sin(a) + (tall ? 0.15 : 0.1);
+      var type = up > 0.8 ? (n % 2 ? 'domino' : 'hexagon') : n % 2 ? 'triangle' : 'square';
+      if (up > 0.55 && up <= 0.8 && !tall) y *= 1.08;
+      var at = E('g', '', { transform: 'translate(' + x.toFixed(3) + ' ' + y.toFixed(3) + ') rotate(' + Math.round((Math.random() - 0.5) * 34) + ')' });
+      var run = E('g', 'in'), hop = E('g', 'hop piece good');
+      // from where it runs in: out past the edge of the screen, the way it lies from the middle
+      var far = Math.max(W, Hh) * 0.75 / Math.hypot(x, y);
+      run.style.setProperty('--n', n); run.style.setProperty('--fx', (x * far).toFixed(2)); run.style.setProperty('--fy', (y * far).toFixed(2));
+      run.style.setProperty('--spin', (n % 2 ? 300 : -300) + 'deg');
+      hop.style.setProperty('--n', n); hop.style.setProperty('--c', HUES[n % HUES.length]); hop.style.setProperty('--lean', (n % 2 ? 7 : -7) + 'deg');
+      hop.appendChild(E('path', 'fill', { d: drawn(type, 1 / unit) }));
+      hop.appendChild(PackmanPiece.face(faces[n % faces.length], type).face);
+      run.appendChild(hop); at.appendChild(run); svg.appendChild(at);
+    }
+    card.classList.add('show');
+    setTimeout(function () { card.classList.remove('show'); }, calm ? 3000 : 6200);
+    if (calm) return;
+    sfx.deal(9);
+    setTimeout(function () { if (won) { sfx.fanfare(); confetti(150); } }, 900);
+    if (navigator.vibrate && touchy) { try { navigator.vibrate([30, 60, 30, 60, 30, 60, 120]); } catch (e) {} }
+    setTimeout(function () { rockets(14, 38, 260, true); }, 700);
   }
 
   // All packed up: a ribbon goes round the box, with a bow where it crosses.
@@ -2029,15 +2066,15 @@
   // The board: most levels packed first, then fewest moves, then least time. Everyone's
   // three numbers are shown. Whoever is looking is picked out, and added underneath if
   // they are further down than the rows on show.
+  // The first three wear a medal in place of their number: gold, silver, bronze, with the number on it.
+  function medal(pos) {
+    return '<svg viewBox="0 0 26 28" role="img" aria-label="' + nth(pos) + '"><path class="tail" d="M5.5 1.5h6l3 9h-6zM20.5 1.5h-6l-3 9h6z"/>' +
+      '<circle class="disc" cx="13" cy="17" r="9"/><circle class="ring" cx="13" cy="17" r="6.3"/><text x="13" y="20.6">' + pos + '</text></svg>';
+  }
   function ranks(list, data, limit) {
     list.textContent = '';
     var mine = false;
     function cell(li, tag, cls, text) { var e = document.createElement(tag); e.className = cls; e.textContent = text; li.appendChild(e); return e; }
-    // The first three wear a medal in place of their number: gold, silver, bronze, with the number on it.
-    function medal(pos) {
-      return '<svg viewBox="0 0 26 28" role="img" aria-label="' + nth(pos) + '"><path class="tail" d="M5.5 1.5h6l3 9h-6zM20.5 1.5h-6l-3 9h6z"/>' +
-        '<circle class="disc" cx="13" cy="17" r="9"/><circle class="ring" cx="13" cy="17" r="6.3"/><text x="13" y="20.6">' + pos + '</text></svg>';
-    }
     function line(pos, r, own) {
       var li = document.createElement('li');
       var place = cell(li, 'b', 'pos', pos);
@@ -2066,9 +2103,23 @@
   // Whoever plays as Swordfish, however it is spelt in capitals, plays off the record: the board is read and never written to.
   function offRecord() { return /^swordfish$/i.test(String(called()).trim()); }
   function report(score) {
-    var box = $('win-lb'), note = $('win-lb-note'), skip = LOCAL || offRecord(), mark = ++sent;
-    box.hidden = true;
-    (skip ? ask(SCORES + '?pid=' + save.pid) : ask(SCORES, score)).then(function (d) {
+    var box = $('win-lb'), note = $('win-lb-note'), skip = LOCAL || offRecord(), mark = ++sent, before = null;
+    box.hidden = true; $('win-coup').hidden = true; $('win-prize').hidden = true;
+    function show(d, why) {
+      ranks($('win-ranks'), d, 5);
+      note.textContent = why || standing(d);
+      note.hidden = !note.textContent;
+      box.hidden = false;
+    }
+    if (SHOW && /^coup[123]$/.test(SHOW)) {   // a look at a place being taken: a board made up for it, a moment after the win as the real one comes
+      setTimeout(function () { var made = pretend(+SHOW.charAt(4)); if (mark === sent) { show(made[1]); coup(made[0], made[1]); } }, 900);
+      return;
+    }
+    // The board is asked where the player stands before the win is sent as well as after, to tell whether it moved them up.
+    (skip ? Promise.resolve(null) : ask(SCORES + '?pid=' + save.pid).catch(function () { return null; })).then(function (b) {
+      before = b && b.top ? b : null;
+      return skip ? ask(SCORES + '?pid=' + save.pid) : ask(SCORES, score);
+    }).then(function (d) {
       if (mark !== sent) return;   // another win has gone since
       if (d.error === 'name') {   // the board will not take that name: fall back to the stand-in and send it again
         save.name = alias(me); persist(); score.name = save.name;
@@ -2076,12 +2127,50 @@
       }
       if (!d.top) return;
       if (!skip) { save.sent = save.sent || {}; save.sent[score.level] = 1; save.as = score.name; persist(); }
-      ranks($('win-ranks'), d, 5);
-      if (d.rank === 1 && !skip) sfx.top();
-      note.textContent = LOCAL ? 'Scores are not sent from a copy on this machine.' : skip ? 'Scores are not sent under this name.' : standing(d);
-      note.hidden = !note.textContent;
-      box.hidden = false;
+      show(d, LOCAL ? 'Scores are not sent from a copy on this machine.' : skip ? 'Scores are not sent under this name.' : '');
+      if (!skip && !coup(before, d) && d.rank === 1) sfx.top();
     }).catch(function () {});   // no board today: the win sheet simply goes without one
+  }
+
+  // A win that carries the player up into the first three, or up within them, has overthrown whoever stood there:
+  // fourth past third, third past second, second past first, or from further down into any of the three. The win
+  // sheet says who, under a medal. The first time a player gets in among the three from outside, they have won the
+  // prize as well, and are told so, once. (before: the board as it stood; after: as it stands. True if there was a coup.)
+  function coup(before, after) {
+    var now = after.rank, was = before ? before.rank || Infinity : 0;   // (not on the board before: below everyone. The board not got before: nothing can be said)
+    if (!now || now > 3 || now >= was) return false;
+    var held = before.top && before.top[now - 1], say = $('coup-say'), box = $('win-coup');
+    if (held && held.a === me) held = null;
+    function part(tag, text) { var e = document.createElement(tag); e.textContent = text; say.appendChild(e); }
+    say.textContent = '';
+    if (held) { part('span', 'You overthrew '); part('b', held.name); } else part('span', 'You are in the top three');
+    part('strong', 'You are ' + nth(now) + ' now!');
+    $('coup-medal').innerHTML = medal(now);
+    box.className = 'coup t' + now; box.hidden = false;
+    sfx.top(); confetti(120);
+    if (PRIZE && was > 3 && !save.top3) {
+      save.top3 = { rank: now, over: held ? held.name : '', at: Date.now() }; persist();
+      $('win-prize').hidden = false; $('win-lb').hidden = true;   // (the prize has the sheet to itself: it is what the screenshot is of)
+    }
+    return true;
+  }
+  // (for a look at it: the board as it would stand before and after the player takes this place)
+  function pretend(to) {
+    var rows = ['Haojun', 'KKG', 'Sonam', 'Sam', 'abc', 'wes'].map(function (n, i) { return { name: n, n: 47 - 5 * i, m: 930 - 60 * i, t: 4400 - 300 * i, a: 77 + i * 7919 }; });
+    var mine = { name: called(), n: rows[to - 1].n + 1, m: 512, t: 2710, a: me };
+    var below = { name: called(), n: rows[to].n - 1, m: 498, t: 2650, a: me }, was = rows.slice();
+    was.splice(to + 1, 0, below);
+    return [{ top: was, rank: to + 2 > 4 ? 4 : to + 1, of: 30 }, { top: rows.slice(0, to - 1).concat([mine], rows.slice(to - 1)), rank: to, of: 30 }];
+  }
+  // Whoever has won the prize is shown it every time they open the game, until they press Done on it.
+  function latePrize() {
+    var w = save.top3;
+    $('win-title').textContent = 'Top three!';
+    $('win-sub').textContent = (w.over ? 'You overthrew ' + w.over + ' and took ' : 'You took ') + nth(w.rank) + ' place on the leaderboard.';
+    $('win-one').hidden = true; $('win-all').hidden = true; $('win-fact').hidden = true; $('win-next').hidden = true;
+    $('win-lb').hidden = true; $('win-coup').hidden = true; $('win-prize').hidden = false;
+    confetti(160);
+    openSheet($('m-win'));
   }
 
   // Bests the board has not had yet are sent as soon as the game opens, one at a time:
@@ -2131,16 +2220,6 @@
     var grid = $('grid'), jump = $('jump'), count = 0, heads = [];
     grid.textContent = ''; jump.textContent = '';
     LEVELS.forEach(function (l, n) {
-      if (n === MAIN) {
-        // the prize sits straight after the seventeenth box, so it is plain what earns it
-        var gift = document.createElement('div'), claimed = LEVELS.every(function (x) { return chap(x) || save.done[x.name]; });
-        gift.className = 'lv prize-tile' + (claimed ? ' won' : '');
-        gift.style.setProperty('--n', n);
-        gift.innerHTML = GIFT;
-        gift.appendChild(document.createTextNode(claimed ? 'Won!' : 'Prize'));
-        gift.title = claimed ? 'You packed all seventeen' : 'Pack all seventeen to win a prize, shipped to you';
-        grid.appendChild(gift);
-      }
       if (n === FIRST[chap(l)]) {
         var more = document.createElement('div');
         more.className = 'more'; more.textContent = 'Chapter ' + (chap(l) + 1) + ' \u00B7 ' + CHAPTERS[chap(l)];
@@ -2243,7 +2322,8 @@
     if (!save.mute) { wake(); sfx.fit(); }
   });
   $('win-next').addEventListener('click', function () { closeSheet($('m-win')); startLevel(Math.min(level + 1, LEVELS.length - 1)); });
-  $('prize-done').addEventListener('click', function () { save.claimed = true; persist(); closeSheet($('m-win')); });
+  $('prize-done').addEventListener('click', function () { if (save.top3) save.top3.done = true; persist(); closeSheet($('m-win')); });
+  if (PRIZE) { $('board-prize').innerHTML = GIFT + '<span>Finish in the <b>top 3</b> and win a <b>prize</b>, shipped to your door.</span>'; $('board-prize').hidden = false; }
   $('prize-gift').innerHTML = GIFT;
   $('go-next').addEventListener('click', function () { startLevel(Math.min(level + 1, LEVELS.length - 1)); });
   $('win-again').addEventListener('click', function () { closeSheet($('m-win')); startLevel(level, true); });
@@ -2252,6 +2332,7 @@
   $('win-share').addEventListener('click', function () {
     var b = this.lastChild, url = location.href.split(/[?#]/)[0] + '?level=' + (level + 1);
     var text = 'I packed ' + lv.name + ', ' + label(level).toLowerCase() + ' of Packman, in ' + clock(elapsed) + '. Can you beat that?';
+    if (shareAll) { url = location.href.split(/[?#]/)[0]; text = 'I finished Packman: all ' + LEVELS.length + ' levels, packed. Can you?'; }   // the whole game, not this level
     if (navigator.share) { navigator.share({ title: 'Packman', text: text, url: url }).catch(function () {}); return; }
     navigator.clipboard.writeText(text + ' ' + url).then(function () {
       b.textContent = 'Copied!';
@@ -2374,28 +2455,32 @@
   // The name comes first, for new players and for anyone from before there was a leaderboard.
   // Whatever else was due to open (how to pack, the party for a finished game) waits for it.
   var opening = function () {
-    if (/[?&]finale\b/.test(location.search)) setTimeout(function () { lateParty(true); }, 600);   // a look at the last level's party, whatever has been packed
-    else if (!save.claimed && LEVELS.every(function (l) { return chap(l) || save.done[l.name]; })) setTimeout(lateParty, 700);
+    if (PRIZE && save.top3 && !save.top3.done) setTimeout(latePrize, 700);
+    else if (SHOW === 'welcome') openSheet($('m-help'));
+    else if (SHOW === 'board') showBoard();
+    else if (SHOW) setTimeout(solve, 1100);   // a look at a moment: the level is packed for whoever is looking, and what follows is the game's own doing
     if (!save.seen) openSheet($('m-help'));
   };
   sync();
   if (nameless()) askName(opening); else opening();
   persist();
 
+  // Packs the level as its own solution has it. (On this machine only: the Solver button, and a look at a moment with ?show.)
+  function solve() {
+    if (won) return;
+    select(-1);
+    pieces.forEach(function (p, i) {
+      while (p.power === 'chameleon' && p.form) morph(p, i);
+      var s = lv.solution[i] || lv.solution[lv.pieces.indexOf(p.type)] || lv.haunt;   // the ghost lies over one of its own kind, or where the level says
+      p.x = s[0]; p.y = s[1]; p.angle = s[2]; render(i);
+    });
+    startClock(); commit(true, true);
+  }
   // Developer tools, only when the game is served from this machine.
   if (LOCAL) {
     var dev = document.createElement('div');
     dev.className = 'dev';
-    [['Solver', function () {
-      if (won) return;
-      select(-1);
-      pieces.forEach(function (p, i) {
-        while (p.power === 'chameleon' && p.form) morph(p, i);
-        var s = lv.solution[i] || lv.solution[lv.pieces.indexOf(p.type)] || lv.haunt;   // the ghost lies over one of its own kind, or where the level says
-        p.x = s[0]; p.y = s[1]; p.angle = s[2]; render(i);
-      });
-      startClock(); commit(true, true);
-    }], ['Hard reset', function () {
+    [['Solver', solve], ['Hard reset', function () {
       if (!window.confirm('Clear all Packman progress on this browser?')) return;
       wipe(false);
     }]].forEach(function (b) {
@@ -2403,6 +2488,7 @@
       btn.textContent = b[0]; btn.addEventListener('click', b[1]);
       dev.appendChild(btn);
     });
+    if (SHOW) dev.hidden = true;   // a look at a moment is of the game as a player has it
     document.body.appendChild(dev);
   }
 

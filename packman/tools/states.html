@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Packman: the big moments</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<style>
+/* The game's big moments, each played by the game itself, on a phone and on a desktop side by side.
+   Only on this machine: the game shows a moment when its address says ?show=... (see SHOW in game.js). */
+html,body{height:100%; margin:0}
+body{display:flex; flex-direction:column; background:#15121F; font:500 14px/1.4 ui-rounded, system-ui, sans-serif; color:#C9C2DC}
+nav{display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:12px 16px; border-bottom:1px solid #2B2540}
+nav b{margin-right:6px; color:#FFF4DE; font-size:15px}
+button,a.out{padding:7px 13px 8px; font:600 14px/1 inherit; color:#FFF4DE; background:#2B2540; border:0; border-radius:10px; cursor:pointer; text-decoration:none}
+button:hover,a.out:hover{background:#3A3258}
+button.on{background:#FFC93C; color:#2B2140}
+.gap{flex:1}
+p.say{margin:0; padding:9px 16px 0; min-height:1.4em}
+main{flex:1; display:flex; align-items:center; justify-content:center; gap:28px; padding:16px; min-height:0; overflow:hidden}
+figure{margin:0; display:flex; flex-direction:column; align-items:center; gap:8px}
+figcaption{font-size:13px; color:#8F86AB}
+.frame{overflow:hidden; border-radius:18px; box-shadow:0 0 0 8px #0A0810, 0 24px 60px rgba(0,0,0,.6); background:#FFF4DE}
+.frame iframe{display:block; border:0; transform-origin:0 0}
+</style>
+</head>
+<body>
+<nav id="nav"><b>Packman’s big moments</b></nav>
+<p class="say" id="say"></p>
+<main>
+  <figure><div class="frame" id="f-phone"><iframe id="phone" title="Phone"></iframe></div><figcaption>Phone · 393 × 852 · <a class="out" id="o-phone" target="_blank">open by itself</a></figcaption></figure>
+  <figure><div class="frame" id="f-desk"><iframe id="desk" title="Desktop"></iframe></div><figcaption>Desktop · 1280 × 800 · <a class="out" id="o-desk" target="_blank">open by itself</a></figcaption></figure>
+</main>
+<script>
+(function () {
+  var MOMENTS = [
+    ['welcome', 'Welcome', 'The welcome, with the prize now for the first three on the leaderboard.'],
+    ['board', 'Leaderboard', 'The leaderboard, which says what the prize is for. (The real board, read and not written to.)'],
+    ['seventeen', 'Seventeen', 'The seventeenth level packed for the first time: a banner, a few fireworks, then the win sheet. No prize.'],
+    ['coup3', '4th → 3rd, first time', 'A win that carries the player past whoever was third, for the first time: the overthrow, and the prize with its screenshot.'],
+    ['coup2', '3rd → 2nd', 'Past whoever was second: the overthrow, and no prize.'],
+    ['coup1', '2nd → 1st', 'Past whoever was first: the overthrow, and no prize.'],
+    ['prize', 'Prize, on coming back', 'The game opened again by someone who has won the prize and not yet pressed Done on it.'],
+    ['finished', 'End of the game', 'The last level of all packed for the first time: the cast runs in round the name and bounces, with the fanfare and the fireworks; then the win sheet, whose way on is Share.']
+  ];
+  var nav = document.getElementById('nav'), now = null, SIZES = { phone: [393, 852], desk: [1280, 800] };
+  function fit() {
+    var main = document.querySelector('main'), H = main.clientHeight - 60, W = main.clientWidth - 60;
+    // both as tall as the room allows, the desktop no wider than what is left beside the phone
+    var kp = Math.min(1, H / 852), kd = Math.min(1, H / 800, (W - 393 * kp) / 1280);
+    [['phone', kp], ['desk', Math.max(kd, 0.25)]].forEach(function (s) {
+      var f = document.getElementById(s[0]), size = SIZES[s[0]], box = document.getElementById('f-' + s[0]);
+      f.width = size[0]; f.height = size[1]; f.style.transform = 'scale(' + s[1].toFixed(3) + ')';
+      box.style.width = Math.round(size[0] * s[1]) + 'px'; box.style.height = Math.round(size[1] * s[1]) + 'px';
+    });
+  }
+  function play(m) {
+    now = m;
+    [].forEach.call(nav.querySelectorAll('button[data-m]'), function (b) { b.className = b.getAttribute('data-m') === m[0] ? 'on' : ''; });
+    document.getElementById('say').textContent = m[2];
+    var url = '../?show=' + m[0];
+    document.getElementById('o-phone').href = url; document.getElementById('o-desk').href = url;
+    document.getElementById('phone').src = url + '&t=' + Date.now();
+    // (a moment later: the two share one saved game, made afresh as each loads)
+    setTimeout(function () { document.getElementById('desk').src = url + '&t=' + (Date.now() + 1); }, 400);
+    try { history.replaceState(null, '', '?m=' + m[0]); } catch (e) {}
+  }
+  MOMENTS.forEach(function (m) {
+    var b = document.createElement('button'); b.textContent = m[1]; b.setAttribute('data-m', m[0]);
+    b.addEventListener('click', function () { play(m); });
+    nav.appendChild(b);
+  });
+  var gap = document.createElement('span'); gap.className = 'gap'; nav.appendChild(gap);
+  var again = document.createElement('button'); again.textContent = '↻ Play it again'; again.addEventListener('click', function () { play(now); }); nav.appendChild(again);
+  addEventListener('resize', fit); fit();
+  var asked = (/[?&]m=([a-z0-9]+)/.exec(location.search) || [])[1];
+  play(MOMENTS.filter(function (m) { return m[0] === asked; })[0] || MOMENTS[2]);
+})();
+</script>
+</body>
+</html>

@@ -43,7 +43,7 @@ SEED = """
 """
 
 async def opened(browser, base, path='/packman/', level='Home', save=None, store='packman.v1', width=393, height=852, scale=1,
-                 dark=False, calm=True, seed=7, still=True, board=None, live=False):
+                 dark=False, calm=True, seed=7, still=True, board=None, live=False, settle=3000):
     """A page of the site. Nothing leaves this machine but the request for the lettering: the counter of visits and
     the leaderboard are cut off. With still, the page's clock stands at a fixed moment and moves only when told to
     (page.clock.run_for); with calm, the page is told the player wants no animation, so no picture catches one midway."""
@@ -79,7 +79,7 @@ async def opened(browser, base, path='/packman/', level='Home', save=None, store
     for _ in range(100):   # the lettering loaded (asked from here: the page's own timers are stopped)
         if await page.evaluate('document.fonts.status === "loaded"'): break
         await asyncio.sleep(0.05)
-    if still: await page.clock.run_for(3000)   # the deal done and settled
+    if still and settle: await page.clock.run_for(settle)   # the deal done and settled
     return page
 
 async def chrome(p):

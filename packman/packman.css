@@ -204,18 +204,6 @@ body:has(#stage.eyes) .sky i{opacity:0}   /* and none of them shows round the ta
 .whoami{display:flex; align-items:center; justify-content:center; gap:9px; margin:16px 0 0; font-size:15px; font-weight:500}
 @media (max-width:420px){ .ranks li{gap:6px; padding-left:4px; padding-right:8px} .ranks .pos{width:18px} .ranks .avatar{width:24px; height:24px} .ranks .fig{width:38px; font-size:13px} .ranks .fig.t{width:44px} }
 
-/* level 17: a little piece runs along a rail towards the prize as the box fills */
-#prize-track{display:flex; align-items:center; gap:8px; margin-top:6px; max-width:420px}
-#prize-track[hidden]{display:none}
-#prize-track .rail{position:relative; flex:1; height:12px; border:var(--bw) solid var(--ink); border-radius:999px; background:var(--card)}
-#rail-fill{position:absolute; left:0; top:0; bottom:0; width:0; border-radius:999px; background:linear-gradient(90deg,var(--mint),var(--sun)); transition:width .35s var(--pop)}
-/* the runner keeps inside the rail: flush with its left end at the start, and with its right end when all are packed */
-#rail-run{position:absolute; top:50%; left:calc(var(--at, 0) * (100% - 22px + 2 * var(--bw)) - var(--bw)); width:22px; height:22px; margin:-11px 0 0; transition:left .35s var(--pop)}
-#rail-run svg{display:block; width:100%; height:100%; animation:bob 1.6s ease-in-out infinite}
-#prize-track .goal{flex:none; width:34px; height:34px; animation:tempt 1.8s ease-in-out infinite}
-#prize-track .goal svg{display:block; width:100%; height:100%}
-#prize-track.near .goal{animation:tempt .55s ease-in-out infinite}
-#prize-track.won .goal{animation:hop .6s var(--pop) both}
 @keyframes tempt{0%,100%{transform:rotate(-7deg) scale(1)} 50%{transform:rotate(7deg) scale(1.12)}}
 .title.swap h1,.title.swap p{animation:slidein .45s var(--pop) both}
 .title.swap p{animation-delay:60ms}
@@ -408,6 +396,7 @@ body.powers .dock.idle .tip{opacity:0}   /* among the powers the strip over the 
 #reset-ask{margin-top:12px; font-size:13px}
 .tick-row{display:flex; align-items:center; justify-content:center; gap:9px; margin:14px 0 2px; font-size:15.5px; font-weight:500; cursor:pointer}
 .tick-row input{width:20px; height:20px; margin:0; accent-color:var(--coral); cursor:pointer}
+.btn.plain.star{background:var(--sun); color:#2B2140; font-weight:700; font-size:18px; padding:11px 22px 12px}
 .btn.plain svg{width:17px; height:17px; margin:-3px 6px 0 -2px; vertical-align:middle; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round}
 .how{list-style:none; margin:10px 0 2px; padding:0; text-align:left}
 .how li{display:flex; align-items:center; gap:10px; padding:5px 0; font-size:14.5px; line-height:1.3}
@@ -429,10 +418,17 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .gift{display:flex; align-items:center; gap:10px; margin:10px 0 2px; padding:8px 12px; text-align:left; font-size:14.5px; line-height:1.3;
   border:var(--bw) dashed var(--ink); border-radius:14px; background:var(--wash)}
 .gift svg{flex:none; width:34px; height:34px} .gift b{color:var(--coral)}
-.lv.prize-tile{display:grid; place-items:center; align-content:center; gap:1px; padding:0; border-style:dashed; background:var(--wash); font-size:12px; cursor:default}
-.lv.prize-tile svg{width:52%; height:auto; margin:0}
-.lv.prize-tile.won{background:var(--sun); color:#2B2140; border-style:solid}
 .stats.all{margin-top:8px} .stats.all div{background:var(--sun); color:#2B2140; min-width:142px} .stats.all small{color:#2B2140}
+/* a place among the first three taken from somebody: a big medal and who it was taken from */
+.coup{display:flex; align-items:center; gap:12px; margin:16px 0 4px; padding:10px 14px 10px 10px; text-align:left; color:#2B2140; background:#FFE9A8;
+  border:var(--bw) solid var(--ink); border-radius:18px; box-shadow:0 5px 0 var(--ink)}
+.coup[hidden]{display:none}
+.sheet.open .coup{animation:hop .6s var(--pop) both}
+.coup.t2{background:#E3E7F0} .coup.t3{background:#F6D3B7}
+#coup-medal{flex:none; width:54px} #coup-medal svg{display:block; width:54px; height:58px; overflow:visible; animation:tempt 1.8s ease-in-out infinite}
+#coup-medal .tail{fill:#FF6B6B; stroke:#2B2140; stroke-width:1.3; stroke-linejoin:round} #coup-medal .disc{stroke:#2B2140; stroke-width:1.6} #coup-medal .ring{fill:none; stroke-width:1.1}
+#coup-medal text{font:700 10px var(--f); text-anchor:middle}
+.coup p{margin:0; font-size:16px; font-weight:500; line-height:1.3} .coup p b{font-weight:700} .coup p strong{display:block; font-size:21px; font-weight:700; line-height:1.15}
 /* the prize: a little sun, with rays turning slowly behind the words and a glow that breathes */
 .prize{position:relative; isolation:isolate; overflow:hidden; margin:18px 0 6px; padding:12px 14px 15px; color:#2B2140; background:var(--sun);
   border:var(--bw) solid var(--ink); border-radius:16px; box-shadow:0 0 0 4px rgba(255,201,60,.4)}
@@ -490,6 +486,29 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 #finale .big b:nth-child(7n+1){color:var(--coral)} #finale .big b:nth-child(7n+2){color:var(--tang)} #finale .big b:nth-child(7n+3){color:var(--sun)}
 #finale .big b:nth-child(7n+4){color:var(--mint)} #finale .big b:nth-child(7n+5){color:var(--sky)} #finale .big b:nth-child(7n+6){color:var(--grape)} #finale .big b:nth-child(7n){color:var(--pink)}
 #finale p{margin:4px 0 0; font-size:clamp(17px,5vw,26px); font-weight:600; color:var(--text)}
+/* The end of the whole game: the cast runs in from every side, gathers round the game's name, and bounces.
+   (Lengths inside the drawing are in its own units, a square to one: a px there is one of those.) */
+#grand{position:fixed; inset:0; z-index:25; display:grid; place-items:center; overflow:hidden; pointer-events:none; text-align:center; --ink:#2B2140; --face:#2B2140; color:#2B2140;
+  opacity:0; visibility:hidden; transition:opacity .45s, visibility .45s;
+  background:#FFF4DE radial-gradient(rgba(43,33,64,.09) 1.6px, transparent 1.7px) 0 0 / 26px 26px}
+#grand.show{opacity:1; visibility:visible}
+#grand-crowd{position:absolute; left:0; top:0; width:100%; height:100%; overflow:visible}
+#grand .in,#grand .hop{transform-box:fill-box; transform-origin:center}
+#grand.show .in{animation:grand-in .9s cubic-bezier(.2,1.25,.4,1) both; animation-delay:calc(var(--n) * 70ms + 150ms)}
+@keyframes grand-in{from{transform:translate(calc(var(--fx) * 1px), calc(var(--fy) * 1px)) rotate(var(--spin)) scale(.7)}}
+#grand.show .hop{animation:grand-hop .52s cubic-bezier(.3,0,.7,1) infinite alternate; animation-delay:calc(var(--n) * -137ms + 1.6s)}
+@keyframes grand-hop{from{transform:translateY(.05px) scale(1.07,.93)} 35%{transform:translateY(0) scale(1,1)} to{transform:translateY(-.42px) scale(.96,1.05) rotate(var(--lean))}}
+.grand-mid{position:relative; padding:0 12px}
+.grand-name{display:flex; align-items:center; justify-content:center; gap:calc(var(--s) * .26)}
+.grand-name svg{width:calc(var(--s) * 1.25); height:calc(var(--s) * 1.25); flex:none}
+#grand.show .grand-name svg{animation:hop .7s var(--pop) .2s both, bob 1.4s ease-in-out 1s infinite}
+.grand-name .word{display:flex !important; font-size:var(--s); letter-spacing:1px; --bw:calc(var(--s) * .085)}
+#grand.show .grand-name .word b{animation:hop .7s var(--pop) both, wave .8s ease-in-out infinite; animation-delay:calc(var(--n) * 70ms + 300ms), calc(var(--n) * 90ms + 1.4s)}
+.grand-say{margin:calc(var(--s) * .16) 0 0; font-size:calc(var(--s) * .42); font-weight:700; line-height:1.15}
+.grand-sum{margin:calc(var(--s) * .08) 0 0; font-size:calc(var(--s) * .27); font-weight:600; color:#7A6F90}
+#grand.show .grand-say,#grand.show .grand-sum{animation:hop .6s var(--pop) 1s both}
+@media (prefers-reduced-motion:reduce){ #grand .in,#grand .hop{animation:none !important} }
+.dev[hidden]{display:none}
 .dev{position:fixed; left:8px; bottom:72px; z-index:40; display:flex; gap:6px}
 .dev button{padding:5px 10px 6px; font:600 13px var(--f); color:#FFF4DE; background:#2B2140; border:0; border-radius:9px; cursor:pointer; opacity:.8}
 .dev button:hover{opacity:1}
@@ -501,7 +520,6 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   .hud{display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:5px 9px; margin-top:10px; min-height:0}
   .title{display:contents} .title h1{font-size:18px}
   .title p{grid-column:1 / -1; grid-row:2; font-size:13.5px; margin:0; min-height:2.5em}
-  #prize-track{grid-column:1 / -1; grid-row:3; margin:0; max-width:none}
   .chip{padding:6px 10px 7px; font-size:13.5px} .chip b{font-size:15px}
   #pips{max-width:86px} #pips i{width:10px; height:10px; border-radius:3px} #pips i.t{width:12px} #pips i.d{width:18px} #pips i.h{border-radius:50%}
   #pips i.t::after{inset:3.5px 3px 2px}
@@ -513,7 +531,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 /* six buttons and the name do not fit side by side on a phone: the name gives way, the face stays */
 @media (max-width:460px){ .word{display:none} }
 @media (max-width:400px){ .tools{gap:5px} .ib{width:35px; height:35px} }
-@media (max-height:520px){ .hud{min-height:0} .title p,#prize-track{display:none} .dock{height:50px} }
+@media (max-height:520px){ .hud{min-height:0} .title p{display:none} .dock{height:50px} }
 /* a phone on its side: one slim bar on top, the spin buttons stacked down the right */
 @media (max-height:480px) and (orientation:landscape){
   #app{display:grid; grid-template-columns:auto 1fr auto; grid-template-rows:auto 1fr; gap:4px 12px}
