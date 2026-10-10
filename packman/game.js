@@ -1084,7 +1084,9 @@
       if (w === 'ghost') { out.push({ w: w, t: lv.ghost || lv.pieces[Math.floor(Math.random() * lv.pieces.length)] }); return; }   // (a level may say what kind its ghost is)
       if (!free.length) return;
       var n = free.pop(), t = lv.pieces[n];
-      var named = w === 'chameleon' && lv.chameleon != null ? lv.chameleon : lv.pin && lv.pin[w] != null ? lv.pin[w] : null;
+      // (a level may pin a power to one shape, or to several if it deals the power more than once: each takes the next of them)
+      var pinned = lv.pin && lv.pin[w] != null ? [].concat(lv.pin[w]).filter(function (k) { return free.concat(n).indexOf(k) >= 0; })[0] : null;
+      var named = w === 'chameleon' && lv.chameleon != null ? lv.chameleon : pinned != null ? pinned : null;
       if (named !== null && free.concat(n).indexOf(named) >= 0) {   // the level says which shape it is
         free = free.concat(n).filter(function (k) { return k !== named; }); n = named; t = lv.pieces[n];
       }
@@ -2394,9 +2396,11 @@
   }
 
   window.Packman = { pieces: function () { return pieces; } };   // for poking at the board from the console
-  if (LOCAL) { window.Packman.commit = commit; window.Packman.render = render; window.Packman.level = function () { return lv; }; }
-  if (REEL) {   // what reel/reel.js works the game with
+  if (LOCAL) {   // for the tests (tests/), and for trying things out
+    window.Packman.commit = commit; window.Packman.render = render; window.Packman.level = function () { return lv; };
     window.Packman.play = function (name) { startLevel(LEVELS.map(function (l) { return l.name; }).indexOf(name), true); };
+  }
+  if (REEL) {   // what reel/reel.js works the game with
     window.Packman.select = select; window.Packman.wake = wake; window.Packman.sfx = sfx;
     window.Packman.fresh = function () { save.done = {}; };   // so that every showing is a first win, with the whole party
     window.Packman.drawn = drawn; window.Packman.confetti = confetti;

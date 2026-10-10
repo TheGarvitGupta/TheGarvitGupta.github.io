@@ -964,14 +964,14 @@ var PackmanLevels = (function () {
     {
       name: 'Short Fuse',
       twist: true,
-      powers: 1,
-      sure: ['mine'],
-      pin: { mine: 3 },   // one of the bricks
-      intro: 'Two bricks and three triangles. One brick is a mine, and neither will go in straight.',
-      hint: 'Lay the two bricks side by side as one big square, both turned to 120°, so the big square stands on a corner and touches all four walls. Triangles fill three of the gaps it leaves against the walls. Turn the mine in short goes, outside the box, and its fuse never runs out.',
+      powers: 2,
+      sure: ['mine', 'mine'],
+      pin: { mine: [4, 5] },   // both bricks
+      intro: 'Two bricks and four triangles. Both bricks are mines, and neither will go in straight.',
+      hint: 'Lay the two bricks side by side as one big square, both turned to 120°, so the big square stands on a corner and touches all four walls. A triangle fills each of the four gaps it leaves against the walls. Turn each mine in short goes, outside the box, and its fuse never runs out.',
       container: box(2.74),
-      pieces: pieces(0, 3, 2),
-      solution: [[0.866, 1.0774, 240], [1.0774, -0.866, 150], [-0.866, -1.0773, 180], [0.433, 0.25, 300], [-0.433, -0.25, 120]]
+      pieces: pieces(0, 4, 2),
+      solution: [[0.866, 1.0774, 240], [1.0774, -0.866, 150], [-0.866, -1.0773, 180], [-1.0774, 0.866, 330], [0.433, 0.25, 300], [-0.433, -0.25, 120]]
     },
     {
       name: 'Sleepwalker',
