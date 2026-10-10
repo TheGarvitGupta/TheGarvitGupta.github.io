@@ -1,6 +1,9 @@
 # What the tests share: the site served from this machine for as long as a test runs, and a page of the game
 # opened in Chrome with everything that changes from one run to the next held still.
-import asyncio, contextlib, functools, http.server, json, os, socketserver, threading
+import asyncio, contextlib, functools, http.server, json, os, socketserver, threading, urllib.request
+
+LIVE = 'http://packman.test'                          # a name that is not this machine's, for the game to be served under
+BOARD = 'https://www.garvitgupta.com/api/packman'     # where the game sends scores
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # the root of the site
 GAME = os.path.join(ROOT, 'packman')
@@ -40,15 +43,22 @@ SEED = """
 """
 
 async def opened(browser, base, path='/packman/', level='Home', save=None, store='packman.v1', width=393, height=852, scale=1,
-                 dark=False, calm=True, seed=7, still=True, board=None):
+                 dark=False, calm=True, seed=7, still=True, board=None, live=False):
     """A page of the site. Nothing leaves this machine but the request for the lettering: the counter of visits and
     the leaderboard are cut off. With still, the page's clock stands at a fixed moment and moves only when told to
     (page.clock.run_for); with calm, the page is told the player wants no animation, so no picture catches one midway."""
+    files = base
+    if live: base = LIVE   # as a player on the real site has it: not localhost, so levels are shut until won and scores are sent
     ctx = await browser.new_context(viewport={'width': width, 'height': height}, device_scale_factor=scale,
                                     color_scheme='dark' if dark else 'light', reduced_motion='reduce' if calm else 'no-preference')
     seedSave = save if save is not None else saved(level)
     await ctx.add_init_script(SEED % (seed, 'true' if seedSave is not False else 'false', json.dumps(store), json.dumps(seedSave or {})))
     await ctx.route('**/*', lambda r: r.continue_() if r.request.url.startswith(base) or 'fonts.g' in r.request.url else r.abort())
+    if live:
+        async def serve(route):   # the same files, under the other name
+            r = await asyncio.to_thread(urllib.request.urlopen, files + route.request.url[len(LIVE):])
+            await route.fulfill(status=200, content_type=r.headers.get('Content-Type', 'text/plain'), body=r.read())
+        await ctx.route(lambda url: url.startswith(LIVE), serve)
     page = await ctx.new_page()
     page.errors = []
     page.on('pageerror', lambda e: page.errors.append('error: ' + str(e)))
@@ -58,8 +68,10 @@ async def opened(browser, base, path='/packman/', level='Home', save=None, store
         async def answer(route):
             page.asked.append((route.request.method, route.request.url, route.request.post_data))
             await route.fulfill(status=200, content_type='application/json', body=json.dumps(board(route.request) if callable(board) else board))
-        await ctx.route(lambda url: url.startswith(base + '/__board'), answer)   # (not the page itself, whose address ends with the board's)
-        path += ('&' if '?' in path else '?') + 'scores=' + base + '/__board'
+        if live: await ctx.route(lambda url: url.startswith(BOARD), answer)   # the real board's address, which the game uses when it is not on this machine
+        else:
+            await ctx.route(lambda url: url.startswith(base + '/__board'), answer)   # (not the page itself, whose address ends with the board's)
+            path += ('&' if '?' in path else '?') + 'scores=' + base + '/__board'
     if still:
         await page.clock.install(time=1760000000000)
         await page.clock.pause_at(1760000001000)
@@ -108,7 +120,8 @@ window.T = {
     return null;
   },
   state: function () {
-    var lv = Packman.level(), C = lv.containers ? PackmanGeom.makeBoxes(lv.containers) : PackmanGeom.makeContainer(lv.container);
+    // (as a player has it the game does not say which level is open: it is the one whose name is shown)
+    var shown = document.getElementById('lv-name').textContent, lv = Packman.level ? Packman.level() : PackmanLevels.filter(function (l) { return l.name === shown; })[0], C = lv.containers ? PackmanGeom.makeBoxes(lv.containers) : PackmanGeom.makeContainer(lv.container);
     var e = PackmanGeom.evaluate(Packman.pieces(), C);
     return { level: lv.name, packed: e.packed, solved: e.solved, sheet: (document.querySelector('.sheet.open') || {}).id || null,
       save: JSON.parse(localStorage.getItem('packman.v1') || '{}'), count: document.getElementById('count').textContent, clock: document.getElementById('clock').textContent,

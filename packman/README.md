@@ -87,6 +87,7 @@ all for trying things out:
 - two buttons stand at the bottom left: **Solver**, which packs the level, and **Hard reset**;
 - `?powers=mine,ghost` deals those powers in place of a random pick;
 - `?scores=<address>` uses a stand-in leaderboard;
+- (anywhere, not only here) a player named **Swordfish**, in any capitals, plays off the record: the board is read and never sent a score;
 - `?reel` has the game play itself (see `reel/`), with progress of its own;
 - `Packman` in the console has more on it: `play(name)` opens a level, `level()` is the one open, `pieces()` its shapes.
 
@@ -124,7 +125,7 @@ game with a mouse as a player does.
 | `sounds` | Every sound and every voice is made of notes that can be played, the browser's own audio takes them, and every personality and power has a voice of its own. |
 | `game` | In the real page: all fifty levels open on a phone, a small phone and a desktop, with the right shapes and powers dealt, on the screen, outside the box, entangled ones on their own side. A shape goes where it is carried and turns by the buttons. A level packed by hand with the mouse is won and saved, and is still there when the page is opened again. The marks light for the shape that went in. An overlap does not count. Start over, eyesight, hints (the spot shown is one from the solution, and is counted), every sheet, choosing a level from the list, and the welcome for a new player. |
 | `powers` | Begun: Minefield deals a mine to every shape whatever the deal, and packs. |
-| `board` | Begun, with a stand-in leaderboard: the first three rows wear medals and the rest their numbers, a short or empty board is right, and the player's own row is still picked out among the medals. |
+| `board` | Begun, with a stand-in leaderboard: the first three rows wear medals and the rest their numbers, a short or empty board is right, and the player's own row is still picked out among the medals. And with the game served as a player has it, under a name that is not this machine's: a win is sent once with what the board needs, wins saved before go up when the game opens, nothing is sent from localhost, and nothing at all is sent under the name Swordfish. |
 | `pages` | "Meet the shapes" draws every personality and power, and they react. The reel plays through to its card, writes nothing to a player's saved game, and is not loaded for a player. The card on the site's front page draws. |
 
 By hand:

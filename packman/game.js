@@ -2063,8 +2063,10 @@
 
   // After a win: send it, unless it should not count, and show where that leaves them.
   var sent = 0;
+  // Whoever plays as Swordfish, however it is spelt in capitals, plays off the record: the board is read and never written to.
+  function offRecord() { return /^swordfish$/i.test(String(called()).trim()); }
   function report(score) {
-    var box = $('win-lb'), note = $('win-lb-note'), skip = LOCAL, mark = ++sent;
+    var box = $('win-lb'), note = $('win-lb-note'), skip = LOCAL || offRecord(), mark = ++sent;
     box.hidden = true;
     (skip ? ask(SCORES + '?pid=' + save.pid) : ask(SCORES, score)).then(function (d) {
       if (mark !== sent) return;   // another win has gone since
@@ -2073,10 +2075,10 @@
         return report(score);
       }
       if (!d.top) return;
-      if (!LOCAL) { save.sent = save.sent || {}; save.sent[score.level] = 1; save.as = score.name; persist(); }
+      if (!skip) { save.sent = save.sent || {}; save.sent[score.level] = 1; save.as = score.name; persist(); }
       ranks($('win-ranks'), d, 5);
       if (d.rank === 1 && !skip) sfx.top();
-      note.textContent = LOCAL ? 'Scores are not sent from a copy on this machine.' : standing(d);
+      note.textContent = LOCAL ? 'Scores are not sent from a copy on this machine.' : skip ? 'Scores are not sent under this name.' : standing(d);
       note.hidden = !note.textContent;
       box.hidden = false;
     }).catch(function () {});   // no board today: the win sheet simply goes without one
@@ -2090,7 +2092,7 @@
   var syncing = false, renames = 0;   // renames: how often this visit has gone back just to change the name, in case the board keeps refusing
   function called() { return save.name || alias(me); }
   function sync() {
-    if (LOCAL || syncing) return;
+    if (LOCAL || offRecord() || syncing) return;
     save.sent = save.sent || {};
     var due = LEVELS.filter(function (l) { return save.done[l.name] && !save.sent[l.name]; });
     // nothing new to send, but the name has changed: send one old best again, which carries the name with it
