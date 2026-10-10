@@ -147,6 +147,50 @@ def lotus_spray():
     out += "<path d='M-1 31C-8 28.5 -14 30 -17 34.5C-11 33 -6 33 -1 31Z'/>"
     return out
 
+# The outline of India as the National Integration two rupees draws it, taken
+# round clockwise from the north in longitude and latitude. A hundred-odd
+# points: enough to be unmistakable at the size it is used, and no more.
+INDIA = [
+    (74.0, 37.0), (75.5, 36.9), (76.8, 35.9), (77.9, 35.5), (78.9, 35.9), (79.6, 35.9), (80.3, 35.4),
+    (80.2, 34.6), (79.5, 34.4), (79.0, 33.3), (79.4, 32.5), (78.7, 32.1), (78.9, 31.4), (79.6, 30.9),
+    (80.3, 30.5), (81.0, 30.2),                                                     # to Nepal's corner
+    (80.1, 28.8), (81.3, 28.2), (82.3, 27.8), (83.4, 27.4), (84.6, 27.3), (85.8, 26.6), (87.0, 26.4),
+    (88.1, 26.4), (88.1, 27.9), (88.8, 28.0), (88.9, 27.3),                         # Sikkim
+    (89.0, 26.8), (89.9, 26.7), (91.0, 26.8), (92.0, 26.85), (91.7, 27.7),          # under Bhutan
+    (92.6, 27.9), (93.5, 28.7), (94.6, 29.2), (95.6, 29.2), (96.4, 29.4), (97.3, 28.3),
+    (96.9, 27.3), (96.1, 27.3), (95.2, 26.6), (94.7, 25.5), (94.5, 24.7), (94.1, 23.9), (93.4, 23.9),
+    (93.3, 22.9), (92.7, 22.0),                                                     # Mizoram's foot
+    (92.3, 22.9), (92.3, 23.7), (91.9, 23.5), (91.6, 23.0), (91.2, 23.6), (91.4, 24.1), (92.1, 24.4),
+    (92.2, 25.0), (91.0, 25.2), (89.9, 25.3), (89.8, 26.0), (89.1, 26.1), (88.4, 26.5),
+    (88.2, 25.8), (88.9, 25.2), (88.1, 24.6), (88.7, 24.2), (88.8, 23.2), (89.0, 22.2), (89.0, 21.6),
+    (88.2, 21.6), (87.2, 21.5), (86.8, 20.6), (85.6, 19.7), (84.9, 19.1), (84.1, 18.3), (83.3, 17.6),
+    (82.3, 16.6), (81.3, 16.3), (80.6, 15.8), (80.1, 15.0), (80.1, 14.0), (80.3, 13.1), (79.9, 12.0),
+    (79.8, 10.9), (79.85, 10.3), (79.2, 10.2), (78.9, 9.3), (78.2, 8.9), (78.1, 8.4), (77.55, 8.08),
+    (76.9, 8.5), (76.3, 9.6), (75.8, 11.3), (75.2, 12.1), (74.8, 13.0), (74.4, 14.5), (73.8, 15.6),
+    (73.3, 17.0), (72.9, 18.4), (72.8, 19.2), (72.7, 20.2), (72.9, 21.1), (72.6, 22.2),
+    (72.2, 21.2), (71.1, 20.7), (70.3, 20.9), (69.2, 21.9), (69.0, 22.3), (70.3, 22.9),
+    (69.6, 22.8), (68.7, 23.2), (68.2, 23.7),                                       # Kutch
+    (68.8, 24.3), (70.0, 24.2), (71.1, 24.4), (70.6, 25.6), (70.1, 25.9), (70.2, 26.5), (69.5, 26.8),
+    (70.2, 27.9), (70.8, 27.7), (71.9, 27.95), (72.9, 29.0), (73.4, 29.9), (74.0, 30.5), (74.5, 31.1),
+    (74.6, 31.9), (75.3, 32.3), (74.6, 32.7), (74.0, 33.0), (73.6, 33.5), (73.6, 34.2), (73.4, 34.8),
+    (73.0, 35.3), (72.6, 36.0), (73.1, 36.7),
+]
+ISLANDS = [    # longitude, latitude, size: the Andaman and Nicobar chain, then Lakshadweep
+    (92.8, 13.2, .22), (92.75, 12.3, .22), (92.6, 11.6, .2), (92.5, 10.7, .18), (92.8, 9.2, .14),
+    (93.6, 7.6, .16), (93.8, 7.0, .16), (72.7, 11.1, .12), (72.2, 10.6, .12), (73.0, 8.3, .12),
+]
+
+def india(h=64):
+    """The map, in a box h tall centred on the origin, with the islands as marks beside it."""
+    squeeze = math.cos(math.radians(22))    # a degree of longitude is shorter than one of latitude here
+    k = h / (37.0 - 8.08)
+    px = lambda lon: (lon - 82.7) * squeeze * k
+    py = lambda lat: (22.54 - lat) * k
+    d = "M" + "L".join(f"{f(px(lon))} {f(py(lat))}" for lon, lat in INDIA) + "Z"
+    isles = "".join(f"<circle cx='{f(px(lon))}' cy='{f(py(lat))}' r='{f(r * k)}' fill='#000' stroke='none'/>"
+                    for lon, lat, r in ISLANDS)
+    return f"<path d='{d}'/>" + isles
+
 def flank(inner, x, k, turn):
     """The same device either side of the centre, mirrored, leaving the middle for the numeral."""
     g = at(-x, 0, inner, k, -turn)
@@ -217,6 +261,11 @@ def face(kind):
         return (polar(ngon(11, 100), 440) + polar(ngon(11, 96.5), 440) + beads(88, 92, 1.25)
                 + flank(lotus_spray(), 42, .95, 4) + numeral(2, 60)
                 + txt("रुपये", -46, 14) + txt("RUPEES", 50, 11, 2.2) + txt("1992", 67, 10, 1) + mint("hyderabad", 77))
+    if kind == "map":        # the National Integration two rupees: the map of India
+        # The date goes in the open corner above the north-east, clear of the islands.
+        date = f"<g transform='translate(40 0)'>{txt('1998', -36, 9.5, 1)}{mint('mumbai', -27, 2.6)}</g>"
+        return (polar(ngon(11, 100), 440) + polar(ngon(11, 96.5), 440) + beads(88, 92, 1.25)
+                + legend("राष्ट्रीय एकता", "NATIONAL INTEGRATION", 70, 9.5) + at(-4, -3, india(104)) + date)
     if kind == "five":       # five paise: a square stood on its corner
         return (diamond() + flank(wheat_curl(), 37, .7, 6) + numeral(5, 50)
                 + txt("पैसे", -34, 12) + txt("PAISE", 42, 10, 2) + txt("1967", 56, 9, 1) + mint("mumbai", 65, 2.6))
@@ -254,7 +303,7 @@ PLACES = [
     (1585, 1965, 180, -12), (640, 1520, 110, 30), (1130, 1230, 95, 40), (700, 2240, 140, -10), (420, 1250, 120, 10),
 ]
 TOP = 5        # how many of those a visitor sees without scrolling
-KINDS = ["rupee", "hex", "anna", "square", "two", "pice", "two", "ten", "half", "five",
+KINDS = ["rupee", "hex", "anna", "square", "two", "pice", "map", "ten", "half", "five",
          "rupee", "hex", "pice", "ten", "anna"]
 SHEETS = 4
 LAYERS = 3     # each sheet is cut into this many, which the page drifts apart
@@ -367,6 +416,7 @@ def rubbings(blur=BLUR, variant=0, layer=None):
     add(7, study(wheat_curl(), 2.4, 22, 36, "ear of wheat", (540, 2360)))
     add(8, study(lotus_spray(), 2.0, 26, 37, "lotus", (1700, 2360)))
     add(9, study(wheat_curl(), 2.0, 22, 36, "ear of wheat", (560, 1300)))
+    add(10, study(india(), 2.4, 30, 34, "India", (560, 2360)))
 
     # And the mints' own marks, let fall in whatever room is left.
     def mark(x, y, kind, s):
@@ -404,6 +454,7 @@ def specimens(path):
     coins = [
         ("rupee", "One rupee", "Round. The numeral between two bearded ears of wheat; the name in Hindi above and English below; date; Mumbai's diamond."),
         ("two", "Two rupees", "Eleven-sided. A lotus with bud and leaf either side; Hyderabad's star."),
+        ("map", "Two rupees, National Integration", "Eleven-sided. The map of India, with its islands."),
         ("five", "Five paise", "Square, stood on its corner. Wheat with the curled leaf."),
         ("ten", "Ten naye paise, 1958", "Eight scallops. &#8220;A tenth part of a rupee&#8221; over the numeral, as struck."),
         ("hex", "Twenty paise", "Hexagonal. The lotus is borrowed from the earlier brass twenty paise; Noida's dot."),
@@ -416,6 +467,7 @@ def specimens(path):
         ("Bearded wheat", "As on the rupee of the 1980s.", wheat_awned()),
         ("Wheat with curled leaf", "As on the older rupee.", wheat_curl()),
         ("Lotus spray", "Flower, bud and leaf.", lotus_spray()),
+        ("India", "The outline, as on the National Integration two rupees.", india()),
     ]
     wholes = "".join(
         f"<h2>Sheet {v + 1} of {SHEETS}</h2><div class='whole'>"
