@@ -967,7 +967,7 @@ var PackmanLevels = (function () {
       powers: 6,
       sure: ['mine', 'mine', 'mine', 'mine', 'mine', 'mine'],
       pin: { mine: [0, 1, 2, 3, 4, 5] },   // every shape
-      intro: 'Two bricks and four triangles. Every one is a mine, and the bricks will not go in straight.',
+      intro: 'Two bricks and four triangles. Every one is a mine.',
       hint: 'Lay the two bricks side by side as one big square, both turned to 120°, so the big square stands on a corner and touches all four walls. A triangle fills each of the four gaps it leaves against the walls. Every shape is a mine: turn each in short goes, outside the box, and its fuse never runs out.',
       container: box(2.74),
       pieces: pieces(0, 4, 2),
