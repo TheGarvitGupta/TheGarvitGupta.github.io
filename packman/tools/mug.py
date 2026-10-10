@@ -15,7 +15,7 @@ HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(HERE, 'mug')
 
 # ---- the mug, in pixels (the page scales the whole of it) ----
-RB, RT, H = 100.0, 81.0, 156.0        # its radius at the foot and at the rim, and its height
+RB, RT, H = 100.0, 82.0, 156.0        # its radius at the foot and at the rim, and its height
 N = 60                                 # staves round it
 LEAN = math.degrees(math.atan((RB - RT) / H))
 SLANT = math.hypot(H, RB - RT)         # a stave's length, leaning
@@ -97,13 +97,13 @@ def handle():
 
 CSS = '''/* The prize mug, turning: a real object in the browser's own 3D, of HTML and CSS alone. Made by tools/mug.py: change it there.
    It is drawn in a box 340px square. Set --k on .mug to make it bigger or smaller: .5 is half that. */
-.mug{--k:1; position:relative; display:block; flex:none; width:calc(340px * var(--k)); height:calc(340px * var(--k)); perspective:calc(1150px * var(--k))}
+.mug{--k:1; position:relative; display:block; flex:none; width:calc(340px * var(--k)); height:calc(340px * var(--k)); perspective:calc(2600px * var(--k))}   /* (from far enough off that the rim, which leans towards the eye, is not made to look as wide as the foot) */
 .mug *,.mug *::before,.mug *::after{position:absolute; box-sizing:border-box; transform-style:preserve-3d}
 /* its shadow, on whatever it stands on */
-.mug::before{content:""; position:absolute; left:46%%; top:50%%; width:calc(330px * var(--k)); height:calc(86px * var(--k)); margin:calc(58px * var(--k)) 0 0 calc(-165px * var(--k));
+.mug::before{content:""; position:absolute; left:46%%; top:50%%; width:calc(330px * var(--k)); height:calc(86px * var(--k)); margin:calc(43px * var(--k)) 0 0 calc(-165px * var(--k));
   border-radius:50%%; background:radial-gradient(closest-side, rgba(43,33,64,.34), rgba(43,33,64,0))}
 /* looked at from a little above; drawn at its own size and scaled to fit; and turning */
-.mug .tilt{left:46%%; top:50%%; width:0; height:0; transform:scale(calc(var(--k) * 1.16)) translateY(-72px) rotateX(-19deg)}
+.mug .tilt{left:46%%; top:50%%; width:0; height:0; transform:scale(calc(var(--k) * 1.16)) translateY(-82px) rotateX(-19deg)}   /* (so that the mug, rim to foot, is in the middle of its box) */
 .mug .turn{left:0; top:0; width:0; height:0; animation:mug-turn %(turn)ss linear infinite}
 @keyframes mug-turn{to{transform:rotateY(360deg)}}
 /* a stave: stood at the foot's edge, leaned in to the rim, narrower at the top, with its share of the picture on it */
