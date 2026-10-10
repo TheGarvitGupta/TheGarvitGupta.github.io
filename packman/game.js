@@ -1068,7 +1068,7 @@
   // is one more, added at the end, of the same kind as one of them.
   function dealPowers() {
     // The puffer is only any trouble with a crowd round it, so it comes out in the levels with five shapes or more.
-    var pool = ['mine', 'ghost', 'sticky', 'chameleon', 'sleeper', 'magnet'].concat(lv.pieces.length >= 5 ? ['puffer'] : []);
+    var pool = lv.pool || ['mine', 'ghost', 'sticky', 'chameleon', 'sleeper', 'magnet'].concat(lv.pieces.length >= 5 ? ['puffer'] : []);   // (a level may name the ones it draws from)
     var asked = LOCAL && /[?&]powers=([a-z,]+)/.exec(location.search);   // on this machine, the ones named in the address
     var tied = [].concat.apply([], (lv.twins || []).concat(lv.gears || []));   // entangled shapes are left as they are
     var out = lv.pieces.map(function () { return 0; }), free = shuffled(out.map(function (z, n) { return n; }).filter(function (n) { return tied.indexOf(n) < 0; }));
@@ -1456,6 +1456,7 @@
     $('lv-num').textContent = among(i);
     $('lv-of').textContent = chapSize(ch);
     document.body.classList.toggle('powers', !!lv.powers);   // the chapter of powers is played at night
+    document.body.classList.toggle('twists', !!lv.twist);   // and the chapter of twists on squared paper
     $('ribbon').setAttribute('hidden', '');
     $('lv-name').textContent = lv.name;
     $('lv-intro').textContent = lv.intro;

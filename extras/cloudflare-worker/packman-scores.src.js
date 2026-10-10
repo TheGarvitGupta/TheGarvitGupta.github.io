@@ -43,7 +43,8 @@ function packed(level, spots) {
 		if (!Array.isArray(s) || s.length !== 3 || !s.every((v) => typeof v === "number" && isFinite(v) && Math.abs(v) < 1e4)) return false;
 		pieces.push({ type: level.pieces[i], size: 1, x: s[0], y: s[1], angle: s[2] });
 	}
-	return G.evaluate(pieces, G.makeContainer(level.container)).solved;
+	// (a level with two boxes lists them as containers; its shapes are judged each by the box it is in)
+	return G.evaluate(pieces, level.containers ? G.makeBoxes(level.containers) : G.makeContainer(level.container)).solved;
 }
 
 let ready = false;

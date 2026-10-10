@@ -55,6 +55,16 @@ body.powers{
   background-size:53px 47px, 131px 113px, 29px 31px; background-position:0 0, 40px 60px, 13px 17px;
 }
 body.powers .bin-fill{stroke:#FFC93C}
+/* The chapter of twists is played on squared paper, whatever the theme and whether or not the level has powers:
+   pale green, ruled in fine squares with a heavier line every fifth, the shapes outlined in dark green and the box rimmed in sea green. */
+body.twists{
+  --bg:#DDF4EA; --ink:#14353A; --text:#14353A; --mut:#4C7D77; --rim:#14353A; --dot:rgba(16,110,96,.1);
+  --card:#FFFFFF; --bin:#FFFFFF; --wash:rgba(16,110,96,.08); --win:#C9F7E6;
+  background-image:linear-gradient(rgba(16,110,96,.17) 1.5px, transparent 1.5px), linear-gradient(90deg, rgba(16,110,96,.17) 1.5px, transparent 1.5px),
+    linear-gradient(rgba(16,110,96,.09) 1px, transparent 1px), linear-gradient(90deg, rgba(16,110,96,.09) 1px, transparent 1px);
+  background-size:120px 120px, 120px 120px, 24px 24px, 24px 24px; background-position:0 0;
+}
+body.twists .bin-fill{stroke:#0E8C78}
 /* In the chapter of powers a strip between the level's name and the board is kept for the power in hand:
    its face, its name and one line, on a gold card. The strip is always there, so nothing moves when the
    card comes and goes, and it covers neither the name nor the board. Empty, it says what it is for. */
@@ -757,10 +767,10 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 </div>
 
 <script src="geom.js?v=2.82"></script>
-<script src="levels.js?v=2.86"></script>
+<script src="levels.js?v=2.88"></script>
 <script src="faces.js?v=2.80"></script>
 <script src="sounds.js?v=2.80"></script>
-<script src="game.js?v=2.82"></script>
+<script src="game.js?v=2.88"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

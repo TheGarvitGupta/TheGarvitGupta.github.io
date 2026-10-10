@@ -421,15 +421,6 @@ var PackmanLevels = (function () {
     // The fourth chapter (twist: true): tight packings, each with one idea of its own, and powers on some of them.
     // pin gives a power to one shape by number. A level may have two boxes (containers); sets of entangled shapes
     // that turn together (twins) or against each other (gears); and a line no entangled shape may cross (divide).
-,
-,
-,
-,
-,
-,
-,
-,
-,
     {
       name: 'Haojun\u2019s Gears',
       twist: true,
@@ -517,6 +508,7 @@ var PackmanLevels = (function () {
       twist: true,
       powers: 1,
       twins: [[4, 5], [0, 6], [1, 7]],   // entangled pairs: each turns when the other does
+      pool: ['mine', 'sticky', 'sleeper', 'magnet', 'puffer'],   // no chameleon: its line would take the place of the one that explains the level
       divide: -0.0155,   // a line half way between the boxes: an entangled shape keeps to the side its spot is on
       intro: 'Two boxes. Shapes that look alike are entangled: turn one and its twin turns too. Neither can cross the line.',
       hint: 'The square box is Five Alive: four squares in the corners and one in the middle at 45°. The honeycomb is Pinwheel: three squares flat against every other wall, at 0°, 30° and 60°. Each pair of twins is split by the line, one in each box. The twin of the square in the middle sits straight in the honeycomb; the twins of the two that lean there sit straight in corners of the square box.',
