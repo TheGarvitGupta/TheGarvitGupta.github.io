@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // The leaderboard itself. Everything above this line is the game's own
-// geom.js and levels.js, pasted in by tools/build-packman-worker.py so a
+// geom.js and levels.js, pasted in by packman/tools/build-worker.py so a
 // score can be checked here with the very code that judges it in the game.
 // ---------------------------------------------------------------------------
 

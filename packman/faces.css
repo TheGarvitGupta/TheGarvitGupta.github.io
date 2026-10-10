@@ -1,0 +1,41 @@
+/* How a shape and its face are painted: the paint for what faces.js draws. Used by the game (packman.css adds how a
+   face changes as the game goes) and by the page that introduces the shapes.
+
+   Lines are so many screen pixels thick whatever the size of the drawing. Whoever draws sets --u, one screen pixel
+   in the drawing's own units, on the drawing or on something round it; --c is the shape's colour, and --ink and
+   --face are the page's. */
+.fill{fill:var(--c); stroke:var(--ink); stroke-width:calc(2.5px * var(--u)); stroke-linejoin:round}
+.eye{fill:var(--face)}
+/* Faces change by visibility, never display: taking a shape out of the page leaves marks in Safari */
+.shut,.wince{visibility:hidden; fill:none; stroke:var(--face); stroke-width:calc(2.6px * var(--u)); stroke-linecap:round; stroke-linejoin:round}
+.mouth{fill:none; stroke:var(--face); stroke-width:calc(2px * var(--u)); stroke-linecap:round}
+.m-good,.m-bad,.w-good{visibility:hidden}
+.wear{fill:none; stroke:var(--face); stroke-width:calc(2px * var(--u)); stroke-linecap:round; stroke-linejoin:round}
+.wear.thin{stroke-width:calc(1.5px * var(--u))} .wear.solid{fill:var(--face); stroke-width:calc(1px * var(--u))}
+.blush{fill:#D6305F; fill-opacity:.32}
+.tongue{fill:#FF7A9C; stroke:var(--face); stroke-width:calc(1.5px * var(--u)); stroke-linejoin:round}
+.heart{fill:#E5263A; stroke:var(--face); stroke-width:calc(1.5px * var(--u)); stroke-linejoin:round}
+.plaster{fill:#F7DDB8; stroke:var(--face); stroke-width:calc(1.5px * var(--u))}
+.fringe{fill:#17121F; stroke:#17121F; stroke-width:calc(1.5px * var(--u)); stroke-linejoin:round}
+.tooth{fill:#fff; stroke:var(--face); stroke-width:calc(1.5px * var(--u)); stroke-linejoin:round}
+/* light on the cool one: glancing off its shades, and a sparkle on its teeth */
+.glare{fill:none; stroke:#fff; stroke-width:calc(1.6px * var(--u)); stroke-linecap:round; opacity:.9} .glint{fill:#fff}
+
+/* the powers: what each one wears */
+.fuse{fill:none; stroke:#C9BA98; stroke-width:calc(2px * var(--u)); stroke-linecap:round}
+.spark{fill:#FFC93C; stroke:#FF6B2C; stroke-width:calc(1px * var(--u)); stroke-linejoin:round}
+/* the mine is nearly as dark as the night it is played in: a paler line round it, and a rivet at each corner */
+.p-mine .fill{stroke:#7F74A8} .rivet{fill:#51476B}
+.shine{fill:#fff; fill-opacity:.8}
+.boo{fill:var(--face)}
+.hem{fill:none; stroke:#fff; stroke-width:calc(2px * var(--u)); stroke-linecap:round; stroke-linejoin:round}
+.honey{fill:#E8891A; stroke:#E8891A; stroke-width:.03px; stroke-linejoin:round}
+.spike{fill:none; stroke:#1596A6; stroke-width:calc(2.4px * var(--u)); stroke-linecap:round}
+.white{fill:#fff; stroke:var(--face); stroke-width:calc(1.5px * var(--u))}
+.zz{fill:none; stroke:#fff; stroke-width:calc(2.2px * var(--u)); stroke-linecap:round; stroke-linejoin:round}
+.yawn{fill:var(--face)}
+.drool{fill:#BFE9FF; stroke:#fff; stroke-width:calc(1px * var(--u)); stroke-linejoin:round}
+/* the magnet's waves: unseen until whoever draws them sets them going */
+.wave{fill:none; stroke:#4D9BFF; stroke-width:calc(2.2px * var(--u)); opacity:0}
+.wave.w0{fill:rgba(77,168,255,.10)} .wave.w2{stroke-dasharray:calc(7px * var(--u)) calc(6px * var(--u))}
+.pole{stroke:var(--face); stroke-width:calc(1.5px * var(--u))} .pole.n{fill:#FF6B6B} .pole.s{fill:#4DA8FF}
