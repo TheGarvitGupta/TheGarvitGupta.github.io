@@ -145,8 +145,7 @@
         display: none;
     }
     #contactMe {
-        /*	padding-bottom:575px;
-	*/
+        min-height: 0;   /* no portrait to make room for: as tall as the form */
     }
     #contactMe::after {
         display: none;

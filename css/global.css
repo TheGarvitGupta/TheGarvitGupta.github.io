@@ -1053,7 +1053,7 @@ input {
 #particles-js { height: 100%; }
 #aboutMe { min-height: 300px; }
 .relative { position: relative; }
-#contactMe { min-height: 575px; overflow: hidden; }
+#contactMe { min-height: 370px; padding-bottom: 110px; overflow: hidden; }   /* the form and a little air, with the portrait rising beside it */
 .inline-p { display: inline; }
 .social-icon-link { float: left; width: 42px; margin-right: 10px; }
 .social-icon-link:last-child { margin-right: 0; }
