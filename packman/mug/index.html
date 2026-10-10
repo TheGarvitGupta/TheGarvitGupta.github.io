@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Packman prize</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<style>
+/* The prize mug, turning. Made by tools/mug.py: change it there. Everything here is HTML and CSS, in the browser's own 3D. */
+html,body{height:100%; margin:0}
+body{display:grid; place-items:center; align-content:center; gap:26px; background:#FFF4DE radial-gradient(rgba(43,33,64,.09) 1.6px, transparent 1.7px) 0 0 / 26px 26px;
+  font:600 17px/1.4 "Fredoka", ui-rounded, system-ui, sans-serif; color:#2B2140; text-align:center}
+p{margin:0} p small{display:block; font-weight:500; font-size:14px; color:#7A6F90}
+
+/* ---- the mug. Set --size on .mug to make it bigger or smaller: it is the width of the box it is drawn in. ---- */
+.mug{--size:340px; --k:calc(var(--size) / 340px); position:relative; width:var(--size); height:var(--size); perspective:calc(var(--size) * 3.4)}
+.mug *,.mug *::before,.mug *::after{position:absolute; box-sizing:border-box; transform-style:preserve-3d}
+/* its shadow, on whatever it stands on */
+.mug::before{content:""; position:absolute; left:46%; top:50%; width:calc(330px * var(--k)); height:calc(86px * var(--k)); margin:calc(58px * var(--k)) 0 0 calc(-165px * var(--k));
+  border-radius:50%; background:radial-gradient(closest-side, rgba(43,33,64,.34), rgba(43,33,64,0))}
+/* looked at from a little above; drawn at its own size and scaled to fit; and turning */
+.mug .tilt{left:46%; top:50%; width:0; height:0; transform:scale(calc(var(--k) * 1.16)) translateY(-72px) rotateX(-19deg)}
+.mug .turn{left:0; top:0; width:0; height:0; animation:mug-turn 9s linear infinite}
+@keyframes mug-turn{to{transform:rotateY(360deg)}}
+/* a stave: stood at the foot's edge, leaned in to the rim, narrower at the top, with its share of the picture on it */
+.mug .stave,.mug .inner{left:-6.041px; top:-1.153px; width:12.082px; height:157.153px; transform-origin:50% 100%;
+  transform:rotateY(calc(var(--i) * 6.0deg)) translateZ(99.863px) rotateX(6.944deg);
+  clip-path:polygon(9.50% 0, 90.50% 0, 100% 100%, 0 100%); backface-visibility:hidden}
+.mug .stave{background:url(art.svg) calc(var(--i) * -10.4816px) 0 / 628.893px 100%}
+/* the light stays where it is while the mug turns: each stave darkens as it goes round to the side, and shines as it passes the light */
+.mug .stave::before,.mug .stave::after{content:""; inset:0; animation:mug-dark 9s linear infinite; animation-delay:calc(var(--i) * -0.1500s)}
+.mug .stave::before{background:#16153C}
+.mug .stave::after{background:#fff; animation-name:mug-shine}
+@keyframes mug-dark{0%{opacity:.03} 6%{opacity:.07} 12.5%{opacity:.17} 19%{opacity:.34} 25%,75%{opacity:.58} 81%{opacity:.3} 87.5%{opacity:.1} 94%{opacity:.02} 100%{opacity:.03}}
+@keyframes mug-shine{0%,80%{opacity:0} 86%{opacity:.1} 90.5%{opacity:.3} 95%{opacity:.08} 99%,100%{opacity:0}}
+/* the inside: the same staves seen from within, glazed, darker down towards the floor */
+.mug .inner{transform:rotateY(calc(var(--i) * 6.0deg)) translateZ(95.863px) rotateX(6.944deg) rotateY(180deg); background:linear-gradient(#6C8DDB, #4467BF 45%, #2B4796)}
+.mug .inner::before{content:""; inset:0; background:#101A4A; animation:mug-in 9s linear infinite; animation-delay:calc(var(--i) * -0.1500s)}
+@keyframes mug-in{0%,100%{opacity:.3} 25%{opacity:.14} 50%{opacity:0} 62%{opacity:.05} 75%{opacity:.2}}
+/* the floor inside, the rim round the top, and the foot it stands on */
+.mug .floor,.mug .rim,.mug .foot{border-radius:50%; transform:rotateX(90deg)}
+.mug .floor{left:-95px; top:47.0px; width:190px; height:190px; background:radial-gradient(#2A4796, #1E3478)}
+.mug .rim{left:-82.0px; top:-82.0px; width:164.0px; height:164.0px; border:7px solid #A9C0F1; box-shadow:0 0 0 1.5px #5571C2, inset 0 0 0 1.5px #5571C2}
+.mug .foot{left:-99px; top:56.0px; width:198px; height:198px; background:#1B3070}
+/* the handle: it stands out from the side away from the picture, and goes round with the mug */
+.mug .handle{left:0; top:0; width:0; height:0; transform:rotateY(-90deg)}
+.mug .seg{left:0; top:0; width:0; height:0; transform:translate3d(var(--x), var(--y), 0) rotateZ(var(--a)); --c:#F1EDE3; --d:#DDD7C8; --e:#C9C2B1}
+.mug .seg.glazed{--c:#7F9DE3; --d:#6585D2; --e:#5373C4}
+.mug .seg.dipped b{background-image:linear-gradient(90deg, #6585D2, #DDD7C8)}
+.mug .seg b{left:calc(var(--l) / -2); width:var(--l); border-radius:5px}
+.mug .seg b:nth-child(1),.mug .seg b:nth-child(2){top:-11px; height:22px; background:var(--d)}      /* its two flat sides */
+.mug .seg b:nth-child(1){transform:translateZ(15px)} .mug .seg b:nth-child(2){transform:translateZ(-15px)}
+.mug .seg b:nth-child(3),.mug .seg b:nth-child(4){top:-15px; height:30px}                           /* its back and its belly */
+.mug .seg b:nth-child(3){transform:rotateX(90deg) translateZ(11px); background:var(--c)} .mug .seg b:nth-child(4){transform:rotateX(90deg) translateZ(-11px); background:var(--e)}
+@media (prefers-reduced-motion:reduce){ .mug .turn{animation:none; transform:rotateY(-32deg)} .mug .stave::before,.mug .stave::after,.mug .inner::before{animation-play-state:paused} }
+@media (max-width:420px){ .mug{--size:280px} }
+</style>
+</head>
+<body>
+<div class="mug" role="img" aria-label="A ceramic mug with a great wave on it, turning"><div class="tilt"><div class="turn">
+<div class="foot"></div><div class="floor"></div>
+<i class="inner" style="--i:0"></i><i class="inner" style="--i:1"></i><i class="inner" style="--i:2"></i><i class="inner" style="--i:3"></i><i class="inner" style="--i:4"></i><i class="inner" style="--i:5"></i><i class="inner" style="--i:6"></i><i class="inner" style="--i:7"></i><i class="inner" style="--i:8"></i><i class="inner" style="--i:9"></i><i class="inner" style="--i:10"></i><i class="inner" style="--i:11"></i><i class="inner" style="--i:12"></i><i class="inner" style="--i:13"></i><i class="inner" style="--i:14"></i><i class="inner" style="--i:15"></i><i class="inner" style="--i:16"></i><i class="inner" style="--i:17"></i><i class="inner" style="--i:18"></i><i class="inner" style="--i:19"></i><i class="inner" style="--i:20"></i><i class="inner" style="--i:21"></i><i class="inner" style="--i:22"></i><i class="inner" style="--i:23"></i><i class="inner" style="--i:24"></i><i class="inner" style="--i:25"></i><i class="inner" style="--i:26"></i><i class="inner" style="--i:27"></i><i class="inner" style="--i:28"></i><i class="inner" style="--i:29"></i><i class="inner" style="--i:30"></i><i class="inner" style="--i:31"></i><i class="inner" style="--i:32"></i><i class="inner" style="--i:33"></i><i class="inner" style="--i:34"></i><i class="inner" style="--i:35"></i><i class="inner" style="--i:36"></i><i class="inner" style="--i:37"></i><i class="inner" style="--i:38"></i><i class="inner" style="--i:39"></i><i class="inner" style="--i:40"></i><i class="inner" style="--i:41"></i><i class="inner" style="--i:42"></i><i class="inner" style="--i:43"></i><i class="inner" style="--i:44"></i><i class="inner" style="--i:45"></i><i class="inner" style="--i:46"></i><i class="inner" style="--i:47"></i><i class="inner" style="--i:48"></i><i class="inner" style="--i:49"></i><i class="inner" style="--i:50"></i><i class="inner" style="--i:51"></i><i class="inner" style="--i:52"></i><i class="inner" style="--i:53"></i><i class="inner" style="--i:54"></i><i class="inner" style="--i:55"></i><i class="inner" style="--i:56"></i><i class="inner" style="--i:57"></i><i class="inner" style="--i:58"></i><i class="inner" style="--i:59"></i>
+<i class="stave" style="--i:0"></i><i class="stave" style="--i:1"></i><i class="stave" style="--i:2"></i><i class="stave" style="--i:3"></i><i class="stave" style="--i:4"></i><i class="stave" style="--i:5"></i><i class="stave" style="--i:6"></i><i class="stave" style="--i:7"></i><i class="stave" style="--i:8"></i><i class="stave" style="--i:9"></i><i class="stave" style="--i:10"></i><i class="stave" style="--i:11"></i><i class="stave" style="--i:12"></i><i class="stave" style="--i:13"></i><i class="stave" style="--i:14"></i><i class="stave" style="--i:15"></i><i class="stave" style="--i:16"></i><i class="stave" style="--i:17"></i><i class="stave" style="--i:18"></i><i class="stave" style="--i:19"></i><i class="stave" style="--i:20"></i><i class="stave" style="--i:21"></i><i class="stave" style="--i:22"></i><i class="stave" style="--i:23"></i><i class="stave" style="--i:24"></i><i class="stave" style="--i:25"></i><i class="stave" style="--i:26"></i><i class="stave" style="--i:27"></i><i class="stave" style="--i:28"></i><i class="stave" style="--i:29"></i><i class="stave" style="--i:30"></i><i class="stave" style="--i:31"></i><i class="stave" style="--i:32"></i><i class="stave" style="--i:33"></i><i class="stave" style="--i:34"></i><i class="stave" style="--i:35"></i><i class="stave" style="--i:36"></i><i class="stave" style="--i:37"></i><i class="stave" style="--i:38"></i><i class="stave" style="--i:39"></i><i class="stave" style="--i:40"></i><i class="stave" style="--i:41"></i><i class="stave" style="--i:42"></i><i class="stave" style="--i:43"></i><i class="stave" style="--i:44"></i><i class="stave" style="--i:45"></i><i class="stave" style="--i:46"></i><i class="stave" style="--i:47"></i><i class="stave" style="--i:48"></i><i class="stave" style="--i:49"></i><i class="stave" style="--i:50"></i><i class="stave" style="--i:51"></i><i class="stave" style="--i:52"></i><i class="stave" style="--i:53"></i><i class="stave" style="--i:54"></i><i class="stave" style="--i:55"></i><i class="stave" style="--i:56"></i><i class="stave" style="--i:57"></i><i class="stave" style="--i:58"></i><i class="stave" style="--i:59"></i>
+<div class="handle"><i class="seg glazed" style="--x:85.7px;--y:24.3px;--a:2.0deg;--l:26.5px"><b></b><b></b><b></b><b></b></i><i class="seg glazed" style="--x:101.4px;--y:25.7px;--a:9.4deg;--l:19.2px"><b></b><b></b><b></b><b></b></i><i class="seg glazed" style="--x:112.3px;--y:28.3px;--a:18.2deg;--l:17.4px"><b></b><b></b><b></b><b></b></i><i class="seg glazed" style="--x:121.4px;--y:32.1px;--a:27.8deg;--l:16.4px"><b></b><b></b><b></b><b></b></i><i class="seg glazed" style="--x:129.1px;--y:37.0px;--a:37.8deg;--l:15.8px"><b></b><b></b><b></b><b></b></i><i class="seg dipped" style="--x:135.4px;--y:42.9px;--a:47.9deg;--l:15.5px"><b></b><b></b><b></b><b></b></i><i class="seg" style="--x:140.5px;--y:49.5px;--a:57.9deg;--l:15.2px"><b></b><b></b><b></b><b></b></i><i class="seg" style="--x:144.1px;--y:56.7px;--a:67.9deg;--l:15.0px"><b></b><b></b><b></b><b></b></i><i class="seg" style="--x:146.5px;--y:64.2px;--a:77.9deg;--l:14.8px"><b></b><b></b><b></b><b></b></i><i class="seg" style="--x:147.4px;--y:71.8px;--a:88.3deg;--l:14.6px"><b></b><b></b><b></b><b></b></i><i class="seg" style="--x:146.9px;--y:79.3px;--a:99.2deg;--l:14.5px"><b></b><b></b><b></b><b></b></i><i class="seg" style="--x:145.0px;--y:86.5px;--a:111.0deg;--l:14.4px"><b></b><b></b><b></b><b></b></i><i class="seg" style="--x:141.6px;--y:93.1px;--a:123.4deg;--l:14.5px"><b></b><b></b><b></b><b></b></i><i class="seg" style="--x:136.7px;--y:99.0px;--a:136.3deg;--l:14.8px"><b></b><b></b><b></b><b></b></i><i class="seg" style="--x:130.2px;--y:103.9px;--a:148.8deg;--l:15.5px"><b></b><b></b><b></b><b></b></i><i class="seg" style="--x:122.0px;--y:107.7px;--a:160.4deg;--l:16.6px"><b></b><b></b><b></b><b></b></i><i class="seg" style="--x:111.7px;--y:110.3px;--a:170.2deg;--l:18.7px"><b></b><b></b><b></b><b></b></i><i class="seg" style="--x:96.3px;--y:111.7px;--a:178.0deg;--l:26.3px"><b></b><b></b><b></b><b></b></i></div>
+<div class="rim"></div>
+</div></div></div>
+<p>The prize<small>For getting into the top three</small></p>
+</body>
+</html>
