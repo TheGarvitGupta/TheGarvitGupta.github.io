@@ -420,6 +420,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .gift svg{flex:none; width:34px; height:34px} .gift b{color:var(--coral)}
 .stats.all{margin-top:8px} .stats.all div{background:var(--sun); color:#2B2140; min-width:142px} .stats.all small{color:#2B2140}
 /* a place among the first three taken from somebody: a big medal and who it was taken from */
+.whole{display:inline-block}   /* a sentence that is not to be broken across lines */
 .coup{display:flex; align-items:center; gap:12px; margin:16px 0 4px; padding:10px 14px 10px 10px; text-align:left; color:#2B2140; background:#FFE9A8;
   border:var(--bw) solid var(--ink); border-radius:18px; box-shadow:0 5px 0 var(--ink)}
 .coup[hidden]{display:none}

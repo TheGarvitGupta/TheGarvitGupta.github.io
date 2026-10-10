@@ -1760,6 +1760,10 @@
       : faster ? lv.name + ', packed ' + clock(prev.t - elapsed) + ' faster than your best.'
       : again ? lv.name + ', packed again. Your best is still ' + clock(prev.t) + '.'
       : label(level) + ', ' + lv.name + ', is all packed up.';
+    if (finale) {   // two sentences, each kept whole: where both will not go on a line, the second goes under the first
+      $('win-sub').textContent = '';
+      ['This was a hard one.', ' ', 'Congrats on finishing it!'].forEach(function (s) { var e = s === ' ' ? document.createTextNode(s) : document.createElement('span'); if (s !== ' ') { e.className = 'whole'; e.textContent = s; } $('win-sub').appendChild(e); });
+    }
     $('win-best').parentNode.classList.toggle('new', faster);
     $('win-time').textContent = clock(elapsed);
     $('win-moves').textContent = moves;
