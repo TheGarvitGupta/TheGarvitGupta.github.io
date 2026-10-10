@@ -417,7 +417,10 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .stats small{font-size:13px; color:var(--mut)}
 .gift{display:flex; align-items:center; gap:10px; margin:10px 0 2px; padding:8px 12px; text-align:left; font-size:14.5px; line-height:1.3;
   border:var(--bw) dashed var(--ink); border-radius:14px; background:var(--wash)}
-.gift svg{flex:none; width:34px; height:34px} .gift b{color:var(--coral)}
+.gift svg{flex:none; width:34px; height:34px} .gift b{color:var(--coral)} #help-prize{flex:none; display:flex}
+.gift .mug{--k:.24; margin:-10px -6px -10px -10px}   /* (the mug: see mug/mug.css) */
+/* a mug nobody can see is not kept turning */
+.sheet:not(.open) .mug *,.sheet:not(.open) .mug *::before,.sheet:not(.open) .mug *::after{animation-play-state:paused}
 .stats.all{margin-top:8px} .stats.all div{background:var(--sun); color:#2B2140; min-width:142px} .stats.all small{color:#2B2140}
 /* a place among the first three taken from somebody: a big medal and who it was taken from */
 .whole{display:inline-block}   /* a sentence that is not to be broken across lines */

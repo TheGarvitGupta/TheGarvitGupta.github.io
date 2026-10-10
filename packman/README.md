@@ -24,6 +24,11 @@ packman/
   og-image.png          Link preview
   apple-touch-icon.png  Home-screen icon
 
+  mug/                  The prize mug, turning: a 3D object of HTML and CSS alone. All of it is written by tools/mug.py
+    index.html          A page of its own for it: /packman/mug/
+    mug.css, mug.js     Its styles and its markup, for the game, which shows it on the leaderboard
+    art.svg             The glaze and the waves, wrapped round it
+
   reel/                 The game playing itself, to be filmed (only on this machine)
     index.html          Shows it at the size of a phone: /packman/reel/
     reel.js             Works the game: loaded by game.js when the address says ?reel
@@ -32,6 +37,7 @@ packman/
 
   tools/
     build-worker.py     Builds the leaderboard's worker (see below)
+    mug.py              Makes everything in mug/: its shape, colours, picture and speed are set there
     pack.py             Searches for the tightest box a set of shapes will pack into, to make a level from
     check.html          Puts every level's own solution through the judge
     states.html         The game's big moments (the seventeenth, an overthrow, the prize, the end of the game), each played live on a phone and a desktop side by side
@@ -128,7 +134,7 @@ game with a mouse as a player does.
 | `game` | In the real page: all fifty levels open on a phone, a small phone and a desktop, with the right shapes and powers dealt, on the screen, outside the box, entangled ones on their own side. A shape goes where it is carried and turns by the buttons. A level packed by hand with the mouse is won and saved, and is still there when the page is opened again. The marks light for the shape that went in. An overlap does not count. Start over, eyesight, hints (the spot shown is one from the solution, and is counted), every sheet, choosing a level from the list, and the welcome for a new player. The big moments: the seventeenth has its party and no prize; the end of the game brings the cast in round the name, on the screen and clear of it, on a phone and a desktop, and comes once; and the prize is spoken of as being for the first three. |
 | `powers` | Begun: Minefield deals a mine to every shape whatever the deal, and packs. |
 | `twists` | Begun: Duality deals its two free squares on the line between the boxes, at four sizes of screen, with the entangled ones on their own sides and nothing overlapping. |
-| `board` | Begun, with a stand-in leaderboard: the first three rows wear medals and the rest their numbers, a short or empty board is right, and the player's own row is still picked out among the medals. And with the game served as a player has it, under a name that is not this machine's: a win is sent once with what the board needs, wins saved before go up when the game opens, nothing is sent from localhost, and nothing at all is sent under the name Swordfish. A win that carries the player up into the first three, or up within them, says whom it overthrew; the first time in from outside wins the prize, once, and it is shown again on coming back until Done is pressed; no overthrow when the place does not change, is outside the three, or could not be known. |
+| `board` | Begun, with a stand-in leaderboard: the first three rows wear medals and the rest their numbers, a short or empty board is right, and the player's own row is still picked out among the medals. The prize on the leaderboard is the mug, with its picture on it, turning while the sheet is up and stopped when it is put away. And with the game served as a player has it, under a name that is not this machine's: a win is sent once with what the board needs, wins saved before go up when the game opens, nothing is sent from localhost, and nothing at all is sent under the name Swordfish. A win that carries the player up into the first three, or up within them, says whom it overthrew; the first time in from outside wins the prize, once, and it is shown again on coming back until Done is pressed; no overthrow when the place does not change, is outside the three, or could not be known. |
 | `pages` | "Meet the shapes" draws every personality and power, and they react. The reel plays through to its card, writes nothing to a player's saved game, and is not loaded for a player. The card on the site's front page draws. |
 
 By hand:

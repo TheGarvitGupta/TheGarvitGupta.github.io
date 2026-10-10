@@ -5,9 +5,9 @@ from harness import player, tick, drag, saved
 def people(n):
     return [{'name': 'Player %d' % (i + 1), 'n': 50 - i, 'm': 400 + 10 * i, 't': 1000.5 + 60 * i, 'a': 1000 + i} for i in range(n)]
 
-async def board(t, rows, **more):
+async def board(t, rows, calm=True, **more):
     data = {'top': rows, 'of': max(len(rows), 1), 'levels': 50}; data.update(more)
-    page = await player(await t.page(board=data))
+    page = await player(await t.page(board=data, calm=calm))
     await page.click('#b-board'); await tick(page, 800)
     sheet = await page.evaluate('T.state().sheet')
     assert sheet == 'm-board', 'the leaderboard button opened %s' % sheet
@@ -169,3 +169,19 @@ async def test_no_overthrow_is_claimed_when_the_board_could_not_be_asked_first(t
         return moved(4, 3)(request)
     page, r = await after_win(t, answer)
     assert r['coup'] is None and not r['prize'], r
+
+async def test_the_prize_on_the_leaderboard_is_the_mug_and_turns_only_while_it_is_seen(t):
+    page = await board(t, people(5), calm=False)
+    r = await page.evaluate('''(function () { var m = document.querySelector('#board-prize .mug'), box = m && m.getBoundingClientRect(), line = document.getElementById('board-prize').getBoundingClientRect();
+      var art = getComputedStyle(m.querySelector('.stave')).backgroundImage;
+      return { there: !!m, staves: m.querySelectorAll('.stave').length, wide: box.width, inside: box.left >= line.left - 2 && box.right <= line.right, tall: line.height, art: art,
+               turning: getComputedStyle(m.querySelector('.turn')).animationPlayState, name: getComputedStyle(m.querySelector('.turn')).animationName, text: document.getElementById('board-prize').textContent }; })()''')
+    assert r['there'] and r['staves'] == 60, r
+    assert 60 < r['wide'] < 100 and r['inside'] and r['tall'] < 90, 'the mug is %.0f wide in a line %.0f tall' % (r['wide'], r['tall'])
+    assert 'art.svg' in r['art'], 'the mug has no picture on it: %s' % r['art']
+    assert r['name'] == 'mug-turn' and r['turning'] == 'running', r
+    assert 'top 3' in r['text']
+    await page.keyboard.press('Escape'); await tick(page, 500)
+    if await page.evaluate('!!document.querySelector(".sheet.open")'): await page.click('.sheet.open [data-close]'); await tick(page, 500)
+    assert await page.evaluate('getComputedStyle(document.querySelector("#board-prize .turn")).animationPlayState') == 'paused', 'with the leaderboard put away the mug is still turning'
+    assert not page.errors, page.errors

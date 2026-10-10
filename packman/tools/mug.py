@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Makes the prize mug, turning: packman/mug/index.html and packman/mug/art.svg.
+"""Makes the prize mug, turning: packman/mug/index.html (a page of its own), and for the game mug.css, mug.js and art.svg beside it.
 
 The mug on the page is a real object in the browser's own 3D, made of nothing but HTML and CSS: sixty flat
 staves stood in a ring and leaned in, as a cooper makes a barrel, with the glaze and the wave wrapped round
@@ -33,10 +33,9 @@ def art():
     for _ in range(520):               # the speckle of the clay
         o.append('<circle cx="%.0f" cy="%.0f" r="%.1f" fill="%s" opacity="%.2f"/>' % (rnd.random() * W, 84 + rnd.random() * 236, 0.7 + rnd.random() * 1.3, rnd.choice(['#6B5540', '#3E4A66', '#8A7458']), 0.25 + rnd.random() * 0.4))
     NAVY, DEEP, SKY, PALE, SAND, FOAM = '#1B2D5C', '#24407F', '#5B92D6', '#9CC3EC', '#E6D28C', '#FBF9F2'
-    x0 = 150                           # the picture is on the side away from the handle
     def P(d, fill='none', stroke=NAVY, w=4, extra=''):
         o.append('<path d="%s" fill="%s" stroke="%s" stroke-width="%s" stroke-linejoin="round" stroke-linecap="round" %s/>' % (d, fill, stroke, w, extra))
-    o.append('<g transform="translate(%d 0)">' % x0)
+    o.append('<g id="wave" transform="translate(22 318) scale(.82) translate(0 -318)">')   # the picture, once: it goes round twice, so no side of the mug is bare
     # the far wave, like a mountain, with foam down its near side
     P('M430 318C470 300 520 262 560 214C572 200 584 196 596 208C628 240 664 286 716 318Z', FOAM)
     P('M560 214C572 200 584 196 596 208C628 240 664 286 716 318L640 318C632 296 606 262 590 246C580 262 568 266 552 262C566 248 566 232 560 214Z', NAVY, NAVY, 3)
@@ -68,6 +67,7 @@ def art():
     for k in range(4): P('M%d 318C%d 304 %d 296 %d 292' % (0 + k * 15, 2 + k * 15, 8 + k * 15, 18 + k * 14), 'none', SKY, 5)
     P('M246 300c8 -8 18 -8 24 0c-6 -2 -10 0 -12 6c-2 -6 -6 -8 -12 -6ZM286 286c8 -8 18 -8 24 0c-6 -2 -10 0 -12 6c-2 -6 -6 -8 -12 -6Z', FOAM, NAVY, 2.5)
     o.append('</g>')
+    o.append('<use href="#wave" x="%d"/>' % (W // 2))   # and again on the other side: the handle stands where the two meet
     # the foot, glazed dark; and the glaze run down from the rim, with a dark line where it stops
     o.append('<rect y="318" width="%d" height="26" fill="%s"/>' % (W, DEEP))
     def edge(x): return 84 + 2.2 * math.sin(x / W * 2 * math.pi * 3) + 1.4 * math.sin(x / W * 2 * math.pi * 8 + 1)
@@ -85,32 +85,19 @@ def handle():
     M, pts = 18, []
     for k in range(M + 1):
         s = k / M * math.pi
-        y = 24 + (112 - 24) * (1 - math.cos(s)) / 2
-        r = RT + (RB - RT) * y / H - 8 + 66 * math.sin(s) ** 0.7
+        y = 26 + (108 - 26) * (1 - math.cos(s)) / 2
+        r = RT + (RB - RT) * y / H - 6 + 54 * math.sin(s) ** 0.72
         pts.append((r, y))
     out = []
     for k in range(M):
         (x1, y1), (x2, y2) = pts[k], pts[k + 1]
         out.append('<i class="seg%s" style="--x:%.1fpx;--y:%.1fpx;--a:%.1fdeg;--l:%.1fpx"><b></b><b></b><b></b><b></b></i>' % (
-            ' glazed' if k < 5 else ' dipped' if k == 5 else '', (x1 + x2) / 2, (y1 + y2) / 2, math.degrees(math.atan2(y2 - y1, x2 - x1)), math.hypot(x2 - x1, y2 - y1) + 7))
+            ' glazed' if k < 5 else ' dipped' if k == 5 else '', (x1 + x2) / 2, (y1 + y2) / 2, math.degrees(math.atan2(y2 - y1, x2 - x1)), math.hypot(x2 - x1, y2 - y1) + 4.5))
     return ''.join(out)
 
-PAGE = '''<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>The Packman prize</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<style>
-/* The prize mug, turning. Made by tools/mug.py: change it there. Everything here is HTML and CSS, in the browser's own 3D. */
-html,body{height:100%%; margin:0}
-body{display:grid; place-items:center; align-content:center; gap:26px; background:#FFF4DE radial-gradient(rgba(43,33,64,.09) 1.6px, transparent 1.7px) 0 0 / 26px 26px;
-  font:600 17px/1.4 "Fredoka", ui-rounded, system-ui, sans-serif; color:#2B2140; text-align:center}
-p{margin:0} p small{display:block; font-weight:500; font-size:14px; color:#7A6F90}
-
-/* ---- the mug. Set --size on .mug to make it bigger or smaller: it is the width of the box it is drawn in. ---- */
-.mug{--size:340px; --k:calc(var(--size) / 340px); position:relative; width:var(--size); height:var(--size); perspective:calc(var(--size) * 3.4)}
+CSS = '''/* The prize mug, turning: a real object in the browser's own 3D, of HTML and CSS alone. Made by tools/mug.py: change it there.
+   It is drawn in a box 340px square. Set --k on .mug to make it bigger or smaller: .5 is half that. */
+.mug{--k:1; position:relative; display:block; flex:none; width:calc(340px * var(--k)); height:calc(340px * var(--k)); perspective:calc(1150px * var(--k))}
 .mug *,.mug *::before,.mug *::after{position:absolute; box-sizing:border-box; transform-style:preserve-3d}
 /* its shadow, on whatever it stands on */
 .mug::before{content:""; position:absolute; left:46%%; top:50%%; width:calc(330px * var(--k)); height:calc(86px * var(--k)); margin:calc(58px * var(--k)) 0 0 calc(-165px * var(--k));
@@ -145,38 +132,57 @@ p{margin:0} p small{display:block; font-weight:500; font-size:14px; color:#7A6F9
 .mug .seg.glazed{--c:#7F9DE3; --d:#6585D2; --e:#5373C4}
 .mug .seg.dipped b{background-image:linear-gradient(90deg, #6585D2, #DDD7C8)}
 .mug .seg b{left:calc(var(--l) / -2); width:var(--l); border-radius:5px}
-.mug .seg b:nth-child(1),.mug .seg b:nth-child(2){top:-11px; height:22px; background:var(--d)}      /* its two flat sides */
-.mug .seg b:nth-child(1){transform:translateZ(15px)} .mug .seg b:nth-child(2){transform:translateZ(-15px)}
-.mug .seg b:nth-child(3),.mug .seg b:nth-child(4){top:-15px; height:30px}                           /* its back and its belly */
-.mug .seg b:nth-child(3){transform:rotateX(90deg) translateZ(11px); background:var(--c)} .mug .seg b:nth-child(4){transform:rotateX(90deg) translateZ(-11px); background:var(--e)}
+.mug .seg b:nth-child(1),.mug .seg b:nth-child(2){top:-6.5px; height:13px; background:var(--d)}      /* its two flat sides */
+.mug .seg b:nth-child(1){transform:translateZ(10px)} .mug .seg b:nth-child(2){transform:translateZ(-10px)}
+.mug .seg b:nth-child(3),.mug .seg b:nth-child(4){top:-10px; height:20px}                           /* its back and its belly */
+.mug .seg b:nth-child(3){transform:rotateX(90deg) translateZ(6.5px); background:var(--c)} .mug .seg b:nth-child(4){transform:rotateX(90deg) translateZ(-6.5px); background:var(--e)}
 @media (prefers-reduced-motion:reduce){ .mug .turn{animation:none; transform:rotateY(-32deg)} .mug .stave::before,.mug .stave::after,.mug .inner::before{animation-play-state:paused} }
-@media (max-width:420px){ .mug{--size:280px} }
+'''
+
+MUG = '<span class="mug" role="img" aria-label="A ceramic mug with a great wave on it, turning"><span class="tilt"><span class="turn"><i class="foot"></i><i class="floor"></i>%(inners)s%(staves)s<span class="handle">%(handle)s</span><i class="rim"></i></span></span></span>'
+
+PAGE = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Packman prize</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<style>
+/* The prize mug, turning. Made by tools/mug.py: change it there. Everything here is HTML and CSS, in the browser's own 3D. */
+html,body{height:100%%; margin:0}
+body{display:grid; place-items:center; align-content:center; gap:26px; background:#FFF4DE radial-gradient(rgba(43,33,64,.09) 1.6px, transparent 1.7px) 0 0 / 26px 26px;
+  font:600 17px/1.4 "Fredoka", ui-rounded, system-ui, sans-serif; color:#2B2140; text-align:center}
+p{margin:0} p small{display:block; font-weight:500; font-size:14px; color:#7A6F90}
+
+%(css)s@media (max-width:420px){ .mug{--k:.82} }
 </style>
 </head>
 <body>
-<div class="mug" role="img" aria-label="A ceramic mug with a great wave on it, turning"><div class="tilt"><div class="turn">
-<div class="foot"></div><div class="floor"></div>
-%(inners)s
-%(staves)s
-<div class="handle">%(handle)s</div>
-<div class="rim"></div>
-</div></div></div>
+%(mug)s
 <p>The prize<small>For getting into the top three</small></p>
 </body>
 </html>
 '''
 
-def page():
-    apo = RB / math.tan(math.pi / N) * math.tan(math.pi / N)   # the staves stand at the foot's radius
+def parts():
     pinch = (1 - RT / RB) / 2 * 100
-    v = dict(turn=TURN, half=-WIDE / 2 - 0.8, wide=WIDE + 1.6,   # (a little wider than its share, so no light shows between two of them)
-             slant=SLANT, drop=H - SLANT, step=360 / N, apo=RB * math.cos(math.pi / N), apo2=RB * math.cos(math.pi / N) - 4,
-             lean=LEAN, pinch=pinch, pinch2=100 - pinch, pitch=WIDE, round=ROUND, lag=TURN / N, floor=H - 14 - 95, foot=H - 99 - 1, rimr=RT + 1, rimd=2 * RT + 2, hat=-90,
-             staves=''.join('<i class="stave" style="--i:%d"></i>' % i for i in range(N)), inners=''.join('<i class="inner" style="--i:%d"></i>' % i for i in range(N)), handle=handle())
-    return PAGE % v
+    return dict(turn=TURN, half=-WIDE / 2 - 0.8, wide=WIDE + 1.6,   # (a little wider than its share, so no light shows between two of them)
+                slant=SLANT, drop=H - SLANT, step=360 / N, apo=RB * math.cos(math.pi / N), apo2=RB * math.cos(math.pi / N) - 4,
+                lean=LEAN, pinch=pinch, pinch2=100 - pinch, pitch=WIDE, round=ROUND, lag=TURN / N, floor=H - 14 - 95, foot=H - 99 - 1, rimr=RT + 1, rimd=2 * RT + 2, hat=-90,
+                staves=''.join('<i class="stave" style="--i:%d"></i>' % i for i in range(N)), inners=''.join('<i class="inner" style="--i:%d"></i>' % i for i in range(N)), handle=handle())
 
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
-    open(os.path.join(OUT, 'art.svg'), 'w').write(art())
-    open(os.path.join(OUT, 'index.html'), 'w').write(page())
-    print('wrote mug/index.html', len(page()), 'bytes and mug/art.svg', len(art()), 'bytes')
+    v = parts()
+    css = (CSS % v).replace('%%', '%')
+    mug = MUG % v
+    files = {
+        'art.svg': art(),
+        'mug.css': css,
+        # (for the game, which puts the mug where it speaks of the prize: the mug as one string of markup)
+        'mug.js': '// The prize mug, as markup: made by tools/mug.py with mug.css, which draws it. Put it in a page with innerHTML.\nvar PackmanMug = ' + repr(mug) + ';\n',
+        'index.html': PAGE % dict(css=CSS % v, mug=mug),
+    }
+    for name, text in files.items(): open(os.path.join(OUT, name), 'w').write(text)
+    print('wrote mug/: ' + ', '.join('%s %d' % (n, len(t)) for n, t in files.items()))

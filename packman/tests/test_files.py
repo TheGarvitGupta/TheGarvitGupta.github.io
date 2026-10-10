@@ -24,9 +24,9 @@ def test_every_file_asked_for_is_there(t):
         for there, _ in asked(page):
             if os.path.isdir(there): there = os.path.join(there, 'index.html')
             if not os.path.exists(there): missing.append('%s asks for %s' % (page, os.path.relpath(there, ROOT)))
-    for css in ('packman.css', 'faces.css'):
+    for css in ('packman.css', 'faces.css', 'mug/mug.css'):
         for ref in re.findall(r'url\(["\']?([^)"\']+)', read('packman', css)):
-            if not ref.startswith('data:') and not os.path.exists(os.path.join(GAME, ref)): missing.append('%s asks for %s' % (css, ref))
+            if not ref.startswith('data:') and not os.path.exists(os.path.join(GAME, os.path.dirname(css), ref)): missing.append('%s asks for %s' % (css, ref))
     for m in re.findall(r"\.src = '([^']+)'", read('packman', 'game.js')):
         if not os.path.exists(os.path.join(GAME, m)): missing.append('game.js loads %s' % m)
     assert not missing, '\n'.join(missing)

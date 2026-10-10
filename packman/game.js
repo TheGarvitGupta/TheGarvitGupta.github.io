@@ -7,6 +7,7 @@
   var COLORS = ['#FF6B6B', '#FFC93C', '#3DDBB4', '#4DA8FF', '#9B7BFF', '#FF8FCB', '#FF9F45', '#B5E655', '#45D9E6', '#D987F5', '#FFB59E'];
   var PRAISE = ['Packed!', 'Snug!', 'Tidy!', 'Nailed it!', 'So neat!', 'Boxed!'];
   var STORE = 'packman.v1';
+  var GIFT = '<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg>';
   // Whoever gets in among the first three on the leaderboard is asked to send Garvit a screenshot, the first time they do. Set false and the prize is not mentioned.
   var PRIZE = true;
   // The leaderboard lives in a Cloudflare Worker (extras/cloudflare-worker/packman-scores.js).
@@ -50,7 +51,6 @@
   PackmanPowers.forEach(function (k) { POWERS[k.power] = k; });
   var CHAM = ['#3DDBB4', '#FF8FCB', '#FFC93C', '#4DA8FF'];   // the chameleon's colours: one for each of the four shapes it goes through
 
-  var GIFT = '<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="17" width="28" height="19" rx="3" fill="#FF6B6B" stroke="#2B2140" stroke-width="2.5"/><rect x="4" y="11" width="32" height="8" rx="2.5" fill="#FF8FCB" stroke="#2B2140" stroke-width="2.5"/><rect x="17" y="11" width="6" height="25" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5"/><path d="M20 11C16 3 8 5 11 10ZM20 11C24 3 32 5 29 10Z" fill="#FFC93C" stroke="#2B2140" stroke-width="2.5" stroke-linejoin="round"/></svg>';
   var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function $(id) { return document.getElementById(id); }
@@ -2343,7 +2343,9 @@
   });
   $('win-next').addEventListener('click', function () { closeSheet($('m-win')); startLevel(Math.min(level + 1, LEVELS.length - 1)); });
   $('prize-done').addEventListener('click', function () { if (save.top3) save.top3.done = true; persist(); closeSheet($('m-win')); });
-  if (PRIZE) { $('board-prize').innerHTML = GIFT + '<span>Finish in the <b>top 3</b> and win a <b>prize</b>, shipped to your door.</span>'; $('board-prize').hidden = false; }
+  // On the leaderboard, where the prize is spoken of, there it is, turning: the mug, a thing of CSS alone (mug/, made by tools/mug.py).
+  if (PRIZE) { $('board-prize').innerHTML = PackmanMug + '<span>Finish in the <b>top 3</b> and win a <b>prize</b>, shipped to your door.</span>'; $('board-prize').hidden = false; }
+  $('help-prize').innerHTML = GIFT;
   $('prize-gift').innerHTML = GIFT;
   $('go-next').addEventListener('click', function () { startLevel(Math.min(level + 1, LEVELS.length - 1)); });
   $('win-again').addEventListener('click', function () { closeSheet($('m-win')); startLevel(level, true); });

@@ -1,0 +1,42 @@
+/* The prize mug, turning: a real object in the browser's own 3D, of HTML and CSS alone. Made by tools/mug.py: change it there.
+   It is drawn in a box 340px square. Set --k on .mug to make it bigger or smaller: .5 is half that. */
+.mug{--k:1; position:relative; display:block; flex:none; width:calc(340px * var(--k)); height:calc(340px * var(--k)); perspective:calc(1150px * var(--k))}
+.mug *,.mug *::before,.mug *::after{position:absolute; box-sizing:border-box; transform-style:preserve-3d}
+/* its shadow, on whatever it stands on */
+.mug::before{content:""; position:absolute; left:46%; top:50%; width:calc(330px * var(--k)); height:calc(86px * var(--k)); margin:calc(58px * var(--k)) 0 0 calc(-165px * var(--k));
+  border-radius:50%; background:radial-gradient(closest-side, rgba(43,33,64,.34), rgba(43,33,64,0))}
+/* looked at from a little above; drawn at its own size and scaled to fit; and turning */
+.mug .tilt{left:46%; top:50%; width:0; height:0; transform:scale(calc(var(--k) * 1.16)) translateY(-72px) rotateX(-19deg)}
+.mug .turn{left:0; top:0; width:0; height:0; animation:mug-turn 9s linear infinite}
+@keyframes mug-turn{to{transform:rotateY(360deg)}}
+/* a stave: stood at the foot's edge, leaned in to the rim, narrower at the top, with its share of the picture on it */
+.mug .stave,.mug .inner{left:-6.041px; top:-1.153px; width:12.082px; height:157.153px; transform-origin:50% 100%;
+  transform:rotateY(calc(var(--i) * 6.0deg)) translateZ(99.863px) rotateX(6.944deg);
+  clip-path:polygon(9.50% 0, 90.50% 0, 100% 100%, 0 100%); backface-visibility:hidden}
+.mug .stave{background:url(art.svg) calc(var(--i) * -10.4816px) 0 / 628.893px 100%}
+/* the light stays where it is while the mug turns: each stave darkens as it goes round to the side, and shines as it passes the light */
+.mug .stave::before,.mug .stave::after{content:""; inset:0; animation:mug-dark 9s linear infinite; animation-delay:calc(var(--i) * -0.1500s)}
+.mug .stave::before{background:#16153C}
+.mug .stave::after{background:#fff; animation-name:mug-shine}
+@keyframes mug-dark{0%{opacity:.03} 6%{opacity:.07} 12.5%{opacity:.17} 19%{opacity:.34} 25%,75%{opacity:.58} 81%{opacity:.3} 87.5%{opacity:.1} 94%{opacity:.02} 100%{opacity:.03}}
+@keyframes mug-shine{0%,80%{opacity:0} 86%{opacity:.1} 90.5%{opacity:.3} 95%{opacity:.08} 99%,100%{opacity:0}}
+/* the inside: the same staves seen from within, glazed, darker down towards the floor */
+.mug .inner{transform:rotateY(calc(var(--i) * 6.0deg)) translateZ(95.863px) rotateX(6.944deg) rotateY(180deg); background:linear-gradient(#6C8DDB, #4467BF 45%, #2B4796)}
+.mug .inner::before{content:""; inset:0; background:#101A4A; animation:mug-in 9s linear infinite; animation-delay:calc(var(--i) * -0.1500s)}
+@keyframes mug-in{0%,100%{opacity:.3} 25%{opacity:.14} 50%{opacity:0} 62%{opacity:.05} 75%{opacity:.2}}
+/* the floor inside, the rim round the top, and the foot it stands on */
+.mug .floor,.mug .rim,.mug .foot{border-radius:50%; transform:rotateX(90deg)}
+.mug .floor{left:-95px; top:47.0px; width:190px; height:190px; background:radial-gradient(#2A4796, #1E3478)}
+.mug .rim{left:-82.0px; top:-82.0px; width:164.0px; height:164.0px; border:7px solid #A9C0F1; box-shadow:0 0 0 1.5px #5571C2, inset 0 0 0 1.5px #5571C2}
+.mug .foot{left:-99px; top:56.0px; width:198px; height:198px; background:#1B3070}
+/* the handle: it stands out from the side away from the picture, and goes round with the mug */
+.mug .handle{left:0; top:0; width:0; height:0; transform:rotateY(-90deg)}
+.mug .seg{left:0; top:0; width:0; height:0; transform:translate3d(var(--x), var(--y), 0) rotateZ(var(--a)); --c:#F1EDE3; --d:#DDD7C8; --e:#C9C2B1}
+.mug .seg.glazed{--c:#7F9DE3; --d:#6585D2; --e:#5373C4}
+.mug .seg.dipped b{background-image:linear-gradient(90deg, #6585D2, #DDD7C8)}
+.mug .seg b{left:calc(var(--l) / -2); width:var(--l); border-radius:5px}
+.mug .seg b:nth-child(1),.mug .seg b:nth-child(2){top:-6.5px; height:13px; background:var(--d)}      /* its two flat sides */
+.mug .seg b:nth-child(1){transform:translateZ(10px)} .mug .seg b:nth-child(2){transform:translateZ(-10px)}
+.mug .seg b:nth-child(3),.mug .seg b:nth-child(4){top:-10px; height:20px}                           /* its back and its belly */
+.mug .seg b:nth-child(3){transform:rotateX(90deg) translateZ(6.5px); background:var(--c)} .mug .seg b:nth-child(4){transform:rotateX(90deg) translateZ(-6.5px); background:var(--e)}
+@media (prefers-reduced-motion:reduce){ .mug .turn{animation:none; transform:rotateY(-32deg)} .mug .stave::before,.mug .stave::after,.mug .inner::before{animation-play-state:paused} }
