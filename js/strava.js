@@ -243,8 +243,7 @@
 			runLifeSub: data.lifetimeMeters > 0 ? "lifetime" + runs(data.lifetimeRunCount) : "",
 			runYear: data.ytdMeters > 0 ? fmtDist(data.ytdMeters).replace(/ \S+$/, "") + " of " + fmtDist(1e6) : "",
 			rideLife: dist(data.rideLifetimeMeters),
-			rideYear: dist(data.rideYtdMeters),
-			swimLife: dist(data.swimLifetimeMeters)
+			rideYear: dist(data.rideYtdMeters)
 		};
 		$(".path-stat").each(function () {
 			var t = text[this.getAttribute("data-stat")] || "";

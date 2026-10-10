@@ -204,10 +204,11 @@ html.dark-mode .path-medals i {
     color: #cccccc;
     border-color: #444444;
 }
-html.dark-mode .path-way {
-    stroke: #555555;
+html.dark-mode .path-road {
+    stroke: #2c2c2c;
 }
-html.dark-mode .path-hiker {
+html.dark-mode .path-num {
+    fill: #5a5a5a;
     stroke: #141414;
 }
 html.dark-mode .path-camp circle {
@@ -219,6 +220,17 @@ html.dark-mode .path-camp path {
 }
 html.dark-mode .path-camp text {
     fill: #b8b8b8;
+    stroke: #141414;
+}
+html.dark-mode .path-coast,
+html.dark-mode .path-edge {
+    stroke: #3d3d3d;
+}
+html.dark-mode .path-water {
+    fill: #2e2e2e;
+}
+html.dark-mode .path-sea {
+    fill: #5a5a5a;
 }
 
 /* Poly portrait */
