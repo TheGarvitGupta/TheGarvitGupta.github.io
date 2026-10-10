@@ -123,7 +123,7 @@ game with a mouse as a player does.
 | `geom` | `geom.js` on cases with known answers: the shapes' sizes, turning, how deep two shapes overlap and which way out, inside and outside a box, the judge's count, two boxes on one board, settling, putting a shape down, sweeping. Every level packed by a simple machine that drops each shape on its place, and every finished board pushed a hair out and shaken home: both but for Eleven and Eleven Bricks, which are listed as the two that want a player's care. |
 | `sounds` | Every sound and every voice is made of notes that can be played, the browser's own audio takes them, and every personality and power has a voice of its own. |
 | `game` | In the real page: all fifty levels open on a phone, a small phone and a desktop, with the right shapes and powers dealt, on the screen, outside the box, entangled ones on their own side. A shape goes where it is carried and turns by the buttons. A level packed by hand with the mouse is won and saved, and is still there when the page is opened again. The marks light for the shape that went in. An overlap does not count. Start over, eyesight, hints (the spot shown is one from the solution, and is counted), every sheet, choosing a level from the list, and the welcome for a new player. |
-| `powers` | Begun: Short Fuse deals a mine to each brick whatever the deal, and packs. |
+| `powers` | Begun: Minefield deals a mine to every shape whatever the deal, and packs. |
 | `pages` | "Meet the shapes" draws every personality and power, and they react. The reel plays through to its card, writes nothing to a player's saved game, and is not loaded for a player. The card on the site's front page draws. |
 
 By hand:

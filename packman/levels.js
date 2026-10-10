@@ -442,13 +442,13 @@ var PackmanLevels = (function () {
       solution: [[-0.698, 0, 0], [0.6084, -0.4331, 0], [-1.474, 0.599, 0], [-1.474, -0.599, 180], [0.6268, 0.3557, 60], [1.4169, 0.4147, 105], [1.6857, -0.4147, 30]]
     },
     {
-      name: 'Short Fuse',
+      name: 'Minefield',   // (it was Short Fuse, with one mine: game.js carries a win of that over)
       twist: true,
-      powers: 2,
-      sure: ['mine', 'mine'],
-      pin: { mine: [4, 5] },   // both bricks
-      intro: 'Two bricks and four triangles. Both bricks are mines, and neither will go in straight.',
-      hint: 'Lay the two bricks side by side as one big square, both turned to 120°, so the big square stands on a corner and touches all four walls. A triangle fills each of the four gaps it leaves against the walls. Turn each mine in short goes, outside the box, and its fuse never runs out.',
+      powers: 6,
+      sure: ['mine', 'mine', 'mine', 'mine', 'mine', 'mine'],
+      pin: { mine: [0, 1, 2, 3, 4, 5] },   // every shape
+      intro: 'Two bricks and four triangles. Every one is a mine, and the bricks will not go in straight.',
+      hint: 'Lay the two bricks side by side as one big square, both turned to 120°, so the big square stands on a corner and touches all four walls. A triangle fills each of the four gaps it leaves against the walls. Every shape is a mine: turn each in short goes, outside the box, and its fuse never runs out.',
       container: box(2.74),
       pieces: pieces(0, 4, 2),
       solution: [[0.866, 1.0774, 240], [1.0774, -0.866, 150], [-0.866, -1.0773, 180], [-1.0774, 0.866, 330], [0.433, 0.25, 300], [-0.433, -0.25, 120]]

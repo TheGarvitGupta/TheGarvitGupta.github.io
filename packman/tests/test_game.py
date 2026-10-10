@@ -186,3 +186,12 @@ async def test_a_new_player_is_welcomed(t):
     assert st['sheet'] in ('m-help', 'm-name'), 'a first visit opens %s' % st['sheet']
     assert st['level'] == 'Four Square'
     assert not page.errors, page.errors
+
+async def test_a_win_of_short_fuse_is_a_win_of_minefield(t):
+    """The level was renamed. Progress is kept by name, so the old name is carried over, or the level after it would shut again."""
+    page = await player(await t.page(save=saved('Short Fuse', done={'Short Fuse': {'t': 61.5, 'm': 9}, 'Home': {'t': 5, 'm': 8}})))
+    st = await state(page)
+    assert st['level'] == 'Minefield', 'a game left on Short Fuse opens on %s' % st['level']
+    await drag(page, 0, (await pieces(page))[0]['x'] + 0.2, (await pieces(page))[0]['y']); await tick(page, 500)   # (anything, so the game is saved again)
+    done = (await state(page))['save']['done']
+    assert done.get('Minefield') == {'t': 61.5, 'm': 9} and 'Short Fuse' not in done and 'Home' in done, done

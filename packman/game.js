@@ -100,6 +100,9 @@
   } catch (e) {}
   // progress saved back when the game was called Packer carries over
   try { var raw = JSON.parse(localStorage.getItem(STORE) || localStorage.getItem('packer.v1')); if (raw && raw.done) save = raw; } catch (e) {}
+  // Minefield was called Short Fuse for its first day: a win of it then is a win of it now, so the level after it stays open.
+  if (save.done && save.done['Short Fuse']) { if (!save.done.Minefield) save.done.Minefield = save.done['Short Fuse']; delete save.done['Short Fuse']; }
+  if (save.last === 'Short Fuse') save.last = 'Minefield';
   // Progress used to be kept by level number: ten levels at first, then
   // thirteen. It is kept by name now, so levels can be added and reordered.
   if (save.v !== 3) {
