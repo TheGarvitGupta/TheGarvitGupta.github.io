@@ -221,6 +221,8 @@
       var low = Hp < 460;
       if (low) pad = 0.32;
       vh = Math.max(ch + 2 * pad, low ? 0 : 4.4);
+      // (a board with a line down it keeps room over and under its boxes for a shape to be dealt on the line: see scatter)
+      if (lv.divide != null && pieces.some(function (p) { return !p.half; })) vh = Math.max(vh, ch + 3);
       vw = cw + 2 * pad + 2 * Math.max(1.7, room / (2 * (vh - 0.6)));
       if (vw / vh < W / Hp) vw = vh * W / Hp; else vh = vw * Hp / W;
       view.x = (cb.minX + cb.maxX) / 2 - vw / 2;
@@ -315,6 +317,19 @@
   function scatter() {
     var zones = trays();
     var cell = 1.3, slots = [];
+    // On a board with a line down it, a shape that may go to either side is dealt on the line itself: under the boxes,
+    // one below another, or on a wide screen under them and over them by turns. The places near the line are left empty
+    // for them, and the grid is made finer until what is left is enough for the rest, each on its own side.
+    var mid = [], sides = { '-1': 0, '1': 0 };
+    if (lv.divide != null) {
+      pieces.forEach(function (p) { if (p.half) sides[p.half]++; });
+      var free = pieces.length - sides['-1'] - sides['1'];
+      for (var k = 0; mid.length < free && k < 12; k++) {
+        var y = view.land && k % 2 ? cb.minY - 0.85 - Math.floor(k / 2) * 1.2 : cb.maxY + 0.85 + (view.land ? Math.floor(k / 2) : k) * 1.2;
+        if (y > view.y + 0.6 && y < view.y + view.h - 0.6) mid.push([lv.divide, y]);
+      }
+    }
+    function room(on) { return slots.filter(function (s) { return (s[0] - lv.divide) * on > FENCE; }).length; }
     while (cell > 0.3) {
       slots = [];
       zones.forEach(function (z) {
@@ -324,19 +339,20 @@
           slots.push([z[0] + (cols > 1 ? c * w / (cols - 1) : w / 2), z[1] + (rows > 1 ? r * h / (rows - 1) : h / 2)]);
         }
       });
-      if (slots.length >= pieces.length) break;
+      if (mid.length) slots = slots.filter(function (s) { return !mid.some(function (m) { return Math.abs(s[0] - m[0]) < 1.08 && Math.abs(s[1] - m[1]) < 1.08; }); });
+      if (slots.length >= pieces.length - mid.length && (!mid.length || (room(-1) >= sides['-1'] && room(1) >= sides['1']))) break;
       cell *= 0.85;
     }
     slots = shuffled(slots);
     // a shape that keeps to one side of the board is dealt on that side; the others take what is left
     var deal = pieces.map(function (p) {
-      if (!p.half) return null;
+      if (!p.half) return mid.shift() || null;
       for (var k = 0; k < slots.length; k++) if ((slots[k][0] - lv.divide) * p.half > FENCE) return slots.splice(k, 1)[0];
       return null;
     });
     pieces.forEach(function (p, i) {
       var s = deal[i] || slots[i % slots.length], j = Math.min(0.12, cell / 8);
-      p.x = s[0] + (Math.random() - 0.5) * j;
+      p.x = s[0] + (lv.divide != null && !p.half && deal[i] ? 0 : (Math.random() - 0.5) * j);   // (dead on the line, if that is where it is dealt)
       p.y = s[1] + (Math.random() - 0.5) * j;
       // Dealt straight, or, on a level that scrambles them, at any of the angles that put one
       // of the shape's sides square to a wall of this box. Never anything else: a shape dealt
