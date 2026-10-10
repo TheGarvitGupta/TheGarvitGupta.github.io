@@ -12,6 +12,8 @@
   // The leaderboard lives in a Cloudflare Worker (extras/cloudflare-worker/packman-scores.js).
   var SCORES = 'https://www.garvitgupta.com/api/packman';
   var LOCAL = /^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname);   // served from this machine: read the board, never write to it
+  var REEL = LOCAL && /[?&]reel\b/.test(location.search);   // the game playing itself, to be filmed (reel/): it keeps its own progress, apart from the player's
+  if (REEL) STORE = 'packman.reel';
   if (LOCAL && /[?&]scores=([^&]+)/.test(location.search)) SCORES = decodeURIComponent(RegExp.$1);   // a stand-in board, for trying things out
   // Everyone gives a name. A colour and an animal stand in only until they do, or if the board will not take
   // the one they gave: the colour of their block, so Blue Leopard is blue.
@@ -148,6 +150,7 @@
   ['pointerdown', 'touchend', 'keydown'].forEach(function (n) { document.addEventListener(n, wake, true); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden && actx) wake(); });
   function tone(freq, dur, opts) {
+    if (REEL && window.Packman && window.Packman.heard) window.Packman.heard(freq, dur, opts || {});   // (for the film's soundtrack, which is made from a list of the notes)
     if (save.mute || !actx) return;
     if (actx.state !== 'running') { wake(); return; }   // asleep: a note queued now would only blurt out late
     opts = opts || {};
@@ -2393,4 +2396,12 @@
 
   window.Packman = { pieces: function () { return pieces; } };   // for poking at the board from the console
   if (LOCAL) { window.Packman.commit = commit; window.Packman.render = render; window.Packman.level = function () { return lv; }; }
+  if (REEL) {   // what reel/reel.js works the game with
+    window.Packman.play = function (name) { startLevel(LEVELS.map(function (l) { return l.name; }).indexOf(name), true); };
+    window.Packman.select = select; window.Packman.wake = wake; window.Packman.sfx = sfx;
+    window.Packman.fresh = function () { save.done = {}; };   // so that every showing is a first win, with the whole party
+    window.Packman.drawn = drawn; window.Packman.confetti = confetti;
+    window.Packman.clock = startClock; window.Packman.judge = judge;   // the clock runs, and the board is looked over (shapes smile, the marks light) without the party a win brings
+    var film = document.createElement('script'); film.src = 'reel/reel.js'; document.body.appendChild(film);
+  }
 })();

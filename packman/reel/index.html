@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Packman reel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<style>
+/* The game playing itself at the size of a phone, to be filmed. It only plays on a copy on this machine: see reel.js.
+   To make a video of it: film.py takes the pictures and lists the notes, sound.py makes the soundtrack. */
+html,body{height:100%; margin:0}
+body{display:grid; place-items:center; gap:0; background:#15121F; font:500 14px/1.4 ui-rounded, system-ui, sans-serif; color:#A99FC4}
+.phone{width:393px; height:852px; border:0; border-radius:34px; box-shadow:0 0 0 10px #0A0810, 0 30px 80px rgba(0,0,0,.6); background:#FFF4DE}
+.bar{position:fixed; left:0; right:0; bottom:14px; text-align:center}
+body.bare{background:#000} body.bare .phone{border-radius:0; box-shadow:none} body.bare .bar{display:none}
+</style>
+</head>
+<body>
+<iframe class="phone" id="phone" title="Packman"></iframe>
+<p class="bar">393 × 852 &nbsp;·&nbsp; tap the screen to play, with sound &nbsp;·&nbsp; add ?bare to the address for the screen alone</p>
+<script>
+(function () {
+  var phone = document.getElementById('phone');
+  if (/[?&]bare\b/.test(location.search)) document.body.className = 'bare';
+  function play() {
+    // its own progress, started afresh each time: a name already given, the welcome already seen, nothing packed
+    try { localStorage.setItem('packman.reel', JSON.stringify({ v: 3, done: {}, last: 'Home', name: 'Packer', pid: 'reel-0000-0000-0000-0000', seen: true, eyeTip: 1 })); } catch (e) {}
+    phone.src = '../?reel&powers=sticky,sleeper' + (/[?&]auto\b/.test(location.search) ? '&auto' : '') + '&t=' + Date.now();
+  }
+  // the phone is shown whole, made smaller if the window is too short for it
+  function fit() { var k = Math.min(1, (innerHeight - 70) / 872); phone.style.transform = document.body.className === 'bare' ? '' : 'translateY(-14px) scale(' + k.toFixed(3) + ')'; }
+  addEventListener('resize', fit); fit();
+  play();
+})();
+</script>
+</body>
+</html>

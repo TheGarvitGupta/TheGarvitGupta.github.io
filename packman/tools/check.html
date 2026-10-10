@@ -1,0 +1,19 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Packman: the levels checked</title><meta name="robots" content="noindex"></head><body><pre id="out"></pre>
+<!-- Every level's own solution put through the game's judge: OK if it packs, and how far the worst shape is over a wall or into another. -->
+<script src="../geom.js"></script><script src="../levels.js"></script>
+<script>
+var G = PackmanGeom, out = [];
+PackmanLevels.forEach(function (l) {
+  if (!l.solution) return;
+  var C = l.containers ? G.makeBoxes(l.containers) : G.makeContainer(l.container);
+  var P = l.pieces.map(function (t, i) { var s = l.solution[i] || [99, 99, 0]; return { type: t, size: 1, x: s[0], y: s[1], angle: s[2] }; });
+  var ev = G.evaluate(P, C), worst = 0;
+  P.forEach(function (p, i) {
+    var A = G.verts(p);
+    G.part(C, p.x, p.y).walls.forEach(function (w) { worst = Math.max(worst, G.excess(A, w)); });
+    for (var j = i + 1; j < P.length; j++) { var o = G.overlap(A, G.verts(P[j])); if (o) worst = Math.max(worst, o.depth); }
+  });
+  out.push((ev.solved ? 'OK   ' : 'FAIL ') + l.name + '  n=' + P.length + ' sol=' + l.solution.length + ' worst=' + worst.toFixed(5) + ' ' + ev.states.map(function (s) { return s.good ? '.' : 'X'; }).join(''));
+});
+document.getElementById('out').textContent = 'CHECK\n' + out.join('\n') + '\nEND';
+</script></body></html>
