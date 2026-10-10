@@ -77,7 +77,7 @@
   function norm(a) { return ((a % 360) + 360) % 360; }
   // Every chapter is open from the start. Inside one, a level opens once the one before it
   // is packed, and anything already packed stays open.
-  function unlocked(n) { return n === FIRST[chap(LEVELS[n])] || !!save.done[LEVELS[n].name] || !!save.done[LEVELS[n - 1].name]; }
+  function unlocked(n) { return LOCAL || n === FIRST[chap(LEVELS[n])] || !!save.done[LEVELS[n].name] || !!save.done[LEVELS[n - 1].name]; }   // (on a copy on this machine every level is open, for trying things out)
   function label(n) { var c = chap(LEVELS[n]); return (c ? 'Chapter ' + (c + 1) + ', level ' : 'Level ') + among(n); }
   function clock(sec) { sec = Math.round(sec); return Math.floor(sec / 60) + ':' + ('0' + sec % 60).slice(-2); }
   function shuffled(a) {
@@ -462,7 +462,7 @@
   /* ---------- judging ---------- */
 
   function judge() {
-    var ev = evaluate(), pips = $('pips').children, fitted = false, shown = ev.packed;
+    var ev = evaluate(), pips = $('pips').children, fitted = false, shown = ev.packed, lit = [];
     pieces.forEach(function (p, i) {
       var s = ev.states[i];
       // A chameleon gives nothing away until the box is packed: in its true shape or not, it does not smile,
@@ -470,6 +470,11 @@
       // the empty box, one shape after another, to see which one it likes.
       var hush = p.power === 'chameleon' && !ev.solved;
       if (hush && s.good) shown--;
+      // Each shape that fits lights a mark of its own shape in the row, not just the next one along.
+      if (s.good && !hush) {
+        var kind = p.power === 'chameleon' ? '?' : p.type;
+        for (var k = 0; k < pips.length; k++) if (pips[k].kind === kind && !lit[k]) { lit[k] = true; break; }
+      }
       p.el.classList.toggle('good', s.good && !hush);
       p.el.classList.toggle('bad', s.zone === 'edge' || s.hit);
       if (p.power === 'sleeper') p.el.classList.toggle('asleep', asleep(p));
@@ -489,7 +494,7 @@
       }
       p.good = s.good;
     });
-    for (var k = 0; k < pips.length; k++) pips[k].classList.toggle('on', k < shown);
+    for (var k = 0; k < pips.length; k++) pips[k].classList.toggle('on', !!lit[k]);
     $('count').textContent = shown + ' of ' + pieces.length + ' packed';
     if (level === MAIN - 1) {
       var along = ev.packed / pieces.length * 100, track = $('prize-track');
@@ -1429,6 +1434,7 @@
     pieces = lv.pieces.map(function (type, n) {
       var pip = document.createElement('i');
       if (type !== 'square') pip.className = type.charAt(0);
+      pip.kind = type;
       pips.appendChild(pip);
       return { type: type, size: 1, x: 0, y: 0, angle: 0, color: kits[n % kits.length].color || colors[n % colors.length], kit: kits[n % kits.length], good: false };
     });
@@ -1441,6 +1447,7 @@
           p = pieces[n] = { type: g.t, size: 1, x: 0, y: 0, angle: 0, good: false };
           var pip = document.createElement('i');
           if (g.t !== 'square') pip.className = g.t.charAt(0);
+          pip.kind = g.t;
           pips.appendChild(pip);
         }
         p.power = g.w; p.kit = POWERS[g.w]; p.color = p.kit.color;
@@ -1448,7 +1455,7 @@
           p.forms = g.o; p.form = g.n; p.tint = g.c; p.type = p.forms[p.form]; p.color = CHAM[(p.form + p.tint) % CHAM.length];
           // Nothing may say which shape is its own. Its place in the row of shapes would, so that is
           // taken out, and a blank one with a question mark goes on the end.
-          var mark = pips.children[n]; mark.className = 'q'; pips.appendChild(mark);
+          var mark = pips.children[n]; mark.className = 'q'; mark.kind = '?'; pips.appendChild(mark);
         }
         if (g.w === 'sticky') { p.mate = g.m == null ? -1 : g.m; p.rel = g.r || null; }
       });
