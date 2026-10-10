@@ -441,11 +441,12 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 /* The mug is a button: a tap is a closer look. Then it has the sheet to itself, grown to fill it, with Close under it. */
 .mug-tap{flex:none; display:flex; margin:0; padding:0; border:0; border-radius:14px; background:none; cursor:zoom-in; -webkit-tap-highlight-color:transparent; transition:transform .15s var(--pop)}
 .mug-tap:hover{transform:scale(1.1) rotate(-3deg)} .mug-tap:active{transform:scale(.96)} .mug-tap:focus-visible{outline:3px solid #4DA8FF; outline-offset:2px}
-#board-mug{display:none}
+.mug-big{display:none}
 .card.mugged{display:flex; flex-direction:column; align-items:center; overflow:hidden}
 .card.mugged > *{display:none} .card.mugged > [data-close]{display:inline-block; flex:none; margin-top:0}
-.card.mugged > #board-mug{display:grid; place-items:center; flex:1; min-height:0; width:100%; cursor:zoom-out}   /* (it grows into its place from the small one's: see mugUp in game.js) */
+.card.mugged > .mug-big{display:grid; place-items:center; flex:1; min-height:0; width:100%; cursor:zoom-out}   /* (it grows into its place from the small one's: see mugUp in game.js) */
 .card.mugged > [data-close]{animation:fadein .3s .2s both}
+#m-help .card.mugged > .btn.go{margin-top:0; padding:9px 16px 10px; font-size:16px; font-weight:600; color:var(--text); background:var(--card)}   /* (Close, as the leaderboard has it) */
 /* a mug nobody can see is not kept turning */
 .sheet:not(.open) .mug *,.sheet:not(.open) .mug *::before,.sheet:not(.open) .mug *::after{animation-play-state:paused}
 .stats.all{margin-top:8px} .stats.all div{background:var(--sun); color:#2B2140; min-width:142px} .stats.all small{color:#2B2140}

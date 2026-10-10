@@ -204,6 +204,30 @@ async def test_the_welcome_shows_the_prize_and_the_first_three_and_only_them(t):
     r = await page.evaluate(LOOK)
     assert r['open'] == 'm-help' and not r['shown'] and r['mug'], r
 
+async def test_the_mug_on_the_welcome_is_tapped_for_a_closer_look_as_on_the_leaderboard(t):
+    """It takes the welcome's sheet, with Close under it; Close, a tap on it or Escape puts the welcome back as it was, Start and all, and the welcome is not counted as read until it is really shut."""
+    LOOK = '''(function () { var card = document.querySelector('#m-help .card'), c = card.getBoundingClientRect(), big = document.querySelector('#help-mug .mug'), b = big && big.getBoundingClientRect(), btn = card.querySelector(':scope > [data-close]');
+      return { open: (document.querySelector('.sheet.open') || {}).id || null, mugged: card.classList.contains('mugged'), big: b ? b.width : 0, inside: !b || (b.left >= c.left && b.right <= c.right && b.top >= c.top && b.bottom <= c.bottom),
+               says: btn.textContent.trim(), tall: c.height, seen: !!JSON.parse(localStorage.getItem('packman.v1')).seen, rows: getComputedStyle(card.querySelector('.podium')).display !== 'none' }; })()'''
+    for size in ({'width': 393, 'height': 852}, {'width': 1280, 'height': 800}):
+        page = await t.page(board={'top': people(3), 'of': 3, 'levels': 50}, save=saved(seen=False), calm=False, **size); await tick(page, 1500)
+        before = await page.evaluate(LOOK)
+        assert before['open'] == 'm-help' and not before['mugged'] and before['says'].startswith('Start'), before
+        for way in ('#m-help .card > [data-close]', '#help-mug', 'Escape'):
+            await page.click('#help-mug-tap'); await tick(page, 900); await page.wait_for_timeout(700)
+            up = await page.evaluate(LOOK)
+            assert up['mugged'] and up['big'] > 200 and up['inside'] and up['says'] == 'Close' and not up['rows'], '%s: %s' % (size, up)
+            if way == 'Escape': await page.keyboard.press('Escape')
+            else: await page.click(way)
+            await tick(page, 600); await page.wait_for_timeout(500)
+            back = await page.evaluate(LOOK)
+            assert back['open'] == 'm-help' and not back['mugged'] and back['says'] == before['says'] and abs(back['tall'] - before['tall']) < 1 and not back['seen'], '%s, by %s: %s' % (size, way, back)
+        await page.click('#m-help .card > [data-close]'); await tick(page, 600)
+        end = await page.evaluate(LOOK)
+        assert end['open'] is None and end['seen'], end
+        assert not page.errors, page.errors
+        await page.context.close()
+
 async def test_whose_game_it_is_the_shapes_and_reset_are_at_the_foot_of_the_page(t):
     """In the bottom right corner on a wide screen, as far from the edges as the buttons at the top right; in the middle under the dock on a narrower one. On one line, clear of the dock."""
     LOOK = '''(function () { function box(e) { var r = e.getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom }; }

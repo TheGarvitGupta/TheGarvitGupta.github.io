@@ -1910,7 +1910,7 @@
   function openSheet(s) { if (!s.classList.contains('open')) sfx.open(); s.classList.add('open'); var b = s.querySelector('.btn.go:not([hidden])') || s.querySelector('.btn:not([hidden])'); if (b) setTimeout(function () { b.focus({ preventScroll: true }); }, 60); }
   // The welcome counts as seen only once it is closed, so a load nobody looked at does not use it up
   function closeSheet(s) {
-    if (s.id === 'm-board' && mugged() && !mugGoing) return mugUp(false);   // from a closer look at the prize, the way out is back to the leaderboard
+    if ((s.id === 'm-board' || s.id === 'm-help') && mugged(s) && !mugGoing) return mugUp(s, false);   // from a closer look at the prize, the way out is back to the sheet it was on
     if (s.id === 'm-name' && nameless()) return wanted();   // no way out of it without a name
     if (s.classList.contains('open')) sfx.close();
     s.classList.remove('open');
@@ -2225,7 +2225,7 @@
     var list = $('board-ranks'), note = $('board-note');
     $('board-face').textContent = ''; $('board-face').appendChild(avatar(me));
     $('board-name').textContent = called();
-    list.classList.add('wait'); mugUp(false, true);
+    list.classList.add('wait'); mugUp($('m-board'), false, true);
     ask(SCORES + '?pid=' + save.pid + '&top=100').then(function (d) {
       if (!d.top) throw 0;
       ranks(list, d, 100);   // the first hundred, to scroll through
@@ -2241,6 +2241,7 @@
   function showHelp() {
     var list = $('help-ranks');
     if (!list.children.length) list.classList.add('wait');
+    mugUp($('m-help'), false, true);
     ask(SCORES + '?top=3').then(function (d) {
       if (!d.top) throw 0;
       ranks(list, { top: d.top }, 3);
@@ -2362,12 +2363,13 @@
   $('prize-done').addEventListener('click', function () { if (save.top3) save.top3.done = true; persist(); closeSheet($('m-win')); });
   // On the leaderboard, where the prize is spoken of, there it is, turning: the mug, a thing of CSS alone (mug/, made by tools/mug.py).
   if (PRIZE) { $('board-prize').innerHTML = '<button class="mug-tap" id="mug-tap" type="button" aria-label="A closer look at the prize">' + PackmanMug + '</button><span>Finish in the <b>top 3</b> and win a <b>prize</b>, shipped to your door.</span>'; $('board-prize').hidden = false;
-    $('help-prize').innerHTML = PackmanMug + '<span>Finish in the <b>top 3</b> and win a <b>prize</b>, shipped to your door.</span>'; $('help-prize').hidden = false; }
+    $('help-prize').innerHTML = '<button class="mug-tap" id="help-mug-tap" type="button" aria-label="A closer look at the prize">' + PackmanMug + '</button><span>Finish in the <b>top 3</b> and win a <b>prize</b>, shipped to your door.</span>'; $('help-prize').hidden = false; }
+  // (The welcome shows it the same way, and a tap on it there does the same in the welcome's sheet.)
   // A tap on the mug is a closer look at it. It grows, smoothly, from where it stands in its line until it has the whole of the
   // leaderboard's sheet, which keeps its size (or grows, if it was a short one), with nothing left but Close under it. Close
   // then, or a tap on the mug, or Escape, and it shrinks back to its line and the leaderboard is as it was.
   var mugWas = null, mugGoing = 0;   // where it stood in the sheet before it grew; and the timer of its shrinking back
-  function mugged() { return $('m-board').firstElementChild.classList.contains('mugged'); }
+  function mugged(s) { return s.firstElementChild.classList.contains('mugged'); }
   // The big mug is drawn in its place, and moved for a moment to (or from) the place and size of the small one.
   function fly(mug, to, back) {
     if (calm || !mug.animate) return 0;
@@ -2376,13 +2378,14 @@
     mug.animate(back ? [{ transform: 'none' }, { transform: small }] : [{ transform: small }, { transform: 'none' }], { duration: time, easing: back ? 'cubic-bezier(.5,0,.6,1)' : 'cubic-bezier(.2,.9,.25,1)', fill: 'forwards' });
     return time;
   }
-  function mugUp(on, quiet) {
-    var card = $('m-board').firstElementChild, big = $('board-mug'), c = card.getBoundingClientRect();
-    function away() { clearTimeout(mugGoing); mugGoing = 0; big.textContent = ''; card.style.height = ''; card.classList.remove('mugged'); }
+  function mugUp(s, on, quiet) {
+    var card = s.firstElementChild, big = card.querySelector('.mug-big'), tap = card.querySelector('.mug-tap'), shut = card.querySelector(':scope > [data-close]'), c = card.getBoundingClientRect();
+    // (the button under it says Close while the mug is up, whatever it says on the sheet)
+    function away() { clearTimeout(mugGoing); mugGoing = 0; big.textContent = ''; card.style.height = ''; card.classList.remove('mugged'); if (shut.says) { shut.textContent = shut.says; shut.says = ''; } }
     if (mugGoing) { away(); if (!on) return; }   // (asked again while it was on its way back)
-    if (on === mugged()) return;
+    if (!tap || on === mugged(s)) return;
     if (on) {
-      var small = $('mug-tap').firstChild.getBoundingClientRect();
+      var small = tap.firstChild.getBoundingClientRect();
       mugWas = { x: small.left - c.left, y: small.top - c.top, w: small.width };
       var tall = Math.max(card.offsetHeight, Math.min(460, innerHeight - 24)), cs = getComputedStyle(card);
       card.style.height = tall + 'px';
@@ -2390,6 +2393,7 @@
       // as big as the sheet has room for, over the button
       var room = Math.min(card.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), tall - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 64);
       big.firstChild.style.setProperty('--k', (Math.max(room, 120) / 340).toFixed(3));
+      shut.says = shut.textContent; shut.textContent = 'Close';
       card.classList.add('mugged');
       fly(big.firstChild, { x: small.left, y: small.top, w: small.width }, false);
     } else {
@@ -2398,8 +2402,11 @@
     }
     if (!quiet) sfx[on ? 'open' : 'close']();
   }
-  if (PRIZE) $('mug-tap').addEventListener('click', function () { mugUp(true); });
-  $('board-mug').addEventListener('click', function () { mugUp(false); });
+  ['m-board', 'm-help'].forEach(function (id) {
+    var s = $(id), tap = s.querySelector('.mug-tap');
+    if (tap) tap.addEventListener('click', function () { mugUp(s, true); });
+    s.querySelector('.mug-big').addEventListener('click', function () { mugUp(s, false); });
+  });
   $('prize-gift').innerHTML = GIFT;
   $('go-next').addEventListener('click', function () { startLevel(Math.min(level + 1, LEVELS.length - 1)); });
   $('win-again').addEventListener('click', function () { closeSheet($('m-win')); startLevel(level, true); });
