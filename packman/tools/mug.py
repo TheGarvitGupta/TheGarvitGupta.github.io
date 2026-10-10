@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Makes the prize mug, turning: packman/mug/index.html (a page of its own), and for the game mug.css, mug.js and art.svg beside it.
 
-The mug on the page is a real object in the browser's own 3D, made of nothing but HTML and CSS: sixty flat
+The mug on the page is a real object in the browser's own 3D, made of nothing but HTML and CSS: thirty flat
 staves stood in a ring and leaned in, as a cooper makes a barrel, with the glaze and the wave wrapped round
-them from one picture; the same sixty again facing inwards for the inside; a rim, a floor, and a handle built
+them from one picture; twenty more facing inwards for the inside; a rim, a floor, and a handle built
 of short blocks along a curve. It turns by one CSS animation, and each stave darkens and catches the light as
 it goes round by another. There is no script on the page: this one writes it.
 
@@ -16,7 +16,8 @@ OUT = os.path.join(HERE, 'mug')
 
 # ---- the mug, in pixels (the page scales the whole of it) ----
 RB, RT, H = 100.0, 82.0, 156.0        # its radius at the foot and at the rim, and its height
-N = 60                                 # staves round it
+N = 30                                 # staves round it
+N_IN = 20                              # and round the inside, which is one plain glaze and is seen only through the mouth
 LEAN = math.degrees(math.atan((RB - RT) / H))
 SLANT = math.hypot(H, RB - RT)         # a stave's length, leaning
 WIDE = 2 * RB * math.tan(math.pi / N)  # and its width at the foot
@@ -107,12 +108,13 @@ CSS = '''/* The prize mug, turning: a real object in the browser's own 3D, of HT
 .mug .turn{left:0; top:0; width:0; height:0; animation:mug-turn %(turn)ss linear infinite}
 @keyframes mug-turn{to{transform:rotateY(360deg)}}
 /* a stave: stood at the foot's edge, leaned in to the rim, narrower at the top, with its share of the picture on it */
-.mug .stave,.mug .inner{left:%(half).3fpx; top:%(drop).3fpx; width:%(wide).3fpx; height:%(slant).3fpx; transform-origin:50%% 100%%;
-  transform:rotateY(calc(var(--i) * %(step)sdeg)) translateZ(%(apo).3fpx) rotateX(%(lean).3fdeg);
-  clip-path:polygon(%(pinch).2f%% 0, %(pinch2).2f%% 0, 100%% 100%%, 0 100%%); backface-visibility:hidden}
-.mug .stave{background:url(art.svg) calc(var(--i) * -%(pitch).4fpx) 0 / %(round).3fpx 100%%}
+/* (They are not cut narrower towards the rim: each is left its full width and overlaps the next one a little there. A hundred
+   and twenty cut-out layers in 3D were what made the mug heavy to draw, and the overlap does not show.) */
+.mug .stave,.mug .inner{top:%(drop).3fpx; height:%(slant).3fpx; transform-origin:50%% 100%%; backface-visibility:hidden}
+.mug .stave{left:%(half).3fpx; width:%(wide).3fpx; transform:rotateY(calc(var(--i) * %(step)sdeg)) translateZ(%(apo).3fpx) rotateX(%(lean).3fdeg);
+  background:url(art.svg) calc(var(--i) * -%(pitch).4fpx + 0.8px) 0 / %(round).3fpx 100%%}
 /* the inside: the same staves seen from within, glazed, darker down towards the floor */
-.mug .inner{transform:rotateY(calc(var(--i) * %(step)sdeg)) translateZ(%(apo2).3fpx) rotateX(%(lean).3fdeg) rotateY(180deg); background:linear-gradient(#6C8DDB, #4467BF 45%%, #2B4796)}
+.mug .inner{left:%(half2).3fpx; width:%(wide2).3fpx; transform:rotateY(calc(var(--i) * %(step2)sdeg)) translateZ(%(apo2).3fpx) rotateX(%(lean).3fdeg) rotateY(180deg); background:linear-gradient(#6C8DDB, #4467BF 45%%, #2B4796)}
 @keyframes mug-in{0%%,100%%{opacity:.3} 25%%{opacity:.14} 50%%{opacity:0} 62%%{opacity:.05} 75%%{opacity:.2}}
 /* the floor inside, the rim round the top, and the foot it stands on */
 .mug .floor,.mug .rim,.mug .foot{border-radius:50%%; transform:rotateX(90deg)}
@@ -207,12 +209,12 @@ def light():
                 wrx=rx, wry=ry, wx=cx, wy=cy, wrx2=rx * 0.5, wry2=ry * 0.75, gx=cx - rx * 0.42, gy=cy - ry * 0.25, w0=(cy - ry) / 340 * 100, w1=(cy + ry) / 340 * 100)
 
 def parts():
-    pinch = (1 - RT / RB) / 2 * 100
     return dict(turn=TURN, half=-WIDE / 2 - 0.8, wide=WIDE + 1.6,   # (a little wider than its share, so no light shows between two of them)
-                slant=SLANT, drop=H - SLANT, step=360 / N, apo=RB * math.cos(math.pi / N), apo2=RB * math.cos(math.pi / N) - 4,
-                lean=LEAN, pinch=pinch, pinch2=100 - pinch, pitch=WIDE, round=ROUND, lag=TURN / N, floor=H - 14 - 95, foot=H - 99 - 1, rimr=RT + 1, rimd=2 * RT + 2, hat=-90,
+                slant=SLANT, drop=H - SLANT, step=360 / N, apo=RB * math.cos(math.pi / N),
+                step2=360 / N_IN, apo2=(RB - 4) * math.cos(math.pi / N_IN), half2=-(RB - 4) * math.tan(math.pi / N_IN) - 0.8, wide2=2 * (RB - 4) * math.tan(math.pi / N_IN) + 1.6,
+                lean=LEAN, pitch=WIDE, round=ROUND, lag=TURN / N, floor=H - 14 - 95, foot=H - 99 - 1, rimr=RT + 1, rimd=2 * RT + 2, hat=-90,
                 **light(),
-                staves=''.join('<i class="stave" style="--i:%d"></i>' % i for i in range(N)), inners=''.join('<i class="inner" style="--i:%d"></i>' % i for i in range(N)), handle=handle())
+                staves=''.join('<i class="stave" style="--i:%d"></i>' % i for i in range(N)), inners=''.join('<i class="inner" style="--i:%d"></i>' % i for i in range(N_IN)), handle=handle())
 
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)

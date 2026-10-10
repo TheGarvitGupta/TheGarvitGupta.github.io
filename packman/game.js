@@ -2342,7 +2342,7 @@
     });
   }
   purge();
-  $('reset-ask').addEventListener('click', function () { closeSheet($('m-help')); $('reset-board').checked = false; openSheet($('m-reset')); });
+  $('reset-ask').addEventListener('click', function () { $('reset-board').checked = false; openSheet($('m-reset')); });
   $('reset-go').addEventListener('click', function () { wipe($('reset-board').checked); });
   var armed = 0;
   function disarm() { clearTimeout(armed); armed = 0; $('b-reset').classList.remove('sure'); }

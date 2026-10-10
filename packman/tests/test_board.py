@@ -176,7 +176,7 @@ async def test_the_prize_on_the_leaderboard_is_the_mug_and_turns_only_while_it_i
       var art = getComputedStyle(m.querySelector('.stave')).backgroundImage;
       return { there: !!m, staves: m.querySelectorAll('.stave').length, wide: box.width, inside: box.left >= line.left - 2 && box.right <= line.right, tall: line.height, art: art,
                turning: getComputedStyle(m.querySelector('.turn')).animationPlayState, name: getComputedStyle(m.querySelector('.turn')).animationName, text: document.getElementById('board-prize').textContent }; })()''')
-    assert r['there'] and r['staves'] == 60, r
+    assert r['there'] and r['staves'] == 30, r
     assert 60 < r['wide'] < 100 and r['inside'] and r['tall'] < 90, 'the mug is %.0f wide in a line %.0f tall' % (r['wide'], r['tall'])
     assert 'art.svg' in r['art'], 'the mug has no picture on it: %s' % r['art']
     assert r['name'] == 'mug-turn' and r['turning'] == 'running', r
@@ -185,6 +185,43 @@ async def test_the_prize_on_the_leaderboard_is_the_mug_and_turns_only_while_it_i
     if await page.evaluate('!!document.querySelector(".sheet.open")'): await page.click('.sheet.open [data-close]'); await tick(page, 500)
     assert await page.evaluate('getComputedStyle(document.querySelector("#board-prize .turn")).animationPlayState') == 'paused', 'with the leaderboard put away the mug is still turning'
     assert not page.errors, page.errors
+
+async def test_the_welcome_shows_the_prize_and_the_first_three_and_only_them(t):
+    LOOK = '''(function () { var rows = document.querySelectorAll('#help-ranks li:not(.head)'), card = document.querySelector('#m-help .card');
+      return { open: (document.querySelector('.sheet.open') || {}).id || null, who: [].map.call(rows, function (li) { return (li.querySelector('.who') || li).textContent; }), medals: document.querySelectorAll('#help-ranks .pos svg').length,
+               shown: getComputedStyle(document.getElementById('help-ranks')).display !== 'none', mug: !!document.querySelector('#help-prize .mug'), prize: document.getElementById('help-prize').textContent,
+               fits: card.scrollWidth <= card.clientWidth }; })()'''
+    page = await t.page(board={'top': people(8), 'of': 8, 'levels': 50, 'mine': people(9)[8], 'rank': 9}, save=saved(seen=False))
+    await tick(page, 1500)
+    r = await page.evaluate(LOOK)
+    assert r['open'] == 'm-help' and r['who'] == ['Player 1', 'Player 2', 'Player 3'] and r['medals'] == 3, r
+    assert r['mug'] and 'top 3' in r['prize'], r
+    assert r['fits'] and 'Garvit' not in await page.evaluate('document.getElementById("m-help").textContent'), r
+    asked = [u for m, u, b in page.asked if m == 'GET']
+    assert asked and 'pid=' not in asked[0], 'the welcome asks the board who the player is: %s' % asked
+    # with no board to ask, the rows are left out and the rest stands
+    page = await t.page(save=saved(seen=False)); await tick(page, 1500)
+    r = await page.evaluate(LOOK)
+    assert r['open'] == 'm-help' and not r['shown'] and r['mug'], r
+
+async def test_whose_game_it_is_the_shapes_and_reset_are_at_the_foot_of_the_page(t):
+    """In the bottom right corner on a wide screen, as far from the edges as the buttons at the top right; in the middle under the dock on a narrower one. On one line, clear of the dock."""
+    LOOK = '''(function () { function box(e) { var r = e.getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom }; }
+      var nav = document.querySelector('#app > .extras'), its = [].slice.call(nav.children), tools = box(document.querySelector('.tools')), n = box(nav);
+      var all = { l: Math.min.apply(null, its.map(function (e) { return box(e).l; })), r: Math.max.apply(null, its.map(function (e) { return box(e).r; })), t: Math.min.apply(null, its.map(function (e) { return box(e).t; })), b: Math.max.apply(null, its.map(function (e) { return box(e).b; })) };
+      var hit = [].some.call(document.querySelectorAll('.dock .rb, .dock .angle'), function (e) { var d = box(e); return d.l < all.r && d.r > all.l && d.t < all.b && d.b > all.t; });
+      return { says: its.map(function (e) { return e.textContent.trim(); }), line: Math.max.apply(null, its.map(function (e) { return box(e).t; })) - all.t, right: innerWidth - all.r, left: all.l, below: innerHeight - all.b,
+               toolsRight: innerWidth - tools.r, toolsTop: tools.t, hit: hit }; })()'''
+    for size in ({'width': 1280, 'height': 800}, {'width': 393, 'height': 852}, {'width': 360, 'height': 640}, {'width': 820, 'height': 1100}, {'width': 844, 'height': 390}):
+        page = await player(await t.page(**size))
+        r = await page.evaluate(LOOK)
+        assert r['says'] == ['Game by Garvit Gupta', 'Meet the shapes', 'Reset'] and r['line'] < 4 and not r['hit'], '%s: %s' % (size, r)
+        assert abs(r['below'] - r['toolsTop']) < 4, '%s: they are %.0f from the bottom, and the buttons %.0f from the top' % (size, r['below'], r['toolsTop'])
+        if size['width'] > 1040 or size['height'] < 480: assert abs(r['right'] - r['toolsRight']) < 2, '%s: %s' % (size, r)
+        else: assert abs(r['left'] - r['right']) < 2, '%s: not in the middle: %s' % (size, r)
+        await page.click('#reset-ask'); await tick(page, 500)
+        assert await page.evaluate('document.querySelector(".sheet.open").id') == 'm-reset'
+        await page.context.close()
 
 async def test_a_tap_on_the_mug_is_a_closer_look_and_close_goes_back(t):
     """The mug takes the whole of the leaderboard's sheet, with nothing left but Close; Close puts the leaderboard back, and Close again puts the sheet away."""

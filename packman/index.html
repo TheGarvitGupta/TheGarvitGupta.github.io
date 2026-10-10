@@ -7,7 +7,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#FFF4DE" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1F1A30" media="(prefers-color-scheme: dark)">
-<meta name="description" content="A packing puzzle. Fit every square and triangle inside the box. Seventeen levels, ending with the famously ugly 17 squares.">
+<meta name="description" content="A packing puzzle. Fit every shape inside the box. Fifty levels in four chapters, with powers like glue, puffers and ghosts, and shapes that are entangled.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='4' width='24' height='24' rx='5' fill='%23FF6B6B' stroke='%232B2140' stroke-width='2.5'/%3E%3Ccircle cx='12' cy='14' r='2' fill='%232B2140'/%3E%3Ccircle cx='20' cy='14' r='2' fill='%232B2140'/%3E%3Cpath d='M11 19q5 5 10 0' fill='none' stroke='%232B2140' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="Packman">
@@ -15,7 +15,7 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://www.garvitgupta.com/packman/">
 <meta property="og:title" content="Packman">
-<meta property="og:description" content="A packing puzzle. Fit every square and triangle inside the box. Seventeen levels, ending with the famously ugly 17 squares.">
+<meta property="og:description" content="A packing puzzle. Fit every shape inside the box. Fifty levels in four chapters, with powers like glue, puffers and ghosts, and shapes that are entangled.">
 <meta property="og:image" content="https://www.garvitgupta.com/packman/og-image.png?v=3">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -29,8 +29,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
 
 <link rel="stylesheet" href="faces.css?v=2.99">
-<link rel="stylesheet" href="mug/mug.css?v=3.11">
-<link rel="stylesheet" href="packman.css?v=3.12">
+<link rel="stylesheet" href="mug/mug.css?v=3.13">
+<link rel="stylesheet" href="packman.css?v=3.13">
 </head>
 <body>
 
@@ -94,6 +94,11 @@
       <button class="btn onward" id="go-next" hidden>Next level <span aria-hidden="true">→</span></button>
     </div>
   </footer>
+  <nav class="extras" aria-label="About the game">
+    <a class="mini" href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg>Game by Garvit Gupta</a>
+    <a class="mini" href="personalities.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M9 10v.2M15 10v.2M8.5 14.5a4.5 4.5 0 0 0 7 0"/></svg>Meet the shapes</a>
+    <button class="mini" id="reset-ask" type="button" aria-label="Reset all progress"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5"/></svg>Reset</button>
+  </nav>
 </div>
 
 <canvas id="fx" aria-hidden="true"></canvas>
@@ -142,14 +147,11 @@
       <li><span>2</span><div><b>Spin</b> it with its knob<span class="keys"> or <kbd>Q</kbd> <kbd>E</kbd></span><span class="taps"> or two fingers</span>.</div></li>
       <li><span>3</span><div><b>Red dashes</b> mean it doesn’t fit. A <b>smile</b> means it does.</div></li>
     </ul>
-    <p class="gift" id="help-prize" hidden></p>
-    <ol class="ranks" id="help-ranks"></ol>
-    <button class="btn go" data-close>Start →</button>
-    <div class="more">
-      <a class="mini" href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg><span><span class="by">Game by </span>Garvit Gupta</span></a>
-      <a class="mini" href="personalities.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M9 10v.2M15 10v.2M8.5 14.5a4.5 4.5 0 0 0 7 0"/></svg>Meet the shapes</a>
-      <button class="mini" id="reset-ask" type="button" aria-label="Reset all progress"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5"/></svg>Reset</button>
+    <div class="podium">
+      <p class="gift" id="help-prize" hidden></p>
+      <ol class="ranks" id="help-ranks"></ol>
     </div>
+    <button class="btn go" data-close>Start →</button>
   </div>
 </div>
 
@@ -220,8 +222,8 @@
 <script src="levels.js?v=3.04"></script>
 <script src="faces.js?v=2.80"></script>
 <script src="sounds.js?v=2.98"></script>
-<script src="mug/mug.js?v=3.11"></script>
-<script src="game.js?v=3.12"></script>
+<script src="mug/mug.js?v=3.13"></script>
+<script src="game.js?v=3.13"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
