@@ -641,10 +641,10 @@ input {
 }
 .textareaHighlight {
     resize: vertical;
-    float: left;
-    margin-top: 10px;
-    width: 443px;
-    height: 100px;
+    display: block;
+    width: 100%;
+    height: 170px;
+    margin: 0;
     padding: 15px;
     line-height: 20px;
     box-sizing: border-box;
@@ -658,97 +658,7 @@ input {
     width: 600px;
 }
 .form-fields {
-    width: 445px;
-    float: left;
-}
-.checkimage {
-    float: left;
-    width: 98px;
-    height: 98px;
-    border: 1px solid black;
-    border-radius: 6px;
-    padding: 0;
-    background-size: 36px;
-    background-position: center 19px;
-    background-repeat: no-repeat;
-    cursor: pointer;
-    -webkit-transition: all 0.2s ease-in-out;
-    transition: all 0.2s ease-in-out;
-    margin-bottom: 0px;
-    display: inline-block;
-    -webkit-user-select: none;
-    user-select: none;
-}
-.checkimage.selected {
-    background-color: #E1F5FE;
-}
-.checkimage:hover,
-.checkimage.selected {
-    border-color: #2196F3;
-}
-.checkimage:hover .clickImageText,
-.checkimage.selected .clickImageText {
-    color: #2196F3;
-}
-.checkimage-app {
-    margin-right: 15px;
-    background-image: url('../images/icons/contact/app.png');
-}
-.checkimage-web {
-    margin-right: 15px;
-    background-image: url('../images/icons/contact/web.png');
-}
-.checkimage-job {
-    margin-right: 15px;
-    background-image: url('../images/icons/contact/job.png');
-}
-.checkimage-feedback {
-    background-image: url('../images/icons/contact/mail.png');
-}
-.checkimage-app:hover,
-.checkimage-app.selected {
-    background-image: url('../images/icons/contact/app-blue.png');
-}
-.checkimage-web:hover,
-.checkimage-web.selected {
-    background-image: url('../images/icons/contact/web-blue.png');
-}
-.checkimage-job:hover,
-.checkimage-job.selected {
-    background-image: url('../images/icons/contact/job-blue.png');
-}
-.checkimage-feedback:hover,
-.checkimage-feedback.selected {
-    background-image: url('../images/icons/contact/mail-blue.png');
-}
-.clickImageText {
     width: 100%;
-    position: absolute;
-    bottom: 10px;
-    font-size: 10px;
-    text-align: center;
-    -webkit-transition: all 0.2s ease-in-out;
-    transition: all 0.2s ease-in-out;
-    letter-spacing: 2px;
-    color: rgb(130, 130, 130);
-}
-.contact-label-individual {
-    font-family: 'Open Sans', 'Roboto', sans-serif;
-    font-size: 14px;
-    color: #000000;
-    padding-top: 10px;
-    height: 30px;
-    border-bottom: 1px solid rgb(255, 255, 255);
-    border-bottom: 1px solid rgba(255, 255, 255, 0);
-    margin-bottom: 10px;
-    text-transform: uppercase;
-}
-.mobile-label {
-    text-align: left;
-    padding-top: 15px;
-    text-transform: uppercase;
-    font-size: 12px;
-    display: none;
 }
 .garvit-gupta {
     float: left;
@@ -1150,9 +1060,6 @@ input {
 .social-linkedin { background-image: url('../images/icons/social/linkedin-svg.svg'); background-size: 23px; }
 .social-twitter { background-image: url('../images/icons/social/twitter-svg.svg'); background-size: 25px; }
 .social-github { background-image: url('../images/icons/social/github-svg.svg'); background-size: 25px; }
-.contact-form-label { float: left; width: 155px; }
-.contact-checkboxes { padding-top: 15px; padding-bottom: 15px; }
-.textarea-wrapper { height: 120px; }
 .contact-intro { height: 72px; padding-bottom: 25px; line-height: 28px; }
 .latte-icon {
     display: inline-block;

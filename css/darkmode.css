@@ -271,10 +271,6 @@ html.dark-mode #contactMe::after {
 html.dark-mode .contact-form {
     color: #d0d0d0;
 }
-html.dark-mode .contact-label-individual {
-    color: #d0d0d0;
-    border-bottom-color: rgba(255, 255, 255, 0);
-}
 html.dark-mode .contact-us {
     border-color: #444444;
     color: #d0d0d0;
@@ -294,15 +290,6 @@ html.dark-mode .textareaHighlight {
 html.dark-mode .textareaHighlight:focus {
     color: #90caf9;
     border-color: #2196F3;
-}
-html.dark-mode .checkimage {
-    border-color: #444444;
-}
-html.dark-mode .checkimage.selected {
-    background-color: #1a2a3a;
-}
-html.dark-mode .clickImageText {
-    color: #888888;
 }
 html.dark-mode #message-received-parent {
     background-color: rgba(255, 255, 255, 0.05);

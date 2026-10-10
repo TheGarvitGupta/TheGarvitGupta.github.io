@@ -320,17 +320,9 @@
     .label {
         display: none;
     }
-    .mobile-label {
-        display: block;
-    }
     .form-fields {
-        width: 100%;
         max-width: 445px;
         margin: auto;
-        float: none;
-    }
-    .textareaHighlight {
-        width: 100%;
     }
     .bg-editable {
         height: 250px;
@@ -427,75 +419,6 @@
         height: 300px;
     }
 }
-@media screen and (max-width: 645px) and (min-width: 620px) {
-    .checkimage {
-        margin: auto;
-    }
-    .checkimage-app {
-        width: 47.5%;
-        float: left;
-    }
-    .checkimage-web {
-        width: 47.5%;
-        float: right;
-    }
-    .checkimage-job {
-        width: 47.5%;
-        float: left;
-        margin-top: 4%;
-    }
-    .checkimage-feedback {
-        width: 47.5%;
-        float: right;
-        margin-top: 4%;
-    }
-}
-@media screen and (max-width: 545px) and (min-width: 512px) {
-    .checkimage {
-        margin: auto;
-    }
-    .checkimage-app {
-        width: 47.5%;
-        float: left;
-    }
-    .checkimage-web {
-        width: 47.5%;
-        float: right;
-    }
-    .checkimage-job {
-        width: 47.5%;
-        float: left;
-        margin-top: 4%;
-    }
-    .checkimage-feedback {
-        width: 47.5%;
-        float: right;
-        margin-top: 4%;
-    }
-}
-@media screen and (max-width: 495px) {
-    .checkimage {
-        margin: auto;
-    }
-    .checkimage-app {
-        width: 47.5%;
-        float: left;
-    }
-    .checkimage-web {
-        width: 47.5%;
-        float: right;
-    }
-    .checkimage-job {
-        width: 47.5%;
-        float: left;
-        margin-top: 4%;
-    }
-    .checkimage-feedback {
-        width: 47.5%;
-        float: right;
-        margin-top: 4%;
-    }
-}
 @media (pointer: coarse) {
     .gallery-arrow {
         display: none;
@@ -520,9 +443,46 @@
     .path-stop:not(:last-child)::before {
         display: block;
     }
+    /* the sports in the middle of the screen, and their details a row of pages under them:
+       swiped from one to the next, each coming to rest in the middle (js/loaders.js lights its icon) */
     .path-play {
         justify-content: space-between;
         gap: 0;
         max-width: 340px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .path-reel {
+        display: flex;
+        align-items: flex-start;
+        height: auto;
+        min-height: 264px;
+        margin: 0 -20px;   /* a page runs a little past the column either side, and swipes edge to edge */
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .path-reel::-webkit-scrollbar {
+        display: none;
+    }
+    .path-detail,
+    .path-detail.on {
+        position: static;
+        flex: 0 0 100%;
+        max-width: none;
+        box-sizing: border-box;
+        padding: 10px max(20px, calc(50% - 150px)) 0;   /* what it holds is 300px at most, in the middle */
+        scroll-snap-align: center;
+        scroll-snap-stop: always;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        transition: none;
+    }
+    .path-detail.empty {
+        display: none;
     }
 }

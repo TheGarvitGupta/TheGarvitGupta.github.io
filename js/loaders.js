@@ -121,15 +121,49 @@ $(function () {
 	document.addEventListener("pointerdown", quiet, { passive: true, capture: true });   // a tap has no move before it
 })();
 
-/* Path column: a sport's details show when its icon is hovered or tapped, and stay until another's are */
+/* Path column: a sport's details show when its icon is hovered or tapped, and stay until another's are.
+   On a phone the details are a row of pages (css/responsive.css): a tap on an icon slides to its page,
+   and a swipe to a page lights its icon. */
 (function () {
 	var sports = document.querySelectorAll(".path-play > li");
-	function pick(li) {
-		if (!li.querySelector(".path-fig:not([hidden]), .path-medals, .path-loop, .path-map")) return;   // nothing to say about this one
-		for (var i = 0; i < sports.length; i++) sports[i].classList.toggle("on", sports[i] === li);
+	var reel = document.querySelector(".path-reel");
+	if (!reel) return;
+	var pages = reel.children;
+	function swiped() { return getComputedStyle(reel).overflowX !== "visible"; }
+	// a sport with nothing to say (its figures not in yet) has no page and no hand over its icon
+	function full(i) { return !!pages[i].querySelector(".path-fig:not([hidden]), .path-medals, .path-loop, .path-map"); }
+	function mark() {
+		for (var i = 0; i < sports.length; i++) {
+			sports[i].classList.toggle("has-detail", full(i));
+			pages[i].classList.toggle("empty", !full(i));
+		}
 	}
-	for (var i = 0; i < sports.length; i++) {
-		sports[i].addEventListener("mouseenter", function () { pick(this); });
-		sports[i].addEventListener("click", function () { pick(this); });
+	function pick(n) {
+		for (var i = 0; i < sports.length; i++) {
+			sports[i].classList.toggle("on", i === n);
+			pages[i].classList.toggle("on", i === n);
+		}
 	}
+	function go(n) {
+		if (!full(n)) return;
+		if (swiped()) reel.scrollTo({ left: pages[n].offsetLeft, behavior: "smooth" });
+		else pick(n);
+	}
+	for (var i = 0; i < sports.length; i++) (function (n) {
+		sports[n].addEventListener("mouseenter", function () { if (!swiped()) go(n); });
+		sports[n].addEventListener("click", function () { go(n); });
+	})(i);
+	// the page nearest the reel's resting place is the one being looked at
+	reel.addEventListener("scroll", function () {
+		if (!swiped()) return;
+		var best = -1, gap = Infinity;
+		for (var i = 0; i < pages.length; i++) {
+			if (!pages[i].offsetWidth) continue;
+			var d = Math.abs(pages[i].offsetLeft - reel.scrollLeft);
+			if (d < gap) { gap = d; best = i; }
+		}
+		if (best >= 0 && !pages[best].classList.contains("on")) pick(best);
+	}, { passive: true });
+	mark();
+	new MutationObserver(mark).observe(reel, { subtree: true, attributes: true, attributeFilter: ["hidden"] });   // the figures arrive later (js/strava.js)
 })();

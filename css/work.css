@@ -214,14 +214,18 @@
     display: flex;
     justify-content: space-between;
     padding-bottom: 14px;
-    margin-bottom: 264px;   /* room for the tallest set of details, so nothing below ever moves */
+}
+/* the details, one set a sport, all in the one place under the row */
+.path-reel {
+    position: relative;
+    height: 264px;   /* room for the tallest set, so nothing below ever moves */
 }
 .path-play > li {
     width: 44px;
     text-align: center;
 }
 /* a hand over the sports that have details to show */
-.path-play > li:has(.path-fig:not([hidden]), .path-medals, .path-loop, .path-map) {
+.path-play > li.has-detail {
     cursor: pointer;
 }
 .path-play > li > svg {
@@ -259,12 +263,13 @@
     margin: 8px -6px 0;
 }
 /* A sport's details open under the row when its icon is hovered, and stay until another's do
-   (js/loaders.js). They stack: a big number, a goal bar, medals, or a trail of places. */
+   (js/loaders.js). They stack: a big number, a goal bar, medals, or a map of places.
+   On a phone they lie side by side instead and are swiped through (css/responsive.css). */
 .path-detail {
     position: absolute;
     left: 0;
     right: 0;
-    top: 100%;
+    top: 0;
     max-width: 300px;
     padding-top: 10px;
     text-align: left;
@@ -273,7 +278,7 @@
     transform: translateY(6px);
     transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s 0.18s;
 }
-.path-play > li.on .path-detail {
+.path-detail.on {
     opacity: 1;
     visibility: visible;
     transform: none;
@@ -346,7 +351,7 @@
     border: 2px solid #2196F3;
     border-radius: 50%;
 }
-.path-play > li.on .path-fill {
+.path-detail.on .path-fill {
     width: var(--p, 0%);
     transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.2s;
 }
@@ -372,7 +377,7 @@
 .path-medals i::before {
     content: attr(data-y);
 }
-.path-play > li.on .path-medals i {
+.path-detail.on .path-medals i {
     animation: path-glide 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
     animation-delay: calc(0.1s + var(--n) * 50ms);
 }
@@ -425,7 +430,7 @@
     font-weight: normal;
     color: #000;
 }
-.path-play > li.on .path-regions li {
+.path-detail.on .path-regions li {
     animation: path-glide 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
     animation-delay: calc(0.1s + var(--n) * 70ms);
 }
@@ -500,7 +505,7 @@
     stroke-linejoin: round;
     paint-order: stroke;
 }
-.path-play > li.on .path-camp {
+.path-detail.on .path-camp {
     animation: path-fade 0.6s ease both;
     animation-delay: calc(0.1s + var(--n) * 80ms);
 }
@@ -522,8 +527,8 @@
     from { opacity: 0; transform: translateY(16px); }
 }
 @media (prefers-reduced-motion: reduce) {
-    .path-in .path-rise, .path-play > li.on .path-medals i, .path-play > li.on .path-camp, .path-play > li.on .path-regions li { animation: none; }
-    .path-play > li.on .path-fill { transition: none; }
+    .path-in .path-rise, .path-detail.on .path-medals i, .path-detail.on .path-camp, .path-detail.on .path-regions li { animation: none; }
+    .path-detail.on .path-fill { transition: none; }
 }
 
 /* The Packman tile: a level that packs itself, drawn by js/packman-tile.js */
