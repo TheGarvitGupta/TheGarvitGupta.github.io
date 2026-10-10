@@ -1,4 +1,4 @@
-/* Metric / imperial toggle. Auto-detects from locale, defaults to imperial.
+/* Metric / imperial toggle. Set by the country the page is opened in, until the visitor chooses.
    Exposes window.GG.units ("metric" | "imperial") for other widgets. */
 
 (function () {
@@ -6,19 +6,22 @@
 
 	window.GG = window.GG || {};
 
-	function detectLocaleUnits() {
+	// The country the page is opened in, read from the device's time zone: that follows the
+	// device from place to place, where its language does not. Imperial in the United States
+	// and its Pacific territories, Liberia and Myanmar; metric everywhere else.
+	var IMPERIAL_ZONES = /^(US\/|America\/(Adak|Anchorage|Atka|Boise|Chicago|Denver|Detroit|Fort_Wayne|Indiana\/|Indianapolis|Juneau|Kentucky\/|Knox_IN|Los_Angeles|Louisville|Menominee|Metlakatla|New_York|Nome|North_Dakota\/|Phoenix|Shiprock|Sitka|Yakutat)|Pacific\/(Honolulu|Johnston|Guam|Saipan|Pago_Pago|Samoa)$|Africa\/Monrovia$|Asia\/(Yangon|Rangoon)$)/;
+
+	function detectUnits() {
 		try {
-			// Locales that use metric for everyday measurements
-			var locale = navigator.language || navigator.userLanguage || "";
-			var country = locale.split("-")[1] || "";
-			// US, Liberia (LR), Myanmar (MM) use imperial
-			var imperial = ["US", "LR", "MM"];
-			if (imperial.indexOf(country.toUpperCase()) !== -1) return "imperial";
-			// If no country subtag, try to guess from base locale
-			if (!country && locale.toLowerCase() === "en") return "imperial";
-			if (!country) return "metric";
-			return "metric";
-		} catch (e) { return "imperial"; }
+			var zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+			// a zone that names a place settles it; "UTC" and the like say nothing of where
+			if (zone && zone.indexOf("/") !== -1 && zone.indexOf("Etc/") !== 0) return IMPERIAL_ZONES.test(zone) ? "imperial" : "metric";
+		} catch (e) {}
+		// no time zone to go by: the region of the browser's language, as before
+		var locale = navigator.language || navigator.userLanguage || "";
+		var country = (locale.split("-")[1] || "").toUpperCase();
+		if (!country) return locale.toLowerCase() === "en" ? "imperial" : "metric";
+		return ["US", "LR", "MM"].indexOf(country) !== -1 ? "imperial" : "metric";
 	}
 
 	function applyUnits(units) {
@@ -37,7 +40,7 @@
 
 	function init() {
 		var stored = localStorage.getItem(STORAGE_KEY);
-		var units = stored || detectLocaleUnits();
+		var units = stored || detectUnits();   // what the visitor last chose, or else where they are
 		applyUnits(units);
 		syncLabels(units);
 

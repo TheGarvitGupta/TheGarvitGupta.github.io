@@ -99,6 +99,12 @@ input {
     opacity: 1;
     right: 0px;
 }
+/* A label is wide and unseen until it is pointed at, and the Path column, the photos and their
+   arrows lie under some of them. While the pointer is on one of those the labels let it through
+   (js/loaders.js), so pointing at what is there is not pointing at them; a dot still shows its label. */
+.navigation.nav-quiet .nav-text {
+    pointer-events: none;
+}
 .home-page {
     height: 100vh;
     background-color: white;
@@ -1022,7 +1028,7 @@ input {
     cursor: pointer;
     opacity: 0.8;
     transition: opacity 0.15s ease-in-out;
-    z-index: 1001;
+    z-index: 999;   /* under the navigation, so a label shown from its dot lies over the arrow with its glow */
 }
 
 .gallery-arrow:hover {

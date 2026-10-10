@@ -101,6 +101,26 @@ $(function () {
 	}, { threshold: 0.12 }).observe(path);
 })();
 
+/* The navigation's unseen labels reach in over the Path column and over the photos and their
+   arrows. While the pointer is on one of those the labels are told to let it through, so they
+   do not show for it being there. */
+(function () {
+	var nav = document.querySelector(".navigation");
+	var under = document.querySelectorAll("#path, .gallery-wrapper, .gallery-arrow");
+	if (!nav || !under.length) return;
+	function quiet(e) {
+		var on = false;
+		for (var i = 0; i < under.length && !on; i++) {
+			if (under[i].classList.contains("hidden")) continue;
+			var r = under[i].getBoundingClientRect();
+			on = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+		}
+		nav.classList.toggle("nav-quiet", on);
+	}
+	document.addEventListener("pointermove", quiet, { passive: true });
+	document.addEventListener("pointerdown", quiet, { passive: true, capture: true });   // a tap has no move before it
+})();
+
 /* Path column: a sport's details show when its icon is hovered or tapped, and stay until another's are */
 (function () {
 	var sports = document.querySelectorAll(".path-play > li");
