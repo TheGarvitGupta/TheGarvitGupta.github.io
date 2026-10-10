@@ -436,10 +436,10 @@ var PackmanLevels = (function () {
       twist: true,
       intro: 'Two boxes, two squares, five triangles. Work out which shapes go in which box.',
       hint: 'The smaller box takes a square and two triangles: the square against the middle of the right-hand wall, one triangle flat on the floor and one hanging flat from the ceiling, their points meeting beside it. The bigger box takes the rest: the square snug in the top-left corner, a triangle hanging upside-down beneath it, one flat against the right-hand wall at 30°, and the last in the bottom corner at 105°.',
-      containers: [box(1.783).map(function (p) { return [p[0] - 1.386, p[1]]; }), box(1.872).map(function (p) { return [p[0] + 1.3415, p[1]]; })],
-      container: box(1.783).map(function (p) { return [p[0] - 1.386, p[1]]; }).concat(box(1.872).map(function (p) { return [p[0] + 1.3415, p[1]]; })),
+      containers: [box(1.783).map(function (p) { return [p[0] - 1.086, p[1]]; }), box(1.872).map(function (p) { return [p[0] + 1.0415, p[1]]; })],
+      container: box(1.783).map(function (p) { return [p[0] - 1.086, p[1]]; }).concat(box(1.872).map(function (p) { return [p[0] + 1.0415, p[1]]; })),
       pieces: pieces(2, 5),
-      solution: [[-0.998, 0, 0], [0.9084, -0.4331, 0], [-1.774, 0.599, 0], [-1.774, -0.599, 180], [0.9268, 0.3557, 60], [1.7169, 0.4147, 105], [1.9857, -0.4147, 30]]
+      solution: [[-0.698, 0, 0], [0.6084, -0.4331, 0], [-1.474, 0.599, 0], [-1.474, -0.599, 180], [0.6268, 0.3557, 60], [1.4169, 0.4147, 105], [1.6857, -0.4147, 30]]
     },
     {
       name: 'Short Fuse',
@@ -512,21 +512,22 @@ var PackmanLevels = (function () {
       divide: -0.0155,   // a line half way between the boxes: an entangled shape keeps to the side its spot is on
       intro: 'Two boxes. Shapes that look alike are entangled: turn one and its twin turns too. Neither can cross the line.',
       hint: 'The square box is Five Alive: four squares in the corners and one in the middle at 45°. The honeycomb is Pinwheel: three squares flat against every other wall, at 0°, 30° and 60°. Each pair of twins is split by the line, one in each box. The twin of the square in the middle sits straight in the honeycomb; the twins of the two that lean there sit straight in corners of the square box.',
-      containers: [box(2.713).map(function (p) { return [p[0] - 1.822, p[1]]; }), ngon(6, 1.372, 0).map(function (p) { return [p[0] + 1.8065, p[1]]; })],
-      container: box(2.713).map(function (p) { return [p[0] - 1.822, p[1]]; }).concat(ngon(6, 1.372, 0).map(function (p) { return [p[0] + 1.8065, p[1]]; })),   // every corner of both, for the board's bounds
+      containers: [box(2.713).map(function (p) { return [p[0] - 1.522, p[1]]; }), ngon(6, 1.372, 0).map(function (p) { return [p[0] + 1.5065, p[1]]; })],
+      container: box(2.713).map(function (p) { return [p[0] - 1.522, p[1]]; }).concat(ngon(6, 1.372, 0).map(function (p) { return [p[0] + 1.5065, p[1]]; })),   // every corner of both, for the board's bounds
       pieces: pieces(8, 0),
-      solution: [[-2.6785, -0.8565, 0], [-0.9655, -0.8565, 0], [-2.6785, 0.8565, 0], [-0.9655, 0.8565, 0], [-1.822, 0, 45], [1.617, 0.6822, 0], [1.3035, -0.5052, 30], [2.486, -0.1872, 60]]
+      solution: [[-2.3785, -0.8565, 0], [-0.6655, -0.8565, 0], [-2.3785, 0.8565, 0], [-0.6655, 0.8565, 0], [-1.522, 0, 45], [1.317, 0.6822, 0], [1.0035, -0.5052, 30], [2.186, -0.1872, 60]]
     },
     {
       name: 'Trinity',
       twist: true,
       twins: [[2, 3, 1], [0, 5, 4]],   // entangled threes: all turn when one does
+      // (the honeycomb is tucked in under the triangle's slope, nearer than the two would stand side by side)
       intro: 'Tripod and Pinwheel, side by side. The squares are entangled in threes: turn one and the other two turn with it.',
       hint: 'Each box takes three squares flat against three walls, at 0°, 30° and 60°. In each set of three, two squares match and the third is 30° off. Put the matching two in different boxes. One set gives both boxes their straight square and the triangle its 30°; the other gives both their 60° and the honeycomb its 30°.',
-      containers: [loosen([[0, -2 * H / 3], [0.5, H / 3], [-0.5, H / 3]], 3.245).map(function (p) { return [p[0] - 1.822, p[1] + 0.468]; }), ngon(6, 1.372, 0).map(function (p) { return [p[0] + 2.0725, p[1]]; })],
-      container: loosen([[0, -2 * H / 3], [0.5, H / 3], [-0.5, H / 3]], 3.245).map(function (p) { return [p[0] - 1.822, p[1] + 0.468]; }).concat(ngon(6, 1.372, 0).map(function (p) { return [p[0] + 2.0725, p[1]]; })),
+      containers: [loosen([[0, -2 * H / 3], [0.5, H / 3], [-0.5, H / 3]], 3.245).map(function (p) { return [p[0] - 1.147, p[1] + 0.468]; }), ngon(6, 1.372, 0).map(function (p) { return [p[0] + 1.3975, p[1]]; })],
+      container: loosen([[0, -2 * H / 3], [0.5, H / 3], [-0.5, H / 3]], 3.245).map(function (p) { return [p[0] - 1.147, p[1] + 0.468]; }).concat(ngon(6, 1.372, 0).map(function (p) { return [p[0] + 1.3975, p[1]]; })),
       pieces: pieces(6, 0),
-      solution: [[-1.1738, 0.7173, 60], [-1.9277, -0.2225, 30], [-2.3607, 0.8935, 0], [1.883, 0.6822, 0], [1.5695, -0.5052, 30], [2.752, -0.1872, 60]]
+      solution: [[-0.4988, 0.7173, 60], [-1.2527, -0.2225, 30], [-1.6857, 0.8935, 0], [1.208, 0.6822, 0], [0.8945, -0.5052, 30], [2.077, -0.1872, 60]]
     }
   ];
 })();

@@ -241,9 +241,12 @@
     p.x = clamp(p.x, view.x + 0.4, view.x + view.w - 0.4);
     p.y = clamp(p.y, view.y + 0.4, view.y + view.h - 0.4);
     // An entangled shape on a board with a line down it keeps to its own side, clear of the line.
-    if (p.half) p.x = p.half < 0 ? Math.min(p.x, lv.divide - FENCE) : Math.max(p.x, lv.divide + FENCE);
+    if (p.half) {
+      var over = Math.max.apply(null, G.verts(p).map(function (v) { return (v[0] - lv.divide) * -p.half; }));   // how far its furthest corner is over the line
+      if (over > 0) p.x += over * p.half;
+    }
   }
-  var FENCE = 0.74, fence = null;   // as near the line as such a shape's middle may come: no corner of it crosses, however it is turned
+  var FENCE = 0.74, fence = null;   // how far from the line such a shape is dealt: clear of it however it is turned
 
   // The angles at which a shape of this kind has a side square to one of this box's walls,
   // counted once each (a square looks the same every 90 degrees, and so on).
@@ -589,6 +592,7 @@
     if (p.power === 'sticky' && p.mate >= 0 && unstick(i)) sfx.peel();   // turned by hand, it comes away
     startClock();
     p.angle += by;
+    if (p.half) keepInView(p);   // a corner turned over the line is pushed back
     carry(i);
     turnTwin(p, by);
     clearTimeout(shakeTimer);
@@ -600,7 +604,7 @@
   // An entangled shape's kin turn whenever it does, wherever they are: by as much, or (geared) as much the other way.
   function turnTwin(p, by) {
     if (!p.kin || !by) return;
-    p.kin.forEach(function (k) { pieces[k.i].angle += by * k.s; carry(k.i); render(k.i); });
+    p.kin.forEach(function (k) { pieces[k.i].angle += by * k.s; if (pieces[k.i].half) keepInView(pieces[k.i]); carry(k.i); render(k.i); });
   }
   // A dotted thread runs from the shape in hand to each of its kin, and they are marked as the one in hand is.
   var threads = [];
