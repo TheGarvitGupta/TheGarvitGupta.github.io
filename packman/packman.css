@@ -41,6 +41,7 @@ body.twists .bin-fill{stroke:#0E8C78}
 #power-row{display:none; flex:none; height:50px; margin-top:8px; align-items:center; justify-content:center}
 body.powers #power-row{display:flex}
 #power-idle{margin:0; padding:0 8px; font-size:14.5px; font-weight:500; text-align:center; color:var(--mut)}
+#power-row.told #power-idle{display:none}   /* (said three times already: see startLevel) */
 #power-note{width:max-content; max-width:100%; max-height:100%; display:flex; align-items:center; gap:11px; padding:5px 18px 6px 8px;
   color:#2B2140; background:var(--sun); border:var(--bw) solid var(--ink); border-radius:16px; animation:note .28s var(--pop) both}
 @keyframes note{from{transform:translateY(-8px) scale(.97); opacity:0}}
@@ -420,8 +421,8 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
    corner, as far from the edges as the buttons at the top right are. */
 .extras{flex:none; display:flex; justify-content:center; gap:14px; margin-top:4px}
 .mini{flex:none; display:flex; align-items:center; gap:4px; padding:2px 0; font:600 12px var(--f); line-height:1.2; white-space:nowrap; text-decoration:none;
-  color:var(--mut); background:none; border:0; cursor:pointer; filter:grayscale(1); opacity:.7}
-.mini:hover{opacity:1}
+  color:var(--mut); background:none; border:0; cursor:pointer; filter:grayscale(1); opacity:.45; transition:opacity .15s}
+.mini:hover,.mini:focus-visible{opacity:1}
 .mini svg{flex:none; width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round}
 @media (max-width:440px){ .extras{gap:9px} .mini{gap:3px; font-size:11.5px} }
 @media (min-width:1041px), (max-height:480px) and (orientation:landscape){

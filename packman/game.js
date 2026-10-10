@@ -1489,6 +1489,8 @@
     $('lv-num').textContent = among(i);
     $('lv-of').textContent = chapSize(ch);
     document.body.classList.toggle('powers', !!lv.powers);   // the chapter of powers is played at night
+    // What to do with a power is said over the first three boards that have one, and not again until the game is reset.
+    if (lv.powers) { var told = save.powerTip || 0; $('power-row').classList.toggle('told', told >= 3); if (told < 3) { save.powerTip = told + 1; persist(); } }
     document.body.classList.toggle('twists', !!lv.twist);   // and the chapter of twists on squared paper
     $('ribbon').setAttribute('hidden', '');
     $('lv-name').textContent = lv.name;
