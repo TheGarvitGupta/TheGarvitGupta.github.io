@@ -750,7 +750,7 @@
 
 		// Keyboard left/right arrows
 		document.addEventListener("keydown", (e) => {
-			if (lightbox?.isOpen()) return;
+			if (lightbox?.lightboxOpen) return;   // GLightbox has no isOpen(); it steps through its own slides
 			if (!stage.closest("body")) return;
 			const rect = stage.getBoundingClientRect();
 			const inView = rect.top < window.innerHeight && rect.bottom > 0;
