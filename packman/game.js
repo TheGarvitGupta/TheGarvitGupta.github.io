@@ -2087,8 +2087,8 @@
       .then(function (r) { return r.json().then(function (d) { d.status = r.status; return d; }); });
   }
   // The board: most levels packed first, then fewest moves, then least time. Everyone's
-  // three numbers are shown. Whoever is looking is picked out, and added underneath if
-  // they are further down than the rows on show.
+  // levels and moves are shown, and on a copy on this machine their time as well. Whoever
+  // is looking is picked out, and added underneath if they are further down than the rows on show.
   // The first three wear a medal in place of their number: gold, silver, bronze, with the number on it.
   function medal(pos) {
     return '<svg viewBox="0 0 26 28" role="img" aria-label="' + nth(pos) + '"><path class="tail" d="M5.5 1.5h6l3 9h-6zM20.5 1.5h-6l-3 9h6z"/>' +
@@ -2104,14 +2104,14 @@
       if (pos <= 3) { place.innerHTML = medal(pos); li.className = 'top t' + pos; }
       li.appendChild(avatar(r.a));
       cell(li, 'span', 'who', own ? called() : r.name);
-      cell(li, 'span', 'fig', r.n); cell(li, 'span', 'fig', r.m); cell(li, 'span', 'fig t', clock(r.t));
+      cell(li, 'span', 'fig', r.n); cell(li, 'span', 'fig', r.m); if (LOCAL) cell(li, 'span', 'fig t', clock(r.t));
       if (own) { li.className += ' me'; mine = true; }
       list.appendChild(li);
     }
     var rows = (data.top || []).slice(0, limit);
     if (!rows.length && !data.mine) { cell(list.appendChild(document.createElement('li')), 'span', '', 'Nobody yet. Be the first.').parentNode.className = 'none'; return; }
     var head = document.createElement('li'); head.className = 'head';
-    cell(head, 'span', 'who', ''); cell(head, 'span', 'fig', 'Levels'); cell(head, 'span', 'fig', 'Moves'); cell(head, 'span', 'fig t', 'Time');
+    cell(head, 'span', 'who', ''); cell(head, 'span', 'fig', 'Levels'); cell(head, 'span', 'fig', 'Moves'); if (LOCAL) cell(head, 'span', 'fig t', 'Time');
     list.appendChild(head);
     rows.forEach(function (r, i) { line(i + 1, r, r.a === me); });
     if (!mine && data.mine && data.rank) {
