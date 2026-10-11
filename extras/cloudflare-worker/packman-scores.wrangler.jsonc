@@ -1,0 +1,23 @@
+// Wrangler config for the worker `packman-scores`. It mirrors what is live, so a
+// deploy changes the code and nothing else. From the repo root:
+//   npx wrangler deploy -c extras/cloudflare-worker/packman-scores.wrangler.jsonc
+// Secrets are not kept here and a deploy leaves them as they are.
+{
+	"name": "packman-scores",
+	"main": "packman-scores.js",
+	"account_id": "50921d5b66bdbaf1a0645c60886709ef",
+	"compatibility_date": "2026-10-05",
+	"workers_dev": true,
+	"preview_urls": false,
+	"routes": [
+		{ "pattern": "*.garvitgupta.com/api/packman*", "zone_name": "garvitgupta.com" }
+	],
+	"d1_databases": [
+		{ "binding": "DB", "database_name": "packman", "database_id": "eb2c3e34-9c96-4fe1-928e-e635269668d0" }
+	],
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1,
+		"logs": { "enabled": true, "head_sampling_rate": 1, "persist": true, "invocation_logs": true }
+	}
+}

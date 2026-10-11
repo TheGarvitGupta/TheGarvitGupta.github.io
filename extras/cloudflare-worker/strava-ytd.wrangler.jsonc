@@ -1,0 +1,25 @@
+// Wrangler config for the worker `strava-ytd`. It mirrors what is live, so a
+// deploy changes the code and nothing else. From the repo root:
+//   npx wrangler deploy -c extras/cloudflare-worker/strava-ytd.wrangler.jsonc
+// Secrets are not kept here and a deploy leaves them as they are:
+// STRAVA_CLIENT_SECRET and STRAVA_REFRESH_TOKEN (set with `wrangler secret put`).
+{
+	"name": "strava-ytd",
+	"main": "strava-ytd.js",
+	"account_id": "50921d5b66bdbaf1a0645c60886709ef",
+	"compatibility_date": "2026-05-06",
+	"workers_dev": true,
+	"preview_urls": false,
+	"routes": [
+		{ "pattern": "www.garvitgupta.com/api/strava*", "zone_name": "garvitgupta.com" }
+	],
+	"kv_namespaces": [
+		{ "binding": "KV", "id": "7cf01a6039eb4baeac09483029572e32" }
+	],
+	"vars": { "STRAVA_ATHLETE_ID": "42935773", "STRAVA_CLIENT_ID": "38171" },
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1,
+		"logs": { "enabled": true, "head_sampling_rate": 1, "persist": true, "invocation_logs": true }
+	}
+}

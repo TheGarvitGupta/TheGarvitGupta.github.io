@@ -70,9 +70,13 @@ geometry and levels, so a change to `geom.js` or `levels.js` has to reach it:
 python3 packman/tools/build-worker.py     # writes extras/cloudflare-worker/packman-scores.js
 ```
 
-Then paste that file into the worker `packman-scores` in the Cloudflare
-dashboard and deploy. Until that is done, scores for a changed level are turned
-away. The steps for setting the worker up from nothing are at the top of the
+Then deploy it, from the repo root:
+
+```sh
+npx wrangler deploy -c extras/cloudflare-worker/packman-scores.wrangler.jsonc
+```
+
+Until that is done, scores for a changed level are turned away. The steps for setting the worker up from nothing are at the top of the
 built file.
 
 **A new level.** Add it to `levels.js` with a solution; `tools/pack.py` finds

@@ -97,7 +97,7 @@ Shows a year-to-date running progress bar in the About section, linked to the St
   - `STRAVA_REFRESH_TOKEN` (scope: `activity:read_all`)
   - `STRAVA_ATHLETE_ID`
 
-To redeploy either worker: open the Cloudflare dashboard → Workers & Pages → select the worker → Edit code → paste the file → Deploy. Secrets are set under Settings → Variables and Secrets.
+To redeploy a worker, from the repo root: `npx wrangler deploy -c extras/cloudflare-worker/<worker>.wrangler.jsonc`. Each config mirrors the worker's live route, bindings and cron, so a deploy changes the code and nothing else. Secrets are not in the configs and a deploy leaves them alone; set one with `npx wrangler secret put <NAME> -c <config>`.
 
 ### Photo gallery
 `js/gallery.js` fetches the file list from the GitHub Contents API at runtime to auto-discover photos in `images/photographs/`. Falls back to a hardcoded list if the API is unavailable. Photos are shuffled and paged 12 at a time with GLightbox for full-screen viewing.

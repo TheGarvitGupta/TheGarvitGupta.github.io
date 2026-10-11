@@ -1,0 +1,26 @@
+// Wrangler config for the worker `spotify-now-playing`. It mirrors what is live, so a
+// deploy changes the code and nothing else. From the repo root:
+//   npx wrangler deploy -c extras/cloudflare-worker/spotify-now-playing.wrangler.jsonc
+// Secrets are not kept here and a deploy leaves them as they are:
+// SPOTIFY_CLIENT_SECRET and SPOTIFY_REFRESH_TOKEN (set with `wrangler secret put`).
+{
+	"name": "spotify-now-playing",
+	"main": "spotify-now-playing.js",
+	"account_id": "50921d5b66bdbaf1a0645c60886709ef",
+	"compatibility_date": "2026-05-06",
+	"workers_dev": true,
+	"preview_urls": false,
+	"routes": [
+		{ "pattern": "www.garvitgupta.com/api/spotify*", "zone_name": "garvitgupta.com" }
+	],
+	"triggers": { "crons": ["* * * * *"] },
+	"kv_namespaces": [
+		{ "binding": "SPOTIFY_CACHE", "id": "7cf01a6039eb4baeac09483029572e32" }
+	],
+	"vars": { "SPOTIFY_CLIENT_ID": "6f9f2995dc574ebcaea5eb13669f0802" },
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1,
+		"logs": { "enabled": true, "head_sampling_rate": 1, "persist": true, "invocation_logs": true }
+	}
+}
