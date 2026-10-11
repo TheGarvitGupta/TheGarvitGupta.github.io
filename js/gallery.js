@@ -86,10 +86,14 @@
 		return arr;
 	};
 
-	let lastBp = null;
-	let featuredPos = null;
+	// Where each page has its big photo, and for which of the two layouts. A
+	// page keeps the place it drew until the layout changes under it: a phone
+	// sends a resize every time its address bar comes or goes, and one place
+	// shared by all the pages put every big photo in the same spot at the first
+	// of those.
+	const featuredPlace = new WeakMap();
 
-	const applyLayout = (gallery, forceRandomize = false) => {
+	const applyLayout = (gallery) => {
 		const featured = gallery?.querySelector(".image-container.featured");
 		if (!featured) return;
 		const others = gallery.querySelectorAll(".image-container:not(.featured)");
@@ -97,14 +101,19 @@
 		const isMobile = matchMedia("(max-width: 1180px)").matches;
 		const [cols, rows] = isMobile ? [3, 5] : [5, 3];
 		const bp = isMobile ? "m" : "d";
-		if (bp !== lastBp || forceRandomize) {
-			lastBp = bp;
-			featuredPos = {
-				fc: 1 + Math.floor(Math.random() * (cols - 1)),
-				fr: 1 + Math.floor(Math.random() * 2)
-			};
+		let place = featuredPlace.get(gallery);
+		if (!place || place.bp !== bp) {
+			// anywhere its two columns and two rows fit, and not where another
+			// page already has its own while there is somewhere else
+			const taken = sections.map(s => s && featuredPlace.get(s.gallery)).filter(p => p && p.bp === bp);
+			const all = [];
+			for (let fr = 1; fr < rows; fr++) for (let fc = 1; fc < cols; fc++) all.push({ bp, fc, fr });
+			const free = all.filter(a => !taken.some(t => t.fc === a.fc && t.fr === a.fr));
+			const from = free.length ? free : all;
+			place = from[Math.floor(Math.random() * from.length)];
+			featuredPlace.set(gallery, place);
 		}
-		const { fc, fr } = featuredPos;
+		const { fc, fr } = place;
 		featured.style.gridColumn = `${fc} / span 2`;
 		featured.style.gridRow    = `${fr} / span 2`;
 
@@ -201,7 +210,7 @@
 
 	// A page seen for the first time comes in strung out behind itself: the
 	// column that leads is nearly in place, each one after it starts further
-	// back, a little turned and unseen, and sets off a little later. direction:
+	// back, a little turned, and sets off a little later. direction:
 	// 1 = arriving from the right, -1 = from the left. Returns where each tile
 	// starts, placed there.
 	const trailTiles = (gallery, cols, direction) => {
@@ -225,7 +234,6 @@
 	// k: how much of its way a trailing tile still has to go, 1 at the start and 0 home.
 	const trailTile = (t, k) => {
 		t.el.style.transform = `translate3d(${(t.ox * k).toFixed(1)}px, ${(t.oy * k).toFixed(1)}px, 0) rotate(${(t.rot * k).toFixed(2)}deg) scale(${(1 - 0.1 * k).toFixed(3)})`;
-		t.el.style.opacity   = Math.min(1, (1 - k) * 3).toFixed(3);
 	};
 
 	// A page that has arrived is left with nothing on its tiles to move them again.
@@ -247,7 +255,7 @@
 		for (let idx = 0; idx < numPages; idx++) {
 			if (sections[idx]) continue;
 			const g = createGallerySection();
-			const [cols, rows] = applyLayout(g, true);
+			const [cols, rows] = applyLayout(g);
 			sections[idx] = { gallery: g, cols, rows, thumbReady: [], upgrades: [] };
 			g.style.display = "none";
 			strip.appendChild(g);
@@ -358,7 +366,7 @@
 	const sectionFor = (idx) => {
 		if (!sections[idx]) {
 			const g = createGallerySection();
-			const [cols, rows] = applyLayout(g, true);
+			const [cols, rows] = applyLayout(g);
 			const { thumbReady, upgrades } = populateGallery(g, idx * PAGE_SIZE, cols, rows);
 			sections[idx] = { gallery: g, cols, rows, thumbReady, upgrades };
 		}
@@ -411,7 +419,7 @@
 		if (oldGallery) {
 			oldGallery.style.cssText = `${PLACED}transform:translate3d(0,0,0)`;
 		}
-		gallery.style.cssText = `${PLACED}transform:translate3d(${direction * travel}px,0,0);opacity:0`;
+		gallery.style.cssText = `${PLACED}transform:translate3d(${direction * travel}px,0,0)`;
 		stage.appendChild(gallery);
 		inflightGallery = gallery;
 		syncVideos();
@@ -421,19 +429,18 @@
 		gallery.offsetWidth; // force reflow
 
 		// The page leaving is whole for most of its way out and fades only as it
-		// goes; the one arriving is there almost at once. It is the travel that
-		// is seen, not one page dissolving into the other.
+		// goes; the one arriving is never faded. It is the travel that is seen,
+		// not one page dissolving into the other.
 		if (oldGallery) {
 			oldGallery.style.transition = `${slide}, opacity ${ANIM_MS * 0.45}ms ease-in ${ANIM_MS * 0.4}ms`;
 			oldGallery.style.transform  = `translate3d(${-direction * travel}px,0,0)`;
 			oldGallery.style.opacity    = "0";
 		}
-		gallery.style.transition = `${slide}, opacity ${ANIM_MS * 0.4}ms ease-out`;
+		gallery.style.transition = slide;
 		gallery.style.transform  = "translate3d(0,0,0)";
-		gallery.style.opacity    = "1";
 
 		tiles.forEach(t => {
-			t.el.style.transition = `transform ${ANIM_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1) ${t.wait}ms, opacity ${ANIM_MS * 0.5}ms ease-out ${t.wait}ms`;
+			t.el.style.transition = `transform ${ANIM_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1) ${t.wait}ms`;
 			trailTile(t, 0);
 		});
 
@@ -463,7 +470,7 @@
 		drag.sec   = sec;
 		drag.idx   = idx;
 		drag.isNew = !sec.visited;
-		sec.gallery.style.cssText = `${PLACED}transform:translate3d(${dir * drag.travel}px,0,0);opacity:0`;
+		sec.gallery.style.cssText = `${PLACED}transform:translate3d(${dir * drag.travel}px,0,0)`;
 		stage.appendChild(sec.gallery);
 		inflightGallery = sec.gallery;
 		drag.tiles = drag.isNew ? trailTiles(sec.gallery, sec.cols, dir) : null;
@@ -479,8 +486,7 @@
 		const p = clamp01(Math.abs(dx) / travel);
 		old.style.transform = `translate3d(${dx.toFixed(1)}px,0,0)`;
 		old.style.opacity   = (1 - clamp01((p - 0.4) / 0.45)).toFixed(3);
-		sec.gallery.style.transform = `translate3d(${(dir * travel + dx).toFixed(1)}px,0,0)`;
-		sec.gallery.style.opacity   = clamp01(p / 0.3).toFixed(3);
+		sec.gallery.style.transform = `translate3d(${(dir * travel + dx).toFixed(1)}px,0,0)`;   // never faded: only what leaves is
 		if (tiles) tiles.forEach(t => trailTile(t, 1 - p));
 	};
 
@@ -545,7 +551,6 @@
 			old.style.transform  = `translate3d(${-dir * travel}px,0,0)`;
 			old.style.opacity    = "0";
 			sec.gallery.style.transform = "translate3d(0,0,0)";
-			sec.gallery.style.opacity   = "1";
 			if (tiles) tiles.forEach(t => { t.el.style.transition = move; trailTile(t, 0); });
 			currentPage = d.idx;
 			sec.visited = true;
