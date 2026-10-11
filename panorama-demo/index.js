@@ -367,4 +367,13 @@
     return null;
   }
 
+  // Framed far down a long page, this turned and drew every frame with nobody
+  // looking. Seen from inside a frame, "in view" is the outer page's view.
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function(entries) {
+      var loop = viewer.renderLoop();
+      if (entries[entries.length - 1].isIntersecting) loop.start(); else loop.stop();
+    }).observe(document.documentElement);
+  }
+
 })();

@@ -115,6 +115,7 @@ function reinitParticles() {
     },
     "retina_detect": true
   });
+  if (typeof syncParticles === 'function') syncParticles();   // made anew while scrolled out of sight (js/loaders.js)
 }
 
 window.reinitParticles = reinitParticles;
