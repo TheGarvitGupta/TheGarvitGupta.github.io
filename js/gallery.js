@@ -61,6 +61,11 @@
 	const ARRIVE_TRAIL    = 0.3;   // of the stage's width: how far behind its place the last column starts
 	const ARRIVE_STAGGER  = 200;   // ms the last column sets off after the first
 	const ARRIVE_ROTATION = 9;     // degrees, either way
+	// A finger on the stage carries the pages with it, and on letting go they
+	// go on to the next page or back.
+	const DRAG_SLOP   = 8;     // px a touch moves before it is taken for a drag or a scroll
+	const DRAG_COMMIT = 0.22;  // of the stage's width: let go past this and the page turns
+	const DRAG_FLICK  = 0.4;   // px per ms: or let go moving this fast
 
 	let allPhotos = [];
 	let currentPage = 0;
@@ -197,30 +202,36 @@
 	// A page seen for the first time comes in strung out behind itself: the
 	// column that leads is nearly in place, each one after it starts further
 	// back, a little turned and unseen, and sets off a little later. direction:
-	// 1 = arriving from the right, -1 = from the left. Returns the longest wait.
+	// 1 = arriving from the right, -1 = from the left. Returns where each tile
+	// starts, placed there.
 	const trailTiles = (gallery, cols, direction) => {
 		const rand = (lo, hi) => lo + Math.random() * (hi - lo);
 		const width = stage.offsetWidth;
-		let longest = 0;
-		gallery.querySelectorAll(".image-container").forEach(el => {
+		const tiles = Array.from(gallery.querySelectorAll(".image-container")).map(el => {
 			const col  = ((parseFloat(el.style.gridColumn) || 1) - 1) / (cols - 1);
 			const back = direction > 0 ? col : 1 - col;   // 0 for the column that leads
-			const ox   = direction * (30 + back * ARRIVE_TRAIL * width + rand(0, 40));
-			const wait = Math.round(back * ARRIVE_STAGGER + rand(0, 60));
-			longest = Math.max(longest, wait);
-			el.dataset.wait     = wait;
-			el.style.transition = "none";
-			el.style.transform  = `translate3d(${ox.toFixed(1)}px, ${rand(-26, 26).toFixed(1)}px, 0) rotate(${rand(-ARRIVE_ROTATION, ARRIVE_ROTATION).toFixed(2)}deg) scale(0.9)`;
-			el.style.opacity    = "0";
+			return {
+				el,
+				ox:   direction * (30 + back * ARRIVE_TRAIL * width + rand(0, 40)),
+				oy:   rand(-26, 26),
+				rot:  rand(-ARRIVE_ROTATION, ARRIVE_ROTATION),
+				wait: Math.round(back * ARRIVE_STAGGER + rand(0, 60)),
+			};
 		});
-		return longest;
+		tiles.forEach(t => { t.el.style.transition = "none"; trailTile(t, 1); });
+		return tiles;
+	};
+
+	// k: how much of its way a trailing tile still has to go, 1 at the start and 0 home.
+	const trailTile = (t, k) => {
+		t.el.style.transform = `translate3d(${(t.ox * k).toFixed(1)}px, ${(t.oy * k).toFixed(1)}px, 0) rotate(${(t.rot * k).toFixed(2)}deg) scale(${(1 - 0.1 * k).toFixed(3)})`;
+		t.el.style.opacity   = Math.min(1, (1 - k) * 3).toFixed(3);
 	};
 
 	// A page that has arrived is left with nothing on its tiles to move them again.
 	const settleTiles = (gallery) => {
 		gallery.querySelectorAll(".image-container").forEach(el => {
 			el.style.transition = el.style.transform = el.style.opacity = "";
-			delete el.dataset.wait;
 		});
 	};
 
@@ -326,21 +337,64 @@
 		return g;
 	};
 
-	// Snap any in-flight animation to its end state immediately.
+	// What is in flight, a turn or a turn called off, lands at once.
+	let settleNow = null;
 	const abortAnimation = () => {
 		if (animationTimer) { clearTimeout(animationTimer); animationTimer = null; }
-		// Hide all strip children (the outgoing gallery)
-		Array.from(strip.children).forEach(el => {
-			el.removeAttribute("style");
-			el.style.display = "none";
-		});
-		// Settle the in-flight gallery into strip
-		if (inflightGallery) {
-			settleTiles(inflightGallery);
-			inflightGallery.removeAttribute("style");
-			strip.appendChild(inflightGallery);
-			inflightGallery = null;
+		drag = null;
+		if (settleNow) { const land = settleNow; settleNow = null; land(); }
+	};
+	const landAfter = (ms, land) => {
+		settleNow = land;
+		animationTimer = setTimeout(() => { animationTimer = null; settleNow = null; land(); }, ms);
+	};
+
+	const PLACED = "position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;display:grid;";
+	// Both pages go the same distance, a page's width and the gap, so they cross
+	// the stage as one strip with the gap between them.
+	const pageTravel   = () => stage.offsetWidth + Math.max(70, PAGE_GAP * stage.offsetWidth);
+	const shownGallery = () => Array.from(strip.children).find(el => el.style.display !== "none") || strip.firstElementChild;
+
+	const sectionFor = (idx) => {
+		if (!sections[idx]) {
+			const g = createGallerySection();
+			const [cols, rows] = applyLayout(g, true);
+			const { thumbReady, upgrades } = populateGallery(g, idx * PAGE_SIZE, cols, rows);
+			sections[idx] = { gallery: g, cols, rows, thumbReady, upgrades };
 		}
+		return sections[idx];
+	};
+
+	// The turn is over: the page that arrived takes the strip, and the one that
+	// left is hidden but kept, so its photos stay in memory.
+	const landTurn = (oldGallery, sec, isNew) => {
+		inflightGallery = null;
+		if (oldGallery && oldGallery !== sec.gallery) {
+			oldGallery.removeAttribute("style");
+			oldGallery.style.display = "none";
+		}
+		settleTiles(sec.gallery);
+		sec.gallery.removeAttribute("style");
+		strip.appendChild(sec.gallery); // move from stage into strip
+		transitioning = false;
+		syncVideos();
+		const fullResReady = isNew
+			? allSettledOrTimeout(sec.thumbReady).then(() => allSettledOrTimeout(sec.upgrades.map(fn => fn())))
+			: Promise.resolve();
+		preloadRemainingPages(fullResReady);
+	};
+
+	// The turn is called off: the page that was coming is put away again and the
+	// one that was there is as it was.
+	const dropTurn = (oldGallery, gallery) => {
+		inflightGallery = null;
+		if (gallery) {
+			settleTiles(gallery);
+			gallery.removeAttribute("style");
+			gallery.style.display = "none";
+			strip.appendChild(gallery);
+		}
+		if (oldGallery) oldGallery.removeAttribute("style");
 		transitioning = false;
 		syncVideos();
 	};
@@ -348,24 +402,21 @@
 	// direction: 1 = the new page comes from the right (next), -1 = from the left (prev)
 	// isNew: true = first time seeing this page (it slides in with its tiles trailing)
 	//        false = revisiting (it slides in as it was left, and nothing else moves)
-	const animateFlyIn = (gallery, cols, rows, direction, isNew, thumbReady, upgrades) => {
-		const slide = `transform ${ANIM_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`;
-		// Both pages go the same distance, a page's width and the gap, so they
-		// cross the stage as one strip with the gap between them.
-		const travel = stage.offsetWidth + Math.max(70, PAGE_GAP * stage.offsetWidth);
-		const placed = "position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;display:grid;";
+	const animateFlyIn = (sec, direction, isNew) => {
+		const { gallery } = sec;
+		const slide  = `transform ${ANIM_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+		const travel = pageTravel();
 
-		// Find the currently visible gallery (not hidden)
-		const oldGallery = Array.from(strip.children).find(el => el.style.display !== "none") || strip.firstElementChild;
+		const oldGallery = shownGallery();
 		if (oldGallery) {
-			oldGallery.style.cssText = `${placed}transform:translate3d(0,0,0)`;
+			oldGallery.style.cssText = `${PLACED}transform:translate3d(0,0,0)`;
 		}
-		gallery.style.cssText = `${placed}transform:translate3d(${direction * travel}px,0,0);opacity:0`;
+		gallery.style.cssText = `${PLACED}transform:translate3d(${direction * travel}px,0,0);opacity:0`;
 		stage.appendChild(gallery);
 		inflightGallery = gallery;
 		syncVideos();
 
-		const longest = isNew ? trailTiles(gallery, cols, direction) : 0;
+		const tiles = isNew ? trailTiles(gallery, sec.cols, direction) : [];
 
 		gallery.offsetWidth; // force reflow
 
@@ -381,33 +432,141 @@
 		gallery.style.transform  = "translate3d(0,0,0)";
 		gallery.style.opacity    = "1";
 
-		if (isNew) {
-			gallery.querySelectorAll(".image-container").forEach(el => {
-				const wait = el.dataset.wait || 0;
-				el.style.transition = `transform ${ANIM_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1) ${wait}ms, opacity ${ANIM_MS * 0.5}ms ease-out ${wait}ms`;
-				el.style.transform  = "translate3d(0,0,0) rotate(0deg) scale(1)";
-				el.style.opacity    = "1";
-			});
+		tiles.forEach(t => {
+			t.el.style.transition = `transform ${ANIM_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1) ${t.wait}ms, opacity ${ANIM_MS * 0.5}ms ease-out ${t.wait}ms`;
+			trailTile(t, 0);
+		});
+
+		const longest = tiles.reduce((most, t) => Math.max(most, t.wait), 0);
+		landAfter(ANIM_MS + longest + 50, () => landTurn(oldGallery, sec, isNew));
+	};
+
+	// --- A finger on the stage -------------------------------------------------
+	// The page follows the finger, with its neighbour on that side beside it
+	// across the gap; a neighbour not yet seen has its tiles trail in as far as
+	// it has been pulled. Letting go far enough over, or fast enough, turns the
+	// page, and anything less puts it back.
+	let drag = null;
+	const pageCount = () => Math.ceil(allPhotos.length / PAGE_SIZE);
+	const clamp01  = (n) => Math.max(0, Math.min(1, n));
+
+	// Stands the neighbour on one side beside the page being dragged, putting
+	// away the one on the other side if the finger has come back across.
+	const dragToward = (dir) => {
+		if (drag.sec) dropTurn(null, drag.sec.gallery);
+		transitioning = true;               // dropTurn says otherwise
+		drag.dir = dir;
+		drag.sec = drag.tiles = null;
+		const idx = currentPage + dir;
+		if (idx < 0 || idx >= pageCount()) return;   // nothing that way: the page only gives a little
+		const sec = sectionFor(idx);
+		drag.sec   = sec;
+		drag.idx   = idx;
+		drag.isNew = !sec.visited;
+		sec.gallery.style.cssText = `${PLACED}transform:translate3d(${dir * drag.travel}px,0,0);opacity:0`;
+		stage.appendChild(sec.gallery);
+		inflightGallery = sec.gallery;
+		drag.tiles = drag.isNew ? trailTiles(sec.gallery, sec.cols, dir) : null;
+		syncVideos();
+	};
+
+	const dragFrame = () => {
+		const { dx, old, sec, dir, travel, tiles } = drag;
+		if (!sec) {
+			old.style.transform = `translate3d(${(dx * 0.25).toFixed(1)}px,0,0)`;
+			return;
+		}
+		const p = clamp01(Math.abs(dx) / travel);
+		old.style.transform = `translate3d(${dx.toFixed(1)}px,0,0)`;
+		old.style.opacity   = (1 - clamp01((p - 0.4) / 0.45)).toFixed(3);
+		sec.gallery.style.transform = `translate3d(${(dir * travel + dx).toFixed(1)}px,0,0)`;
+		sec.gallery.style.opacity   = clamp01(p / 0.3).toFixed(3);
+		if (tiles) tiles.forEach(t => trailTile(t, 1 - p));
+	};
+
+	const dragStart = (e) => {
+		if (e.touches.length !== 1 || !allPhotos.length) { drag = null; return; }
+		if (transitioning) abortAnimation();
+		const { clientX: x, clientY: y } = e.touches[0];
+		drag = { x0: x, y0: y, dx: 0, lock: null, lastX: x, lastT: e.timeStamp, vx: 0 };
+	};
+
+	const dragMove = (e) => {
+		if (!drag || drag.lock === "v") return;
+		const { clientX: x, clientY: y } = e.touches[0];
+		if (!drag.lock) {
+			const ax = Math.abs(x - drag.x0), ay = Math.abs(y - drag.y0);
+			if (ax < DRAG_SLOP && ay < DRAG_SLOP) return;
+			if (ay > ax) { drag.lock = "v"; return; }   // the page is being scrolled, not turned
+			drag.lock   = "h";
+			drag.x0     = x;                             // no jump as the drag takes hold
+			drag.travel = pageTravel();
+			drag.old    = shownGallery();
+			drag.old.style.cssText = `${PLACED}transform:translate3d(0,0,0)`;
+			transitioning = true;
+			const d = drag;
+			settleNow = () => dropTurn(d.old, d.sec?.gallery);
+		}
+		const dt = e.timeStamp - drag.lastT;
+		if (dt > 0) drag.vx = 0.7 * (x - drag.lastX) / dt + 0.3 * drag.vx;
+		drag.lastX = x;
+		drag.lastT = e.timeStamp;
+		drag.dx = Math.max(-drag.travel, Math.min(drag.travel, x - drag.x0));
+		const dir = drag.dx < 0 ? 1 : -1;
+		if (drag.dx !== 0 && dir !== drag.dir) dragToward(dir);
+		if (drag.queued) return;
+		drag.queued = true;
+		const d = drag;
+		requestAnimationFrame(() => {
+			d.queued = false;
+			if (drag === d) dragFrame();   // not if it has been let go of since
+		});
+	};
+
+	const dragEnd = (e) => {
+		const d = drag;
+		drag = null;
+		if (!d || d.lock !== "h") return;
+		settleNow = null;
+		const { old, sec, dir, travel, tiles, isNew } = d;
+		const p = clamp01(Math.abs(d.dx) / travel);
+		// A finger that has stopped before lifting was not flicking.
+		const vx = e.type === "touchend" && e.timeStamp - d.lastT < 80 ? d.vx : 0;
+		const flick = Math.abs(vx) > DRAG_FLICK;
+		const onward = vx < 0 ? 1 : -1;     // the way a flick is turning the pages
+		const turn = e.type === "touchend" && sec &&
+			(flick ? onward === dir : Math.abs(d.dx) > DRAG_COMMIT * stage.offsetWidth);
+		const ease = "cubic-bezier(0.2, 0.8, 0.2, 1)";
+
+		if (turn) {
+			const ms = Math.round(Math.max(200, Math.min(480, ANIM_MS * (1 - p))));
+			const move = `transform ${ms}ms ${ease}, opacity ${ms}ms ease-out`;
+			old.style.transition = sec.gallery.style.transition = move;
+			old.style.transform  = `translate3d(${-dir * travel}px,0,0)`;
+			old.style.opacity    = "0";
+			sec.gallery.style.transform = "translate3d(0,0,0)";
+			sec.gallery.style.opacity   = "1";
+			if (tiles) tiles.forEach(t => { t.el.style.transition = move; trailTile(t, 0); });
+			currentPage = d.idx;
+			sec.visited = true;
+			updateDots(pageCount());
+			rebuildLightbox();
+			landAfter(ms + 50, () => landTurn(old, sec, isNew));
+			return;
 		}
 
-		animationTimer = setTimeout(() => {
-			animationTimer = null;
-			inflightGallery = null;
-			// Hide old gallery but keep it in DOM so images stay in memory
-			if (oldGallery && oldGallery !== gallery) {
-				oldGallery.removeAttribute("style");
-				oldGallery.style.display = "none";
-			}
-			settleTiles(gallery);
-			gallery.removeAttribute("style");
-			strip.appendChild(gallery); // move from stage into strip
-			transitioning = false;
-			syncVideos();
-			const fullResReady = isNew
-				? allSettledOrTimeout(thumbReady).then(() => allSettledOrTimeout(upgrades.map(fn => fn())))
-				: Promise.resolve();
-			preloadRemainingPages(fullResReady);
-		}, ANIM_MS + longest + 50);
+		const ms = Math.round(Math.max(180, Math.min(400, ANIM_MS * p)));
+		const move = `transform ${ms}ms ${ease}, opacity ${ms}ms ease-out`;
+		old.style.transition = move;
+		old.style.transform  = "translate3d(0,0,0)";
+		old.style.opacity    = "1";
+		if (sec) {
+			sec.gallery.style.transition = move;
+			sec.gallery.style.transform  = `translate3d(${dir * travel}px,0,0)`;
+			sec.gallery.style.opacity    = "0";
+			if (tiles) tiles.forEach(t => { t.el.style.transition = move; trailTile(t, 1); });
+		}
+		landAfter(ms + 50, () => dropTurn(old, sec?.gallery));
 	};
 
 
@@ -557,20 +716,13 @@
 		if (targetIdx === currentPage) return;
 
 		const direction = targetIdx > currentPage ? 1 : -1;
-		const isNew = !sections[targetIdx] || !sections[targetIdx].visited;
+		const sec = sectionFor(targetIdx);
+		const isNew = !sec.visited;
 		currentPage = targetIdx;
 		transitioning = true;
+		sec.visited = true;
 
-		if (!sections[targetIdx]) {
-			const g = createGallerySection();
-			const [cols, rows] = applyLayout(g, true);
-			const { thumbReady, upgrades } = populateGallery(g, targetIdx * PAGE_SIZE, cols, rows);
-			sections[targetIdx] = { gallery: g, cols, rows, thumbReady, upgrades };
-		}
-		sections[targetIdx].visited = true;
-		const { gallery, cols, rows, thumbReady, upgrades } = sections[targetIdx];
-
-		animateFlyIn(gallery, cols, rows, direction, isNew, thumbReady, upgrades);
+		animateFlyIn(sec, direction, isNew);
 		updateDots(numPages);
 		rebuildLightbox();
 	};
@@ -735,19 +887,13 @@
 			navigateTo(currentPage + 1);
 		});
 
-		// Touch swipe
-		let touchStartX = 0, touchStartY = 0;
-		stage.addEventListener("touchstart", (e) => {
-			touchStartX = e.touches[0].clientX;
-			touchStartY = e.touches[0].clientY;
-		}, { passive: true });
-		stage.addEventListener("touchend", (e) => {
-			const dx = e.changedTouches[0].clientX - touchStartX;
-			const dy = e.changedTouches[0].clientY - touchStartY;
-			if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
-				navigateTo(currentPage + (dx < 0 ? 1 : -1));
-			}
-		}, { passive: true });
+		// A finger carries the pages (dragStart and the rest, above). The stage is
+		// touch-action: pan-y, so a sideways drag is ours and an up-and-down one
+		// is the browser's, which ends ours with a touchcancel.
+		stage.addEventListener("touchstart",  dragStart, { passive: true });
+		stage.addEventListener("touchmove",   dragMove,  { passive: true });
+		stage.addEventListener("touchend",    dragEnd,   { passive: true });
+		stage.addEventListener("touchcancel", dragEnd,   { passive: true });
 
 		// Keyboard left/right arrows
 		document.addEventListener("keydown", (e) => {
