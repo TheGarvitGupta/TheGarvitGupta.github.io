@@ -54,7 +54,7 @@
 	const SCATTER_SCALE    = [0.55, 0.85]; // size a tile starts at
 	const SCATTER_SWIRL    = 0.7;          // radians its way in is bent by, either way
 	const SCATTER_LATE     = 0.3;          // the last of the tiles sets off this far into the scroll
-	const SNAP_AT          = 0.72;         // from here the tiles finish on their own
+	const SNAP_AT          = 0.86;         // from here the tiles finish on their own
 	const SNAP_MS          = 420;
 	const ANIM_MS = 700;
 
