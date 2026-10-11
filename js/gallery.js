@@ -45,10 +45,17 @@
 		"photograph-9.jpg",
 	];
 	const PAGE_SIZE = 12;
-	const CONVERGE_PX          = 40;
-	const CONVERGE_JITTER_ANGLE = 20 * (Math.PI / 180);
 	const CONVERGE_JITTER_DIST  = 10;
 	const CONVERGE_ROTATION_MAX = 12;
+	// The first page's tiles start flung out from the middle and are drawn in by
+	// the scroll (see scatterTiles / initScrollConverge).
+	const SCATTER_REACH    = [0.34, 0.62]; // how far out a tile starts, as a share of the stage's longer side
+	const SCATTER_ROTATION = 28;           // degrees, either way
+	const SCATTER_SCALE    = [0.55, 0.85]; // size a tile starts at
+	const SCATTER_SWIRL    = 0.7;          // radians its way in is bent by, either way
+	const SCATTER_LATE     = 0.3;          // the last of the tiles sets off this far into the scroll
+	const SNAP_AT          = 0.72;         // from here the tiles finish on their own
+	const SNAP_MS          = 420;
 	const ANIM_MS = 700;
 
 	let allPhotos = [];
@@ -142,17 +149,6 @@
 		return [cols, rows];
 	};
 
-	// returns random offset data with organic jitter around a base direction angle (scroll converge)
-	const randomOffset = (baseAngle) => {
-		const angle = baseAngle + (Math.random() * 2 - 1) * CONVERGE_JITTER_ANGLE;
-		const dist  = CONVERGE_PX + (Math.random() * 2 - 1) * CONVERGE_JITTER_DIST;
-		return {
-			ox:  Math.cos(angle) * dist,
-			oy:  Math.sin(angle) * dist,
-			rot: (Math.random() * 2 - 1) * CONVERGE_ROTATION_MAX,
-		};
-	};
-
 	// Compute explosion-based offsets for a tile at (col, row) in a (cols x rows) grid.
 	// explosionEdge: 'right' = origin at (cols+1, midRow), 'left' = origin at (0, midRow).
 	// Returns {ox, oy, rot} — the displacement vector away from the explosion origin.
@@ -175,24 +171,48 @@
 		};
 	};
 
-	// baseAngle: null = radial from center (scroll converge), otherwise fixed direction
-	const applyOffsets = (gallery, cols, rows, baseAngle = null) => {
-		const cx = (cols + 1) / 2;
-		const cy = (rows + 1) / 2;
-		gallery.querySelectorAll(".image-container").forEach(el => {
-			const col = parseFloat(el.style.gridColumn) || cx;
-			const row = parseFloat(el.style.gridRow)    || cy;
-			const angle = baseAngle !== null ? baseAngle : Math.atan2(row - cy, col - cx);
-			const { ox, oy, rot } = randomOffset(angle);
-			el.dataset.ox  = ox;
-			el.dataset.oy  = oy;
-			el.dataset.rot = rot;
-			el.style.transition = "none";
-			el.style.transform  = `translate(${ox}px, ${oy}px) rotate(${rot}deg)`;
+	// Where each tile of the first page starts from: flung out from the middle of
+	// the stage along its own line, small, turned and unseen; #life clips the
+	// ones that start beyond its edges. Returns what
+	// initScrollConverge needs to bring each one home.
+	const scatterTiles = (gallery, cols, rows) => {
+		const rand  = (lo, hi) => lo + Math.random() * (hi - lo);
+		const reach = Math.max(stage.offsetWidth, stage.offsetHeight);
+		const tiles = Array.from(gallery.querySelectorAll(".image-container")).map(el => {
+			const span = el.classList.contains("featured") ? 2 : 1;
+			const dx = ((parseFloat(el.style.gridColumn) || 1) - 1 + span / 2) / cols - 0.5;
+			const dy = ((parseFloat(el.style.gridRow)    || 1) - 1 + span / 2) / rows - 0.5;
+			// straight out from the middle, give or take; a tile at the middle has no way out of its own
+			const angle = (Math.abs(dx) + Math.abs(dy) < 0.05 ? rand(0, 2 * Math.PI) : Math.atan2(dy, dx)) + rand(-0.35, 0.35);
+			const start = rand(0, SCATTER_LATE);
+			return {
+				el, angle,
+				dist:  rand(SCATTER_REACH[0], SCATTER_REACH[1]) * reach,
+				rot:   rand(-SCATTER_ROTATION, SCATTER_ROTATION),
+				scale: rand(SCATTER_SCALE[0], SCATTER_SCALE[1]),
+				swirl: rand(-SCATTER_SWIRL, SCATTER_SWIRL),
+				start,
+				end:   rand(Math.max(start + 0.5, 0.85), 1),
+			};
 		});
+		tiles.forEach(t => {
+			// Its own layer, so moving it is the compositor's work and the photo is
+			// not painted again on every frame of the scroll.
+			t.el.style.willChange = "transform, opacity";
+			t.el.style.transition = "none";
+		});
+		return tiles;
 	};
 
-	// Like applyOffsets but uses explosion model for page transitions.
+	// k: how much of its way a tile still has to go, 1 at the start and 0 home.
+	const placeTile = (t, k) => {
+		const a = t.angle + t.swirl * k;
+		const d = t.dist * k;
+		t.el.style.transform = `translate3d(${(Math.cos(a) * d).toFixed(1)}px, ${(Math.sin(a) * d).toFixed(1)}px, 0) rotate(${(t.rot * k).toFixed(2)}deg) scale(${(1 + (t.scale - 1) * k).toFixed(3)})`;
+		t.el.style.opacity   = Math.min(1, (1 - k) * 2.5).toFixed(3);
+	};
+
+	// Where a page's tiles start from when it is slid to: the explosion model.
 	// explosionEdge: 'right' tiles fly away from right (outgoing for next), 'left' = prev outgoing.
 	const applyExplosionOffsets = (gallery, cols, rows, explosionEdge) => {
 		gallery.querySelectorAll(".image-container").forEach(el => {
@@ -235,34 +255,58 @@
 		return thumbChain.then(() => allSettledOrTimeout(upgradeFns.map(fn => fn())));
 	};
 
-	const initScrollConverge = (gallery) => {
-		if (scrollHandler) window.removeEventListener("scroll", scrollHandler);
+	// Draws the scattered tiles of the first page home as the stage scrolls up
+	// into view, and lets go once they are nearly there: from SNAP_AT they finish
+	// by themselves, and stay.
+	const initScrollConverge = (tiles) => {
+		let queued = false;
+		let last = -1;
 
-		scrollHandler = () => {
-			const stage = document.querySelector(".gallery-stage");
-			if (!stage) return;
-			const { top, height } = stage.getBoundingClientRect();
-			const vh = window.innerHeight;
-			const progress = Math.max(0, Math.min(1, (vh - top) / height));
-
-			gallery.querySelectorAll(".image-container").forEach(el => {
-				const ox  = parseFloat(el.dataset.ox)  || 0;
-				const oy  = parseFloat(el.dataset.oy)  || 0;
-				const rot = parseFloat(el.dataset.rot) || 0;
-				const t   = 1 - progress;
-				el.style.transition = "none";
-				el.style.transform  = `translate(${ox * t}px, ${oy * t}px) rotate(${rot * t}deg)`;
+		const finish = () => {
+			tiles.forEach(t => {
+				t.el.style.transition = t.el.style.transform = t.el.style.opacity = t.el.style.willChange = "";
 			});
+		};
 
-			if (progress >= 1) {
-				hasConverged = true;
-				window.removeEventListener("scroll", scrollHandler);
-				scrollHandler = null;
-			}
+		const snap = () => {
+			hasConverged = true;
+			window.removeEventListener("scroll", scrollHandler);
+			window.removeEventListener("resize", scrollHandler);
+			scrollHandler = null;
+			// a little past and back, so they land rather than stop
+			const ease = `${SNAP_MS}ms cubic-bezier(0.3, 1.35, 0.6, 1)`;
+			tiles.forEach(t => {
+				t.el.style.transition = `transform ${ease}, opacity ${SNAP_MS / 2}ms ease-out`;
+				t.el.style.transform  = "translate3d(0, 0, 0) rotate(0deg) scale(1)";
+				t.el.style.opacity    = "1";
+			});
+			setTimeout(finish, SNAP_MS + 80);
+		};
+
+		const frame = () => {
+			queued = false;
+			if (!scrollHandler) return;
+			const { top, height } = stage.getBoundingClientRect();
+			const progress = Math.max(0, Math.min(1, (window.innerHeight - top) / height));
+			if (progress === last) return;
+			last = progress;
+			if (progress >= SNAP_AT) { snap(); return; }
+			tiles.forEach(t => {
+				const p = Math.max(0, Math.min(1, (progress - t.start) / (t.end - t.start)));
+				placeTile(t, Math.pow(1 - p, 1.5));
+			});
+		};
+
+		// Scroll events can come several to a frame; the tiles are moved once.
+		scrollHandler = () => {
+			if (queued) return;
+			queued = true;
+			requestAnimationFrame(frame);
 		};
 
 		window.addEventListener("scroll", scrollHandler, { passive: true });
-		scrollHandler();
+		window.addEventListener("resize", scrollHandler, { passive: true });
+		frame();
 	};
 
 	const createGallerySection = () => {
@@ -300,6 +344,7 @@
 			inflightGallery = null;
 		}
 		transitioning = false;
+		syncVideos();
 	};
 
 	// direction: 1 = right (next), -1 = left (prev)
@@ -316,6 +361,7 @@
 		gallery.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;display:grid;transform:translateX(${direction * 100}%);opacity:0`;
 		stage.appendChild(gallery);
 		inflightGallery = gallery;
+		syncVideos();
 
 		if (isNew) {
 			const explosionEdge = direction > 0 ? 'left' : 'right';
@@ -355,6 +401,7 @@
 			gallery.removeAttribute("style");
 			strip.appendChild(gallery); // move from stage into strip
 			transitioning = false;
+			syncVideos();
 			const fullResReady = isNew
 				? allSettledOrTimeout(thumbReady).then(() => allSettledOrTimeout(upgrades.map(fn => fn())))
 				: Promise.resolve();
@@ -369,12 +416,26 @@
 			new Promise(res => setTimeout(res, ms))
 		]);
 
+	// A clip is decoded for as long as it plays, seen or not, so the only ones
+	// playing are those on the page being shown, while the stage is on screen.
+	let stageInView = false;
+	const shouldPlay = (gallery) => stageInView && (gallery === inflightGallery || sections[currentPage]?.gallery === gallery);
+	const syncVideos = () => {
+		sections.forEach(sec => {
+			if (!sec) return;
+			const on = shouldPlay(sec.gallery);
+			sec.gallery.querySelectorAll("video").forEach(v => {
+				if (on) { if (v.paused) v.play().catch(() => {}); }
+				else if (!transitioning) v.pause();   // the page sliding out plays until it is gone
+			});
+		});
+	};
+
 	const makeVideo = (src, cr) => {
 		const v = document.createElement("video");
 		v.muted = true;
 		v.loop  = true;
-		v.autoplay = true;
-		v.setAttribute("autoplay", "");
+		v.preload = "auto";
 		v.playsInline = true;
 		v.setAttribute("playsinline", "");
 		if (cr) v.style.borderRadius = cr;
@@ -424,14 +485,14 @@
 				thumbReady.push(new Promise(res => {
 					thumb.addEventListener("canplay", res, { once: true });
 					thumb.addEventListener("error",   res, { once: true });
-					thumb.play().catch(() => {});
+					if (shouldPlay(gallery)) thumb.play().catch(() => {});
 				}));
 				upgrades.push(() => new Promise(res => {
 					const full = makeVideo(fullUrl, cr);
 					full.style.cssText += "opacity:0;transition:opacity 0.4s ease;z-index:1;";
 					thumb.after(full);
 					full.addEventListener("canplaythrough", () => {
-						full.play().catch(() => {});
+						if (shouldPlay(gallery)) full.play().catch(() => {});
 						full.style.opacity = "1";
 						full.addEventListener("transitionend", () => { thumb.remove(); res(); }, { once: true });
 					}, { once: true });
@@ -456,12 +517,16 @@
 					full.style.cssText = "opacity:0;transition:opacity 0.4s ease;z-index:1;";
 					if (cr) full.style.borderRadius = cr;
 					thumb.after(full);
-					full.onload = () => {
+					const show = () => {
 						full.style.opacity = "1";
 						full.addEventListener("transitionend", () => { thumb.remove(); res(); }, { once: true });
 					};
 					full.onerror = res;
 					full.src = fullUrl;
+					// decode() readies the pixels off the main thread; left to the
+					// first paint, a large photo is a dropped frame mid-scroll.
+					if (full.decode) full.decode().then(show, res);
+					else full.onload = show;
 				}));
 			}
 		});
@@ -523,12 +588,14 @@
 			const [cols, rows] = applyLayout(firstGallery);
 			const { thumbReady, upgrades } = populateGallery(firstGallery, 0, cols, rows);
 			sections[0] = { gallery: firstGallery, cols, rows, thumbReady, upgrades, visited: true };
-			applyOffsets(firstGallery, cols, rows);
+			syncVideos();
+			const tiles = scatterTiles(firstGallery, cols, rows);
+			tiles.forEach(t => placeTile(t, 1));
 			// Phase 1 begins with the first page's thumbnails; once they're in we
 			// kick off the scroll converge, then let preloadRemainingPages load the
 			// rest of the thumbnails before any full-res (incl. this page's) loads.
 			const firstThumbsReady = allSettledOrTimeout(thumbReady).then(() => {
-				initScrollConverge(firstGallery);
+				initScrollConverge(tiles);
 			});
 			preloadRemainingPages(firstThumbsReady, upgrades);
 			rebuildLightbox();
@@ -708,6 +775,15 @@
 				setTimeout(() => { wheelCooldown = false; wheelAccum = 0; }, ANIM_MS + 100);
 			}
 		}, { passive: false });
+
+		if ("IntersectionObserver" in window) {
+			new IntersectionObserver((entries) => {
+				stageInView = entries[entries.length - 1].isIntersecting;
+				syncVideos();
+			}, { rootMargin: "200px 0px" }).observe(stage);
+		} else {
+			stageInView = true;
+		}
 
 		showPage(0);
 	};

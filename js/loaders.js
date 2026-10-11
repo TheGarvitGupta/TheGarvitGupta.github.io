@@ -19,6 +19,7 @@ $(window).scroll(function () {
 	if (shouldHide !== particlesHidden) {
 		$("#particles-js").css("visibility", shouldHide ? "hidden" : "visible");
 		particlesHidden = shouldHide;
+		syncParticles();
 	}
 
 	/* Garvit Gupta image */
@@ -51,6 +52,16 @@ $(window).scroll(function () {
 		});
 	}
 });
+
+/* A hidden canvas is still drawn every frame unless its loop is stopped, so the
+   particles stop being drawn while they are scrolled out of sight. */
+function syncParticles() {
+	var pJS = window.pJSDom && window.pJSDom[0] && window.pJSDom[0].pJS;
+	if (!pJS || !!pJS.paused === particlesHidden) return;
+	pJS.paused = particlesHidden;
+	if (window.cancelRequestAnimFrame) window.cancelRequestAnimFrame(pJS.fn.drawAnimFrame);
+	if (!particlesHidden) pJS.fn.vendors.draw();
+}
 
 function isElementInViewport(el) {
 	if (typeof jQuery === "function" && el instanceof jQuery) el = el[0];
