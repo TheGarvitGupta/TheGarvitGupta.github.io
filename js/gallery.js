@@ -45,8 +45,6 @@
 		"photograph-9.jpg",
 	];
 	const PAGE_SIZE = 12;
-	const CONVERGE_JITTER_DIST  = 10;
-	const CONVERGE_ROTATION_MAX = 12;
 	// The first page's tiles start flung out from the middle and are drawn in by
 	// the scroll (see scatterTiles / initScrollConverge).
 	const SCATTER_REACH    = [0.34, 0.62]; // how far out a tile starts, as a share of the stage's longer side
@@ -57,6 +55,12 @@
 	const SNAP_AT          = 0.86;         // from here the tiles finish on their own
 	const SNAP_MS          = 420;
 	const ANIM_MS = 700;
+	// Turning to another page: the two pages travel together, this far apart,
+	// and a page seen for the first time has its tiles trail in behind it.
+	const PAGE_GAP        = 0.16;  // of the stage's width, and never less than 70px
+	const ARRIVE_TRAIL    = 0.3;   // of the stage's width: how far behind its place the last column starts
+	const ARRIVE_STAGGER  = 200;   // ms the last column sets off after the first
+	const ARRIVE_ROTATION = 9;     // degrees, either way
 
 	let allPhotos = [];
 	let currentPage = 0;
@@ -149,28 +153,6 @@
 		return [cols, rows];
 	};
 
-	// Compute explosion-based offsets for a tile at (col, row) in a (cols x rows) grid.
-	// explosionEdge: 'right' = origin at (cols+1, midRow), 'left' = origin at (0, midRow).
-	// Returns {ox, oy, rot} — the displacement vector away from the explosion origin.
-	const explosionOffset = (col, row, cols, rows, explosionEdge) => {
-		const K = 90; // max displacement magnitude in px
-		const midRow = (rows + 1) / 2;
-		// explosion origin in 1-indexed grid space
-		const ex = explosionEdge === 'right' ? cols + 0.5 : 0.5;
-		const ey = midRow;
-		// vector from explosion to tile center
-		const vx = (col + 0.5) - ex;  // negative for 'right' (leftward), positive for 'left'
-		const vy = (row + 0.5) - ey;  // negative=up, 0=middle, positive=down
-		// normalize components separately by max possible distance so magnitudes are consistent
-		const oxNorm = vx / cols;
-		const oyNorm = vy / (rows / 2);
-		return {
-			ox:  oxNorm * K + (Math.random() * 2 - 1) * CONVERGE_JITTER_DIST,
-			oy:  oyNorm * K + (Math.random() * 2 - 1) * CONVERGE_JITTER_DIST,
-			rot: (Math.random() * 2 - 1) * CONVERGE_ROTATION_MAX,
-		};
-	};
-
 	// Where each tile of the first page starts from: flung out from the middle of
 	// the stage along its own line, small, turned and unseen; #life clips the
 	// ones that start beyond its edges. Returns what
@@ -212,18 +194,33 @@
 		t.el.style.opacity   = Math.min(1, (1 - k) * 2.5).toFixed(3);
 	};
 
-	// Where a page's tiles start from when it is slid to: the explosion model.
-	// explosionEdge: 'right' tiles fly away from right (outgoing for next), 'left' = prev outgoing.
-	const applyExplosionOffsets = (gallery, cols, rows, explosionEdge) => {
+	// A page seen for the first time comes in strung out behind itself: the
+	// column that leads is nearly in place, each one after it starts further
+	// back, a little turned and unseen, and sets off a little later. direction:
+	// 1 = arriving from the right, -1 = from the left. Returns the longest wait.
+	const trailTiles = (gallery, cols, direction) => {
+		const rand = (lo, hi) => lo + Math.random() * (hi - lo);
+		const width = stage.offsetWidth;
+		let longest = 0;
 		gallery.querySelectorAll(".image-container").forEach(el => {
-			const col = parseFloat(el.style.gridColumn) || 1;
-			const row = parseFloat(el.style.gridRow)    || 1;
-			const { ox, oy, rot } = explosionOffset(col, row, cols, rows, explosionEdge);
-			el.dataset.ox  = ox;
-			el.dataset.oy  = oy;
-			el.dataset.rot = rot;
+			const col  = ((parseFloat(el.style.gridColumn) || 1) - 1) / (cols - 1);
+			const back = direction > 0 ? col : 1 - col;   // 0 for the column that leads
+			const ox   = direction * (30 + back * ARRIVE_TRAIL * width + rand(0, 40));
+			const wait = Math.round(back * ARRIVE_STAGGER + rand(0, 60));
+			longest = Math.max(longest, wait);
+			el.dataset.wait     = wait;
 			el.style.transition = "none";
-			el.style.transform  = `translate(${ox}px, ${oy}px) rotate(${rot}deg)`;
+			el.style.transform  = `translate3d(${ox.toFixed(1)}px, ${rand(-26, 26).toFixed(1)}px, 0) rotate(${rand(-ARRIVE_ROTATION, ARRIVE_ROTATION).toFixed(2)}deg) scale(0.9)`;
+			el.style.opacity    = "0";
+		});
+		return longest;
+	};
+
+	// A page that has arrived is left with nothing on its tiles to move them again.
+	const settleTiles = (gallery) => {
+		gallery.querySelectorAll(".image-container").forEach(el => {
+			el.style.transition = el.style.transform = el.style.opacity = "";
+			delete el.dataset.wait;
 		});
 	};
 
@@ -339,6 +336,7 @@
 		});
 		// Settle the in-flight gallery into strip
 		if (inflightGallery) {
+			settleTiles(inflightGallery);
 			inflightGallery.removeAttribute("style");
 			strip.appendChild(inflightGallery);
 			inflightGallery = null;
@@ -347,45 +345,47 @@
 		syncVideos();
 	};
 
-	// direction: 1 = right (next), -1 = left (prev)
-	// isNew: true = first time seeing this section (slide + tile convergence)
-	//        false = revisiting (clean slide only, tiles already settled)
+	// direction: 1 = the new page comes from the right (next), -1 = from the left (prev)
+	// isNew: true = first time seeing this page (it slides in with its tiles trailing)
+	//        false = revisiting (it slides in as it was left, and nothing else moves)
 	const animateFlyIn = (gallery, cols, rows, direction, isNew, thumbReady, upgrades) => {
-		const easing = `${ANIM_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+		const slide = `transform ${ANIM_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+		// Both pages go the same distance, a page's width and the gap, so they
+		// cross the stage as one strip with the gap between them.
+		const travel = stage.offsetWidth + Math.max(70, PAGE_GAP * stage.offsetWidth);
+		const placed = "position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;display:grid;";
 
 		// Find the currently visible gallery (not hidden)
 		const oldGallery = Array.from(strip.children).find(el => el.style.display !== "none") || strip.firstElementChild;
 		if (oldGallery) {
-			oldGallery.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;display:grid;transform:translateX(0)";
+			oldGallery.style.cssText = `${placed}transform:translate3d(0,0,0)`;
 		}
-		gallery.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;display:grid;transform:translateX(${direction * 100}%);opacity:0`;
+		gallery.style.cssText = `${placed}transform:translate3d(${direction * travel}px,0,0);opacity:0`;
 		stage.appendChild(gallery);
 		inflightGallery = gallery;
 		syncVideos();
 
-		if (isNew) {
-			const explosionEdge = direction > 0 ? 'left' : 'right';
-			applyExplosionOffsets(gallery, cols, rows, explosionEdge);
-			gallery.querySelectorAll(".image-container").forEach(el => { el.style.opacity = "0"; });
-		}
+		const longest = isNew ? trailTiles(gallery, cols, direction) : 0;
 
 		gallery.offsetWidth; // force reflow
 
-		const galleryEase = `transform ${easing}, opacity ${easing}`;
+		// The page leaving is whole for most of its way out and fades only as it
+		// goes; the one arriving is there almost at once. It is the travel that
+		// is seen, not one page dissolving into the other.
 		if (oldGallery) {
-			oldGallery.style.transition = galleryEase;
-			oldGallery.style.transform  = `translateX(${-direction * 100}%)`;
+			oldGallery.style.transition = `${slide}, opacity ${ANIM_MS * 0.45}ms ease-in ${ANIM_MS * 0.4}ms`;
+			oldGallery.style.transform  = `translate3d(${-direction * travel}px,0,0)`;
 			oldGallery.style.opacity    = "0";
 		}
-		gallery.style.transition = `transform ${easing}, opacity ${easing}`;
-		gallery.style.transform  = "translateX(0)";
+		gallery.style.transition = `${slide}, opacity ${ANIM_MS * 0.4}ms ease-out`;
+		gallery.style.transform  = "translate3d(0,0,0)";
 		gallery.style.opacity    = "1";
 
 		if (isNew) {
-			const tileEase = `transform ${easing}, opacity ${easing}`;
 			gallery.querySelectorAll(".image-container").forEach(el => {
-				el.style.transition = tileEase;
-				el.style.transform  = "translate(0,0) rotate(0deg)";
+				const wait = el.dataset.wait || 0;
+				el.style.transition = `transform ${ANIM_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1) ${wait}ms, opacity ${ANIM_MS * 0.5}ms ease-out ${wait}ms`;
+				el.style.transform  = "translate3d(0,0,0) rotate(0deg) scale(1)";
 				el.style.opacity    = "1";
 			});
 		}
@@ -398,6 +398,7 @@
 				oldGallery.removeAttribute("style");
 				oldGallery.style.display = "none";
 			}
+			settleTiles(gallery);
 			gallery.removeAttribute("style");
 			strip.appendChild(gallery); // move from stage into strip
 			transitioning = false;
@@ -406,7 +407,7 @@
 				? allSettledOrTimeout(thumbReady).then(() => allSettledOrTimeout(upgrades.map(fn => fn())))
 				: Promise.resolve();
 			preloadRemainingPages(fullResReady);
-		}, ANIM_MS + 50);
+		}, ANIM_MS + longest + 50);
 	};
 
 
