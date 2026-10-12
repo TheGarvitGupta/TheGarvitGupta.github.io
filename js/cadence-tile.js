@@ -14,6 +14,16 @@
 	var RX = 286;                 // where the runner is, across
 	var LEAN = Math.tan(11 * Math.PI / 180);   // the logo's bars lean this far
 	var YELLOW = "#ffd24a", WHITE = "#fcfcfb";
+	// The runner's headphones come in a different colour each time the page loads: the cup, its lit top, its rim, and the band.
+	var PODS = [
+		{ cup: "#9d83d6", light: "#cdbdf0", edge: "#7a5fb8", band: "#c3b1ec" },   // purple
+		{ cup: "#6f9fd0", light: "#b4d0ec", edge: "#4f7fb3", band: "#a9c8e8" },   // blue
+		{ cup: "#f08f5c", light: "#fac3a0", edge: "#cf6b38", band: "#f7b890" },   // orange
+		{ cup: "#7fc09a", light: "#bfe3cc", edge: "#559c73", band: "#afdcc0" },   // green
+		{ cup: "#ee8f9c", light: "#f8c5cb", edge: "#cf6475", band: "#f5b6bf" },   // pink
+		{ cup: "#3a4254", light: "#6a7388", edge: "#252b39", band: "#5d667b" }    // midnight
+	];
+	PODS = PODS[Math.floor(Math.random() * PODS.length)];
 
 	// The songs: ones I have run to, by the tail end of each cover's address at Spotify. Six are picked afresh each time the page loads.
 	var ART = "https://i.scdn.co/image/ab67616d00001e02";
@@ -203,12 +213,21 @@
 		ctx.strokeStyle = col; ctx.lineWidth = 11 * wide; line(hx, hy, nx, ny);
 		var cx = nx + 13 * Math.sin(lean + 0.18), cy = ny - 13 * Math.cos(lean + 0.18);
 		ctx.fillStyle = col; ctx.beginPath(); ctx.arc(cx, cy, 7.8 * wide, 0, 7); ctx.fill();
-		if (wear) {   // headphones, purple, seen from the side: the band goes straight up from the ear and over the crown, the cup sits over the ear
+		if (wear) {   // headphones, seen from the side: the cup over the ear, a steel stem up out of it, and the band's fork over the crown
 			ctx.save(); ctx.translate(cx, cy); ctx.rotate(lean * 0.5);
-			ctx.strokeStyle = "#b08cff"; ctx.lineWidth = 2.8; ctx.lineCap = "round";
-			ctx.beginPath(); ctx.arc(0, 0, 8.5, Math.PI * 1.41, Math.PI * 1.57); ctx.stroke();
-			ctx.lineWidth = 2.2; line(-0.6, -8.6, -0.6, -4);
-			ctx.fillStyle = "#8e5cf7"; rrect(-4.6, -4.4, 8, 11.2, 3.6); ctx.fill();
+			ctx.lineCap = "round"; ctx.lineJoin = "round";
+			ctx.strokeStyle = PODS.band; ctx.lineWidth = 1.9;
+			ctx.beginPath(); ctx.moveTo(-4.1, -8.2); ctx.quadraticCurveTo(-3.6, -5.9, -0.4, -5.8); ctx.quadraticCurveTo(2.8, -5.9, 3.3, -8.2); ctx.stroke();   // the fork
+			ctx.lineWidth = 2.3; ctx.beginPath(); ctx.arc(-0.4, 0.2, 9.2, Math.PI * 1.36, Math.PI * 1.64); ctx.stroke();   // and the canopy it holds
+			ctx.strokeStyle = "#dfe1e6"; ctx.lineWidth = 1.5; line(-0.4, -5.2, -0.4, -4.4);   // the stem
+			var shade = ctx.createLinearGradient(0, -4.6, 0, 7.4);
+			shade.addColorStop(0, PODS.light); shade.addColorStop(1, PODS.cup);
+			ctx.fillStyle = shade;   // the cup: taller than wide, and fuller at the foot
+			ctx.beginPath(); ctx.moveTo(-0.4, -4.4);
+			ctx.bezierCurveTo(3.4, -4.4, 4.5, -2.6, 4.6, 1.2); ctx.bezierCurveTo(4.7, 5.4, 3, 7.4, -0.4, 7.4);
+			ctx.bezierCurveTo(-3.8, 7.4, -5.5, 5.4, -5.4, 1.2); ctx.bezierCurveTo(-5.3, -2.6, -4.2, -4.4, -0.4, -4.4);
+			ctx.fill();
+			ctx.strokeStyle = PODS.edge; ctx.lineWidth = 0.7; ctx.stroke();
 			ctx.restore();
 		}
 		limb(near, hx, hy, 7.6, col);
