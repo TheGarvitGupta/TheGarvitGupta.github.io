@@ -586,3 +586,31 @@
 .pk-happy .pk-good {
     visibility: visible;
 }
+
+/* The Cadence tile: a run through a playlist, drawn by js/cadence-tile.js */
+.lede-image.cadence-tile {
+    background: #3a27a8;
+}
+.cadence-tile canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+/* Strava + Spotify where the other cards have a word or two, as Cadence's own front page joins them */
+.joined {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #C9C2F5;
+    font: 600 11px/13px system-ui, -apple-system, "Segoe UI", sans-serif;
+    text-transform: none;
+}
+.joined svg {
+    width: 13px;
+    height: 13px;
+}
+.joined i {
+    font-style: normal;
+    opacity: 0.6;
+    margin: 0 2px;
+}

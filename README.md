@@ -21,6 +21,7 @@ js/                     JavaScript
   initiateVariables.js  Global variables used across scripts
   loaders.js            Scroll-triggered animations and section reveals
   packman-tile.js       The Packman card in Projects: a level that packs itself, drawn live in SVG
+  cadence-tile.js       The Cadence card in Projects: a runner crossing a playlist, drawn live on a canvas
   loadUncover.js        Page load reveal + image prefetch
   darkmode.js           Dark-mode toggle and persistence
   gallery.js            Photo gallery (GitHub API + GLightbox)

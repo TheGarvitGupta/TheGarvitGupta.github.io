@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Cadence tile</title>
+	<link href="https://fonts.googleapis.com/css?family=Montserrat:400,500|Open+Sans:300,400" rel="stylesheet">
+	<style>
+		body { margin: 0; background: #fff; font-family: 'Open Sans', sans-serif; }
+		.stage { width: 950px; margin: 70px auto; }
+
+		/* the card, as css/work.css lays the other three out */
+		.lede-parent { width: 950px; height: 500px; position: relative; }
+		.lede-background { height: 400px; position: absolute; width: 800px; top: 0; left: 150px; background-color: #15102E; border-radius: 12px; }
+		.lede-image-container { position: absolute; height: 448px; width: 696px; top: 50px; border-radius: 12px; overflow: hidden; }
+		.lede-image { height: 448px; position: absolute; width: 696px; border-radius: 12px; }
+		.bg-editable { position: absolute; right: 0; height: 330px; top: 50px; width: 250px; z-index: 10; }
+		.text-1-ed { color: #C9C2F5; padding: 0 20px 20px; font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 13px; line-height: 13px; text-align: right; }
+		/* Strava + Spotify, as Cadence's own front page joins them, without the pill */
+		.joined { display: inline-flex; align-items: center; gap: 5px; color: #C9C2F5; font: 600 11px/13px system-ui, -apple-system, "Segoe UI", sans-serif; text-transform: none; letter-spacing: 0; }
+		.joined svg { width: 13px; height: 13px; }
+		.joined i { font-style: normal; opacity: 0.6; margin: 0 2px; }
+		.text-2-ed { color: #fff; font-family: 'Montserrat', sans-serif; padding: 20px; font-size: 28px; }
+		.text-3-ed { color: #C9C2F5; font-size: 15px; padding: 0 20px 20px; font-weight: 300; }
+		.text-short { display: none; }
+		.lede-button { position: absolute; right: 30px; bottom: -20px; background-color: #000; z-index: 500; border-radius: 6px; overflow: hidden; }
+		.lede-button:hover { background-color: #FFCA28; }
+		.lede-button-text { font-family: 'Montserrat', sans-serif; font-size: 15px; padding: 13px 16px; display: inline-block; color: #fff; line-height: 15px; text-transform: uppercase; letter-spacing: 1px; }
+
+		/* The Cadence tile: a run through a playlist, drawn by the script below */
+		.lede-image.cadence-tile { background: #3a27a8; }
+		.cadence-tile a, .cadence-tile canvas { display: block; width: 100%; height: 100%; }
+
+		@media screen and (max-width: 1000px) {
+			.stage { width: auto; margin: 16px; }
+			.lede-parent { display: flex; flex-direction: column; width: 100%; height: auto; }
+			.lede-image-container { order: 1; position: relative; top: 0; width: 100%; height: auto; padding-bottom: 66.67%; border-radius: 12px 12px 0 0; }
+			.lede-image { width: 100%; height: 100%; border-radius: 12px 12px 0 0; }
+			.lede-background { left: 0; right: 0; top: 0; bottom: 0; width: auto; height: auto; }
+			.bg-editable { order: 2; position: relative; top: auto; width: 100%; height: auto; padding: 20px 0 22px; }
+			.text-long { display: none; }
+			.text-short { display: inline; }
+		}
+	</style>
+</head>
+<body>
+	<div class="stage">
+		<div class="lede-parent">
+			<div class="bg-editable">
+				<div class="text-1-ed"><span class="joined"><svg viewBox="0 0 24 24" aria-hidden="true" fill="#fc4c02"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>Strava<i>+</i><svg viewBox="0 0 24 24" aria-hidden="true" fill="#1db954"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>Spotify</span></div>
+				<div class="text-2-ed">Cadence</div>
+				<div class="text-3-ed"><span class="text-long">Which songs make you run faster? Cadence matches your Strava runs to what was playing on Spotify, and shows your pace song by song.</span><span class="text-short">Which songs make you run faster? Your Strava pace, matched to your Spotify songs.</span></div>
+			</div>
+			<div class="lede-background">
+				<a href="/cadence/">
+					<div class="lede-button lb1">
+						<div class="lede-button-text">Try the demo</div>
+					</div>
+				</a>
+			</div>
+			<div class="lede-image-container">
+				<div class="lede-image cadence-tile" id="cadence-tile"></div>
+			</div>
+		</div>
+	</div>
+
+	<script src="../js/units.js"></script>
+	<script src="../js/cadence-tile.js"></script>
+</body>
+</html>
