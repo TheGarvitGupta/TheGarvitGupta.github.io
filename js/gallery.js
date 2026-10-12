@@ -47,7 +47,7 @@
 	const PAGE_SIZE = 12;
 	// The first page's tiles start flung out from the middle and are drawn in by
 	// the scroll (see scatterTiles / initScrollConverge).
-	const SCATTER_REACH    = [0.34, 0.62]; // how far out a tile starts, as a share of the stage's longer side
+	const SCATTER_REACH    = [0.17, 0.31];// how far out a tile starts, as a share of the stage's longer side
 	const SCATTER_ROTATION = 28;           // degrees, either way
 	const SCATTER_SCALE    = [0.55, 0.85]; // size a tile starts at
 	const SCATTER_SWIRL    = 0.7;          // radians its way in is bent by, either way
