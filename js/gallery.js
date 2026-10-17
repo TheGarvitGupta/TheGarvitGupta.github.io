@@ -32,7 +32,7 @@
 		"photograph-12.jpg",
 		"photograph-13.jpg",
 		"photograph-15.jpg",
-		"photograph-16.jpg",
+		"photograph-16.mp4",
 		"photograph-18.jpg",
 		"photograph-2.jpg",
 		"photograph-20.jpg",
@@ -44,6 +44,25 @@
 		"photograph-7.jpg",
 		"photograph-9.jpg",
 	];
+	// A clip cut from something published elsewhere carries a link out to the
+	// full version, pinned to its top-right corner in the lightbox.
+	const SOURCES = {
+		"photograph-16.mp4": { name: "Reuters", logo: "images/icons/reuters.svg", href: "https://www.reuters.com/video/watch/idRW606028092026RP1" },
+	};
+	const sourceLink = (name) => {
+		const src = SOURCES[name];
+		if (!src) return null;
+		const a = document.createElement("a");
+		a.className = "gallery-source";
+		a.href = src.href;
+		a.target = "_blank";
+		a.rel = "noopener";
+		a.setAttribute("aria-label", `View full version on ${src.name}`);
+		a.innerHTML = `<span class="gallery-source-lead">View full version on</span><img class="gallery-source-logo" src="${src.logo}" alt="${src.name}"><span class="gallery-source-arrow" aria-hidden="true">↗</span>`;
+		// The lightbox steps slides on a swipe; it should not see a tap meant for this.
+		["pointerdown", "touchstart", "mousedown"].forEach(t => a.addEventListener(t, e => e.stopPropagation(), { passive: true }));
+		return a;
+	};
 	const PAGE_SIZE = 12;
 	// The first page's tiles start flung out from the middle and are drawn in by
 	// the scroll (see scatterTiles / initScrollConverge).
@@ -773,6 +792,7 @@
 		const v = document.createElement("video");
 		v.src = `images/photographs/${name}`;
 		v.className = "gallery-lightbox-video";
+		v.dataset.name = name;
 		// No controls: a video should behave like the photo either side of it, and
 		// every clip is encoded silent anyway (tools/gallery.py passes -an), so a
 		// scrubber and a volume slider were chrome over nothing. It also settles the
@@ -799,7 +819,15 @@
 	// reaches a video and cannot swipe past it.
 	const enableSwipeOverVideos = () => {
 		document.querySelectorAll(".glightbox-container .ginlined-content").forEach(el => {
-			if (el.querySelector(".gallery-lightbox-video")) el.classList.add("gslide-inline");
+			const v = el.querySelector(".gallery-lightbox-video");
+			if (!v) return;
+			el.classList.add("gslide-inline");
+			// The link out sits beside the video, not around it, so the video's
+			// parent stays the .gslide-inline the swipe test above looks for.
+			if (!el.querySelector(".gallery-source")) {
+				const source = sourceLink(v.dataset.name);
+				if (source) el.appendChild(source);
+			}
 		});
 	};
 

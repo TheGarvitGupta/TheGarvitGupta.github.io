@@ -1118,6 +1118,65 @@ input {
     min-height: 0;
 }
 
+/* ── Link out to a clip's full version ────────────────────────────────────────
+   A soft white badge in the top-right corner of the lightbox frame, the logo in
+   its own colours. Only in the lightbox: the clip plays bare in the grid like
+   every other tile. */
+/* hugging the video, so the badge pins to the frame and not to the 900px box
+   GLightbox sizes an inline slide to */
+.glightbox-container .ginlined-content { position: relative; width: fit-content; margin: 0 auto; }
+
+.gallery-source {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 11px 6px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.78);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    backdrop-filter: blur(18px) saturate(180%);
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 4px 14px rgba(0, 0, 0, 0.14);
+    color: #6e6e73;
+    font: 400 12px/1 -apple-system, BlinkMacSystemFont, 'Open Sans', 'Roboto', sans-serif;
+    letter-spacing: 0.005em;
+    white-space: nowrap;
+    text-decoration: none;
+    opacity: 0.9;
+    touch-action: manipulation;
+    transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.3s cubic-bezier(.2, .7, .3, 1), box-shadow 0.3s ease;
+}
+.gallery-source:hover,
+.gallery-source:focus-visible {
+    background: rgba(255, 255, 255, 0.94);
+    opacity: 1;
+    color: #3a3a3c;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 8px 22px rgba(0, 0, 0, 0.2);
+}
+.gallery-source-logo { display: block; height: 17px; width: auto; flex: none; }
+.gallery-source-arrow {
+    font-size: 12px;
+    line-height: 1;
+    color: #8e8e93;
+    transition: transform 0.3s cubic-bezier(.2, .7, .3, 1), color 0.3s ease;
+}
+.gallery-source:hover .gallery-source-arrow,
+.gallery-source:focus-visible .gallery-source-arrow {
+    transform: translate(1.5px, -1.5px);
+    color: #1d1d1f;
+}
+/* a phone's frame is too narrow for the whole line */
+@media (max-width: 480px) {
+    .gallery-source { top: 10px; right: 10px; padding: 5px 9px 5px 10px; gap: 6px; }
+    .gallery-source-lead { display: none; }
+    .gallery-source-logo { height: 15px; }
+}
+
 @media (min-width: 769px) {
     .gallery-lightbox-video {
         /* the same pair of values the stylesheet gives a photo at this width */
