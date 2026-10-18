@@ -1695,52 +1695,26 @@
   }
   function fixed(i) { return pieces[i].nailed || copy(i); }   // a shape that cannot be picked up
 
-  // Blind Box (blind): the board lies under fog. Each shape sees a little way round itself, and clears the fog there
-  // for as long as it is there: once it has gone, the fog closes in again. Packed, the fog lifts.
+  // Blind Box (blind): the box cannot be seen, but for a little way round each shape: the box is drawn through a mask
+  // with a soft disc in it round every shape, where it is now. Packed, the whole box shows.
   var fog = el('g', 'fog');
-  fog.innerHTML = '<defs><radialGradient id="sight"><stop offset="55%" stop-color="#000"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient>' +
-    '<radialGradient id="glow"><stop offset="62%" stop-color="#9CC8FF" stop-opacity="0"/><stop offset="86%" stop-color="#9CC8FF" stop-opacity=".16"/><stop offset="100%" stop-color="#9CC8FF" stop-opacity="0"/></radialGradient>' +
-    '<pattern id="mist" patternUnits="userSpaceOnUse" width="5" height="5"><image width="5" height="5" preserveAspectRatio="none"/></pattern>' +
-    '<filter id="soft" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation=".07"/></filter>' +
-    '<mask id="fogged" maskUnits="userSpaceOnUse"><rect class="all" fill="#fff" filter="url(#soft)"/><g class="sees"></g></mask></defs>' +
-    '<g class="cloud" mask="url(#fogged)"><rect class="dark"/><rect class="wisps" fill="url(#mist)"/></g><g class="glows"></g>';
+  fog.innerHTML = '<defs><radialGradient id="sight"><stop offset="45%" stop-color="#fff"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
+    '<mask id="sighted" maskUnits="userSpaceOnUse"><g class="sees"></g></mask></defs>';
   board.insertBefore(fog, $('seams'));
-  // The fog's wisps: soft pale blobs, drawn once on a canvas that tiles without a seam, and laid over the dark.
-  function mist() {
-    var cv = document.createElement('canvas'), n = 256, x = cv.getContext && cv.getContext('2d');
-    if (!x) return '';
-    cv.width = cv.height = n;
-    for (var k = 0; k < 70; k++) {
-      var cx = Math.random() * n, cy = Math.random() * n, r = 18 + Math.random() * 46, a = 0.025 + Math.random() * 0.045;
-      for (var dx = -n; dx <= n; dx += n) for (var dy = -n; dy <= n; dy += n) {   // (and its copies a tile away, so the edges meet)
-        var gr = x.createRadialGradient(cx + dx, cy + dy, 0, cx + dx, cy + dy, r);
-        gr.addColorStop(0, 'rgba(140,180,240,' + a + ')'); gr.addColorStop(1, 'rgba(140,180,240,0)');
-        x.fillStyle = gr; x.fillRect(cx + dx - r, cy + dy - r, 2 * r, 2 * r);
-      }
-    }
-    return cv.toDataURL();
-  }
-  function reach(p) { return { square: 0.85, triangle: 0.78, domino: 1.2, hexagon: 1.15 }[p.type] || 0.9; }   // how far a shape sees
+  function reach(p) { return { square: 0.72, triangle: 0.66, domino: 1.05, hexagon: 1.0 }[p.type] || 0.75; }   // how far a shape sees
   function fogView() {
-    fog.toggleAttribute('hidden', !lv.blind);
-    if (!lv.blind) return;
-    var img = fog.querySelector('image');
-    if (!img.getAttribute('href')) img.setAttribute('href', mist());
-    ['mask', '.dark', '.wisps'].forEach(function (k) { var r = fog.querySelector(k); r.setAttribute('x', view.x); r.setAttribute('y', view.y); r.setAttribute('width', view.w); r.setAttribute('height', view.h); });
-    var all = fog.querySelector('.all'), e = 0.12;   // the fog thins out at the edges of the board, into the page
-    all.setAttribute('x', view.x + e); all.setAttribute('y', view.y + e); all.setAttribute('width', view.w - 2 * e); all.setAttribute('height', view.h - 2 * e); all.setAttribute('rx', 0.3);
+    var m = fog.querySelector('mask');
+    m.setAttribute('x', view.x); m.setAttribute('y', view.y); m.setAttribute('width', view.w); m.setAttribute('height', view.h);
   }
-  function unsee() { fog.querySelector('.sees').textContent = ''; fog.querySelector('.glows').textContent = ''; fog.classList.remove('lift'); }
+  function unsee() { fog.querySelector('.sees').textContent = ''; }
   function see() {
+    if (lv.blind && !won) bin.setAttribute('mask', 'url(#sighted)'); else bin.removeAttribute('mask');
     if (!lv.blind) return;
-    fog.classList.toggle('lift', won);
-    var now = fog.querySelector('.sees'), rims = fog.querySelector('.glows');   // what each sees, and a faint glow round the edge of it, as of a lantern
-    while (now.childNodes.length < pieces.length) { now.appendChild(el('circle')); rims.appendChild(el('circle')); }
+    var now = fog.querySelector('.sees');
+    while (now.childNodes.length < pieces.length) now.appendChild(el('circle'));
     pieces.forEach(function (p, i) {
-      var r = reach(p);
-      [[now.childNodes[i], 'sight', r], [rims.childNodes[i], 'glow', r * 1.05]].forEach(function (k) {
-        k[0].setAttribute('cx', p.x.toFixed(3)); k[0].setAttribute('cy', p.y.toFixed(3)); k[0].setAttribute('r', k[2]); k[0].setAttribute('fill', 'url(#' + k[1] + ')');
-      });
+      var c = now.childNodes[i];
+      c.setAttribute('cx', p.x.toFixed(3)); c.setAttribute('cy', p.y.toFixed(3)); c.setAttribute('r', reach(p)); c.setAttribute('fill', 'url(#sight)');
     });
   }
 
@@ -2147,7 +2121,7 @@
   }
 
   function win() {
-    won = true; see();   // (a fog lifts)
+    won = true; see();   // (a box nobody could see shows whole)
     if (level === EYE_LEVEL) eye(false);   // the eyesight level is over: the shapes get their faces back for the party
     countMove();
     clearTimeout(shakeTimer);

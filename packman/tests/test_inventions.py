@@ -150,17 +150,17 @@ async def test_every_guest_has_a_wish_and_a_say(t):
     assert not page.errors, page.errors
 
 async def test_a_blind_box_is_seen_only_round_the_shapes(t):
-    """The board lies under fog, and each shape clears it only round itself, where it is now. Packed, it lifts."""
+    """The box is drawn only a little way round each shape, where it is now. Packed, it shows whole."""
     page = await level(t, 'Blind Box')
-    fogged = 'getComputedStyle(document.querySelector(".fog .cloud")).opacity'
-    assert float(await page.evaluate(fogged)) > 0.5, 'there is no fog over the box'
+    masked = 'document.getElementById("bin").getAttribute("mask")'
+    assert await page.evaluate(masked), 'the box can be seen'
     sight = '(function () { var c = document.querySelectorAll(".fog .sees circle")[5]; return [+c.getAttribute("cx"), +c.getAttribute("cy")]; })()'
     sol = await solution(page)
     await put(page, 5, sol[5])
     at = await page.evaluate(sight)
-    assert abs(at[0] - sol[5][0]) < 0.01 and abs(at[1] - sol[5][1]) < 0.01, 'the brick does not see from where it is'
-    assert await page.evaluate('document.querySelectorAll(".fog .sees circle").length') == 6, 'something other than the shapes clears the fog'
+    assert abs(at[0] - sol[5][0]) < 0.01 and abs(at[1] - sol[5][1]) < 0.01, 'the box does not show round the brick, where it is'
+    assert await page.evaluate('document.querySelectorAll(".fog .sees circle").length') == 6, 'the box shows round something other than the shapes'
     for i in range(5): await put(page, i, sol[i])
     await tick(page, 2500)
-    assert await won(page) and float(await page.evaluate(fogged)) < 0.05, 'packed, the fog does not lift'
+    assert await won(page) and not await page.evaluate(masked), 'packed, the box does not show whole'
     assert not page.errors, page.errors
