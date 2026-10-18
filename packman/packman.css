@@ -623,7 +623,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 @keyframes chev{0%,100%{opacity:.25} 40%{opacity:1}}
 /* Blind Box: the box is drawn only just round each shape (a mask: game.js, under inventions), and whole on a win */
 .fog{pointer-events:none} .fog .sees path{stroke:#fff; stroke-width:calc(20px * var(--u)); stroke-linejoin:round}   /* (half of it outside the shape: a rim of 10 pixels) */
-body.blind #board.eyes #bin:not(.win){visibility:hidden}   /* (under eyesight the rim would show the true box, in white: no box at all, until it is packed) */
+body.blind #board.eyes #bin:not(.win) #true-box{visibility:hidden}   /* (under eyesight the rim would show the true box, in white: no box at all, until it is packed) */
 .piece.echo{pointer-events:none}
 .piece.echo .pop{opacity:.84}
 .piece.away{visibility:hidden}
