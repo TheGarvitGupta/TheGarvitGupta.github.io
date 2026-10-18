@@ -1120,25 +1120,6 @@ var PackmanLevels = (function () {
       solution: [[-1.0515, -0.2154, 60], [1.0825, 0.0051, 48], [0.8728, -0.6404, 216], [0.081, -0.9808, 190], [-0.4721, -0.7838, 129], [-0.1045, 0.4538, 300]]
     },
     {
-      name: 'Loading Dock',
-      invent: true,
-      // every wall but the door, at the foot of the right-hand one
-      walls: [[-2.002, -1.502, 2.002, -1.502], [-2.002, -1.502, -2.002, 1.502], [-2.002, 1.502, 2.002, 1.502], [2.002, -1.502, 2.002, 0.2]],
-      apron: 1.6,   // and room on the board outside the door, as wide as a brick lying down, to bring a shape up to it
-      door: [2.002, 0.2, 2.002, 1.502],   // (drawn: the posts either side, and the bay in front of it)
-      intro: 'Shapes go in through the door, and once they are in, nothing passes through anything.',
-      hint: 'A brick goes through the door lying down, and there are fewer and fewer places with room to stand one up. Stand the first up in the middle and push it to the back, square above it. The second has only just room, right of the middle. The third has none: lay it across the doorway, half out, and tip it up a little at a time, nudging it up as it goes.',
-      container: rect(4.004, 3.004),
-      pieces: pieces(3, 0, 4),
-      solution: [[-1.5, -1, 0], [1.5, -1, 0], [1.5, 0, 0], [-1.5, 0.5, 90], [-0.5, -0.5, 90], [0.5, -0.5, 90], [1, 1, 0]],
-      // the hint goes a move at a time: each step a shape (from where the last step left it) to a spot, on the way or its own
-      steps: [['domino', null, [0, 0, 0]], ['domino', [0, 0, 0], [0, 0, 90]], ['domino', [0, 0, 90], [-1.5, 0.5, 90]],
-        ['square', null, [-1.5, -1, 0]],
-        ['domino', null, [0.5, 0, 0]], ['domino', [0.5, 0, 0], [0.5, 0, 90]], ['domino', [0.5, 0, 90], [-0.5, -0.5, 90]],
-        ['domino', null, [1.5, 0.7, 0]], ['domino', [1.5, 0.7, 0], [1.5, 0.56, 20]], ['domino', [1.5, 0.56, 20], [1.5, 0.44, 40]], ['domino', [1.5, 0.44, 40], [1.5, 0.38, 90]], ['domino', [1.5, 0.38, 90], [0.5, -0.5, 90]],
-        ['square', null, [1.5, -1, 0]], ['square', null, [1.5, 0, 0]], ['domino', null, [1, 1, 0]]]
-    },
-    {
       name: 'Kaleidoscope',
       invent: true,
       echo: 3,   // the first three are dealt; the other six are their copies, a third and two thirds of a turn round the middle

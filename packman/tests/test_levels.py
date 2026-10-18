@@ -1,7 +1,7 @@
 # The levels are sound: levels.js looked at by itself, with the game's own geometry to judge the solutions.
 from harness import read
 
-CHAPTERS = [17, 15, 9, 9, 8]   # the seventeen, the powers, the bricks and hexagons, the twists, the inventions
+CHAPTERS = [17, 15, 9, 9, 7]   # the seventeen, the powers, the bricks and hexagons, the twists, the inventions
 TURNS = {'square': 90, 'triangle': 120, 'domino': 180, 'hexagon': 60}
 
 # Everything the tests ask of a level, worked out in the page and handed back as plain numbers and words.
@@ -43,7 +43,7 @@ def each(L, wrong):
     bad = ['%s: %s' % (l['name'], w) for l in L for w in [wrong(l)] if w]
     assert not bad, '\n'.join(bad)
 
-async def test_there_are_fifty_eight_in_five_chapters(t):
+async def test_there_are_fifty_seven_in_five_chapters(t):
     L, _ = await levels(t)
     sizes = [sum(1 for l in L if chap(l) == k) for k in range(5)]
     assert sizes == CHAPTERS, 'chapters hold %s levels, and should hold %s' % (sizes, CHAPTERS)

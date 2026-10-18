@@ -16,7 +16,7 @@ packman/
   packman.css           Everything on that page but how a shape is painted
   faces.css             How a shape and its face are painted; shared with personalities.html
   geom.js               Geometry: overlap, walls, settling, the judge (PackmanGeom). Also built into the worker
-  levels.js             The fifty-eight levels and one solution to each (PackmanLevels). Also built into the worker
+  levels.js             The fifty-seven levels and one solution to each (PackmanLevels). Also built into the worker
   faces.js              The personalities and the powers, and how each is drawn (PackmanFaces, PackmanPowers, PackmanPiece)
   sounds.js             Every sound, as notes (PackmanSounds)
   game.js               The game itself
@@ -144,7 +144,7 @@ game with a mouse as a player does.
 | `powers` | Begun: Minefield deals a mine to every shape whatever the deal, and packs. |
 | `twists` | Begun: Duality deals its two free squares on the line between the boxes, at four sizes of screen, with the entangled ones on their own sides and nothing overlapping. |
 | `board` | Begun, with a stand-in leaderboard: the first three rows wear medals and the rest their numbers, a short or empty board is right, and the player's own row is still picked out among the medals. The prize on the leaderboard is the mug, with its picture on it, turning while the sheet is up and stopped when it is put away. And with the game served as a player has it, under a name that is not this machine's: a win is sent once with what the board needs, wins saved before go up when the game opens, nothing is sent from localhost, and nothing at all is sent under the name Swordfish. A win that carries the player up into the first three, or up within them, says whom it overthrew; the first time in from outside wins the prize, once, and it is shown again on coming back until Done is pressed; no overthrow when the place does not change, is outside the three, or could not be known. |
-| `inventions` | The fifth chapter's rules. Judged by `geom.js` (and so by the leaderboard): Seesaw packed the wrong way round does not balance, and Sam’s Seating Plan with two guests swapped leaves both unhappy. In the real page: a Kaleidoscope copy goes where its shape goes and hides when it is taken out; One Shot nails a shape down; a Landslide fills from the bottom; the Loading Dock lets shapes in by the door and not through a wall, and can be packed through it, played start to finish (the last brick swung up in the doorway a few degrees at a time, with room to do it at every step), and its hint walks a brick its whole way, a move at a time; a Seesaw that tips is not won; a guest says what it wants; and a Blind Box shows only round each shape, and whole when it is packed. |
+| `inventions` | The fifth chapter's rules. Judged by `geom.js` (and so by the leaderboard): Seesaw packed the wrong way round does not balance, and Sam’s Seating Plan with two guests swapped leaves both unhappy. In the real page: a Kaleidoscope copy goes where its shape goes and hides when it is taken out; One Shot nails a shape down; a Landslide fills from the bottom; a Seesaw that tips is not won; a guest says what it wants; and a Blind Box shows only round each shape, and whole when it is packed. |
 | `pages` | "Meet the shapes" draws every personality and power, and they react. The reel plays through to its card, writes nothing to a player's saved game, and is not loaded for a player. The card on the site's front page draws. |
 
 By hand:
