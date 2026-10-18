@@ -1623,6 +1623,10 @@
           if (back * aside < 0) { x -= tx * back; y -= ty * back; }
           continue;
         }
+        if (!hit) {   // stopped, but by nothing a step on: a corner only touching one, exactly. On past it
+          p.x += dx * 0.002; p.y += dy * 0.002;
+          continue;
+        }
       }
       if (!hit) return;
       var into = (x - p.x) * hit.nx + (y - p.y) * hit.ny;

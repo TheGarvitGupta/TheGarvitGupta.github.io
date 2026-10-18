@@ -549,22 +549,21 @@ var PackmanLevels = (function () {
     {
       name: 'Loading Dock',
       invent: true,
-      // every wall but the door, in the middle of the right-hand one
-      walls: [[-2.002, -1.502, 2.002, -1.502], [-2.002, -1.502, -2.002, 1.502], [-2.002, 1.502, 2.002, 1.502], [2.002, -1.502, 2.002, -0.65], [2.002, 0.65, 2.002, 1.502]],
+      // every wall but the door, at the foot of the right-hand one
+      walls: [[-2.002, -1.502, 2.002, -1.502], [-2.002, -1.502, -2.002, 1.502], [-2.002, 1.502, 2.002, 1.502], [2.002, -1.502, 2.002, 0.2]],
       apron: 1.6,   // and room on the board outside the door, as wide as a brick lying down, to bring a shape up to it
-      door: [2.002, -0.65, 2.002, 0.65],   // (drawn: the posts either side, and the bay in front of it)
+      door: [2.002, 0.2, 2.002, 1.502],   // (drawn: the posts either side, and the bay in front of it)
       intro: 'Shapes go in through the door, and once they are in, nothing passes through anything.',
-      hint: 'A brick goes through the door lying down, and it can only be stood up while the box is empty enough to be three rows tall round it. So stand two up first, out in the middle, and push them to the back wall. The two along the ceiling go in, up, and along. Then the one along the floor, and the squares shut the door.',
+      hint: 'A brick goes through the door lying down, and there are fewer and fewer places with room to stand one up. Stand the first up in the middle and push it to the back, square above it. The second has only just room, right of the middle. The third has none: lay it across the doorway, half out, and tip it up a little at a time, nudging it up as it goes.',
       container: rect(4.004, 3.004),
-      pieces: pieces(2, 0, 5),
-      solution: [[0.5, 0, 0], [1.5, 0, 0], [-1.5, 0.5, 90], [-0.5, 0.5, 90], [-1, -1, 0], [1, -1, 0], [1, 1, 0]],
+      pieces: pieces(3, 0, 4),
+      solution: [[-1.5, -1, 0], [1.5, -1, 0], [1.5, 0, 0], [-1.5, 0.5, 90], [-0.5, -0.5, 90], [0.5, -0.5, 90], [1, 1, 0]],
       // the hint goes a move at a time: each step a shape (from where the last step left it) to a spot, on the way or its own
       steps: [['domino', null, [0, 0, 0]], ['domino', [0, 0, 0], [0, 0, 90]], ['domino', [0, 0, 90], [-1.5, 0.5, 90]],
-        ['domino', null, [0.5, 0, 0]], ['domino', [0.5, 0, 0], [0.5, 0, 90]], ['domino', [0.5, 0, 90], [-0.5, 0.5, 90]],
-        ['domino', null, [1, 0, 0]], ['domino', [1, 0, 0], [1, -1, 0]], ['domino', [1, -1, 0], [-1, -1, 0]],
-        ['domino', null, [1, 0, 0]], ['domino', [1, 0, 0], [1, -1, 0]],
-        ['domino', null, [1, 0, 0]], ['domino', [1, 0, 0], [1, 1, 0]],
-        ['square', null, [0.5, 0, 0]], ['square', null, [1.5, 0, 0]]]
+        ['square', null, [-1.5, -1, 0]],
+        ['domino', null, [0.5, 0, 0]], ['domino', [0.5, 0, 0], [0.5, 0, 90]], ['domino', [0.5, 0, 90], [-0.5, -0.5, 90]],
+        ['domino', null, [1.5, 0.7, 0]], ['domino', [1.5, 0.7, 0], [1.5, 0.56, 20]], ['domino', [1.5, 0.56, 20], [1.5, 0.44, 40]], ['domino', [1.5, 0.44, 40], [1.5, 0.38, 90]], ['domino', [1.5, 0.38, 90], [0.5, -0.5, 90]],
+        ['square', null, [1.5, -1, 0]], ['square', null, [1.5, 0, 0]], ['domino', null, [1, 1, 0]]]
     },
     {
       name: 'Kaleidoscope',
