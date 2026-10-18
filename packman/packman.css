@@ -628,7 +628,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .rims .chev{fill:none; stroke:#FFC93C; stroke-width:calc(4px * var(--u)); stroke-linecap:round; stroke-linejoin:round; animation:chev 1.1s ease-in-out infinite}
 @keyframes chev{0%,100%{opacity:.25} 40%{opacity:1}}
 /* Blind Box: the box is drawn only just round each shape (a mask: game.js, under inventions), and whole on a win */
-.fog{pointer-events:none} .fog .sees path{stroke:#fff; stroke-width:calc(20px * var(--u)); stroke-linejoin:round}   /* (half of it outside the shape: a rim of 10 pixels) */
+.fog{pointer-events:none} .fog .sees path{stroke:#fff; stroke-width:calc(20px * var(--u)); stroke-linejoin:miter; stroke-miterlimit:8}   /* (half of it outside the shape: a rim of 10 pixels) */
 .piece.echo{pointer-events:none}
 .piece.echo .pop{opacity:.84}
 .piece.away{visibility:hidden}
