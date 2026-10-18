@@ -1696,10 +1696,10 @@
   function fixed(i) { return pieces[i].nailed || copy(i); }   // a shape that cannot be picked up
 
   // Blind Box (blind): the box cannot be seen, but just round each shape: the box is drawn through a mask that has
-  // in it, for every shape, the shape itself a little bigger, where it is now, with soft edges. Packed, the whole box shows.
-  var fog = el('g', 'fog'), HALO = 1.3;
-  fog.innerHTML = '<defs><filter id="blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".05"/></filter>' +
-    '<mask id="sighted" maskUnits="userSpaceOnUse"><g class="sees" filter="url(#blur)"></g></mask></defs>';
+  // in it, for every shape, the shape itself and a rim a few pixels wide round it (packman.css), where it is now.
+  // Packed, the whole box shows.
+  var fog = el('g', 'fog');
+  fog.innerHTML = '<defs><mask id="sighted" maskUnits="userSpaceOnUse"><g class="sees"></g></mask></defs>';
   board.insertBefore(fog, $('seams'));
   function fogView() {
     var m = fog.querySelector('mask');
@@ -1714,7 +1714,7 @@
     pieces.forEach(function (p, i) {
       var h = now.childNodes[i];
       h.setAttribute('d', loop(G.SHAPES[p.type])); h.setAttribute('fill', '#fff');
-      h.setAttribute('transform', 'translate(' + p.x.toFixed(3) + ' ' + p.y.toFixed(3) + ') rotate(' + p.angle + ') scale(' + HALO + ')');
+      h.setAttribute('transform', 'translate(' + p.x.toFixed(3) + ' ' + p.y.toFixed(3) + ') rotate(' + p.angle + ')');
     });
   }
 

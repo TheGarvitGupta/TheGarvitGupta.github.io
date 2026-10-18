@@ -150,7 +150,7 @@ async def test_every_guest_has_a_wish_and_a_say(t):
     assert not page.errors, page.errors
 
 async def test_a_blind_box_is_seen_only_round_the_shapes(t):
-    """The box is drawn only just round each shape, a little bigger than the shape, where it is now. Packed, it shows whole."""
+    """The box is drawn only just round each shape, a few pixels past its edges, where it is now. Packed, it shows whole."""
     page = await level(t, 'Blind Box')
     masked = 'document.getElementById("bin").getAttribute("mask")'
     assert await page.evaluate(masked), 'the box can be seen'
