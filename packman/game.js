@@ -1701,7 +1701,7 @@
   fog.innerHTML = '<defs><radialGradient id="sight"><stop offset="55%" stop-color="#000"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient>' +
     '<mask id="fogged" maskUnits="userSpaceOnUse"><rect class="all" fill="#fff"/><g class="sees"></g></mask></defs><rect class="cloud" mask="url(#fogged)"/>';
   board.insertBefore(fog, $('seams'));
-  function reach(p) { return { square: 1.05, triangle: 0.95, domino: 1.45, hexagon: 1.4 }[p.type] || 1.1; }   // how far a shape sees
+  function reach(p) { return { square: 0.85, triangle: 0.78, domino: 1.2, hexagon: 1.15 }[p.type] || 0.9; }   // how far a shape sees
   function fogView() {
     fog.toggleAttribute('hidden', !lv.blind);
     if (!lv.blind) return;
