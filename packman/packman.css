@@ -621,7 +621,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .rims .bay{fill:rgba(255,201,60,.08); stroke:#FFC93C; stroke-width:calc(2px * var(--u)); stroke-dasharray:.08 .06}
 .rims .chev{fill:none; stroke:#FFC93C; stroke-width:calc(4px * var(--u)); stroke-linecap:round; stroke-linejoin:round; animation:chev 1.1s ease-in-out infinite}
 @keyframes chev{0%,100%{opacity:.25} 40%{opacity:1}}
-/* Blind Box: the box is drawn only round each shape (a mask: game.js, under inventions), and whole on a win */
+/* Blind Box: the box is drawn only just round each shape (a mask: game.js, under inventions), and whole on a win */
 .fog{pointer-events:none}
 .piece.echo{pointer-events:none}
 .piece.echo .pop{opacity:.84}

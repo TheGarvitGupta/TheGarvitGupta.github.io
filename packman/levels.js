@@ -530,7 +530,7 @@ var PackmanLevels = (function () {
       solution: [[-0.4988, 0.7173, 60], [-1.2527, -0.2225, 30], [-1.6857, 0.8935, 0], [1.208, 0.6822, 0], [0.8945, -0.5052, 30], [2.077, -0.1872, 60]]
     },
     // The fifth chapter (invent: true): inventions, each level with a rule or a thing the game has nowhere else.
-    // A level may have: a box that shows only a little way round each shape (blind); shapes that are copied round the box's middle, the first
+    // A level may have: a box that shows only just round each shape (blind); shapes that are copied round the box's middle, the first
     // echo of them dealt and the rest following (echo); gravity; walls that shapes cannot be carried through,
     // listed as [x1, y1, x2, y2], where the box is open or has a door wherever there is none (walls); shapes
     // that are nailed down once let go in the box (once); a pivot to balance on (balance); and guests, a
@@ -550,7 +550,7 @@ var PackmanLevels = (function () {
       name: 'Blind Box',
       invent: true,
       blind: true,
-      intro: 'The box is invisible. It shows only a little way round each shape.',
+      intro: 'The box is invisible. It shows only just round each shape.',
       hint: 'The box is a lopsided pentagon, widest across the middle. The brick stands almost upright against the left wall. One square sits nearly straight on the floor beside it, one leans into the corner on the lower right, and one leans under the wall at the top right. The triangles go between them: one under the top wall, one in the middle.',
       container: [[-1.8129, -0.9971], [0.6345, -1.3597], [1.8129, 0.1812], [0.9971, 1.4503], [-1.6316, 1.0878]],
       pieces: pieces(3, 2, 1),

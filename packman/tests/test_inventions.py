@@ -150,16 +150,16 @@ async def test_every_guest_has_a_wish_and_a_say(t):
     assert not page.errors, page.errors
 
 async def test_a_blind_box_is_seen_only_round_the_shapes(t):
-    """The box is drawn only a little way round each shape, where it is now. Packed, it shows whole."""
+    """The box is drawn only just round each shape, a little bigger than the shape, where it is now. Packed, it shows whole."""
     page = await level(t, 'Blind Box')
     masked = 'document.getElementById("bin").getAttribute("mask")'
     assert await page.evaluate(masked), 'the box can be seen'
-    sight = '(function () { var c = document.querySelectorAll(".fog .sees circle")[5]; return [+c.getAttribute("cx"), +c.getAttribute("cy")]; })()'
+    sight = '(function () { var t = document.querySelectorAll(".fog .sees path")[5].transform.baseVal.consolidate().matrix; return [t.e, t.f]; })()'
     sol = await solution(page)
     await put(page, 5, sol[5])
     at = await page.evaluate(sight)
     assert abs(at[0] - sol[5][0]) < 0.01 and abs(at[1] - sol[5][1]) < 0.01, 'the box does not show round the brick, where it is'
-    assert await page.evaluate('document.querySelectorAll(".fog .sees circle").length') == 6, 'the box shows round something other than the shapes'
+    assert await page.evaluate('document.querySelectorAll(".fog .sees path").length') == 6, 'the box shows round something other than the shapes'
     for i in range(5): await put(page, i, sol[i])
     await tick(page, 2500)
     assert await won(page) and not await page.evaluate(masked), 'packed, the box does not show whole'

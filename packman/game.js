@@ -1695,13 +1695,12 @@
   }
   function fixed(i) { return pieces[i].nailed || copy(i); }   // a shape that cannot be picked up
 
-  // Blind Box (blind): the box cannot be seen, but for a little way round each shape: the box is drawn through a mask
-  // with a soft disc in it round every shape, where it is now. Packed, the whole box shows.
-  var fog = el('g', 'fog');
-  fog.innerHTML = '<defs><radialGradient id="sight"><stop offset="45%" stop-color="#fff"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
-    '<mask id="sighted" maskUnits="userSpaceOnUse"><g class="sees"></g></mask></defs>';
+  // Blind Box (blind): the box cannot be seen, but just round each shape: the box is drawn through a mask that has
+  // in it, for every shape, the shape itself a little bigger, where it is now, with soft edges. Packed, the whole box shows.
+  var fog = el('g', 'fog'), HALO = 1.3;
+  fog.innerHTML = '<defs><filter id="blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".05"/></filter>' +
+    '<mask id="sighted" maskUnits="userSpaceOnUse"><g class="sees" filter="url(#blur)"></g></mask></defs>';
   board.insertBefore(fog, $('seams'));
-  function reach(p) { return { square: 0.72, triangle: 0.66, domino: 1.05, hexagon: 1.0 }[p.type] || 0.75; }   // how far a shape sees
   function fogView() {
     var m = fog.querySelector('mask');
     m.setAttribute('x', view.x); m.setAttribute('y', view.y); m.setAttribute('width', view.w); m.setAttribute('height', view.h);
@@ -1711,10 +1710,11 @@
     if (lv.blind && !won) bin.setAttribute('mask', 'url(#sighted)'); else bin.removeAttribute('mask');
     if (!lv.blind) return;
     var now = fog.querySelector('.sees');
-    while (now.childNodes.length < pieces.length) now.appendChild(el('circle'));
+    while (now.childNodes.length < pieces.length) now.appendChild(el('path'));
     pieces.forEach(function (p, i) {
-      var c = now.childNodes[i];
-      c.setAttribute('cx', p.x.toFixed(3)); c.setAttribute('cy', p.y.toFixed(3)); c.setAttribute('r', reach(p)); c.setAttribute('fill', 'url(#sight)');
+      var h = now.childNodes[i];
+      h.setAttribute('d', loop(G.SHAPES[p.type])); h.setAttribute('fill', '#fff');
+      h.setAttribute('transform', 'translate(' + p.x.toFixed(3) + ' ' + p.y.toFixed(3) + ') rotate(' + p.angle + ') scale(' + HALO + ')');
     });
   }
 
