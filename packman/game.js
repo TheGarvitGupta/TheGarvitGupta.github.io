@@ -1608,6 +1608,15 @@
       if (!hit) {
         var ahead = G.verts(p).map(function (v) { return [v[0] + dx * 0.002, v[1] + dy * 0.002]; }), what = null;
         B.forEach(function (b) { var o = G.overlap(ahead, b); if (o && (!hit || o.depth > hit.depth)) { hit = o; what = b; } });
+        if (what && hit.depth < 0.04 && Math.abs(dx * hit.nx + dy * hit.ny) < 0.5) {   // sliding along it, a sliver into it: out of the sliver, and on
+          var up = hit.depth + 1e-4, L = G.verts(p).map(function (v) { return [v[0] + hit.nx * up, v[1] + hit.ny * up]; });
+          if (!B.some(function (q) { return G.overlap(L, q); })) {
+            p.x += hit.nx * up; p.y += hit.ny * up;
+            var sink = (x - p.x) * hit.nx + (y - p.y) * hit.ny;
+            if (sink < 0) { x -= hit.nx * sink; y -= hit.ny * sink; }   // (and on along it, not back down into it)
+            continue;
+          }
+        }
         var aside = what ? clip(p, ahead, what, hit, B) : 0;
         if (aside) {   // only caught on a corner: round it, and on, without heading back onto it
           var tx = -hit.ny, ty = hit.nx, back = (x - p.x) * tx + (y - p.y) * ty;
@@ -2117,7 +2126,10 @@
   function seatGhost() {
     if (!ghost) return;
     if (sel >= 0 && intoGhost(sel)) { render(sel); showAngle(); placeHandle(); }
-    if (pieces.some(function (p) { return lv.steps ? inStep(p, [ghost.x, ghost.y, ghost.angle], ghost.type) : near(p, ghost, 0.004, 0.5); })) showGhost(null);   // (a step is done near enough: carried, a shape is not snapped)
+    var at = [ghost.x, ghost.y, ghost.angle];
+    if (!pieces.some(function (p) { return lv.steps ? inStep(p, at, ghost.type) : near(p, ghost, 0.004, 0.5); })) return;   // (a step is done near enough: carried, a shape is not snapped)
+    var next = lv.steps && stepSpot();   // one spot is one shape's whole way: where it goes on from here shows at once
+    showGhost(next && next.from && next.from.every(function (v, k) { return Math.abs(v - at[k]) < 1e-6; }) ? next : null);
   }
 
   function win() {

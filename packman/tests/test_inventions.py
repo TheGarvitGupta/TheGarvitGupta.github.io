@@ -94,32 +94,50 @@ async def test_the_loading_dock_lets_shapes_in_by_the_door_only(t):
     await drag(page, 0, side * 3.2, -0.9 * side)   # out to one side, level with a wall
     await drag(page, 0, 0, -0.9 * side, steps=20)
     p = (await shapes(page))[0]
-    assert abs(p['x']) > 2.0 or abs(p['y']) > 1.15, 'a square was carried in through a wall, to (%.2f, %.2f)' % (p['x'], p['y'])
-    await drag(page, 0, side * 3.2, 1.9 * side); await drag(page, 0, 3.2, 1.9); await drag(page, 0, 3.2, 0.5)   # round the outside, to the door
-    await drag(page, 0, 0.5, 0.5, steps=24)
+    assert abs(p['x']) > 2.0 or abs(p['y']) > 1.5, 'a square was carried in through a wall, to (%.2f, %.2f)' % (p['x'], p['y'])
+    await drag(page, 0, side * 3.2, 2.3 * side); await drag(page, 0, 3.2, 2.3 * side); await drag(page, 0, 3.2, 0)   # round the outside, to the door
+    await drag(page, 0, 0.5, 0, steps=24)
     p = (await shapes(page))[0]
-    assert at(p, 0.5, 0.5, 0.05), 'a square carried in through the door stopped at (%.2f, %.2f)' % (p['x'], p['y'])
+    assert at(p, 0.5, 0, 0.05), 'a square carried in through the door stopped at (%.2f, %.2f)' % (p['x'], p['y'])
     assert not page.errors, page.errors
 
 async def test_the_loading_dock_can_be_packed_through_its_door(t):
-    """The whole level played with the mouse, every shape carried round the outside and in by the door: the bricks
-    stood up in the middle and pushed to the back, the squares up to the ceiling, and the last brick along the floor."""
+    """The whole level played with the mouse, every shape carried round the outside and in by the door, the way the
+    hint goes: two bricks stood up in the middle and pushed to the back, two slid up to the ceiling and along, one
+    down to the floor, and the squares last, in the door."""
     page = await level(t, 'Loading Dock')
-    async def bring(i):   # round the outside, under the box, to the bay in front of the door, and in
+    async def bring(i, x=0.5):   # round the outside, under the box, to the bay in front of the door, and in
         p = (await shapes(page))[i]
-        if p['x'] < 2.4: await drag(page, i, p['x'], 1.95); await drag(page, i, 3.4, 1.95)
-        await drag(page, i, 3.4, 0.55); await drag(page, i, 0.6, 0.55, steps=24)
-    for i, x in ((2, -1.5), (3, -0.5)):
-        await bring(i)
-        await drag(page, i, 0.5, 0)
+        if p['x'] < 2.6: await drag(page, i, p['x'], 2.3); await drag(page, i, 3.6, 2.3)
+        await drag(page, i, 3.6, 0); await drag(page, i, x, 0, steps=24)
+    for i, x, at in ((2, -1.5, 0), (3, -0.5, 0.5)):
+        await bring(i, at)
         await turn(page, i, 90)
-        await drag(page, i, x, 0, steps=16)
-    await bring(0); await drag(page, 0, 0.5, 0.55); await drag(page, 0, 0.5, -0.65)
-    await bring(1); await drag(page, 1, 1.51, 0.55); await drag(page, 1, 1.45, -0.65)   # up and a little in: it slides up the side of the first
-    await bring(4)   # along the floor: in, it fits, and that is the box packed
+        await drag(page, i, x, 0.5, steps=16)
+    for i, x in ((4, -1), (5, 1)):
+        await bring(i, 1); await drag(page, i, 1, -1.1); await drag(page, i, x, -1.1, steps=16)   # (up against the ceiling: the wall stops it)
+    await bring(6, 1); await drag(page, 6, 1, 1.1)
+    await bring(0); await bring(1, 1.5)
     await tick(page, 1500)
     p = await shapes(page)
     assert await won(page), 'packed through the door, the dock is not won: %s' % [(round(q['x'], 3), round(q['y'], 3), q['angle']) for q in p]
+    assert not page.errors, page.errors
+
+async def test_a_loading_dock_hint_shows_a_shape_its_whole_way(t):
+    """One spot is one brick's way: in to the middle, stood up there, and pushed to the back, each shown as the last is done."""
+    page = await level(t, 'Loading Dock')
+    ghost = '''(function () { var g = document.getElementById("ghost"); if (g.hasAttribute("hidden")) return null;
+      var m = g.transform.baseVal.consolidate().matrix; return [Math.round(m.e * 100) / 100, Math.round(m.f * 100) / 100, Math.round(Math.atan2(m.b, m.a) * 180 / Math.PI)]; })()'''
+    await page.click('#b-hint'); await tick(page, 400); await page.click('#hint-spot'); await tick(page, 800)
+    assert await page.evaluate(ghost) == [0, 0, 0], 'the first spot is not a brick lying in the middle: %s' % await page.evaluate(ghost)
+    p = (await shapes(page))[2]
+    await drag(page, 2, p['x'], 2.3); await drag(page, 2, 3.6, 2.3); await drag(page, 2, 3.6, 0); await drag(page, 2, 0, 0, steps=24)
+    assert await page.evaluate(ghost) == [0, 0, 90], 'brought in, the brick is not shown stood up: %s' % await page.evaluate(ghost)
+    await turn(page, 2, 90)
+    assert await page.evaluate(ghost) == [-1.5, 0.5, 90], 'stood up, the brick is not shown its place at the back: %s' % await page.evaluate(ghost)
+    assert await page.evaluate('!document.getElementById("ghost-way").hasAttribute("hidden")'), 'no line from where it stands to where it goes'
+    await drag(page, 2, -1.5, 0.6, steps=16)
+    assert await page.evaluate(ghost) is None, 'the brick is in its place and a spot still shows'
     assert not page.errors, page.errors
 
 async def test_a_seesaw_has_to_balance(t):
