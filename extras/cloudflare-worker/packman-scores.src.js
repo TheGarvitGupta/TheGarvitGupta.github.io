@@ -44,7 +44,9 @@ function packed(level, spots) {
 		pieces.push({ type: level.pieces[i], size: 1, x: s[0], y: s[1], angle: s[2] });
 	}
 	// (a level with two boxes lists them as containers; its shapes are judged each by the box it is in)
-	return G.evaluate(pieces, level.containers ? G.makeBoxes(level.containers) : G.makeContainer(level.container)).solved;
+	const C = level.containers ? G.makeBoxes(level.containers) : G.makeContainer(level.container);
+	// and a level with rules of its own (a pivot to balance on, guests with wishes) has them kept too
+	return G.evaluate(pieces, C).solved && G.verdict(level, pieces, C).ok;
 }
 
 let ready = false;

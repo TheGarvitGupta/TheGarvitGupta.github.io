@@ -2,8 +2,8 @@
 // same units as the pieces (every piece has side 1). Each solution is one packed
 // [x, y, angle] per piece, in the order the pieces are listed. The levels run
 // from easiest to hardest; saved progress goes by name, so they can be reordered.
-// There are four chapters, played in this order: the seventeen; then the powers; then the bricks and
-// hexagons; then the twists, which are listed last here. In this file: the first is the seventeen; the next (bonus: true) brings
+// There are five chapters, played in this order: the seventeen; then the powers; then the bricks and
+// hexagons; then the twists; then the inventions, which are listed last here. In this file: the first is the seventeen; the next (bonus: true) brings
 // the brick and the hexagon; the third (powers: n) deals n of its shapes a power each time,
 // picked at random, but for any named in sure, which always come. A chameleon is dealt to
 // any shape, unless chameleon: n names one; masked is the hint to give when there is a chameleon in the deal.
@@ -528,6 +528,111 @@ var PackmanLevels = (function () {
       container: loosen([[0, -2 * H / 3], [0.5, H / 3], [-0.5, H / 3]], 3.245).map(function (p) { return [p[0] - 1.147, p[1] + 0.468]; }).concat(ngon(6, 1.372, 0).map(function (p) { return [p[0] + 1.3975, p[1]]; })),
       pieces: pieces(6, 0),
       solution: [[-0.4988, 0.7173, 60], [-1.2527, -0.2225, 30], [-1.6857, 0.8935, 0], [1.208, 0.6822, 0], [0.8945, -0.5052, 30], [2.077, -0.1872, 60]]
+    },
+    // The fifth chapter (invent: true): inventions, each level with a rule or a thing the game has nowhere else.
+    // A level may have: a box under fog, which each shape clears only round itself (blind); shapes that are copied round the box's middle, the first
+    // echo of them dealt and the rest following (echo); gravity; walls that shapes cannot be carried through,
+    // listed as [x1, y1, x2, y2], where the box is open or has a door wherever there is none (walls); shapes
+    // that are nailed down once let go in the box (once); a pivot to balance on (balance); and guests, a
+    // personality for every shape, each with a wish that has to be kept (guests: see verdict in geom.js). A box with a
+    // door in its right-hand wall keeps room on the board outside it (apron), or on a phone there would be none.
+    {
+      name: 'Fivefold',
+      invent: true,
+      intro: 'Five sides, and not one of them lines up with anything.',
+      hint: 'The hexagon lies straight and flat on the floor, a little left of the middle. The five triangles fan round the top of it, one against each of the other four walls and one in the peak. Not one of them sits square: turn each until a side lies flat against its wall.',
+      fact: 'Every other box here has corners that a square or a triangle could fill. A pentagon’s are 108°, which nothing here makes.',
+      container: ngon(5, 1.6363, -90),
+      pieces: pieces(0, 5, 0, 1),
+      solution: [[-1.0515, -0.2154, 60], [1.0825, 0.0051, 48], [0.8728, -0.6404, 216], [0.081, -0.9808, 190], [-0.4721, -0.7838, 129], [-0.1045, 0.4538, 300]]
+    },
+    {
+      name: 'Blind Box',
+      invent: true,
+      blind: true,
+      intro: 'The box is lost in fog. Each shape sees only a little way round itself.',
+      hint: 'The box is a lopsided pentagon, widest across the middle. The brick stands almost upright against the left wall. One square sits nearly straight on the floor beside it, one leans into the corner on the lower right, and one leans under the wall at the top right. The triangles go between them: one under the top wall, one in the middle.',
+      container: [[-1.8129, -0.9971], [0.6345, -1.3597], [1.8129, 0.1812], [0.9971, 1.4503], [-1.6316, 1.0878]],
+      pieces: pieces(3, 2, 1),
+      solution: [[1.0367, 0.4508, 213], [-0.1498, 0.6888, 176], [0.5615, -0.6196, 323], [-0.372, -0.9112, 292], [-0.0609, -0.1339, 233], [-1.2147, 0.0449, 265]]
+    },
+    {
+      name: 'Kaleidoscope',
+      invent: true,
+      echo: 3,   // the first three are dealt; the other six are their copies, a third and two thirds of a turn round the middle
+      intro: 'Three shapes, and whatever you do to one happens three times over, a third of a turn apart.',
+      hint: 'The three triangles meet in the middle, each one’s point against the next one’s side, like a pinwheel. Each square lies with a corner tucked into a corner of the honeycomb, beside a triangle. Get one square right and its copies are right too.',
+      container: ngon(6, 1.9121, 0),
+      pieces: ['square', 'square', 'triangle', 'square', 'square', 'triangle', 'square', 'square', 'triangle'],
+      solution: [[0.5496, -1.0387, 263], [1.1782, 0.1405, 113], [0.4778, -0.2338, 173], [0.6247, 0.9954, 23], [-0.7108, 0.9501, 233], [-0.0364, 0.5307, 293], [-1.1744, 0.0433, 143], [-0.4674, -1.0906, 353], [-0.4414, -0.2968, 53]]
+    },
+    {
+      name: 'Landslide',
+      invent: true,
+      gravity: true,
+      // the two walls under the box; the two over it are open, and the way in
+      walls: [[2.8369, 0, 0, 2.8369], [0, 2.8369, -2.8369, 0]],
+      intro: 'The box stands on its corner, and shapes slide downhill. Nothing passes through anything in it.',
+      hint: 'Every shape goes in turned to 45°, square to the walls. Build up from the bottom corner: a shape only stays put where both the places under it are filled. A brick laid across a gap shuts the gap off for good, so fill the gaps first.',
+      container: ngon(4, 2.8369, -90),
+      pieces: pieces(8, 0, 4),
+      solution: [[0.0, 2.1213, 45], [-2.1213, 0.0, 45], [0.7071, 1.4142, 45], [0.0, 0.7071, 45], [0.7071, 0.0, 45], [-0.7071, -1.4142, 45], [1.4142, -0.7071, 45], [0.0, -2.1213, 45],
+        [-1.0607, 1.0607, 45], [1.7678, 0.3536, 315], [-1.0607, -0.3536, 45], [0.3536, -1.0607, 315]]
+    },
+    {
+      name: 'Seesaw',
+      invent: true,
+      balance: { at: 0.305, within: 0.03 },   // where the pivot is, and how far off it the weight may be
+      intro: 'The box rests on a pivot. Pack it so that it balances.',
+      hint: 'From left to right: the two triangles, one pointing up and one down, against the left wall; the hexagon, straight; the square, on the floor; and the brick, standing upright against the right wall.',
+      container: rect(5.01, 2.006),
+      pieces: pieces(1, 2, 1, 1),
+      solution: [[1.0, 0.5, 0], [-2.0, 0.7113, 0], [-2.0, -0.7113, 180], [2.0, 0, 90], [-0.5, 0, 0]]
+    },
+    {
+      name: 'One Shot',
+      invent: true,
+      once: true,
+      intro: 'Each shape can be put in once. Let go of it in the box and it is nailed down.',
+      hint: 'Turn every shape before it goes in. The hexagon first, straight, low on the right, flat on the floor. One square sits straight against the ceiling on the right; the other leans 30° against the wall at the upper left. One triangle hangs in the top left, and the other points down in the bottom left.',
+      container: ngon(6, 1.688, 0),
+      pieces: pieces(2, 2, 0, 1),
+      solution: [[-0.8943, -0.366, 120], [0.4472, -0.7746, 0], [-0.3415, -0.9575, 30], [-1.0, 0.6057, 180], [0.3415, 0.5915, 60]]
+    },
+    {
+      name: 'Loading Dock',
+      invent: true,
+      // every wall but the door, at the foot of the right-hand one
+      walls: [[-2.002, -1.152, 2.002, -1.152], [-2.002, -1.152, -2.002, 1.152], [-2.002, 1.152, 2.002, 1.152], [2.002, -1.152, 2.002, -0.148]],
+      apron: 1.6,   // and room on the board outside the door, as wide as a brick lying down, to bring a shape up to it
+      door: [2.002, -0.148, 2.002, 1.152],   // (drawn: the posts either side, and the bay in front of it)
+      intro: 'Shapes go in through the door, and once they are in, nothing passes through anything.',
+      hint: 'A brick goes through the door lying down, and there is only room to stand it up out in the middle of the box. Stand two up and push them to the back wall. Then the squares, up to the ceiling. The last brick slides in along the floor, so it has to be the last thing in.',
+      container: rect(4.004, 2.304),
+      pieces: pieces(2, 0, 3),
+      solution: [[0.5, -0.65, 0], [1.5, -0.65, 0], [-1.5, 0, 90], [-0.5, 0, 90], [1.0, 0.65, 0]]
+    },
+    {
+      name: 'Sam’s Seating Plan',   // for Sam, who finished the game
+      invent: true,
+      // each shape a guest: its personality (by its voice, in faces.js), the icon on its place card, what it wants, and the rule that judges it
+      guests: [
+        { kit: 'grump', icon: '😤', say: 'Was fine where it was. Keep it away from the kid.', not: 6 },
+        { kit: 'sleepy', icon: '💤', say: 'Could be packed lying down. Lies flat, on the floor.', flat: true, floor: true },
+        { kit: 'gent', icon: '🎩', say: 'After you. Stands upright.', upright: true },
+        { kit: 'cat', icon: '🐾', say: 'Fits, therefore sits. In a corner.', corner: true },
+        { kit: 'smitten', icon: '💘', say: 'In love with its neighbour. Beside the sweetheart.', beside: 5 },
+        { kit: 'sweet', icon: '🌸', say: 'Blushes when it fits. On the floor.', floor: true },
+        { kit: 'kid', icon: '🎈', say: 'Cannot sit still. Touching four shapes.', crowd: 4 },
+        { kit: 'host', icon: '🥂', say: 'Dressed for the occasion. Off every wall.', walls: 0 },
+        { kit: 'specs', icon: '📖', say: 'Has read the rules twice. Beside the gentleman.', beside: 2 }
+      ],
+      intro: 'Sam is having people round. Pick up a guest to hear what it wants.',
+      hint: 'Top row, left to right: the grump, lying down, then the bookworm, then the gentleman, standing in the corner. Middle row: the smitten one, the host, the kid. Bottom row: the sweetheart, the sleepyhead lying flat, and the cat in the corner.',
+      fact: 'Of the 1,153,440 ways to seat these nine in a box this size, one keeps every wish, and its mirror images.',
+      container: rect(4.006, 3.006),
+      pieces: pieces(0, 0, 3).concat(pieces(6, 0)),
+      solution: [[-1, -1, 0], [0, 1, 0], [1.5, -0.5, 90], [1.5, 1, 0], [-1.5, 0, 0], [-1.5, 1, 0], [0.5, 0, 0], [-0.5, 0, 0], [0.5, -1, 0]]
     }
   ];
 })();

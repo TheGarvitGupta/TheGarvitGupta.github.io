@@ -35,11 +35,21 @@ body.twists{
   background-size:120px 120px, 120px 120px, 24px 24px, 24px 24px; background-position:0 0;
 }
 body.twists .bin-fill{stroke:#0E8C78}
+/* The chapter of inventions is drawn on a blueprint, whatever the theme: deep blue, ruled in fine white squares with a
+   heavier line every fifth, and the box rimmed in white. */
+body.invent{
+  --bg:#17406E; --ink:#0B1E36; --text:#EEF5FF; --mut:#A9C4E6; --rim:#EEF5FF; --dot:rgba(238,245,255,.08);
+  --card:#1F4C80; --bin:#245892; --wash:rgba(238,245,255,.09); --win:#2E7D6E;
+  background-image:linear-gradient(rgba(238,245,255,.16) 1.5px, transparent 1.5px), linear-gradient(90deg, rgba(238,245,255,.16) 1.5px, transparent 1.5px),
+    linear-gradient(rgba(238,245,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(238,245,255,.07) 1px, transparent 1px);
+  background-size:120px 120px, 120px 120px, 24px 24px, 24px 24px; background-position:0 0;
+}
+body.invent .bin-fill{stroke:#EEF5FF}
 /* In the chapter of powers a strip between the level's name and the board is kept for the power in hand:
    its face, its name and one line, on a gold card. The strip is always there, so nothing moves when the
    card comes and goes, and it covers neither the name nor the board. Empty, it says what it is for. */
 #power-row{display:none; flex:none; height:50px; margin-top:8px; align-items:center; justify-content:center}
-body.powers #power-row{display:flex}
+body.powers #power-row,body.guests #power-row,body.once #power-row{display:flex}   /* and at the dinner party, for what the guest in hand wants */
 #power-idle{margin:0; padding:0 8px; font-size:14.5px; font-weight:500; text-align:center; color:var(--mut)}
 #power-row.told #power-idle{display:none}   /* (said three times already: see startLevel) */
 #power-note{width:max-content; max-width:100%; max-height:100%; display:flex; align-items:center; gap:11px; padding:5px 18px 6px 8px;
@@ -330,6 +340,7 @@ body:has(#stage.eyes) .sky i{opacity:0}   /* and none of them shows round the ta
 @keyframes beckon{from{opacity:.45}}
 /* under eyesight the hinted spot is a flat yellow shape at its true size, like everything else there: no outline, no dashes */
 #board.eyes .ghost{fill-opacity:1; stroke:none}
+.ghost-way{pointer-events:none} .ghost-way line{stroke:var(--sun); stroke-width:calc(3px * var(--u)); stroke-dasharray:.07 .06; stroke-linecap:round} .ghost-way circle{fill:var(--sun)}
 #ribbon{pointer-events:none}
 #ribbon .edge,#ribbon .band{fill:none; stroke-dasharray:1; animation:tie .4s ease-out both}
 #ribbon .edge{stroke:var(--ink); stroke-width:calc(.12px + 5px * var(--u))}
@@ -499,6 +510,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .lv:active{transform:translateY(1px)}
 .lv svg{display:block; width:56%; height:46%; margin:0 auto 1px; overflow:visible}
 .lv svg polygon{fill:var(--wash); stroke:var(--ink); stroke-width:2.5px; stroke-linejoin:round; vector-effect:non-scaling-stroke}
+.lv svg polygon.hid{fill:none; stroke-dasharray:3px 4px}   /* the box nobody can see */
 .lv.done{background:var(--mint); color:#2B2140}
 .lv.done svg polygon{fill:#fff}
 .lv.here{outline:3px solid var(--coral); outline-offset:2px}
@@ -558,7 +570,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   .dock{gap:6px} .spin{gap:5px} .dock .rb{min-width:44px; padding:0 5px; font-size:14.5px} .angle{padding:0 9px 0 4px} .angle input{width:44px}
   .dock .tip{font-size:14px}
   .grid{gap:8px} .lv{border-radius:13px; font-size:15px}
-  .card{padding:20px 16px 18px} .jump button{font-size:12.5px}
+  .card{padding:20px 16px 18px} .jump{gap:4px} .jump button{font-size:11.5px; padding:6px 1px 7px} .jump small{font-size:10.5px}   /* five chapters across a phone */
 }
 /* six buttons and the name do not fit side by side on a phone: the name gives way, the face stays */
 @media (max-width:460px){ .word{display:none} }
@@ -576,7 +588,8 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   #stats{margin-top:2px; font-size:12.5px}
   #stage{grid-area:2 / 1 / 3 / 3; margin:0}
   /* no room for a strip here: the card lies over the top of the board, and the empty strip says nothing */
-  body.powers #power-row{grid-area:2 / 1 / 3 / 3; align-self:start; z-index:4; margin:0; height:auto; pointer-events:none} #power-idle{display:none}
+  body.powers #power-row,body.guests #power-row,body.once #power-row{grid-area:2 / 1 / 3 / 3; align-self:start; z-index:4; margin:0; height:auto; pointer-events:none} #power-idle{display:none}
+  body.once #power-idle{display:block; font-size:12.5px}
   .dock{grid-area:2 / 3; flex-direction:column; height:auto; gap:8px; align-self:center} .spin{flex:none; flex-direction:column; gap:5px}
   .dock .rb{height:36px; min-width:74px; border-radius:12px} .angle{height:38px; width:74px; padding:0 8px 0 2px; font-size:18px; border-radius:12px}
   .angle input{width:44px}
@@ -592,3 +605,74 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none !important; transition:none !important}
 }
+
+/* The fifth chapter's things on the board (in game.js, under inventions). A box with walls of its own has them drawn one
+   by one, with the door or the open side left out; a box under fog is seen only round each shape; a copy cannot be picked up, and one hidden under its shape is not seen; a nailed shape
+   has the nail's head on it; a guest whose wish is not kept looks pained; and a box that must balance has its beam, pivot and weight. */
+#bin.walled .bin-fill{stroke:none}
+/* solid walls (their hatching and stripes are patterns game.js draws, and fills them with): hatched slabs, from the real wall outwards; a door's posts striped; the bay before it, with its arrows in */
+.rims{pointer-events:none}
+.rims .h{stroke:var(--rim); stroke-width:.018; opacity:.75}
+.rims .slab{stroke:var(--rim); stroke-width:calc(2.5px * var(--u)); stroke-linejoin:round}
+.rims .slab.bump{animation:bump .35s ease-out}
+@keyframes bump{from{fill:#FF6B6B; stroke:#FF6B6B}}
+.rims .hz-a{fill:#FFC93C} .rims .hz-b{fill:#0B1E36}
+.rims .post{stroke:var(--rim); stroke-width:calc(2.5px * var(--u))}
+.rims .bay{fill:rgba(255,201,60,.08); stroke:#FFC93C; stroke-width:calc(2px * var(--u)); stroke-dasharray:.08 .06}
+.rims .chev{fill:none; stroke:#FFC93C; stroke-width:calc(4px * var(--u)); stroke-linecap:round; stroke-linejoin:round; animation:chev 1.1s ease-in-out infinite}
+@keyframes chev{0%,100%{opacity:.25} 40%{opacity:1}}
+/* Blind Box: the fog over the board, with each shape's sight cut out of it (game.js, under inventions); it lifts on a win */
+.fog{pointer-events:none} .fog .cloud{fill:#06111F; opacity:.94; transition:opacity 1.2s} .fog.lift .cloud{opacity:0}
+.piece.echo{pointer-events:none}
+.piece.echo .pop{opacity:.84}
+.piece.away{visibility:hidden}
+/* One Shot: the nail every shape carries. Over the box in hand, it hangs above the shape and bobs, ready; let go of, it is
+   hammered in with a ring of dust and the shape gives under it, and only the head shows after. A nailed shape loses its shine. */
+.stake{pointer-events:none}
+.stake .drop{opacity:0; transform:translateY(-.42px); transition:opacity .15s, transform .15s}
+.stake .nail{fill:#D5DAE3; stroke:#2B2140; stroke-width:calc(2.5px * var(--u))}
+.stake .shank{fill:#9AA3B2; stroke:#2B2140; stroke-width:calc(2px * var(--u)); stroke-linejoin:round}
+.stake .shine{fill:#fff; opacity:.8}
+.stake .thud{fill:none; stroke:var(--ink); stroke-width:calc(3px * var(--u)); opacity:0; transform-box:fill-box; transform-origin:center}
+.piece.aim .stake .drop{opacity:.95; animation:poise .7s ease-in-out infinite alternate}
+@keyframes poise{from{transform:translateY(-.42px)} to{transform:translateY(-.32px)}}
+.piece.nailed .stake .drop{opacity:1; transform:none}
+.piece.nailed .stake .shank{visibility:hidden}
+.piece.struck .stake .drop{animation:drive .16s cubic-bezier(.5,0,1,.6) both}
+.piece.struck .stake .shank{visibility:visible; animation:sink .16s step-end both}
+.piece.struck .stake .thud{animation:thud .45s .13s ease-out both}
+.piece.struck .body{animation:give .4s .13s ease-out}   /* (about the shape's middle, where it turns: no transform-origin)*/
+@keyframes drive{from{transform:translateY(-.42px)} to{transform:none}}
+@keyframes sink{to{visibility:hidden}}
+@keyframes thud{from{opacity:.9; transform:scale(.6)} to{opacity:0; transform:scale(3.2)}}
+@keyframes give{30%{scale:.93}}
+.piece.nailed .body{filter:saturate(.7) brightness(.93)}
+#power-idle .shot{display:inline-block; width:7px; height:16px; margin:0 0 -3px 5px; background:var(--rim); border-radius:4px 4px 1px 1px; clip-path:polygon(0 0,100% 0,100% 30%,70% 30%,70% 85%,50% 100%,30% 85%,30% 30%,0 30%)}
+#power-idle .shot.used{opacity:.25}
+/* Sam's dining room (its wallpaper is a pattern game.js draws, and fills the box with): the floor under it, the lamp, the
+   bunting; a place card on every guest, green when its wish is kept and red when it is not; a heart, or steam, between two */
+.party,.toasts{pointer-events:none}
+.party .pp-a{fill:#FFE9C7} .party .pp-b{fill:#FFDDB0}
+.party .boards{stroke:#8A5A33; stroke-width:.14; stroke-dasharray:.55 .03}
+.party .cord{stroke:#2B2140; stroke-width:calc(2px * var(--u))} .party .shade{fill:#FF6B6B; stroke:#2B2140; stroke-width:calc(2px * var(--u))}
+.party .bulb{fill:#FFF3B0; filter:drop-shadow(0 0 .12px #FFE066)}
+.party .string{fill:none; stroke:#2B2140; stroke-width:calc(1.5px * var(--u))}
+.party .flag{stroke:#2B2140; stroke-width:calc(1.5px * var(--u)); stroke-linejoin:round}
+.party .f0{fill:#FF6B6B} .party .f1{fill:#FFC93C} .party .f2{fill:#3DDBB4} .party .f3{fill:#4DA8FF}
+.party .letter{font-family:var(--f); font-weight:800; font-size:.15px; fill:#fff}
+body.guests #bin .bin-fill{stroke:#2B2140}
+.place rect{fill:#fff; stroke:#2B2140; stroke-width:calc(2px * var(--u)); transition:fill .2s}
+.place text{font-size:.16px}
+.piece.kept .place rect{fill:#B5E655} .piece.broken .place rect{fill:#FF8A70}
+.piece.kept .place{animation:place .35s ease-out}
+@keyframes place{40%{transform:translateY(-.06px)}}
+.toasts text{font-size:.26px; animation:toast .4s ease-out both}
+@keyframes toast{from{opacity:0; transform:translateY(.08px)}}
+.piece.sad .eye{visibility:hidden} .piece.sad .wince{visibility:visible}
+.piece.sad .m-bad{visibility:visible; fill:var(--face)} .piece.sad .m-idle,.piece.sad .w-idle{visibility:hidden}
+.scale{pointer-events:none}
+.scale .beam{stroke:var(--rim); stroke-width:calc(5px * var(--u)); stroke-linecap:round}
+.scale .pivot{fill:var(--rim)}
+.scale .bob{fill:var(--sun); stroke:var(--ink); stroke-width:calc(2.5px * var(--u))}
+.scale .bob.even,.scale .say.even{fill:var(--mint)}
+.scale .say{font-family:var(--f); font-size:0.26px; font-weight:600; fill:var(--text)}

@@ -36,9 +36,9 @@
     'Dolphin', 'Moose', 'Raven', 'Gecko', 'Bison', 'Puffin', 'Hare', 'Seal', 'Yak', 'Crane', 'Lemur', 'Ibex'];
   // Three chapters: the seventeen, then the powers, then the bricks and hexagons. The file lists the
   // powers last (they were written last), so the levels are put in chapter order here.
-  var CHAPTERS = ['Seventeen', 'Powers', 'Bricks and hexagons', 'Twists'];
-  function chap(l) { return l.twist ? 3 : l.powers ? 1 : l.bonus ? 2 : 0; }   // (the fourth has powers on some levels and none on others)
-  LEVELS = [0, 1, 2, 3].reduce(function (all, k) { return all.concat(LEVELS.filter(function (l) { return chap(l) === k; })); }, []);
+  var CHAPTERS = ['Seventeen', 'Powers', 'Bricks and hexagons', 'Twists', 'Inventions'];
+  function chap(l) { return l.invent ? 4 : l.twist ? 3 : l.powers ? 1 : l.bonus ? 2 : 0; }   // (the fourth has powers on some levels and none on others)
+  LEVELS = [0, 1, 2, 3, 4].reduce(function (all, k) { return all.concat(LEVELS.filter(function (l) { return chap(l) === k; })); }, []);
   var FIRST = CHAPTERS.map(function (c, k) { return LEVELS.map(chap).indexOf(k); });   // where each chapter starts
   var MAIN = LEVELS.filter(function (l) { return !chap(l); }).length;   // the seventeen
   function among(n) { return n - FIRST[chap(LEVELS[n])] + 1; }   // a level's number within its chapter
@@ -242,6 +242,7 @@
     var px = 1 / view.scale;
     board.style.setProperty('--u', px);   // one screen pixel, in board units, for stroke widths
     bin.firstElementChild.setAttribute('d', binPath(px));
+    drawRims(px); fogView(); see();
     $('true-box').setAttribute('d', boxes().map(function (c) { return loop(c.poly); }).join(''));   // for eyesight: the box exactly as judged
     pieces.forEach(function (p) { if (p.fill) outline(p); });
     if (ghost) $('ghost').setAttribute('d', ghostPath(ghost.type));
@@ -408,6 +409,8 @@
     }
     p.back = back;
     p.el = g; p.pop = pop; p.body = body; p.fill = fill; p.eyes = eyes; p.tf = p.rot = p.look = '';
+    if (lv.once) stake(p);
+    if (lv.guests) placeCard(p, i);
     outline(p);
     layer.appendChild(g);
     setTimeout(function () { g.classList.remove('fresh'); }, 620 + i * 28);
@@ -435,6 +438,7 @@
     if (tf !== p.tf) p.el.setAttribute('transform', tf);
     p.under.setAttribute('transform', tf + ' ' + rot);
     p.tf = tf; p.rot = rot;
+    if (lv.echo && i < lv.echo) mirror(i);   // and its copies go with it
     gum(p);
     if (sel >= 0 && (i === sel || (pieces[sel].kin || []).some(function (k) { return k.i === i; }))) tether();
   }
@@ -516,6 +520,7 @@
   /* ---------- judging ---------- */
 
   function judge() {
+    if (lv.once) aim();
     var ev = evaluate(), pips = $('pips').children, fitted = false, shown = ev.packed, lit = [];
     pieces.forEach(function (p, i) {
       var s = ev.states[i];
@@ -531,6 +536,7 @@
       }
       p.el.classList.toggle('good', s.good && !hush);
       p.el.classList.toggle('bad', s.zone === 'edge' || s.hit);
+      p.el.classList.toggle('sad', !!(ev.sad && ev.sad[i]));   // a guest in the box whose wish is not kept
       if (p.power === 'sleeper') p.el.classList.toggle('asleep', asleep(p));
       if (p.power === 'chameleon') {   // in the box and in nobody's way, but not in its real shape: the card says why it does not count
         p.fake = !!p.form && s.zone === 'in' && !s.hit;
@@ -554,7 +560,7 @@
     almost = !ev.solved && pieces.some(function (p) { return p.fake; }) && pieces.every(function (p, i) { return ev.states[i].good || p.fake; });
     card();
     ev.fitted = fitted;
-    showHits();
+    showHits(); see(); weigh(); mingle(ev.sad);
     return ev;
   }
 
@@ -568,6 +574,7 @@
   function commit(quiet, settled) {
     seatGhost();
     if (lv.powers && !settled && react()) return;   // shapes are on the move: this is called again when they come to rest
+    if (lv.gravity && !settled && fall()) return;   // and so they are when they fall
     var ev = judge();
     dirty = true;
     if (ev.solved) { win(); return; }
@@ -582,7 +589,8 @@
       l: lv.name, m: moves, t: t0 ? Math.round((performance.now() - t0) / 1000) : carried,
       p: pieces.map(function (p) { return [+p.x.toFixed(4), +p.y.toFixed(4), p.angle]; }),
       // which shapes have which power, and how each stands: the level is dealt differently every time
-      q: lv.powers ? pieces.map(function (p) { return p.power ? { w: p.power, t: p.type, o: p.forms, n: p.form, c: p.tint, m: p.mate, r: p.rel } : 0; }) : undefined
+      q: lv.powers ? pieces.map(function (p) { return p.power ? { w: p.power, t: p.type, o: p.forms, n: p.form, c: p.tint, m: p.mate, r: p.rel } : 0; }) : undefined,
+      n: lv.once ? pieces.map(function (p, i) { return p.nailed ? i : -1; }).filter(function (i) { return i >= 0; }) : undefined   // which are nailed down
     };
     persist();
   }
@@ -617,8 +625,16 @@
     if (!by || won) return;
     var p = pieces[i];
     if (asleep(p)) { var now = performance.now(); if (now - snored > 800) { snored = now; sfx.snore(); } return; }
+    if (p.nailed) return;
     if (p.power === 'sticky' && p.mate >= 0 && unstick(i)) sfx.peel();   // turned by hand, it comes away
     startClock();
+    if (lv.walls) {   // where nothing passes through anything, a shape turns a degree at a time, and as far as it has room to
+      var step = by > 0 ? 1 : -1, done = 0;
+      while (done !== by) { p.angle += step; if (blocked(i)) { p.angle -= step; break; } done += step; }
+      if (done !== by) { var t = performance.now(); if (t - snored > 400) { snored = t; sfx.bad(); } }
+      if (!done) return;
+      by = 0;   // (turned already)
+    }
     p.angle += by;
     if (p.half) keepInView(p);   // a corner turned over the line is pushed back
     carry(i);
@@ -701,6 +717,8 @@
       handle.classList.add('spin'); bubble.classList.add('show');
       placeHandle();
       if (pieces[sel].power === 'mine' && !(pieces[sel].fuse > 0)) light(pieces[sel]);   // taking hold of its knob is picking it up too
+    } else if (pe && fixed(+pe.dataset.i)) {
+      sfx.bad(); select(-1); return;   // nailed down, or a copy: not to be picked up
     } else if (pe) {
       var i = +pe.dataset.i, p = pieces[i];
       if (i !== sel) {
@@ -726,7 +744,7 @@
     var f = fingers[e.pointerId];
     if (f) { f.x = e.clientX; f.y = e.clientY; }
     if (!drag || (e.pointerId !== drag.id && e.pointerId !== drag.id2)) return;
-    pending = { clientX: e.clientX, clientY: e.clientY };
+    pending = { clientX: e.clientX, clientY: e.clientY, shiftKey: e.shiftKey };
     if (!frame) frame = requestAnimationFrame(moveTo);
   });
 
@@ -744,7 +762,8 @@
     }
     if (drag.mode === 'spin') {
       p = pieces[sel];
-      spinTo(sel, notched(Math.atan2(w.y - p.y, w.x - p.x) * 180 / Math.PI - knobAt(p)));
+      var to = Math.atan2(w.y - p.y, w.x - p.x) * 180 / Math.PI - knobAt(p);
+      spinTo(sel, e.shiftKey ? 15 * Math.round(to / 15) : notched(to));   // with shift held, only to a multiple of 15, as shift with Q and E
       judge();
       return;
     }
@@ -753,11 +772,19 @@
     if (!drag.moved && pieces[drag.i].power === 'sticky' && unstick(drag.i)) sfx.peel();
     drag.moved = true; startClock();
     p = pieces[drag.i];
+    if (lv.walls) {   // carried, it stops at the walls and at shapes in the box, and slides along them; nothing snaps or turns it
+      var wx = w.x + drag.ox, wy = w.y + drag.oy;
+      haul(drag.i, wx, wy); keepInView(p);
+      if (Math.hypot(p.x - wx, p.y - wy) > 0.05) bump(drag.i);   // short of where it was carried to: something stopped it
+      render(drag.i); judge(); showAngle();
+      return;
+    }
     // Only the dragged piece moves, and what you see while dragging is exactly
     // what you get when you let go.
     p.x = w.x + drag.ox; p.y = w.y + drag.oy; p.angle = drag.a0;
     keepInView(p);
-    var S = lv.powers ? solid(p) : pieces, stuck = G.place(S, S.indexOf(p), C) === 'snap';
+    // (the copies of a shape do not get in its way, since they go wherever it goes; nor do the copies hidden under shapes out of the box)
+    var S = lv.powers ? solid(p) : lv.echo ? pieces.filter(function (q, j) { return q === p || (!q.away && (j % lv.echo) !== drag.i); }) : pieces, stuck = G.place(S, S.indexOf(p), C) === 'snap';
     // not even a snap turns the sleeper in there; nor an entangled shape anywhere, or its twin would be turned in passing
     if (p.angle !== drag.a0 && ((p.power === 'sleeper' && asleep(p)) || p.kin)) { p.angle = drag.a0; G.settle(S, S.indexOf(p), C); stuck = false; }
     if (p.power === 'ghost' && onto(p)) stuck = true;
@@ -782,7 +809,8 @@
       return;
     }
     var p = pieces[d.i];
-    p.el.classList.remove('held');
+    p.el.classList.remove('held', 'aim');
+    if (lv.once && d.moved && inPlay(p)) { nail(d.i); select(-1); }   // let go of in the box: there it stays
     if (d.moved) commit(); else lookForShake();
     placeHandle();
   }
@@ -987,6 +1015,7 @@
     e.preventDefault();
     if (won || drag) return;
     var pe = e.target.closest ? e.target.closest('.piece') : null;
+    if (pe && fixed(+pe.dataset.i)) return;
     if (pe && +pe.dataset.i !== sel) select(+pe.dataset.i);
     if (sel < 0) return;
     wake();
@@ -1032,7 +1061,11 @@
     var k = e.key.toLowerCase(), big = e.shiftKey;
     if (k === 'tab' && pieces.length) {
       e.preventDefault();
-      select((sel + (big ? pieces.length - 1 : 1) + (sel < 0 && big ? 1 : 0)) % pieces.length);
+      var next = sel;
+      for (var n = 0; n < pieces.length; n++) {   // the next one along that can be picked up
+        next = (next + (big ? pieces.length - 1 : 1) + (next < 0 && big ? 1 : 0)) % pieces.length;
+        if (!fixed(next)) { select(next); break; }
+      }
       return;
     }
     if (sel < 0) return;
@@ -1040,7 +1073,8 @@
     // A shape being carried is put back, at every move of the pointer, to the angle it was picked up at (drag.a0), so that
     // a turn it took on only to sit against something does not stay with it. A turn from the keys is meant: it is kept.
     if (/^[qe[\]{}]$/.test(k)) {
-      spin(sel, (k === 'q' || k === '[' || k === '{' ? -1 : 1) * (big ? 15 : 1));
+      var way = k === 'q' || k === '[' || k === '{' ? -1 : 1;
+      spin(sel, big ? (way > 0 ? Math.floor(p.angle / 15 + 1e-9) * 15 + 15 : Math.ceil(p.angle / 15 - 1e-9) * 15 - 15) - p.angle : way);   // with shift, on to the next multiple of 15 that way
       if (drag && drag.mode === 'move' && drag.i === sel) drag.a0 = p.angle;
       commit(true);
     }
@@ -1053,9 +1087,12 @@
     if (dx || dy) {
       startClock();
       if (p.power === 'sticky' && unstick(sel)) sfx.peel();
-      p.x += dx; p.y += dy; keepInView(p);
-      var S = lv.powers ? solid(p) : pieces;
-      G.settle(S, S.indexOf(p), C);
+      if (lv.walls) { var tx = p.x + dx, ty = p.y + dy; haul(sel, tx, ty); if (Math.hypot(p.x - tx, p.y - ty) > 1e-3) bump(sel); }
+      else {
+        p.x += dx; p.y += dy; keepInView(p);
+        var S = lv.powers ? solid(p) : pieces;
+        G.settle(S, S.indexOf(p), C);
+      }
       render(sel); carry(sel); placeHandle(); commit(true);
     }
   });
@@ -1086,13 +1123,15 @@
       if (mine.length === 1) spared = mine[0];
     });
     hits.forEach(function (h) { if (h !== spared) st[h[0]].hit = st[h[1]].hit = true; });
+    var v = lv.balance || lv.guests ? G.verdict(lv, pieces, C) : null;   // the level's own rules, if it has any: see geom.js
     for (i = 0; i < n; i++) {
       // And the ghost has to be sharing: sitting by itself in a bit of spare room does not count as packed.
       st[i].good = st[i].zone === 'in' && !st[i].hit && (pieces[i].power !== 'ghost' || (!!spared && (spared[0] === i || spared[1] === i))) &&
-        !(pieces[i].power === 'chameleon' && pieces[i].form);   // nor does the chameleon in any shape but its own: a smaller one would make room it has no right to
+        !(pieces[i].power === 'chameleon' && pieces[i].form) &&   // nor does the chameleon in any shape but its own: a smaller one would make room it has no right to
+        !(v && v.sad[i]);   // nor a guest who is not happy where it is
       if (st[i].good) packed++;
     }
-    return { states: st, packed: packed, solved: packed === n };
+    return { states: st, packed: packed, solved: packed === n && (!v || v.ok), sad: v ? v.sad : null };
   }
 
   // Which powers a level gets this time, and which shapes get them: a list as long as the
@@ -1134,6 +1173,7 @@
   // anything says a chameleon is in the wrong shape. Otherwise the card is for the shape in hand, if that has a power.
   var almost = false;
   function card() {
+    if (lv && lv.guests) { wish(sel); return; }
     if (!lv || !lv.powers) return;
     var p = sel >= 0 ? pieces[sel] : null;
     if (almost) notePower('chameleon', 'Everything fits, but the chameleon is fooling you: it is in disguise! Find its true shape, then pack it to finish.', 'So close!');
@@ -1466,6 +1506,316 @@
     });
   }, 100);
 
+  /* ---------- inventions ---------- */
+
+  // Each level of the fifth chapter has a rule of its own: levels.js says which. They are worked here.
+  // Three layers of the board are theirs: the walls drawn where a box has a door or an open side (rims), the
+  // fog over a box nobody can see (fog, below), and the pivot under a box that has to balance (scale).
+  var rims = el('g', 'rims'), scale = el('g', 'scale');
+  [scale, rims].forEach(function (g) { board.insertBefore(g, $('seams')); });
+
+  // Kaleidoscope (echo): the first lv.echo shapes are dealt, and every other shape is a copy of one of them,
+  // turned round the middle of the box by its share of a whole turn. It goes wherever its shape goes and turns as
+  // it turns. The copies of a shape out of the box lie hidden under it, out of the box too.
+  function copy(i) { return !!lv.echo && i >= lv.echo; }
+  function mirror(i) {
+    var k = lv.echo, p = pieces[i], away = G.zone(G.verts(p), C) === 'out', m = pieces.length / k;
+    for (var j = i + k; j < pieces.length; j += k) {
+      var q = pieces[j], a = 360 * Math.floor(j / k) / m, r = a * Math.PI / 180;
+      q.away = away;
+      if (away) { q.x = p.x; q.y = p.y; q.angle = p.angle; }
+      else { q.x = p.x * Math.cos(r) - p.y * Math.sin(r); q.y = p.x * Math.sin(r) + p.y * Math.cos(r); q.angle = p.angle + a; }
+      if (q.el) { q.el.classList.toggle('away', away); q.under.style.display = away ? 'none' : ''; render(j); }
+    }
+  }
+
+  // Walls that nothing can be carried through (walls): each is a slab lying along the box, just outside it. Where a
+  // box has none, it is open, or has a door. On such a board a shape in the box is solid too: a shape being carried
+  // stops at it, and slides along it, as it does along a wall. Shapes out of the box are not in the way.
+  var slabs = [];
+  function makeSlabs() {
+    var bb = G.bounds(lv.container), cx = (bb.minX + bb.maxX) / 2, cy = (bb.minY + bb.maxY) / 2;   // the box's own middle
+    slabs = (lv.walls || []).map(function (w) {
+      var dx = w[2] - w[0], dy = w[3] - w[1], l = Math.hypot(dx, dy), nx = dy / l, ny = -dx / l;
+      if ((w[0] - cx) * nx + (w[1] - cy) * ny < 0) { nx = -nx; ny = -ny; }   // facing out of the box
+      return { a: [w[0], w[1]], b: [w[2], w[3]], nx: nx, ny: ny, V: [[w[0], w[1]], [w[2], w[3]], [w[2] + nx * 0.12, w[3] + ny * 0.12], [w[0] + nx * 0.12, w[1] + ny * 0.12]] };
+    });
+  }
+  // The walls as they are drawn: solid slabs, hatched as a blueprint hatches a wall it cuts through, from the real
+  // wall outwards. A door has striped posts, and a bay marked out in front of it with arrows pointing in.
+  var THICK = 0.15;
+  function drawRims(px) {
+    rims.textContent = '';
+    if (!slabs.length) return;
+    rims.innerHTML = '<defs><pattern id="hatch" patternUnits="userSpaceOnUse" width="0.09" height="0.09" patternTransform="rotate(45)"><line class="h" x1="0" y1="0" x2="0" y2="0.09"/></pattern>' +
+      '<pattern id="hazard" patternUnits="userSpaceOnUse" width="0.16" height="0.16" patternTransform="rotate(45)"><rect class="hz-a" width="0.16" height="0.16"/><rect class="hz-b" width="0.08" height="0.16"/></pattern></defs>';
+    function quad(a, b, s, k) {
+      var P = el('polygon', k), t = THICK;
+      P.setAttribute('fill', k === 'post' ? 'url(#hazard)' : 'url(#hatch)');
+      P.setAttribute('points', [a, b, [b[0] + s.nx * t, b[1] + s.ny * t], [a[0] + s.nx * t, a[1] + s.ny * t]].map(function (v) { return v[0].toFixed(4) + ',' + v[1].toFixed(4); }).join(' '));
+      rims.appendChild(P); return P;
+    }
+    slabs.forEach(function (s) { s.el = quad(s.a, s.b, s, 'slab'); });
+    var d = lv.door;
+    if (!d) return;
+    var bb = G.bounds(lv.container), dx = d[2] - d[0], dy = d[3] - d[1], l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l, nx = uy, ny = -ux;
+    if ((d[0] - (bb.minX + bb.maxX) / 2) * nx + (d[1] - (bb.minY + bb.maxY) / 2) * ny < 0) { nx = -nx; ny = -ny; }
+    var n = { nx: nx, ny: ny }, post = 0.24;   // the posts: the last of the wall either side of the door (none where the door is in a corner)
+    function wall(x, y) { return x > bb.minX - 1e-6 && x < bb.maxX + 1e-6 && y > bb.minY - 1e-6 && y < bb.maxY + 1e-6; }
+    if (wall(d[0] - ux * post, d[1] - uy * post)) quad([d[0], d[1]], [d[0] - ux * post, d[1] - uy * post], n, 'post');
+    if (wall(d[2] + ux * post, d[3] + uy * post)) quad([d[2], d[3]], [d[2] + ux * post, d[3] + uy * post], n, 'post');
+    var bay = el('polygon', 'bay'), o = THICK + 0.08, far = Math.min(lv.apron || 1.2, 1.5) - 0.1;
+    bay.setAttribute('points', [[d[0] + nx * o, d[1] + ny * o], [d[2] + nx * o, d[3] + ny * o], [d[2] + nx * far, d[3] + ny * far], [d[0] + nx * far, d[1] + ny * far]].map(function (v) { return v[0].toFixed(4) + ',' + v[1].toFixed(4); }).join(' '));
+    rims.appendChild(bay);
+    var mx = (d[0] + d[2]) / 2, my = (d[1] + d[3]) / 2, w = Math.min(0.3, l * 0.25);
+    [0, 1, 2].forEach(function (k) {   // chevrons, pointing in at the door, one after another
+      var at = o + 0.2 + k * (far - o - 0.35) / 2, c = el('polyline', 'chev');
+      c.setAttribute('points', [[mx + nx * (at + 0.14) + ux * w, my + ny * (at + 0.14) + uy * w], [mx + nx * at, my + ny * at], [mx + nx * (at + 0.14) - ux * w, my + ny * (at + 0.14) - uy * w]].map(function (v) { return v[0].toFixed(4) + ',' + v[1].toFixed(4); }).join(' '));
+      c.style.animationDelay = (0.25 * (2 - k)) + 's';
+      rims.appendChild(c);
+    });
+  }
+  // a wall a shape has been carried up against flashes
+  function bump(i) {
+    var A = G.verts(pieces[i]);
+    slabs.forEach(function (s) {
+      if (!s.el || !G.contact(A, s.V)) return;
+      s.el.classList.remove('bump'); void s.el.getBoundingClientRect(); s.el.classList.add('bump');
+    });
+  }
+  function solids(i) { return slabs.map(function (s) { return s.V; }).concat(pieces.filter(function (q, j) { return j !== i && inPlay(q); }).map(G.verts)); }
+  // is shape i into a wall, or into a shape in the box?
+  function blocked(i) {
+    var A = G.verts(pieces[i]);
+    return solids(i).some(function (B) { var o = G.overlap(A, B); return o && o.depth > G.EPS; });
+  }
+  // Carry shape i towards (x, y) as far as it will go, sliding along whatever it meets on the way. Whatever it is
+  // already lying over (a wall it was dealt against, or a shape it was put down on badly) it may come out of, or
+  // move along, but not go any further into.
+  function haul(i, x, y) {
+    var p = pieces[i], A = G.verts(p), B = [], over = [];
+    solids(i).forEach(function (b) { var o = G.overlap(A, b); if (o) over.push(o); else B.push(b); });   // (even by a hair: two shapes put flush may slide along each other)
+    for (var n = 0; n < 6; n++) {
+      var dx = x - p.x, dy = y - p.y, d = Math.hypot(dx, dy), t = d, hit = null;
+      if (d < 1e-6) return;
+      dx /= d; dy /= d; A = G.verts(p);
+      over.forEach(function (o) { if (dx * o.nx + dy * o.ny < -1e-9) { t = 0; hit = o; } });   // (o.nx, o.ny: the way out of it)
+      if (!hit) B.forEach(function (b) { t = Math.min(t, G.sweep(A, b, dx, dy)); });
+      var go = Math.max(0, t - 1e-4);
+      p.x += dx * go; p.y += dy * go;
+      if (t >= d) return;
+      // what it ran into, and the rest of the way less whatever of it goes into that
+      if (!hit) {
+        var ahead = G.verts(p).map(function (v) { return [v[0] + dx * 0.002, v[1] + dy * 0.002]; }), what = null;
+        B.forEach(function (b) { var o = G.overlap(ahead, b); if (o && (!hit || o.depth > hit.depth)) { hit = o; what = b; } });
+        var aside = what ? clip(p, ahead, what, hit, B) : 0;
+        if (aside) {   // only caught on a corner: round it, and on, without heading back onto it
+          var tx = -hit.ny, ty = hit.nx, back = (x - p.x) * tx + (y - p.y) * ty;
+          if (back * aside < 0) { x -= tx * back; y -= ty * back; }
+          continue;
+        }
+      }
+      if (!hit) return;
+      var into = (x - p.x) * hit.nx + (y - p.y) * hit.ny;
+      if (into >= 0) return;
+      x -= hit.nx * into; y -= hit.ny * into;
+    }
+  }
+  // A shape that runs into another by only a sliver of its side, corner on corner, is moved that sliver aside to
+  // clear it, as long as nothing is in the way there; returns how far (0: not). Without it, shapes lined up to the hair catch on each other.
+  function clip(p, ahead, b, o, B) {
+    var tx = -o.ny, ty = o.nx, a = span(ahead, tx, ty), c = span(b, tx, ty), lo = a[1] - c[0], hi = c[1] - a[0], s;
+    if (Math.min(lo, hi) > 0.04) return 0;
+    s = (lo < hi ? -lo : hi) + (lo < hi ? -1e-4 : 1e-4);
+    var A = G.verts(p).map(function (v) { return [v[0] + tx * s, v[1] + ty * s]; });
+    if (B.some(function (q) { return G.overlap(A, q); })) return 0;
+    p.x += tx * s; p.y += ty * s;
+    return s;
+  }
+  function span(V, nx, ny) {
+    var lo = Infinity, hi = -Infinity;
+    V.forEach(function (v) { var d = v[0] * nx + v[1] * ny; if (d < lo) lo = d; if (d > hi) hi = d; });
+    return [lo, hi];
+  }
+  // Landslide (gravity): every shape in the box slides down as far as it can, the lowest first, over and over
+  // until nothing moves. A shape on a slope slides down it; one with something under each side stays.
+  function fall() {
+    var from = pieces.map(pose), any = true;
+    for (var pass = 0; pass < 24 && any; pass++) {
+      any = false;
+      pieces.map(function (p, i) { return i; }).filter(function (i) { return inPlay(pieces[i]); })
+        .sort(function (a, b) { return pieces[b].y - pieces[a].y; }).forEach(function (i) {
+          var p = pieces[i], x = p.x, y = p.y;
+          haul(i, p.x, p.y + 20);
+          if (Math.hypot(p.x - x, p.y - y) > 1e-4) any = true; else { p.x = x; p.y = y; }
+        });
+    }
+    if (pieces.every(function (p, i) { return Math.hypot(p.x - from[i][0], p.y - from[i][1]) <= 1e-4; })) {
+      pieces.forEach(function (p, i) { p.x = from[i][0]; p.y = from[i][1]; });
+      return false;
+    }
+    glide(from, calm ? 0 : 380, function () { commit(true, true); });
+    return true;
+  }
+
+  // One Shot (once): a shape let go of in the box is nailed down where it is, and is not picked up or turned again.
+  // Every shape on the level carries a nail. It is not seen until the shape is carried over the box, when it hangs over
+  // the shape ready to strike (aim); let go of there, it is hammered in (nailed), and only its head is left showing.
+  function stake(p) {
+    var g = el('g', 'stake'), y = (-0.62 * TOP[p.type]).toFixed(3), shank = el('path', 'shank'), head = el('ellipse', 'nail'), shine = el('ellipse', 'shine'), thud = el('circle', 'thud');
+    g.setAttribute('transform', 'translate(0 ' + y + ')');
+    shank.setAttribute('d', 'M-0.026 0 L0.026 0 L0.026 0.26 L0 0.33 L-0.026 0.26 Z');
+    head.setAttribute('rx', 0.1); head.setAttribute('ry', 0.085);
+    shine.setAttribute('rx', 0.04); shine.setAttribute('ry', 0.022); shine.setAttribute('cx', -0.025); shine.setAttribute('cy', -0.03);
+    thud.setAttribute('r', 0.13);
+    var drop = el('g', 'drop');
+    drop.appendChild(shank); drop.appendChild(head); drop.appendChild(shine);
+    g.appendChild(thud); g.appendChild(drop);
+    p.pop.appendChild(g);
+  }
+  function nail(i, quiet) {
+    var p = pieces[i];
+    if (p.nailed) return;
+    p.nailed = true; p.el.classList.remove('aim'); p.el.classList.add('nailed');
+    if (!quiet) { p.el.classList.add('struck'); sfx.nail(); haptic(); setTimeout(function () { p.el.classList.remove('struck'); }, 600); }
+    shots();
+  }
+  // The strip over the board keeps count: a nail for each shape, struck through as it goes in.
+  function shots() {
+    var row = $('power-idle'), left = pieces.filter(function (p) { return !p.nailed; }).length;
+    row.innerHTML = '';
+    var say = document.createElement('span');
+    say.textContent = left ? 'One shot each. ' + left + ' to go:' : 'All in.';
+    row.appendChild(say);
+    pieces.forEach(function (p) { var n = document.createElement('i'); n.className = 'shot' + (p.nailed ? ' used' : ''); row.appendChild(n); });
+  }
+  // the shape in hand, over the box: let go of now, it is nailed there
+  function aim() {
+    pieces.forEach(function (p, i) { p.el.classList.toggle('aim', !!drag && drag.mode === 'move' && drag.i === i && drag.moved && !p.nailed && inPlay(p)); });
+  }
+  function fixed(i) { return pieces[i].nailed || copy(i); }   // a shape that cannot be picked up
+
+  // Blind Box (blind): the board lies under fog. Each shape sees a little way round itself, and clears the fog there
+  // for as long as it is there: once it has gone, the fog closes in again. Packed, the fog lifts.
+  var fog = el('g', 'fog');
+  fog.innerHTML = '<defs><radialGradient id="sight"><stop offset="55%" stop-color="#000"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient>' +
+    '<mask id="fogged" maskUnits="userSpaceOnUse"><rect class="all" fill="#fff"/><g class="sees"></g></mask></defs><rect class="cloud" mask="url(#fogged)"/>';
+  board.insertBefore(fog, $('seams'));
+  function reach(p) { return { square: 1.05, triangle: 0.95, domino: 1.45, hexagon: 1.4 }[p.type] || 1.1; }   // how far a shape sees
+  function fogView() {
+    fog.toggleAttribute('hidden', !lv.blind);
+    if (!lv.blind) return;
+    ['.all', '.cloud', 'mask'].forEach(function (k) { var r = fog.querySelector(k); r.setAttribute('x', view.x); r.setAttribute('y', view.y); r.setAttribute('width', view.w); r.setAttribute('height', view.h); });
+  }
+  function unsee() { fog.querySelector('.sees').textContent = ''; fog.classList.remove('lift'); }
+  function see() {
+    if (!lv.blind) return;
+    fog.classList.toggle('lift', won);
+    var now = fog.querySelector('.sees');
+    while (now.childNodes.length < pieces.length) now.appendChild(el('circle'));
+    pieces.forEach(function (p, i) {
+      var r = reach(p), c = now.childNodes[i];
+      c.setAttribute('cx', p.x.toFixed(3)); c.setAttribute('cy', p.y.toFixed(3)); c.setAttribute('r', r); c.setAttribute('fill', 'url(#sight)');
+    });
+  }
+
+  // Seesaw (balance): a beam under the box, the pivot under that, and a weight on the beam where the weight of the
+  // shapes in the box is. Within reach of the pivot it turns green, and the line under it says which way the box would tip.
+  function weigh() {
+    scale.textContent = '';
+    if (!lv.balance) return;
+    var y = lv.container.reduce(function (m, v) { return Math.max(m, v[1]); }, -Infinity) + 0.16, at = lv.balance.at, w = 0, m = 0;
+    pieces.forEach(function (p) { if (inPlay(p)) { var k = G.size(p.type); w += k; m += k * p.x; } });
+    var beam = el('line', 'beam'), pivot = el('polygon', 'pivot');
+    beam.setAttribute('x1', lv.container[0][0]); beam.setAttribute('x2', lv.container[1][0]); beam.setAttribute('y1', y); beam.setAttribute('y2', y);
+    pivot.setAttribute('points', pts([[at, y + 0.04], [at + 0.3, y + 0.5], [at - 0.3, y + 0.5]]));
+    scale.appendChild(beam); scale.appendChild(pivot);
+    if (!w) return;
+    var com = m / w, even = Math.abs(com - at) <= lv.balance.within, all = pieces.every(inPlay);
+    var bob = el('circle', 'bob' + (even ? ' even' : ''));
+    bob.setAttribute('cx', com); bob.setAttribute('cy', y); bob.setAttribute('r', 0.11);
+    scale.appendChild(bob);
+    if (!all) return;
+    var say = el('text', 'say' + (even ? ' even' : ''));
+    say.setAttribute('x', at); say.setAttribute('y', y + 0.82); say.setAttribute('text-anchor', 'middle');
+    say.textContent = even ? 'Balanced' : com < at ? '← It tips to the left' : 'It tips to the right →';
+    scale.appendChild(say);
+  }
+
+  // Sam's Seating Plan (guests): the box is Sam's dining room, seen from the side as the wishes see it: wallpaper, the
+  // floor under it, a lamp from the ceiling and bunting across it. Every shape is a guest with a place card stuck on
+  // it, which goes green when its wish is kept and red when it is not; a heart shows between two who wanted to sit
+  // together and do, and a puff of steam between two who should not touch and do. The strip says what the one in hand wants.
+  var dining = el('g', 'party'), toasts = el('g', 'toasts');
+  board.insertBefore(dining, $('seams')); board.insertBefore(toasts, $('hits'));
+  function decorate() {
+    dining.textContent = ''; toasts.textContent = '';
+    $('bin').querySelector('.bin-fill').style.fill = lv.guests ? 'url(#paper)' : '';
+    if (!lv.guests) return;
+    var b = G.bounds(lv.container), w = b.maxX - b.minX, mid = (b.minX + b.maxX) / 2;
+    dining.innerHTML = '<defs><pattern id="paper" patternUnits="userSpaceOnUse" width="0.5" height="0.5"><rect class="pp-a" width="0.5" height="0.5"/><rect class="pp-b" width="0.25" height="0.5"/></pattern></defs>';
+    var floor = el('line', 'boards');   // the floor, under the box
+    floor.setAttribute('x1', b.minX - 0.1); floor.setAttribute('x2', b.maxX + 0.1); floor.setAttribute('y1', b.maxY + 0.07); floor.setAttribute('y2', b.maxY + 0.07);
+    dining.appendChild(floor);
+    var cord = el('line', 'cord'), shade = el('path', 'shade'), glow = el('circle', 'bulb');   // the lamp
+    cord.setAttribute('x1', mid); cord.setAttribute('x2', mid); cord.setAttribute('y1', b.minY); cord.setAttribute('y2', b.minY + 0.42);
+    shade.setAttribute('d', 'M' + (mid - 0.26) + ' ' + (b.minY + 0.62) + ' Q' + mid + ' ' + (b.minY + 0.3) + ' ' + (mid + 0.26) + ' ' + (b.minY + 0.62) + ' Z');
+    glow.setAttribute('cx', mid); glow.setAttribute('cy', b.minY + 0.64); glow.setAttribute('r', 0.07);
+    [cord, shade, glow].forEach(function (e) { dining.appendChild(e); });
+    var words = 'SAM’S PARTY', n = words.length, sag = 0.22, string = el('path', 'string');   // the bunting
+    string.setAttribute('d', 'M' + b.minX + ' ' + (b.minY + 0.04) + ' Q' + mid + ' ' + (b.minY + 0.04 + 2 * sag) + ' ' + b.maxX + ' ' + (b.minY + 0.04));
+    dining.appendChild(string);
+    for (var k = 0; k < n; k++) {
+      var t = (k + 0.5) / n, x = b.minX + w * t, y = b.minY + 0.04 + 2 * sag * 2 * t * (1 - t), fw = w / n * 0.42;
+      var flag = el('path', 'flag f' + (k % 4));
+      flag.setAttribute('d', 'M' + (x - fw) + ' ' + y + ' L' + (x + fw) + ' ' + y + ' L' + x + ' ' + (y + fw * 2.1) + ' Z');
+      dining.appendChild(flag);
+      if (words[k] !== ' ') { var ch = el('text', 'letter'); ch.setAttribute('x', x); ch.setAttribute('y', y + fw * 0.95); ch.setAttribute('text-anchor', 'middle'); ch.textContent = words[k]; dining.appendChild(ch); }
+    }
+  }
+  // a place card on a guest, with its icon on it
+  function placeCard(p, i) {
+    var g = el('g', 'place'), r = el('rect'), t = el('text'), x = 0.29, y = 0.29;   // a name tag, stuck on in the lower corner
+    r.setAttribute('x', x - 0.15); r.setAttribute('y', y - 0.12); r.setAttribute('width', 0.3); r.setAttribute('height', 0.24); r.setAttribute('rx', 0.05);
+    t.setAttribute('x', x); t.setAttribute('y', y + 0.06); t.setAttribute('text-anchor', 'middle'); t.textContent = lv.guests[i].icon || '';
+    g.appendChild(r); g.appendChild(t);
+    p.pop.appendChild(g);
+  }
+  // after every move: each card says whether its guest's wish is kept, and the pairs show
+  function mingle(sad) {
+    if (!lv.guests) return;
+    toasts.textContent = '';
+    var V = pieces.map(G.verts);
+    pieces.forEach(function (p, i) {
+      var inn = inPlay(p);
+      p.el.classList.toggle('kept', inn && !(sad && sad[i]));
+      p.el.classList.toggle('broken', inn && !!(sad && sad[i]));
+      var g = lv.guests[i];
+      [[g.beside, 'love', '❤️'], [g.not, 'fume', '💢']].forEach(function (k) {
+        var j = k[0];
+        if (j == null || !inn || !inPlay(pieces[j]) || !(G.contact(V[i], V[j]) > 0.3)) return;
+        var q = pieces[j], m = el('text', k[1]);
+        m.setAttribute('x', ((p.x + q.x) / 2).toFixed(3)); m.setAttribute('y', ((p.y + q.y) / 2 + 0.09).toFixed(3)); m.setAttribute('text-anchor', 'middle');
+        m.textContent = k[2];
+        toasts.appendChild(m);
+      });
+    });
+  }
+  // the strip over the board says what the guest in hand wants
+  function wish(i) {
+    var note = $('power-note'), sad = i >= 0 && pieces[i].el.classList.contains('sad'), key = i >= 0 ? 'guest|' + i + '|' + sad : null;
+    if (key === noted) return;
+    noted = key;
+    note.hidden = i < 0; $('power-idle').hidden = i >= 0;
+    if (i < 0) return;
+    var p = pieces[i], box = document.createElement('p'), b = document.createElement('b');
+    b.textContent = p.kit.name;
+    box.appendChild(b); box.appendChild(document.createTextNode(lv.guests[i].say));
+    note.classList.toggle('warn', sad);
+    note.textContent = ''; note.appendChild(portrait(p.kit, p.color, p.type)); note.appendChild(box);
+    note.style.animation = 'none'; void note.offsetWidth; note.style.animation = '';
+  }
+
   /* ---------- levels ---------- */
 
   // fresh: deal the pieces out again even if a half-packed board was saved.
@@ -1476,6 +1826,9 @@
     $('best').hidden = !was;
     if (was) $('best').textContent = 'Your best: ' + clock(was.t) + ' · ' + was.m + (was.m === 1 ? ' move' : ' moves');
     C = lv.containers ? G.makeBoxes(lv.containers) : G.makeContainer(lv.container); cb = G.bounds(lv.container);
+    if (lv.balance) cb.maxY += 0.75;   // room under the box for the pivot it sits on
+    if (lv.apron) cb.maxX += lv.apron;   // and room outside a door, to bring a shape up to it
+    makeSlabs();
     clearTimeout(partyTimer); $('finale').classList.remove('show'); $('grand').classList.remove('show'); shareAll = false;
     $('go-next').hidden = true; dock.classList.remove('won');
     won = false; drag = null; sel = -1; dirty = false; moves = 0; t0 = 0; elapsed = 0; carried = 0;
@@ -1492,6 +1845,12 @@
     // What to do with a power is said over the first three boards that have one, and not again until the game is reset.
     if (lv.powers) { var told = save.powerTip || 0; $('power-row').classList.toggle('told', told >= 3); if (told < 3) { save.powerTip = told + 1; persist(); } }
     document.body.classList.toggle('twists', !!lv.twist);   // and the chapter of twists on squared paper
+    document.body.classList.toggle('invent', !!lv.invent);   // and the inventions on a blueprint
+    document.body.classList.toggle('blind', !!lv.blind); unsee();
+    document.body.classList.toggle('guests', !!lv.guests); decorate();
+    document.body.classList.toggle('once', !!lv.once);   // which has the strip for the shots left   // which has the strip over the board for what the guest in hand wants
+    if (lv.guests) $('power-row').classList.remove('told');
+    $('power-idle').textContent = lv.guests ? 'Pick up a guest to hear what it wants.' : 'Pick up a shape with a power to see what it does.';
     $('ribbon').setAttribute('hidden', '');
     $('lv-name').textContent = lv.name;
     $('lv-intro').textContent = lv.intro;
@@ -1499,7 +1858,7 @@
     var title = $('title');
     title.classList.remove('swap'); void title.offsetWidth; title.classList.add('swap');
 
-    bin.setAttribute('class', '');
+    bin.setAttribute('class', lv.walls ? 'walled' : '');   // (a box with walls of its own has them drawn one by one: see drawRims)
     bin.style.animation = 'none'; void bin.getBoundingClientRect(); bin.style.animation = '';
 
     layer.textContent = ''; $('seams').textContent = ''; $('seals').textContent = ''; $('gums').textContent = '';
@@ -1530,6 +1889,9 @@
         });
       });
     });
+    // At a dinner party every shape is the guest the level says, and in the Kaleidoscope a copy looks just like its shape.
+    if (lv.guests) pieces.forEach(function (p, n) { p.kit = OUTFITS.filter(function (k) { return k.voice === lv.guests[n].kit; })[0]; p.color = p.kit.color || colors[n % colors.length]; });
+    if (lv.echo) pieces.forEach(function (p, n) { if (n >= lv.echo) { p.kit = pieces[n % lv.echo].kit; p.color = pieces[n % lv.echo].color; } });
     var kept = save.board;
     if (lv.powers) {
       (!fresh && kept && kept.l === lv.name && kept.q && kept.q.every(function (g) { return !g || POWERS[g.w]; }) ? kept.q : dealPowers()).forEach(function (g, n) {   // a board saved with a power there no longer is, is dealt afresh
@@ -1561,7 +1923,10 @@
       scatter(); sfx.deal(pieces.length);
       pieces.forEach(function (p, n) { (p.kin || []).forEach(function (k) { if (k.i > n) pieces[k.i].angle = k.s * p.angle + k.k; }); });
     }
-    pieces.forEach(function (p, n) { buildPiece(p, n); render(n); });
+    pieces.forEach(function (p, n) { buildPiece(p, n); render(n); if (copy(n)) p.el.classList.add('echo'); });
+    if (lv.echo) for (var n = 0; n < lv.echo; n++) mirror(n);
+    if (lv.once && !fresh && kept && kept.l === lv.name && kept.n) kept.n.forEach(function (n) { if (pieces[n]) nail(n, true); });
+    if (lv.once) shots();
     tether();
     notePower(null); countHints();
     if (masked()) $('lv-intro').textContent = 'One of these is a chameleon in disguise. Its true shape is for you to find.';   // the usual line would count the shapes out
@@ -1582,7 +1947,7 @@
   function lookForShake() {
     clearTimeout(shakeTimer);
     shakeTimer = setTimeout(function () {
-      if (won || drag || shaking) return;
+      if (won || drag || shaking || lv.echo) return;   // (a shake moves every shape its own way, and copies may only go with their shape)
       if (evaluate().solved) return;
       // The shake works on the shapes that take up room. The ghost is left out of it, and then
       // goes along with the shape it is lying over; the box is only shaken if that leaves it packed too.
@@ -1660,7 +2025,7 @@
   // the solution's spots, turned or flipped one of the ways the box allows
   function slotsFor(t) {
     return lv.solution.map(function (s, i) {
-      return { type: lv.pieces[i], x: t.m * s[0] * t.c - s[1] * t.s, y: t.m * s[0] * t.s + s[1] * t.c, angle: norm(t.m * s[2] + t.r) };
+      return { i: i, type: lv.pieces[i], x: t.m * s[0] * t.c - s[1] * t.s, y: t.m * s[0] * t.s + s[1] * t.c, angle: norm(t.m * s[2] + t.r) };
     });
   }
   // is there a chameleon in this deal? Then nothing may say what shapes the level is made of.
@@ -1675,8 +2040,27 @@
     var row = v < 0.38 ? 'top' : v > 0.62 ? 'bottom' : '', col = u < 0.38 ? 'left' : u > 0.62 ? 'right' : '';
     return row && col ? 'at the ' + row + ' ' + col : row ? 'at the ' + row : col ? 'on the ' + col : 'in the middle';
   }
+  // A level that can only be packed by moving shapes about inside it (steps) is hinted a move at a time, in-between
+  // places and all. Each step is [shape, from, to]: from is null for a shape brought in from outside. The hint finds
+  // the furthest step the box already shows (every shape the plan has in it by then is in its place), and shows the next.
+  function inStep(p, s, type) { return p.type === type && Math.hypot(p.x - s[0], p.y - s[1]) <= 0.12 && Math.abs(off(s[2], p.angle, type)) <= 6; }
+  function stepSpot() {
+    var st = [], states = [st], have = pieces.filter(inPlay);
+    lv.steps.forEach(function (s) {
+      st = st.filter(function (q) { return !(s[1] && q[0] === s[0] && Math.hypot(q[1][0] - s[1][0], q[1][1] - s[1][1]) < 1e-6); }).concat([[s[0], s[2]]]);
+      states.push(st);
+    });
+    for (var j = lv.steps.length - 1; j >= 0; j--) {
+      var ok = states[j].every(function (q) { return have.some(function (p) { return inStep(p, q[1], q[0]); }); });
+      if (!ok) continue;
+      var s = lv.steps[j];
+      return { type: s[0], x: s[2][0], y: s[2][1], angle: s[2][2], from: s[1] };
+    }
+    return null;
+  }
   // An empty spot from the solution, for one piece that is not packed yet.
   function pickSpot() {
+    if (lv.steps) return stepSpot();
     var best = null;
     syms.forEach(function (t) {
       var slots = slotsFor(t);
@@ -1693,6 +2077,7 @@
         return pieces.some(function (p) { return !p.power && p.type === s.type && !slotsNear(p); });
       });
     }
+    if (lv.echo) best = best.filter(function (s) { return s.i < lv.echo; });   // a spot for a shape that is dealt, not for one of the copies
     var packed = pieces.filter(function (p) { return p.good; }).map(G.verts);
     var clear = best.filter(function (s) {
       var V = G.verts(s);
@@ -1707,15 +2092,21 @@
     var e = $('ghost');
     ghost = s;
     e.toggleAttribute('hidden', !s);
-    if (!s) return;
+    if (!s) { $('ghost-way').setAttribute('hidden', ''); return; }
     e.setAttribute('d', ghostPath(s.type));
     e.setAttribute('transform', 'translate(' + s.x.toFixed(4) + ' ' + s.y.toFixed(4) + ') rotate(' + s.angle + ')');
+    var w = $('ghost-way');   // a shape already in the box that is to be moved: a line from where it is to where it goes
+    w.toggleAttribute('hidden', !s.from);
+    if (!s.from) return;
+    var l = w.querySelector('line'), c = w.querySelector('circle');
+    l.setAttribute('x1', s.from[0]); l.setAttribute('y1', s.from[1]); l.setAttribute('x2', s.x); l.setAttribute('y2', s.y);
+    c.setAttribute('cx', s.from[0]); c.setAttribute('cy', s.from[1]);
   }
   // The hinted spot pulls the right kind of piece into it: carried anywhere
   // near, at anything like the right angle, the piece jumps exactly into place.
   function intoGhost(i) {
     var p = pieces[i];
-    if (!ghost || !near(p, ghost, 0.34, 25)) return false;
+    if (!ghost || lv.walls || !near(p, ghost, 0.34, 25)) return false;   // (where walls are solid, it would carry the shape through them)
     var x = p.x, y = p.y, a = p.angle, by = off(ghost.angle, p.angle, p.type);
     p.x = ghost.x; p.y = ghost.y; p.angle += by;
     if (evaluate().states[i].good) { turnTwin(p, by); return true; }
@@ -1727,11 +2118,11 @@
   function seatGhost() {
     if (!ghost) return;
     if (sel >= 0 && intoGhost(sel)) { render(sel); showAngle(); placeHandle(); }
-    if (pieces.some(function (p) { return near(p, ghost, 0.004, 0.5); })) showGhost(null);
+    if (pieces.some(function (p) { return lv.steps ? inStep(p, [ghost.x, ghost.y, ghost.angle], ghost.type) : near(p, ghost, 0.004, 0.5); })) showGhost(null);   // (a step is done near enough: carried, a shape is not snapped)
   }
 
   function win() {
-    won = true;
+    won = true; see();   // (a fog lifts)
     if (level === EYE_LEVEL) eye(false);   // the eyesight level is over: the shapes get their faces back for the party
     countMove();
     clearTimeout(shakeTimer);
@@ -1860,15 +2251,15 @@
 
   // All packed up: a ribbon goes round the box, with a bow where it crosses.
   function tieRibbon() {
-    var r = $('ribbon'), cx = (cb.minX + cb.maxX) / 2, cy = (cb.minY + cb.maxY) / 2;
-    var k = clamp(Math.min(cb.maxX - cb.minX, cb.maxY - cb.minY) / 2.2, 0.7, 1.5);
+    var bb = G.bounds(lv.container), r = $('ribbon'), cx = (bb.minX + bb.maxX) / 2, cy = (bb.minY + bb.maxY) / 2;   // (the box's own bounds: cb has room round it for a pivot or a door)
+    var k = clamp(Math.min(bb.maxX - bb.minX, bb.maxY - bb.minY) / 2.2, 0.7, 1.5);
     var clip = el('clipPath'), shape = el('path'), bands = el('g'), bow = el('g', 'bow');
     r.textContent = '';
     clip.id = 'box-clip';
     shape.setAttribute('d', bin.firstElementChild.getAttribute('d'));
     clip.appendChild(shape); r.appendChild(clip);
     bands.setAttribute('clip-path', 'url(#box-clip)');
-    ['M' + (cb.minX - 0.3) + ' ' + cy + 'H' + (cb.maxX + 0.3), 'M' + cx + ' ' + (cb.minY - 0.3) + 'V' + (cb.maxY + 0.3)].forEach(function (d, n) {
+    ['M' + (bb.minX - 0.3) + ' ' + cy + 'H' + (bb.maxX + 0.3), 'M' + cx + ' ' + (bb.minY - 0.3) + 'V' + (bb.maxY + 0.3)].forEach(function (d, n) {
       ['edge', 'band'].forEach(function (c) {
         var p = el('path', c);
         p.setAttribute('d', d); p.setAttribute('pathLength', 1);
@@ -1927,7 +2318,7 @@
   var HINTS = 10, EVERY = 8 * 36e5, waiter = 0;
   function purse() {
     save.hints = save.hints || {};
-    var key = 'chapter ' + (lv.twist ? 3 : lv.powers ? 2 : lv.bonus ? 1 : 0), h = save.hints[key], now = Date.now();   // (numbered as the chapters were when hints were first kept this way)
+    var key = 'chapter ' + (lv.invent ? 4 : lv.twist ? 3 : lv.powers ? 2 : lv.bonus ? 1 : 0), h = save.hints[key], now = Date.now();   // (numbered as the chapters were when hints were first kept this way)
     if (!h || Array.isArray(h)) h = save.hints[key] = { n: HINTS - (Array.isArray(h) ? Math.min(h.length, HINTS) : 0), at: now };   // (a list of times, from when each came back after a day)
     if (h.n < HINTS) {
       if (!(h.at <= now)) h.at = now;   // a clock that has been put back
@@ -2272,7 +2663,7 @@
       b.setAttribute('aria-label', label(n) + (shut ? ', locked until the one before it is packed' : ', ' + l.name + (done ? ', packed in ' + clock(done.t) : '')));
       b.title = shut ? 'Pack the one before it first' : l.name + (done ? ' · best ' + clock(done.t) : '');
       s.setAttribute('viewBox', bb.minX + ' ' + bb.minY + ' ' + (bb.maxX - bb.minX) + ' ' + (bb.maxY - bb.minY));
-      (l.containers || [l.container]).forEach(function (c) { var poly = el('polygon'); poly.setAttribute('points', pts(c)); s.appendChild(poly); });
+      (l.containers || [l.container]).forEach(function (c) { var poly = el('polygon', l.blind ? 'hid' : ''); poly.setAttribute('points', pts(c)); s.appendChild(poly); });
       b.appendChild(s);
       b.appendChild(document.createTextNode(among(n)));
       if (done || shut) { var t = document.createElement('span'); t.className = 'tick'; t.textContent = done ? '✓' : '\uD83D\uDD12'; b.appendChild(t); }

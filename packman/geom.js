@@ -480,6 +480,58 @@ var PackmanGeom = (function () {
     return cur.solved ? cur.Q.map(function (q) { return { x: q.x, y: q.y, angle: q.angle }; }) : null;
   }
 
+  // A level may ask more of a packing than that every shape is in. With balance, the box sits on a pivot,
+  // and the shapes' weight (as much as each has of area) must sit over it, to within so much. With guests,
+  // every shape is a guest with a wish, about where it sits or whom it sits beside. verdict says whether
+  // the level's own rules are kept (ok), which shapes are in the box with a wish unmet (sad), and where the weight is (at).
+  var NEAR = 0.02;   // as close as counts as touching
+  function size(type) {
+    var V = SHAPES[type], s = 0;
+    for (var i = 0; i < V.length; i++) { var a = V[i], b = V[(i + 1) % V.length]; s += a[0] * b[1] - b[0] * a[1]; }
+    return Math.abs(s) / 2;
+  }
+  // How long a stretch of A's outline lies along B's: edges face to face, and no further apart than NEAR.
+  function contact(A, B) {
+    var len = 0, ea = edgeList(A), eb = edgeList(B);
+    ea.forEach(function (e) {
+      eb.forEach(function (f) {
+        if (e.nx * f.nx + e.ny * f.ny > -0.999) return;
+        if (Math.abs((f.a[0] - e.a[0]) * e.nx + (f.a[1] - e.a[1]) * e.ny) > NEAR) return;
+        len += Math.max(0, shared(e, { ux: e.nx, uy: e.ny, a: f.a, b: f.b }));
+      });
+    });
+    return len;
+  }
+  function turned(a, by) { a = ((a % 180) + 180) % 180; return Math.abs(a - by) <= 3 || Math.abs(a - by - 180) <= 3; }   // a brick lying (0) or standing (90)
+  function verdict(level, pieces, C) {
+    var out = { ok: true, sad: pieces.map(function () { return false; }), at: null };
+    if (level.balance) {
+      var w = 0, m = 0;
+      pieces.forEach(function (p) { var k = size(p.type); w += k; m += k * p.x; });
+      out.at = m / w;
+      if (Math.abs(out.at - level.balance.at) > level.balance.within) out.ok = false;
+    }
+    if (level.guests) {
+      var V = pieces.map(verts);
+      level.guests.forEach(function (g, i) {
+        var A = V[i], walls = C.walls.map(function (w) { return excess(A, w) > -NEAR; }), n = walls.length;
+        if (zone(A, C) === 'out') { out.ok = false; return; }
+        var beside = function (j) { return contact(A, V[j]) > 0.3; };
+        var floor = C.walls.some(function (w, k) { return walls[k] && w.ny > 0.7; });
+        var happy = (g.corner == null || walls.some(function (on, k) { return on && walls[(k + 1) % n]; })) &&
+          (g.floor == null || floor) &&
+          (g.walls == null || walls.filter(Boolean).length === g.walls) &&
+          (g.flat == null || turned(pieces[i].angle, 0)) &&
+          (g.upright == null || turned(pieces[i].angle, 90)) &&
+          (g.beside == null || beside(g.beside)) &&
+          (g.not == null || !beside(g.not)) &&
+          (g.crowd == null || V.filter(function (B, j) { return j !== i && beside(j); }).length >= g.crowd);
+        if (!happy) { out.sad[i] = true; out.ok = false; }
+      });
+    }
+    return out;
+  }
+
   function bounds(poly) {
     var b = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
     for (var i = 0; i < poly.length; i++) {
@@ -492,6 +544,7 @@ var PackmanGeom = (function () {
   return {
     H: H, EPS: EPS, SHAPES: SHAPES,
     verts: verts, overlap: overlap, makeContainer: makeContainer, makeBoxes: makeBoxes, part: part, excess: excess,
-    pointInside: pointInside, zone: zone, evaluate: evaluate, settle: settle, magnet: magnet, place: place, shake: shake, bounds: bounds, sweep: sweep
+    pointInside: pointInside, zone: zone, evaluate: evaluate, settle: settle, magnet: magnet, place: place, shake: shake, bounds: bounds, sweep: sweep,
+    verdict: verdict, contact: contact, size: size
   };
 })();

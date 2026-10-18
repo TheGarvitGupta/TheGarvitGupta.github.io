@@ -42,6 +42,7 @@ var PackmanSounds = function (tone) {
     drop: function () { tone(210, 0.11, { to: 120, vol: 0.14 }); },
     snap: function () { tone(880, 0.05, { type: 'triangle', to: 1320, vol: 0.06 }); },
     tick: function () { tone(1250, 0.025, { type: 'triangle', vol: 0.035 }); },
+    nail: function () { tone(95, 0.09, { type: 'square', to: 55, vol: 0.09 }); tone(2100, 0.05, { at: 0.01, type: 'triangle', to: 1900, vol: 0.05 }); tone(1400, 0.12, { at: 0.03, type: 'triangle', vol: 0.025 }); },   // a hammer on a nail: the thud and the ring of it
     bad: function () { tone(160, 0.12, { type: 'triangle', to: 110, vol: 0.1 }); },
     // A shape goes in. The note climbs an octave over the course of a level: part is how much of the box is packed, 0 to 1.
     fit: function (part) {

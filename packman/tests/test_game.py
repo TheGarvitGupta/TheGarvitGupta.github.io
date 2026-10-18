@@ -112,6 +112,29 @@ async def test_a_shape_in_hand_is_turned_by_the_buttons(t):
         assert got == want, 'turned by %d and it stands at %s, not %s' % (by, got, want)
     assert all(p['angle'] == 0 for p in (await pieces(page)) if p['i'] != 1), 'another shape turned with it'
 
+async def test_shift_turns_only_to_multiples_of_fifteen(t):
+    """Shift with Q or E goes on to the next multiple of 15 that way, and the knob turned with shift held stops only on them."""
+    page = await game(t)
+    await tap(page, 1)
+    for key, want in (('e', 1), ('Shift+E', 15), ('e', 16), ('Shift+Q', 15), ('q', 14), ('Shift+Q', 0), ('Shift+Q', 345)):
+        await page.keyboard.press(key); await tick(page, 100)
+        got = (await pieces(page))[1]['angle'] % 360
+        assert got == want, '%s and it stands at %s, not %s' % (key, got, want)
+    await page.keyboard.press('Shift+E'); await page.keyboard.press('e'); await tick(page, 100)   # at 1
+    k = await page.evaluate('(function () { var r = document.getElementById("knob-hit").getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()')
+    c = await page.evaluate('T.grip(1)')
+    await page.keyboard.down('Shift')
+    await page.mouse.move(*k); await page.mouse.down(); await tick(page, 40)
+    seen = set()
+    import math
+    for n in range(1, 13):   # round a little over a quarter of a turn, a few degrees at a time
+        a = math.radians(-90 + n * 8); r = math.hypot(k[0] - c['at'][0], k[1] - c['at'][1])
+        await page.mouse.move(c['at'][0] + r * math.cos(a), c['at'][1] + r * math.sin(a)); await tick(page, 40)
+        seen.add((await pieces(page))[1]['angle'] % 360)
+    await page.mouse.up(); await page.keyboard.up('Shift'); await tick(page, 100)
+    assert seen and all(a % 15 == 0 for a in seen), 'turned by the knob with shift held, it stood at %s' % sorted(seen)
+    assert len(seen) > 3, 'turned by the knob with shift held, it only stood at %s' % sorted(seen)
+
 async def test_a_shape_that_overlaps_does_not_count(t):
     page = await game(t)
     sol = await page.evaluate('Packman.level().solution')

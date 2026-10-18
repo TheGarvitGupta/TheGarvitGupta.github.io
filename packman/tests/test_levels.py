@@ -1,7 +1,7 @@
 # The levels are sound: levels.js looked at by itself, with the game's own geometry to judge the solutions.
 from harness import read
 
-CHAPTERS = [17, 15, 9, 9]   # the seventeen, the powers, the bricks and hexagons, the twists
+CHAPTERS = [17, 15, 9, 9, 8]   # the seventeen, the powers, the bricks and hexagons, the twists, the inventions
 TURNS = {'square': 90, 'triangle': 120, 'domino': 180, 'hexagon': 60}
 
 # Everything the tests ask of a level, worked out in the page and handed back as plain numbers and words.
@@ -22,7 +22,7 @@ LOOK = '''(function () {
       return { corners: n, convex: turn !== 3 };
     });
     return { name: l.name, intro: l.intro, hint: l.hint, pieces: l.pieces, places: sol.length, solved: ev.solved, good: ev.states.map(function (s) { return s.good; }), deep: deep,
-      boxes: boxes, twist: !!l.twist, powers: l.powers || 0, bonus: !!l.bonus, sure: l.sure || [], pool: l.pool || null, pin: l.pin || {}, chameleon: l.chameleon, masked: l.masked,
+      boxes: boxes, invent: !!l.invent, twist: !!l.twist, powers: l.powers || 0, bonus: !!l.bonus, sure: l.sure || [], pool: l.pool || null, pin: l.pin || {}, chameleon: l.chameleon, masked: l.masked,
       twins: l.twins || [], gears: l.gears || [], divide: l.divide == null ? null : l.divide, ghost: l.ghost || null, haunt: l.haunt || null,
       xs: V.map(function (v) { return [Math.min.apply(null, v.map(function (q) { return q[0]; })), Math.max.apply(null, v.map(function (q) { return q[0]; }))]; }),
       angles: sol.map(function (s) { return s[2]; }), eps: G.EPS };
@@ -36,16 +36,16 @@ async def levels(t):
     assert not page.errors, page.errors
     return L, powers
 
-def chap(l): return 3 if l['twist'] else 1 if l['powers'] else 2 if l['bonus'] else 0
+def chap(l): return 4 if l['invent'] else 3 if l['twist'] else 1 if l['powers'] else 2 if l['bonus'] else 0
 
 def each(L, wrong):
     """Every level put to a question; the ones that fail it, named."""
     bad = ['%s: %s' % (l['name'], w) for l in L for w in [wrong(l)] if w]
     assert not bad, '\n'.join(bad)
 
-async def test_there_are_fifty_in_four_chapters(t):
+async def test_there_are_fifty_eight_in_five_chapters(t):
     L, _ = await levels(t)
-    sizes = [sum(1 for l in L if chap(l) == k) for k in range(4)]
+    sizes = [sum(1 for l in L if chap(l) == k) for k in range(5)]
     assert sizes == CHAPTERS, 'chapters hold %s levels, and should hold %s' % (sizes, CHAPTERS)
 
 async def test_names_are_all_different(t):
@@ -135,10 +135,10 @@ async def test_entangled_shapes_can_be_packed_on_their_own_sides(t):
     assert any(l['divide'] is not None for l in L), 'no level has a line: has Duality gone?'
 
 async def test_the_first_level_of_each_chapter_is_where_the_game_thinks(t):
-    """The chapters are told apart by what a level has (twist, powers, bonus), and each must be all together in the
+    """The chapters are told apart by what a level has (invent, twist, powers, bonus), and each must be all together in the
     list but for the fourth, which the game numbers on its own: a level put in the wrong place would be numbered into the wrong chapter."""
     L, _ = await levels(t)
     order = [chap(l) for l in L]
-    for k in range(4):
+    for k in range(5):
         where = [i for i, c in enumerate(order) if c == k]
         assert where == list(range(where[0], where[0] + len(where))), 'chapter %d is not all together: its levels are at %s' % (k + 1, where)

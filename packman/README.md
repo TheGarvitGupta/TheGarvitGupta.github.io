@@ -1,7 +1,7 @@
 # Packman
 
 A packing game: fit every shape into the box with nothing overlapping. Lives at
-`garvitgupta.com/packman/`. Fifty levels in four chapters, with a leaderboard.
+`garvitgupta.com/packman/`. Fifty-eight levels in five chapters, with a leaderboard.
 
 Plain HTML, CSS and JavaScript with no build step and no dependencies, matching
 the rest of the site. The scripts are written in the ES5 style throughout.
@@ -16,7 +16,7 @@ packman/
   packman.css           Everything on that page but how a shape is painted
   faces.css             How a shape and its face are painted; shared with personalities.html
   geom.js               Geometry: overlap, walls, settling, the judge (PackmanGeom). Also built into the worker
-  levels.js             The fifty levels and one solution to each (PackmanLevels). Also built into the worker
+  levels.js             The fifty-eight levels and one solution to each (PackmanLevels). Also built into the worker
   faces.js              The personalities and the powers, and how each is drawn (PackmanFaces, PackmanPowers, PackmanPiece)
   sounds.js             Every sound, as notes (PackmanSounds)
   game.js               The game itself
@@ -79,6 +79,11 @@ npx wrangler deploy -c extras/cloudflare-worker/packman-scores.wrangler.jsonc
 Until that is done, scores for a changed level are turned away. The steps for setting the worker up from nothing are at the top of the
 built file.
 
+**The fifth chapter.** Its levels each have a rule of their own, named in `levels.js` (`blind`, `echo`, `gravity`,
+`walls`, `apron`, `once`, `balance`, `guests`; the comment over the chapter says what each is) and worked in
+`game.js` under *inventions*. Balance and the guests' wishes are judged by `verdict` in `geom.js`, so the
+leaderboard keeps them too.
+
 **A new level.** Add it to `levels.js` with a solution; `tools/pack.py` finds
 tight ones. Progress is saved by the level's name, so levels can be reordered
 but a rename loses players' progress on that level. Open `tools/check.html` to
@@ -132,13 +137,14 @@ game with a mouse as a player does.
 | Set | What it checks |
 | --- | --- |
 | `files` | Every file a page asks for is there. Scripts and styles have cache numbers, the same on every page, and a file changed since the last push has a new one. The built worker is what `build-worker.py` would write now. The scripts keep to ES5, with nothing left from debugging. |
-| `levels` | Fifty levels in four chapters, each chapter together. Names all different; every level has its line and its hint; every box is convex. Every solution has a place for each shape, packs by the game's judge, and does not use up the hair of tolerance. Powers and shapes a level names exist: pinned powers, the chameleon, entangled sets of one kind, enough free shapes for the powers dealt. Entangled shapes can be packed on their own side of the line. |
+| `levels` | Fifty-eight levels in five chapters, each chapter together. Names all different; every level has its line and its hint; every box is convex. Every solution has a place for each shape, packs by the game's judge, and does not use up the hair of tolerance. Powers and shapes a level names exist: pinned powers, the chameleon, entangled sets of one kind, enough free shapes for the powers dealt. Entangled shapes can be packed on their own side of the line. |
 | `geom` | `geom.js` on cases with known answers: the shapes' sizes, turning, how deep two shapes overlap and which way out, inside and outside a box, the judge's count, two boxes on one board, settling, putting a shape down, sweeping. Every level packed by a simple machine that drops each shape on its place, and every finished board pushed a hair out and shaken home: both but for Eleven and Eleven Bricks, which are listed as the two that want a player's care. |
 | `sounds` | Every sound and every voice is made of notes that can be played, the browser's own audio takes them, and every personality and power has a voice of its own. |
-| `game` | In the real page: all fifty levels open on a phone, a small phone and a desktop, with the right shapes and powers dealt, on the screen, outside the box, entangled ones on their own side. A shape goes where it is carried and turns by the buttons. A level packed by hand with the mouse is won and saved, and is still there when the page is opened again. The marks light for the shape that went in. An overlap does not count. Start over, eyesight, hints (the spot shown is one from the solution, and is counted), every sheet, choosing a level from the list, and the welcome for a new player. The big moments: the seventeenth has its party and no prize; the end of the game brings the cast in round the name, on the screen and clear of it, on a phone and a desktop, and comes once; and the prize is spoken of as being for the first three. |
+| `game` | In the real page: every level opens on a phone, a small phone and a desktop, with the right shapes and powers dealt, on the screen, outside the box, entangled ones on their own side. A shape goes where it is carried and turns by the buttons; with shift, the keys and the knob turn it only to multiples of 15. A level packed by hand with the mouse is won and saved, and is still there when the page is opened again. The marks light for the shape that went in. An overlap does not count. Start over, eyesight, hints (the spot shown is one from the solution, and is counted), every sheet, choosing a level from the list, and the welcome for a new player. The big moments: the seventeenth has its party and no prize; the end of the game brings the cast in round the name, on the screen and clear of it, on a phone and a desktop, and comes once; and the prize is spoken of as being for the first three. |
 | `powers` | Begun: Minefield deals a mine to every shape whatever the deal, and packs. |
 | `twists` | Begun: Duality deals its two free squares on the line between the boxes, at four sizes of screen, with the entangled ones on their own sides and nothing overlapping. |
 | `board` | Begun, with a stand-in leaderboard: the first three rows wear medals and the rest their numbers, a short or empty board is right, and the player's own row is still picked out among the medals. The prize on the leaderboard is the mug, with its picture on it, turning while the sheet is up and stopped when it is put away. And with the game served as a player has it, under a name that is not this machine's: a win is sent once with what the board needs, wins saved before go up when the game opens, nothing is sent from localhost, and nothing at all is sent under the name Swordfish. A win that carries the player up into the first three, or up within them, says whom it overthrew; the first time in from outside wins the prize, once, and it is shown again on coming back until Done is pressed; no overthrow when the place does not change, is outside the three, or could not be known. |
+| `inventions` | The fifth chapter's rules. Judged by `geom.js` (and so by the leaderboard): Seesaw packed the wrong way round does not balance, and Sam’s Seating Plan with two guests swapped leaves both unhappy. In the real page: a Kaleidoscope copy goes where its shape goes and hides when it is taken out; One Shot nails a shape down; a Landslide fills from the bottom; the Loading Dock lets shapes in by the door and not through a wall, and can be packed through it, played start to finish; a Seesaw that tips is not won; a guest says what it wants; and a Blind Box lies under fog that each shape clears only round itself, and that lifts when it is packed. |
 | `pages` | "Meet the shapes" draws every personality and power, and they react. The reel plays through to its card, writes nothing to a player's saved game, and is not loaded for a player. The card on the site's front page draws. |
 
 By hand:
@@ -146,7 +152,7 @@ By hand:
 | What it checks | Where | How |
 | --- | --- | --- |
 | A change that should not alter how anything looks has not | `tests/shots.py` | `take` a set of pictures before and after, then `diff` them. 28 cases: levels of every chapter, phone and desktop, light and dark, eyesight, powers, the sheets, a win, "Meet the shapes". Two sets from the same files are the same to the pixel. |
-| Every level's own solution packs | `tools/check.html` | Opened in a browser: fifty lines, each `OK`. (The `levels` set does the same.) |
+| Every level's own solution packs | `tools/check.html` | Opened in a browser: a line for each level, each `OK`. (The `levels` set does the same.) |
 
 And in production the worker runs the judge on every score sent, so none reaches the board unless it packs.
 
