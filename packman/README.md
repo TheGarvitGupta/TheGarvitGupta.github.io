@@ -36,6 +36,7 @@ packman/
     sound.py            Makes the soundtrack from that list
 
   tools/
+    admin.py            The admin panel, on this machine only: every player against every level, from the board (python3 packman/tools/admin.py, then localhost:8790)
     build-worker.py     Builds the leaderboard's worker (see below)
     mug.py              Makes everything in mug/: its shape, colours, picture and speed are set there
     pack.py             Searches for the tightest box a set of shapes will pack into, to make a level from
