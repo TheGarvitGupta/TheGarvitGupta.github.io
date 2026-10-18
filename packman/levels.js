@@ -547,14 +547,17 @@ var PackmanLevels = (function () {
       solution: [[-1.0515, -0.2154, 60], [1.0825, 0.0051, 48], [0.8728, -0.6404, 216], [0.081, -0.9808, 190], [-0.4721, -0.7838, 129], [-0.1045, 0.4538, 300]]
     },
     {
-      name: 'Blind Box',
+      name: 'Loading Dock',
       invent: true,
-      blind: true,
-      intro: 'The box is invisible. It shows only just round each shape.',
-      hint: 'The box is a lopsided pentagon, widest across the middle. The brick stands almost upright against the left wall. One square sits nearly straight on the floor beside it, one leans into the corner on the lower right, and one leans under the wall at the top right. The triangles go between them: one under the top wall, one in the middle.',
-      container: [[-1.8129, -0.9971], [0.6345, -1.3597], [1.8129, 0.1812], [0.9971, 1.4503], [-1.6316, 1.0878]],
-      pieces: pieces(3, 2, 1),
-      solution: [[1.0367, 0.4508, 213], [-0.1498, 0.6888, 176], [0.5615, -0.6196, 323], [-0.372, -0.9112, 292], [-0.0609, -0.1339, 233], [-1.2147, 0.0449, 265]]
+      // every wall but the door, at the foot of the right-hand one
+      walls: [[-2.002, -1.152, 2.002, -1.152], [-2.002, -1.152, -2.002, 1.152], [-2.002, 1.152, 2.002, 1.152], [2.002, -1.152, 2.002, -0.148]],
+      apron: 1.6,   // and room on the board outside the door, as wide as a brick lying down, to bring a shape up to it
+      door: [2.002, -0.148, 2.002, 1.152],   // (drawn: the posts either side, and the bay in front of it)
+      intro: 'Shapes go in through the door, and once they are in, nothing passes through anything.',
+      hint: 'A brick goes through the door lying down, and there is only room to stand it up out in the middle of the box. Stand two up and push them to the back wall. Then the squares, up to the ceiling. The last brick slides in along the floor, so it has to be the last thing in.',
+      container: rect(4.004, 2.304),
+      pieces: pieces(2, 0, 3),
+      solution: [[0.5, -0.65, 0], [1.5, -0.65, 0], [-1.5, 0, 90], [-0.5, 0, 90], [1.0, 0.65, 0]]
     },
     {
       name: 'Kaleidoscope',
@@ -600,17 +603,14 @@ var PackmanLevels = (function () {
       solution: [[-0.8943, -0.366, 120], [0.4472, -0.7746, 0], [-0.3415, -0.9575, 30], [-1.0, 0.6057, 180], [0.3415, 0.5915, 60]]
     },
     {
-      name: 'Loading Dock',
+      name: 'Blind Box',
       invent: true,
-      // every wall but the door, at the foot of the right-hand one
-      walls: [[-2.002, -1.152, 2.002, -1.152], [-2.002, -1.152, -2.002, 1.152], [-2.002, 1.152, 2.002, 1.152], [2.002, -1.152, 2.002, -0.148]],
-      apron: 1.6,   // and room on the board outside the door, as wide as a brick lying down, to bring a shape up to it
-      door: [2.002, -0.148, 2.002, 1.152],   // (drawn: the posts either side, and the bay in front of it)
-      intro: 'Shapes go in through the door, and once they are in, nothing passes through anything.',
-      hint: 'A brick goes through the door lying down, and there is only room to stand it up out in the middle of the box. Stand two up and push them to the back wall. Then the squares, up to the ceiling. The last brick slides in along the floor, so it has to be the last thing in.',
-      container: rect(4.004, 2.304),
-      pieces: pieces(2, 0, 3),
-      solution: [[0.5, -0.65, 0], [1.5, -0.65, 0], [-1.5, 0, 90], [-0.5, 0, 90], [1.0, 0.65, 0]]
+      blind: true,
+      intro: 'The box is invisible. It shows only just round each shape.',
+      hint: 'The box is a lopsided pentagon, widest across the middle. The brick stands almost upright against the left wall. One square sits nearly straight on the floor beside it, one leans into the corner on the lower right, and one leans under the wall at the top right. The triangles go between them: one under the top wall, one in the middle.',
+      container: [[-1.8129, -0.9971], [0.6345, -1.3597], [1.8129, 0.1812], [0.9971, 1.4503], [-1.6316, 1.0878]],
+      pieces: pieces(3, 2, 1),
+      solution: [[1.0367, 0.4508, 213], [-0.1498, 0.6888, 176], [0.5615, -0.6196, 323], [-0.372, -0.9112, 292], [-0.0609, -0.1339, 233], [-1.2147, 0.0449, 265]]
     },
     {
       name: 'Sam’s Seating Plan',   // for Sam, who finished the game
