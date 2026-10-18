@@ -2540,6 +2540,7 @@
       }
       if (!d.top) return;
       if (!skip) { save.sent = save.sent || {}; save.sent[score.level] = 1; save.as = score.name; persist(); }
+      keepPlaces(d);
       show(d, LOCAL ? 'Scores are not sent from a copy on this machine.' : skip ? 'Scores are not sent under this name.' : '');
       if (!skip && !coup(before, d) && d.rank === 1) sfx.top();
     }).catch(function () {});   // no board today: the win sheet simply goes without one
@@ -2619,6 +2620,7 @@
     ask(SCORES + '?pid=' + save.pid + '&top=100').then(function (d) {
       if (!d.top) throw 0;
       ranks(list, d, 100);   // the first hundred, to scroll through
+      keepPlaces(d);
       list.scrollTop = 0;
       note.textContent = standing(d);
     }).catch(function () {
@@ -2644,6 +2646,23 @@
   $('win-lb-all').addEventListener('click', function () { closeSheet($('m-win')); showBoard(); });
   $('board-rename').addEventListener('click', function () { closeSheet($('m-board')); askName(showBoard); });
 
+  // Where the player stands on each level they have packed, if among the first three, comes with the board whenever it
+  // is asked with their id. It is kept, so the list of levels can show it at once, and is put right when the board answers.
+  function keepPlaces(d) {
+    if (!d || !d.places) return;
+    save.places = d.places; persist(); medals();
+  }
+  // on each packed level in the list where the player is first, second or third there, a medal in place of the tick
+  function medals() {
+    var at = save.places || {};
+    Array.prototype.forEach.call($('grid').querySelectorAll('.lv.done'), function (b) {
+      var t = b.querySelector('.tick'), pos = at[b.dataset.name];
+      if (!t) return;
+      t.className = 'tick' + (pos ? ' medal t' + pos : '');
+      if (pos) t.innerHTML = medal(pos); else t.textContent = '✓';
+      b.setAttribute('aria-label', b.dataset.label + (pos ? ', ' + nth(pos) + ' on this level' : ''));
+    });
+  }
   function showLevels() {
     var grid = $('grid'), jump = $('jump'), count = 0, heads = [];
     grid.textContent = ''; jump.textContent = '';
@@ -2659,7 +2678,8 @@
       b.className = 'lv' + (done ? ' done' : '') + (n === level ? ' here' : '') + (shut ? ' locked' : '');
       b.disabled = shut;
       b.style.setProperty('--n', Math.min(among(n) + 2 * chap(l), 22));
-      b.setAttribute('aria-label', label(n) + (shut ? ', locked until the one before it is packed' : ', ' + l.name + (done ? ', packed in ' + clock(done.t) : '')));
+      b.dataset.name = l.name; b.dataset.label = label(n) + (shut ? ', locked until the one before it is packed' : ', ' + l.name + (done ? ', packed in ' + clock(done.t) : ''));
+      b.setAttribute('aria-label', b.dataset.label);
       b.title = shut ? 'Pack the one before it first' : l.name + (done ? ' · best ' + clock(done.t) : '');
       s.setAttribute('viewBox', bb.minX + ' ' + bb.minY + ' ' + (bb.maxX - bb.minX) + ' ' + (bb.maxY - bb.minY));
       (l.containers || [l.container]).forEach(function (c) { var poly = el('polygon', l.blind ? 'hid' : ''); poly.setAttribute('points', pts(c)); s.appendChild(poly); });
@@ -2670,6 +2690,8 @@
       grid.appendChild(b);
     });
     $('levels-sub').textContent = (count ? count + ' of ' + LEVELS.length + ' packed. ' : '') + 'Start any chapter. Its levels open one by one.';
+    medals();
+    if (count && !offRecord()) ask(SCORES + '?pid=' + save.pid).then(keepPlaces).catch(function () {});   // (and as they stand now)
     // a button for each chapter, saying how much of it is packed; it brings that chapter to the top of the list
     CHAPTERS.forEach(function (name, k) {
       var b = document.createElement('button'), sm = document.createElement('small');

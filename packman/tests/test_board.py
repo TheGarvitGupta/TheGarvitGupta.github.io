@@ -281,3 +281,18 @@ async def test_a_tap_on_the_mug_is_a_closer_look_and_close_goes_back(t):
         assert (await page.evaluate(LOOK))['open'] is None, 'Close on the leaderboard itself does not put it away'
         assert not page.errors, page.errors
         await page.context.close()
+
+async def test_a_level_the_player_is_first_second_or_third_on_wears_a_medal_in_the_list(t):
+    """The board says where the player stands on each level they have packed, if among the first three; the list of
+    levels shows that level's medal in place of its tick, and a plain tick on the rest."""
+    done = {'Four Square': {'t': 5, 'm': 4}, 'Flip': {'t': 9, 'm': 4}, 'Honeycomb': {'t': 9, 'm': 4}}
+    answer = {'top': [], 'of': 6, 'levels': 58, 'mine': {'name': 'Ada', 'n': 3, 'm': 12, 't': 23, 'a': 'x'}, 'rank': 4, 'places': {'Four Square': 1, 'Flip': 3}}
+    page = await player(await t.page(board=answer, save=saved('Home', name='Ada', done=done)))
+    await page.click('#chip'); await tick(page, 600)
+    got = await page.evaluate('''[].map.call(document.querySelectorAll('#grid .lv.done'), function (b) {
+      var k = b.querySelector('.tick'); return [b.dataset.name, k.className, k.textContent]; })''')
+    got = {n: (c, x) for n, c, x in got}
+    assert got['Four Square'][0] == 'tick medal t1' and got['Four Square'][1] == '1', got['Four Square']
+    assert got['Flip'][0] == 'tick medal t3' and got['Flip'][1] == '3', got['Flip']
+    assert got['Honeycomb'] == ('tick', '✓'), got['Honeycomb']
+    assert not page.errors, page.errors

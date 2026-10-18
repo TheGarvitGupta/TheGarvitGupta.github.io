@@ -1291,6 +1291,12 @@ async function board(db, pid, rows = TOP) {
 			`SELECT COUNT(*) AS c FROM (${TOTALS}) WHERE n > ? OR (n = ? AND (m < ? OR (m = ? AND t < ?)))`
 		).bind(...NAMES, mine.n, mine.n, mine.m, mine.m, mine.t).first();
 		out.mine = row(mine); out.rank = ahead.c + 1;
+		// and their place on each level they have packed, where it is among the first three: fewer moves, then less time
+		const at = await db.prepare(
+			"SELECT s.level AS level, 1 + (SELECT COUNT(*) FROM scores o WHERE o.level = s.level AND (o.m < s.m OR (o.m = s.m AND o.t < s.t))) AS r FROM scores s WHERE s.pid = ?"
+		).bind(pid).all();
+		out.places = {};
+		for (const x of at.results) if (x.r <= 3 && BY_NAME.has(x.level)) out.places[x.level] = x.r;
 	}
 	return out;
 }
