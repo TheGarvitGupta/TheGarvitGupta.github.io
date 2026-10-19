@@ -230,14 +230,14 @@
     } else {
       // On a phone the box should be as big as it can be, so the tray stays a
       // shallow strip and the loose pieces are allowed to pile up in it. Where shapes fall, the tray is over
-      // the box and the box at the foot of the screen, so that a shape goes in from above (clear of the angle bar under it).
+      // the box and the box at the foot of the screen, so that a shape goes in from above.
       pad = 0.3;
-      var foot = lv.gravity ? 1.1 : 0;
+      var foot = lv.gravity ? 0.15 : 0, head = lv.guests ? 0.75 : 0;   // (and over the dinner party, room for its bunting)
       vw = Math.max(cw + 2 * pad, 3.4) + (lv.gravity ? 0.8 : 0);   // (and a little smaller, to leave the shapes room)
-      vh = ch + 2 * pad + foot + clamp(room / (vw - 0.6), 1.9, 2.3);
+      vh = ch + 2 * pad + foot + head + clamp(room / (vw - 0.6), 1.9, 2.3);
       if (vw / vh < W / Hp) vw = vh * W / Hp; else vh = vw * Hp / W;
       view.x = (cb.minX + cb.maxX) / 2 - vw / 2;
-      view.y = lv.gravity ? cb.maxY + pad + foot - vh : cb.minY - pad;
+      view.y = lv.gravity ? cb.maxY + pad + foot - vh : cb.minY - pad - head;
     }
     view.w = vw; view.h = vh; view.scale = W / vw;
     board.setAttribute('viewBox', view.x + ' ' + view.y + ' ' + vw + ' ' + vh);
@@ -372,10 +372,23 @@
       // Dealt straight (or at the level's own tilt), or, on a level that scrambles them, at any of the angles that put one
       // of the shape's sides square to a wall of this box. Never anything else: a shape dealt
       // at an angle no wall shares could not sit flush against anything until it was turned.
-      var ways = lv.scramble ? squared(p.type) : [lv.tilt || 0];
+      var ways = lv.scramble ? squared(p.type) : [lv.tilt || (lv.guests && lv.guests[i].upright ? 90 : 0)];   // (the gentleman stands)
       p.angle = ways[Math.floor(Math.random() * ways.length)];
       keepInView(p); standOff(p);
     });
+    pieces.forEach(function (p, i) { if (p.angle % 180) aside(i); });   // (the trays are laid out for shapes lying down)
+  }
+  // a shape dealt standing that lies over another is moved to the first place in the trays where it lies over none
+  function aside(i) {
+    var p = pieces[i], clear = function () { var A = G.verts(p); return pieces.every(function (q, j) { var o = j !== i && G.overlap(A, G.verts(q)); return !o || o.depth <= G.EPS; }); };
+    if (clear()) return;
+    var x0 = p.x, y0 = p.y, spots = [];
+    trays().forEach(function (z) { for (var x = z[0]; x <= z[2]; x += 0.25) for (var y = z[1]; y <= z[3]; y += 0.25) spots.push([x, y]); });
+    for (var k = 0, s = shuffled(spots); k < s.length; k++) {
+      p.x = s[k][0]; p.y = s[k][1]; keepInView(p);
+      if (G.zone(G.verts(p), C) === 'out' && clear()) return;
+    }
+    p.x = x0; p.y = y0;
   }
 
   /* ---------- drawing ---------- */
@@ -388,6 +401,7 @@
     g.style.setProperty('--c', p.color);
     if (p.kit && p.kit.ink) g.style.setProperty('--face', p.kit.ink);
     g.style.setProperty('--d', (60 + i * 28) + 'ms');
+    if (lv.guests) g.classList.add('v-' + p.kit.voice);   // (each guest is told apart by its personality: packman.css)
     var kit = p.kit || OUTFITS[0];
     var made = PackmanPiece.face(kit, p.type), face = made.face, eyes = made.eyes;   // drawn as every page that shows a shape draws one: in faces.js
     p.goo = PackmanPiece.pour(kit, p.type, '');   // what it has poured over it, if anything: outline() cuts it to the shape
@@ -397,6 +411,17 @@
     var back = el('rect', 'back'), k = p.type === 'triangle' ? 0.74 : p.type === 'hexagon' ? 1.3 : 1, dy = p.type === 'triangle' ? 0.03 : 0;
     back.setAttribute('x', -0.28 * k); back.setAttribute('y', -0.21 * k + dy);
     back.setAttribute('width', 0.56 * k); back.setAttribute('height', (p.type === 'triangle' ? 0.45 : 0.54) * k);   // short of a triangle's base
+    // A guest who stands upright has its face drawn standing: a quarter turn back from the shape's own, so it is upright when he is.
+    p.turn = lv.guests && lv.guests[i].upright ? -90 : 0;
+    if (p.turn) { face.setAttribute('transform', 'rotate(' + p.turn + ')'); back.setAttribute('transform', 'rotate(' + p.turn + ')'); }
+    if (lv.guests && kit.voice === 'gent') {   // and a top hat, over his face
+      var hat = el('g', 'tophat');
+      [['path', 'crown', 'M-0.15 -0.32L-0.13 -0.64Q-0.13 -0.66 -0.11 -0.66H0.11Q0.13 -0.66 0.13 -0.64L0.15 -0.32Z'], ['path', 'band', 'M-0.147 -0.38H0.147L0.146 -0.33H-0.146Z'],
+       ['path', 'brim', 'M-0.25 -0.32Q-0.25 -0.28 -0.2 -0.28H0.2Q0.25 -0.28 0.25 -0.32Q0.2 -0.34 0 -0.34Q-0.2 -0.34 -0.25 -0.32Z'], ['path', 'sheen', 'M-0.09 -0.6V-0.42']].forEach(function (k) {
+        var e = el(k[0], k[1]); e.setAttribute('d', k[2]); hat.appendChild(e);
+      });
+      face.appendChild(hat);
+    }
     // Under the shape lies its true outline, in a flat blue. It is all that shows of a shape
     // while eyesight is on. The shapes take turns at five blues, so two that sit flush can
     // still be told apart with no line between them.
@@ -424,7 +449,7 @@
     p.back = back;
     p.el = g; p.pop = pop; p.body = body; p.fill = fill; p.eyes = eyes; p.tf = p.rot = p.look = '';
     if (lv.once) stake(p);
-    if (lv.guests) placeCard(p, i);
+    if (lv.guests && kit.voice === 'host') wine(p);
     outline(p);
     layer.appendChild(g);
     setTimeout(function () { g.classList.remove('fresh'); }, 620 + i * 28);
@@ -455,6 +480,7 @@
     if (lv.echo && i < lv.echo) mirror(i);   // and its copies go with it
     gum(p);
     if (sel >= 0 && (i === sel || (pieces[sel].kin || []).some(function (k) { return k.i === i; }))) tether();
+    if (lv.guests && !gazeFrame) gazeFrame = requestAnimationFrame(gaze);   // the grump's eyes go after the kid
   }
 
   // The knob stands straight above a shape to begin with. When the shape is selected, it
@@ -574,7 +600,7 @@
     almost = !ev.solved && pieces.some(function (p) { return p.fake; }) && pieces.every(function (p, i) { return ev.states[i].good || p.fake; });
     card();
     ev.fitted = fitted;
-    showHits(); see(); weigh(); mingle(ev.sad);
+    showHits(); see(); weigh(); mingle();
     return ev;
   }
 
@@ -998,12 +1024,12 @@
   function gaze() {
     gazeFrame = 0;
     var w = gazeAt && world(gazeAt);
-    pieces.forEach(function (p) {
-      var tf = '';
-      if (w && !p.kit.still) {   // the sleepy one cannot be bothered to look
-        var dx = w.x - p.x, dy = w.y - p.y, d = Math.hypot(dx, dy);
+    pieces.forEach(function (p, i) {
+      var tf = '', g = lv.guests && lv.guests[i], at = g && p.kit.voice === 'grump' && g.not != null ? pieces[g.not] : w;   // the grump has eyes only for the kid
+      if (at && !p.kit.still) {   // the sleepy one cannot be bothered to look
+        var dx = at.x - p.x, dy = at.y - p.y, d = Math.hypot(dx, dy);
         if (d > 0.3) {
-          var r = -p.angle * Math.PI / 180, k = Math.min(0.04, d * 0.03) / d;
+          var r = -(p.angle + (p.turn || 0)) * Math.PI / 180, k = Math.min(0.04, d * 0.03) / d;
           tf = ((dx * Math.cos(r) - dy * Math.sin(r)) * k).toFixed(3) + ' ' + ((dx * Math.sin(r) + dy * Math.cos(r)) * k).toFixed(3);
         }
       }
@@ -1797,64 +1823,145 @@
     scale.appendChild(say);
   }
 
-  // Sam's Seating Plan (guests): the box is Sam's dining room, seen from the side as the wishes see it: wallpaper, the
-  // floor under it, a lamp from the ceiling and bunting across it. Every shape is a guest with a place card stuck on
-  // it, which goes green when its wish is kept and red when it is not; a heart shows between two who wanted to sit
-  // together and do, and a puff of steam between two who should not touch and do. The strip says what the one in hand wants.
-  var dining = el('g', 'party'), toasts = el('g', 'toasts');
+  // Sam's Seating Plan (guests): bunting strung over the box between two posts, spelling out whose party it is, and
+  // the guests show how they get on: a beating heart between the smitten one and the sweetheart, a word between the bookworm and the gentleman, and
+  // steam off the grump when the kid is next to it. The strip says what the one in hand wants.
+  var dining = el('g', 'party'), toasts = el('g', 'toasts'), met = {};
   board.insertBefore(dining, $('seams')); board.insertBefore(toasts, $('hits'));
   function decorate() {
-    dining.textContent = ''; toasts.textContent = '';
-    $('bin').querySelector('.bin-fill').style.fill = lv.guests ? 'url(#paper)' : '';
+    dining.textContent = ''; toasts.textContent = ''; met = {};
     if (!lv.guests) return;
-    var b = G.bounds(lv.container), w = b.maxX - b.minX, mid = (b.minX + b.maxX) / 2;
-    dining.innerHTML = '<defs><pattern id="paper" patternUnits="userSpaceOnUse" width="0.5" height="0.5"><rect class="pp-a" width="0.5" height="0.5"/><rect class="pp-b" width="0.25" height="0.5"/></pattern></defs>';
-    var floor = el('line', 'boards');   // the floor, under the box
-    floor.setAttribute('x1', b.minX - 0.1); floor.setAttribute('x2', b.maxX + 0.1); floor.setAttribute('y1', b.maxY + 0.07); floor.setAttribute('y2', b.maxY + 0.07);
-    dining.appendChild(floor);
-    var cord = el('line', 'cord'), shade = el('path', 'shade'), glow = el('circle', 'bulb');   // the lamp
-    cord.setAttribute('x1', mid); cord.setAttribute('x2', mid); cord.setAttribute('y1', b.minY); cord.setAttribute('y2', b.minY + 0.42);
-    shade.setAttribute('d', 'M' + (mid - 0.26) + ' ' + (b.minY + 0.62) + ' Q' + mid + ' ' + (b.minY + 0.3) + ' ' + (mid + 0.26) + ' ' + (b.minY + 0.62) + ' Z');
-    glow.setAttribute('cx', mid); glow.setAttribute('cy', b.minY + 0.64); glow.setAttribute('r', 0.07);
-    [cord, shade, glow].forEach(function (e) { dining.appendChild(e); });
-    var words = 'SAM’S PARTY', n = words.length, sag = 0.22, string = el('path', 'string');   // the bunting
-    string.setAttribute('d', 'M' + b.minX + ' ' + (b.minY + 0.04) + ' Q' + mid + ' ' + (b.minY + 0.04 + 2 * sag) + ' ' + b.maxX + ' ' + (b.minY + 0.04));
+    var b = G.bounds(lv.container), w = b.maxX - b.minX, mid = (b.minX + b.maxX) / 2, top = b.minY - 0.62, sag = 0.16;
+    [b.minX, b.maxX].forEach(function (x) {   // the posts, up from the box's top corners
+      var post = el('line', 'post'), cap = el('circle', 'cap');
+      post.setAttribute('x1', x); post.setAttribute('x2', x); post.setAttribute('y1', b.minY); post.setAttribute('y2', top - 0.06);
+      cap.setAttribute('cx', x); cap.setAttribute('cy', top - 0.08); cap.setAttribute('r', 0.065);
+      dining.appendChild(post); dining.appendChild(cap);
+    });
+    var words = 'SAM’S PARTY', n = words.length, string = el('path', 'string');
+    string.setAttribute('d', 'M' + b.minX + ' ' + top + ' Q' + mid + ' ' + (top + 2 * sag) + ' ' + b.maxX + ' ' + top);
     dining.appendChild(string);
-    for (var k = 0; k < n; k++) {
-      var t = (k + 0.5) / n, x = b.minX + w * t, y = b.minY + 0.04 + 2 * sag * 2 * t * (1 - t), fw = w / n * 0.42;
+    for (var k = 0; k < n; k++) {   // a pennant for each letter, swaying on the string
+      var t = (k + 0.5) / n, x = b.minX + w * t, y = top + 2 * sag * 2 * t * (1 - t), fw = w / n * 0.42, hang = el('g', 'hang');
       var flag = el('path', 'flag f' + (k % 4));
       flag.setAttribute('d', 'M' + (x - fw) + ' ' + y + ' L' + (x + fw) + ' ' + y + ' L' + x + ' ' + (y + fw * 2.1) + ' Z');
-      dining.appendChild(flag);
-      if (words[k] !== ' ') { var ch = el('text', 'letter'); ch.setAttribute('x', x); ch.setAttribute('y', y + fw * 0.95); ch.setAttribute('text-anchor', 'middle'); ch.textContent = words[k]; dining.appendChild(ch); }
+      hang.style.animationDelay = (-k * 0.37) + 's';
+      hang.appendChild(flag);
+      if (words[k] !== ' ') { var ch = el('text', 'letter'); ch.setAttribute('x', x); ch.setAttribute('y', y + fw * 0.95); ch.setAttribute('text-anchor', 'middle'); ch.textContent = words[k]; hang.appendChild(ch); }
+      dining.appendChild(hang);
     }
   }
-  // a place card on a guest, with its icon on it
-  function placeCard(p, i) {
-    var g = el('g', 'place'), r = el('rect'), t = el('text'), x = 0.29, y = 0.29;   // a name tag, stuck on in the lower corner
-    r.setAttribute('x', x - 0.15); r.setAttribute('y', y - 0.12); r.setAttribute('width', 0.3); r.setAttribute('height', 0.24); r.setAttribute('rx', 0.05);
-    t.setAttribute('x', x); t.setAttribute('y', y + 0.06); t.setAttribute('text-anchor', 'middle'); t.textContent = lv.guests[i].icon || '';
-    g.appendChild(r); g.appendChild(t);
-    p.pop.appendChild(g);
+  // the host's glass of red, held in a white glove in the corner of her face: it shows while she is in the box and
+  // happy, and now and then she sips. The glass tips on the glove, and the wine in it is turned back as far the other
+  // way, so that it lies level as the glass tips (packman.css: sip and level, in step).
+  function wine(p) {
+    var hold = el('g', 'wine'), sip = el('g', 'sip'), glass = el('g'), cut = el('clipPath'), wet = el('g'), at = el('g'), level = el('g', 'level'), red = el('rect', 'red');
+    hold.setAttribute('transform', 'translate(0.29 0.19)');
+    glass.setAttribute('transform', 'translate(0 0.01)');   // (the glove, which it tips on, at the middle)
+    var BOWL = 'M-0.075 -0.21H0.075Q0.08 -0.08 0 -0.06Q-0.08 -0.08 -0.075 -0.21Z';
+    cut.id = 'host-bowl'; cut.appendChild(el('path')).setAttribute('d', BOWL);
+    wet.setAttribute('clip-path', 'url(#host-bowl)'); at.setAttribute('transform', 'translate(0 -0.12)');
+    red.setAttribute('x', -0.3); red.setAttribute('y', -0.03); red.setAttribute('width', 0.6); red.setAttribute('height', 0.5);
+    level.appendChild(red); at.appendChild(level); wet.appendChild(at);
+    var part = function (cls, d) { var e = el('path', cls); e.setAttribute('d', d); glass.appendChild(e); return e; };
+    glass.appendChild(cut);
+    part('bowl', BOWL); glass.appendChild(wet);
+    // her hand, in her own colour: the palm behind the stem, the fingers curled round it in front, and the thumb over them
+    var blob = function (cx, cy, rx, ry, turn) {
+      var e = el('ellipse', 'hand'); e.setAttribute('cx', cx); e.setAttribute('cy', cy); e.setAttribute('rx', rx); e.setAttribute('ry', ry);
+      if (turn) e.setAttribute('transform', 'rotate(' + turn + ' ' + cx + ' ' + cy + ')');
+      glass.appendChild(e);
+    };
+    part('rim', BOWL); part('glint', 'M-0.045 -0.19Q-0.05 -0.13 -0.03 -0.1');
+    blob(0.03, -0.006, 0.04, 0.045, -20);
+    part('stem', 'M0 -0.06V0.04M-0.05 0.04H0.05');
+    blob(-0.004, 0.017, 0.029, 0.0135, 8); blob(-0.006, -0.007, 0.031, 0.0135, 4); blob(-0.004, -0.031, 0.029, 0.0135, 0);
+    blob(0.006, -0.05, 0.012, 0.025, -35);
+    sip.appendChild(glass); hold.appendChild(sip); p.pop.appendChild(hold);
   }
-  // after every move: each card says whether its guest's wish is kept, and the pairs show
-  function mingle(sad) {
+  var HEART = 'M0 0.13C-0.06 0.08 -0.19 0.01 -0.19 -0.07C-0.19 -0.14 -0.13 -0.18 -0.08 -0.18C-0.04 -0.18 -0.01 -0.15 0 -0.12C0.01 -0.15 0.04 -0.18 0.08 -0.18C0.13 -0.18 0.19 -0.14 0.19 -0.07C0.19 0.01 0.06 0.08 0 0.13Z';
+  // what shows between two guests who meet: drawn about (0, 0), and moved to where they meet (packman.css animates it)
+  function token(kind) {
+    var g = el('g', kind), at = function (k, tag, cls, a) { var e = el(tag, cls); Object.keys(a).forEach(function (n) { e.setAttribute(n, a[n]); }); k.appendChild(e); return e; };
+    if (kind === 'love') {
+      var burst = at(g, 'g', 'burst', {});
+      for (var k = 0; k < 8; k++) { var r = k * Math.PI / 4; at(burst, 'line', 'spark', { x1: (0.27 * Math.cos(r)).toFixed(3), y1: (0.27 * Math.sin(r)).toFixed(3), x2: (0.38 * Math.cos(r)).toFixed(3), y2: (0.38 * Math.sin(r)).toFixed(3) }); }
+      [[-0.16, 0], [0.15, 0.6], [0.02, 1.2]].forEach(function (f) {   // little hearts that float up off it, one after another
+        var up = at(g, 'g', 'rise', {}); up.style.animationDelay = (0.5 + f[1]) + 's';
+        at(up, 'path', 'mini', { d: HEART, transform: 'translate(' + f[0] + ' -0.12) scale(0.38)' });
+      });
+      var beat = at(g, 'g', 'beat', {});
+      at(beat, 'path', 'big', { d: HEART });
+      at(beat, 'ellipse', 'shine', { cx: -0.1, cy: -0.09, rx: 0.045, ry: 0.028, transform: 'rotate(-35 -0.1 -0.09)' });
+    } else if (kind === 'chat') {
+      var bub = at(g, 'g', 'bubble', {});
+      at(bub, 'path', 'cloud', { d: 'M-0.2 -0.24H0.2Q0.26 -0.24 0.26 -0.18V-0.06Q0.26 0 0.2 0H0.04L-0.04 0.08L-0.03 0H-0.2Q-0.26 0 -0.26 -0.06V-0.18Q-0.26 -0.24 -0.2 -0.24Z' });
+      [-0.11, 0, 0.11].forEach(function (x, k) { var d = at(bub, 'circle', 'dot', { cx: x, cy: -0.12, r: 0.03 }); d.style.animationDelay = (k * 0.15) + 's'; });
+    } else if (kind === 'snore') {   // Zs, smaller and smaller, drifting up and away
+      [[0, 0, 1.3], [0.12, -0.1, 1], [0.22, -0.19, 0.75]].forEach(function (z, k) {
+        var up = at(g, 'g', 'doze', {}), d = 'M-0.045 -0.04H0.045L-0.045 0.04H0.045';
+        up.style.animationDelay = (k * 0.6) + 's';
+        var zz = at(up, 'g', '', { transform: 'translate(' + z[0] + ' ' + z[1] + ') scale(' + z[2] + ')' });
+        at(zz, 'path', 'under', { d: d }); at(zz, 'path', 'over', { d: d });
+      });
+    } else if (kind === 'purr') {   // rings of purring, one after another
+      [0.05, 0.09, 0.13].forEach(function (r, k) {
+        var a = at(g, 'path', 'ring', { d: 'M' + (r * 0.5).toFixed(3) + ' ' + (-r).toFixed(3) + 'Q' + (r * 1.3).toFixed(3) + ' 0 ' + (r * 0.5).toFixed(3) + ' ' + r.toFixed(3) });
+        a.style.animationDelay = (k * 0.18) + 's';
+      });
+    } else if (kind === 'glint') {   // a star that catches the light now and then
+      var tw = at(g, 'g', 'twinkle', {});
+      at(tw, 'path', 'star', { d: 'M0 -0.09Q0.014 -0.014 0.09 0Q0.014 0.014 0 0.09Q-0.014 0.014 -0.09 0Q-0.014 -0.014 0 -0.09Z' });
+      at(g, 'circle', 'speck', { cx: 0.09, cy: -0.07, r: 0.018 });
+    } else {   // fume
+      [[-0.12, 0], [0.1, 0.5], [0, 1]].forEach(function (f) {
+        var up = at(g, 'g', 'steam', {}); up.style.animationDelay = f[1] + 's';
+        at(up, 'circle', 'puff', { cx: f[0], cy: -0.2, r: 0.075 });
+      });
+      var vein = at(g, 'g', 'vein', {}), d = 'M-0.05 -0.13Q-0.05 -0.05 -0.13 -0.05M0.05 -0.13Q0.05 -0.05 0.13 -0.05M-0.05 0.13Q-0.05 0.05 -0.13 0.05M0.05 0.13Q0.05 0.05 0.13 0.05';
+      at(vein, 'path', 'under', { d: d }); at(vein, 'path', 'over', { d: d });
+    }
+    return g;
+  }
+  // after every move: those who meet show it, and a happy host has a drink. What already shows
+  // stays, and only follows them about, so that it is not started over at every move.
+  function mingle() {
     if (!lv.guests) return;
-    toasts.textContent = '';
-    var V = pieces.map(G.verts);
+    var V = pieces.map(G.verts), now = {}, feel = pieces.map(function () { return ''; });
     pieces.forEach(function (p, i) {
-      var inn = inPlay(p);
-      p.el.classList.toggle('kept', inn && !(sad && sad[i]));
-      p.el.classList.toggle('broken', inn && !!(sad && sad[i]));
-      var g = lv.guests[i];
-      [[g.beside, 'love', '❤️'], [g.not, 'fume', '💢']].forEach(function (k) {
+      var inn = inPlay(p), g = lv.guests[i];
+      [[g.beside, p.kit.voice === 'smitten' ? 'love' : 'chat'], [g.not, 'fume']].forEach(function (k) {
         var j = k[0];
         if (j == null || !inn || !inPlay(pieces[j]) || !(G.contact(V[i], V[j]) > 0.3)) return;
-        var q = pieces[j], m = el('text', k[1]);
-        m.setAttribute('x', ((p.x + q.x) / 2).toFixed(3)); m.setAttribute('y', ((p.y + q.y) / 2 + 0.09).toFixed(3)); m.setAttribute('text-anchor', 'middle');
-        m.textContent = k[2];
-        toasts.appendChild(m);
+        var key = i + ' ' + j, q = pieces[j], m = met[key] || toasts.appendChild(token(k[1])), x = (p.x + q.x) / 2, y = (p.y + q.y) / 2;
+        if (k[1] === 'fume') { var bb = G.bounds(V[i]); x = bb.maxX - 0.2; y = bb.minY + 0.2; feel[i] = 'fuming'; }   // (steam off the grump's own head, in its corner)
+        if (k[1] === 'love') feel[i] = feel[j] = 'loved';
+        now[key] = m;
+        m.setAttribute('transform', 'translate(' + x.toFixed(3) + ' ' + y.toFixed(3) + ')');
       });
     });
+    // and a happy guest shows it in its own way: the sleepyhead snores, the cat purrs, the gentleman's monocle glints, and
+    // the kid bounces (packman.css: and jitters, while it is not)
+    pieces.forEach(function (p, i) {
+      var happy = inPlay(p) && !p.el.classList.contains('sad'), v = p.kit.voice, bb = G.bounds(V[i]), at = null, turn = 0, kind = { sleepy: 'snore', cat: 'purr', gent: 'glint' }[v];
+      p.el.classList.toggle('happy', happy);
+      if (!happy || !kind) return;
+      if (kind === 'snore') at = [bb.maxX - 0.32, bb.minY + 0.42];
+      if (kind === 'purr') {   // towards the corner of the box it sits in
+        var c = lv.container.reduce(function (b, k) { return Math.hypot(k[0] - p.x, k[1] - p.y) < Math.hypot(b[0] - p.x, b[1] - p.y) ? k : b; });
+        turn = Math.atan2(c[1] - p.y, c[0] - p.x); at = [p.x + Math.cos(turn) * 0.3, p.y + Math.sin(turn) * 0.3]; turn *= 180 / Math.PI;
+      }
+      if (kind === 'glint') {   // on the monocle (faces.js), wherever the face is turned
+        var r = (p.angle + (p.turn || 0)) * Math.PI / 180;
+        at = [p.x + 0.13 * Math.cos(r) + 0.06 * Math.sin(r) + 0.07, p.y + 0.13 * Math.sin(r) - 0.06 * Math.cos(r) - 0.07];
+      }
+      var key = kind + ' ' + i, m = met[key] || toasts.appendChild(token(kind));
+      now[key] = m;
+      m.setAttribute('transform', 'translate(' + at[0].toFixed(3) + ' ' + at[1].toFixed(3) + ')' + (turn ? ' rotate(' + turn.toFixed(1) + ')' : ''));
+    });
+    Object.keys(met).forEach(function (k) { if (!now[k]) toasts.removeChild(met[k]); });
+    met = now;
+    pieces.forEach(function (p, i) { p.el.classList.toggle('loved', feel[i] === 'loved'); p.el.classList.toggle('fuming', feel[i] === 'fuming'); });
   }
   // the strip over the board says what the guest in hand wants
   function wish(i) {

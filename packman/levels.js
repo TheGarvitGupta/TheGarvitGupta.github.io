@@ -603,17 +603,17 @@ var PackmanLevels = (function () {
     {
       name: 'Sam’s Seating Plan',   // for Sam, who finished the game
       invent: true,
-      // each shape a guest: its personality (by its voice, in faces.js), the icon on its place card, what it wants, and the rule that judges it
+      // each shape a guest: its personality (by its voice, in faces.js), what it wants, and the rule that judges it. The gentleman is dealt standing
       guests: [
-        { kit: 'grump', icon: '😤', say: 'Was fine where it was. Keep it away from the kid.', not: 6 },
-        { kit: 'sleepy', icon: '💤', say: 'Could be packed lying down. Lies flat, on the floor.', flat: true, floor: true },
-        { kit: 'gent', icon: '🎩', say: 'After you. Stands upright.', upright: true },
-        { kit: 'cat', icon: '🐾', say: 'Fits, therefore sits. In a corner.', corner: true },
-        { kit: 'smitten', icon: '💘', say: 'In love with its neighbour. Beside the sweetheart.', beside: 5 },
-        { kit: 'sweet', icon: '🌸', say: 'Blushes when it fits. On the floor.', floor: true },
-        { kit: 'kid', icon: '🎈', say: 'Cannot sit still. Touching four shapes.', crowd: 4 },
-        { kit: 'host', icon: '🥂', say: 'Dressed for the occasion. Off every wall.', walls: 0 },
-        { kit: 'specs', icon: '📖', say: 'Has read the rules twice. Beside the gentleman.', beside: 2 }
+        { kit: 'grump', say: 'Was fine where it was. Keep it away from the kid.', not: 6 },
+        { kit: 'sleepy', say: 'Could be packed lying down. Lies flat, on the floor.', flat: true, floor: true },
+        { kit: 'gent', say: 'After you. Stands upright.', upright: true },
+        { kit: 'cat', say: 'Fits, therefore sits. In a corner.', corner: true },
+        { kit: 'smitten', say: 'In love with its neighbour. Beside the sweetheart.', beside: 5 },
+        { kit: 'sweet', say: 'Blushes when it fits. On the floor.', floor: true },
+        { kit: 'kid', say: 'Cannot sit still. Touching four shapes.', crowd: 4 },
+        { kit: 'host', say: 'Dressed for the occasion. Off every wall.', walls: 0 },
+        { kit: 'specs', say: 'Has read the rules twice. Beside the gentleman.', beside: 2 }
       ],
       intro: 'Sam is having people round. Pick up a guest to hear what it wants.',
       hint: 'Top row, left to right: the grump, lying down, then the bookworm, then the gentleman, standing in the corner. Middle row: the smitten one, the host, the kid. Bottom row: the sweetheart, the sleepyhead lying flat, and the cat in the corner.',
