@@ -318,6 +318,7 @@ body:has(#stage.eyes) .sky i{opacity:0}   /* and none of them shows round the ta
 /* the glue squeezed out between Sticky and what it is stuck to */
 .gum{pointer-events:none} .gum path{fill:none; stroke:#E8891A; stroke-width:.075px; stroke-linecap:round; stroke-linejoin:round} .gum circle{fill:#E8891A}
 #board.eyes .gum{visibility:hidden}
+#board.eyes .toasts,#board.eyes .piece .wine{visibility:hidden}   /* (nor what the party's guests show of how they get on) */
 /* the sleeper asleep: a shade darker, eyes shut, mouth open, drooling, and z's that come up one after another */
 .zz,.snooze,.yawn,.drool{visibility:hidden}
 .piece.asleep .zz,.piece.asleep .snooze,.piece.asleep .yawn,.piece.asleep .drool{visibility:visible}
@@ -655,7 +656,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .piece.nailed .body{filter:saturate(.7) brightness(.93)}
 #power-idle .shot{display:inline-block; width:7px; height:16px; margin:0 0 -3px 5px; background:var(--rim); border-radius:4px 4px 1px 1px; clip-path:polygon(0 0,100% 0,100% 30%,70% 30%,70% 85%,50% 100%,30% 85%,30% 30%,0 30%)}
 #power-idle .shot.used{opacity:.25}
-/* Sam's party: bunting on two posts over the box, and between guests who meet a beating heart, a word, or steam (game.js: decorate, token) */
+/* Sam's party: bunting on two posts over the box, and between guests who meet a beating heart, a word, or a fit of temper (game.js: decorate, token) */
 .party,.toasts{pointer-events:none}
 .party .post{stroke:var(--rim); stroke-width:calc(3px * var(--u)); stroke-linecap:round}
 .party .cap{fill:#FFC93C; stroke:#2B2140; stroke-width:calc(2px * var(--u))}
@@ -683,9 +684,6 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .toasts .vein .under{stroke:#fff; stroke-width:calc(7px * var(--u))} .toasts .vein .over{stroke:#E8304A; stroke-width:calc(3.5px * var(--u))}
 .toasts .vein{transform-box:fill-box; transform-origin:50% 50%; animation:pop-in .35s cubic-bezier(.3,1.7,.5,1) both, throb .7s .35s ease-in-out infinite alternate}
 @keyframes throb{to{transform:scale(1.15)}}
-.toasts .puff{fill:#fff; stroke:#2B2140; stroke-width:calc(2px * var(--u))}
-.toasts .steam{opacity:0; animation:steam 1.5s ease-out infinite}
-@keyframes steam{0%{opacity:0; transform:translateY(0) scale(.5)} 20%{opacity:1} 100%{opacity:0; transform:translateY(-.4px) scale(1.2)}}
 .piece.fuming .body{filter:saturate(1.5) hue-rotate(-14deg)}
 .piece.fuming .face{animation:fume .12s linear infinite alternate}
 @keyframes fume{from{transform:translateX(-.012px)} to{transform:translateX(.012px)}}
@@ -718,12 +716,21 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .piece.happy.v-kid .face{animation:bounce .45s ease-in-out infinite alternate}
 .piece.sad.v-kid .face{animation:jitter .09s steps(2) infinite}
 @keyframes jitter{0%{transform:translate(-.018px,.01px) rotate(-2deg)} 50%{transform:translate(.018px,-.01px) rotate(2deg)} 100%{transform:translate(-.01px,-.012px)}}
+.tophat{opacity:0; transform:translateY(-.16px); transition:opacity .25s, transform .4s cubic-bezier(.3,1.6,.5,1)}
+.piece.happy .tophat{opacity:1; transform:none}
 .tophat .crown,.tophat .brim{fill:#2B2140}
 .tophat .band{fill:#FF6B6B}
 .tophat .sheen{fill:none; stroke:#fff; stroke-opacity:.35; stroke-width:calc(2.5px * var(--u)); stroke-linecap:round}
 @keyframes bounce{from{transform:translateY(.02px)} to{transform:translateY(-.045px)}}
-@media (prefers-reduced-motion:reduce){ .party .hang,.toasts *,.wine .sip,.wine .level,.piece.fuming .face,.piece.loved .face .heart{animation:none !important} .toasts .rise,.toasts .steam{display:none} }
-.piece.sad .eye{visibility:hidden} .piece.sad .wince{visibility:visible}
+@media (prefers-reduced-motion:reduce){ .party .hang,.toasts *,.wine .sip,.wine .level,.piece.fuming .face,.piece.loved .face .heart{animation:none !important} .toasts .rise{display:none} }
+.piece.sad .eye,.piece.sad .shut{visibility:hidden} .piece.sad .wince{visibility:visible}   /* (and it does not blink through it) */
+.face .broken{display:none; fill:#E5263A; stroke:var(--face); stroke-width:calc(1.5px * var(--u)); stroke-linejoin:round}
+.piece.sad.v-smitten .face .heart,.piece.sad.v-smitten .wince{display:none}
+.piece.sad.v-smitten .face .broken{display:inline; transform-box:fill-box; animation:crack .5s cubic-bezier(.3,1.6,.5,1) both}
+.piece.sad.v-smitten .face .hl{transform-origin:100% 100%; --to:translate(-.014px,.008px) rotate(-12deg)}
+.piece.sad.v-smitten .face .hr{transform-origin:0 100%; --to:translate(.014px,.008px) rotate(12deg)}
+@keyframes crack{from{transform:none} to{transform:var(--to)}}
+@media (prefers-reduced-motion:reduce){ .piece.sad.v-smitten .face .broken{animation:none; transform:var(--to)} }
 .piece.sad .m-bad{visibility:visible; fill:var(--face)} .piece.sad .m-idle,.piece.sad .w-idle{visibility:hidden}
 .scale{pointer-events:none}
 .scale .beam{stroke:var(--rim); stroke-width:calc(5px * var(--u)); stroke-linecap:round}

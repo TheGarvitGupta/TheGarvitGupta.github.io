@@ -414,7 +414,16 @@
     // A guest who stands upright has its face drawn standing: a quarter turn back from the shape's own, so it is upright when he is.
     p.turn = lv.guests && lv.guests[i].upright ? -90 : 0;
     if (p.turn) { face.setAttribute('transform', 'rotate(' + p.turn + ')'); back.setAttribute('transform', 'rotate(' + p.turn + ')'); }
-    if (lv.guests && kit.voice === 'gent') {   // and a top hat, over his face
+    if (lv.guests && kit.voice === 'smitten') {   // and, for when it is kept from the sweetheart, its heart eyes broken in two (packman.css)
+      [-0.13, 0.13].forEach(function (x) {
+        var down = ' L' + (x - 0.012) + ' -0.07L' + (x + 0.008) + ' -0.05L' + (x - 0.01) + ' -0.025Z', up = ' L' + (x - 0.01) + ' -0.025L' + (x + 0.008) + ' -0.05L' + (x - 0.012) + ' -0.07Z';
+        [['hl', 'M' + x + ' -0.005C' + (x - 0.1) + ' -0.075 ' + (x - 0.05) + ' -0.15 ' + x + ' -0.095' + down],
+         ['hr', 'M' + x + ' -0.095C' + (x + 0.05) + ' -0.15 ' + (x + 0.1) + ' -0.075 ' + x + ' -0.005' + up]].forEach(function (h) {
+          var half = el('path', 'broken ' + h[0]); half.setAttribute('d', h[1]); face.appendChild(half);
+        });
+      });
+    }
+    if (lv.guests && kit.voice === 'gent') {   // and a top hat, over his face, that he puts on when he is happy (packman.css)
       var hat = el('g', 'tophat');
       [['path', 'crown', 'M-0.15 -0.32L-0.13 -0.64Q-0.13 -0.66 -0.11 -0.66H0.11Q0.13 -0.66 0.13 -0.64L0.15 -0.32Z'], ['path', 'band', 'M-0.147 -0.38H0.147L0.146 -0.33H-0.146Z'],
        ['path', 'brim', 'M-0.25 -0.32Q-0.25 -0.28 -0.2 -0.28H0.2Q0.25 -0.28 0.25 -0.32Q0.2 -0.34 0 -0.34Q-0.2 -0.34 -0.25 -0.32Z'], ['path', 'sheen', 'M-0.09 -0.6V-0.42']].forEach(function (k) {
@@ -1825,7 +1834,7 @@
 
   // Sam's Seating Plan (guests): bunting strung over the box between two posts, spelling out whose party it is, and
   // the guests show how they get on: a beating heart between the smitten one and the sweetheart, a word between the bookworm and the gentleman, and
-  // steam off the grump when the kid is next to it. The strip says what the one in hand wants.
+  // a fit of temper where the grump touches the kid. The strip says what the one in hand wants.
   var dining = el('g', 'party'), toasts = el('g', 'toasts'), met = {};
   board.insertBefore(dining, $('seams')); board.insertBefore(toasts, $('hits'));
   function decorate() {
@@ -1914,10 +1923,6 @@
       at(tw, 'path', 'star', { d: 'M0 -0.09Q0.014 -0.014 0.09 0Q0.014 0.014 0 0.09Q-0.014 0.014 -0.09 0Q-0.014 -0.014 0 -0.09Z' });
       at(g, 'circle', 'speck', { cx: 0.09, cy: -0.07, r: 0.018 });
     } else {   // fume
-      [[-0.12, 0], [0.1, 0.5], [0, 1]].forEach(function (f) {
-        var up = at(g, 'g', 'steam', {}); up.style.animationDelay = f[1] + 's';
-        at(up, 'circle', 'puff', { cx: f[0], cy: -0.2, r: 0.075 });
-      });
       var vein = at(g, 'g', 'vein', {}), d = 'M-0.05 -0.13Q-0.05 -0.05 -0.13 -0.05M0.05 -0.13Q0.05 -0.05 0.13 -0.05M-0.05 0.13Q-0.05 0.05 -0.13 0.05M0.05 0.13Q0.05 0.05 0.13 0.05';
       at(vein, 'path', 'under', { d: d }); at(vein, 'path', 'over', { d: d });
     }
@@ -1934,7 +1939,10 @@
         var j = k[0];
         if (j == null || !inn || !inPlay(pieces[j]) || !(G.contact(V[i], V[j]) > 0.3)) return;
         var key = i + ' ' + j, q = pieces[j], m = met[key] || toasts.appendChild(token(k[1])), x = (p.x + q.x) / 2, y = (p.y + q.y) / 2;
-        if (k[1] === 'fume') { var bb = G.bounds(V[i]); x = bb.maxX - 0.2; y = bb.minY + 0.2; feel[i] = 'fuming'; }   // (steam off the grump's own head, in its corner)
+        if (k[1] === 'fume') {   // (where the grump touches the kid, a little on the grump's side)
+          var bb = G.bounds(V[i]), qb = G.bounds(V[j]), cx = (Math.max(bb.minX, qb.minX) + Math.min(bb.maxX, qb.maxX)) / 2, cy = (Math.max(bb.minY, qb.minY) + Math.min(bb.maxY, qb.maxY)) / 2, d = Math.hypot(p.x - cx, p.y - cy) || 1;
+          x = cx + (p.x - cx) / d * 0.16; y = cy + (p.y - cy) / d * 0.16; feel[i] = 'fuming';
+        }
         if (k[1] === 'love') feel[i] = feel[j] = 'loved';
         now[key] = m;
         m.setAttribute('transform', 'translate(' + x.toFixed(3) + ' ' + y.toFixed(3) + ')');
