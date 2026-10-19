@@ -44,6 +44,14 @@ var PackmanSounds = function (tone) {
     tick: function () { tone(1250, 0.025, { type: 'triangle', vol: 0.035 }); },
     nail: function () { tone(95, 0.09, { type: 'square', to: 55, vol: 0.09 }); tone(2100, 0.05, { at: 0.01, type: 'triangle', to: 1900, vol: 0.05 }); tone(1400, 0.12, { at: 0.03, type: 'triangle', vol: 0.025 }); },   // a hammer on a nail: the thud and the ring of it
     bad: function () { tone(160, 0.12, { type: 'triangle', to: 110, vol: 0.1 }); },
+    // Landslide: shapes slide down the box, a falling whoosh, and come to rest one after another, a wooden clack for each (n, up to four)
+    slide: function (n) {
+      tone(620, 0.3, { type: 'triangle', to: 170, vol: 0.05 });
+      for (var k = 0; k < Math.min(n || 1, 4); k++) {
+        tone(150 - k * 12, 0.08, { at: 0.3 + k * 0.06, type: 'triangle', to: 80, vol: 0.13 });
+        tone(980 + k * 90, 0.03, { at: 0.305 + k * 0.06, type: 'square', vol: 0.025 });
+      }
+    },
     // A shape goes in. The note climbs an octave over the course of a level: part is how much of the box is packed, 0 to 1.
     fit: function (part) {
       var f = part == null ? 660 : 440 * Math.pow(2, Math.max(0, Math.min(1, part)));

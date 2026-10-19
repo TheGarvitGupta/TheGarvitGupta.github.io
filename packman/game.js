@@ -1738,6 +1738,7 @@
       pieces.forEach(function (p, i) { p.x = from[i][0]; p.y = from[i][1]; });
       return false;
     }
+    sfx.slide(pieces.filter(function (p, i) { return Math.hypot(p.x - from[i][0], p.y - from[i][1]) > 1e-4; }).length);
     glide(from, calm ? 0 : 380, function () { commit(true, true); });
     return true;
   }
