@@ -87,6 +87,27 @@ async def test_a_landslide_fills_from_the_bottom(t):
     assert at(p[5], 0.7071, 1.4142) or at(p[5], -0.7071, 1.4142), 'the second square came to rest at (%.3f, %.3f), not beside the first' % (p[5]['x'], p[5]['y'])
     assert not page.errors, page.errors
 
+async def test_a_landslide_is_walled_only_from_inside(t):
+    """On a phone the shapes are dealt over the box, turned to 45°. One let go of across the rim of the box falls in, and
+    does not fly off; one carried in through a wall from under the box comes in, and cannot be carried back out."""
+    page = await level(t, 'Landslide')
+    p = await shapes(page)
+    assert all(q['angle'] == 45 for q in p), 'not every shape is dealt at 45°'
+    assert all(q['y'] < 0 for q in p), 'a shape is dealt beside or under the box, not over it'
+    for i, x in ((0, -2.6), (1, 2.6)):   # hanging over the left and the right corners
+        await drag(page, i, x, -0.4); await tick(page, 1500)
+        q = (await shapes(page))[i]
+        assert 'in' == await page.evaluate('PackmanGeom.zone(PackmanGeom.verts(Packman.pieces()[%d]), PackmanGeom.makeContainer(Packman.level().container))' % i), \
+            'a shape let go of over the rim came to rest at (%.2f, %.2f), not in the box' % (q['x'], q['y'])
+    await page.evaluate('var p = Packman.pieces()[2]; p.x = 2; p.y = 3.4; Packman.render(2)')   # under the box, beside its foot
+    await drag(page, 2, 0.5, -1); await tick(page, 1500)
+    q = (await shapes(page))[2]
+    assert q['y'] < 2, 'a shape carried up through the wall under the box stopped at (%.2f, %.2f)' % (q['x'], q['y'])
+    await drag(page, 2, 0, 5); await tick(page, 1500)
+    q = (await shapes(page))[2]
+    assert q['y'] < 2.2, 'a shape in the box was carried out through its wall, to (%.2f, %.2f)' % (q['x'], q['y'])
+    assert not page.errors, page.errors
+
 async def test_a_seesaw_has_to_balance(t):
     page = await level(t, 'Seesaw')
     sol = await solution(page)

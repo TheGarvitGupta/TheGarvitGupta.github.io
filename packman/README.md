@@ -81,7 +81,7 @@ Until that is done, scores for a changed level are turned away. The steps for se
 built file.
 
 **The fifth chapter.** Its levels each have a rule of their own, named in `levels.js` (`blind`, `echo`, `gravity`,
-`walls`, `apron`, `once`, `balance`, `guests`; the comment over the chapter says what each is) and worked in
+`tilt`, `walls`, `apron`, `once`, `balance`, `guests`; the comment over the chapter says what each is) and worked in
 `game.js` under *inventions*. Balance and the guests' wishes are judged by `verdict` in `geom.js`, so the
 leaderboard keeps them too.
 

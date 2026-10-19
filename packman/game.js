@@ -229,13 +229,15 @@
       view.y = (cb.minY + cb.maxY) / 2 - vh / 2;
     } else {
       // On a phone the box should be as big as it can be, so the tray stays a
-      // shallow strip and the loose pieces are allowed to pile up in it.
+      // shallow strip and the loose pieces are allowed to pile up in it. Where shapes fall, the tray is over
+      // the box and the box at the foot of the screen, so that a shape goes in from above (clear of the angle bar under it).
       pad = 0.3;
-      vw = Math.max(cw + 2 * pad, 3.4);
-      vh = ch + 2 * pad + clamp(room / (vw - 0.6), 1.9, 2.3);
+      var foot = lv.gravity ? 1.1 : 0;
+      vw = Math.max(cw + 2 * pad, 3.4) + (lv.gravity ? 0.8 : 0);   // (and a little smaller, to leave the shapes room)
+      vh = ch + 2 * pad + foot + clamp(room / (vw - 0.6), 1.9, 2.3);
       if (vw / vh < W / Hp) vw = vh * W / Hp; else vh = vw * Hp / W;
       view.x = (cb.minX + cb.maxX) / 2 - vw / 2;
-      view.y = cb.minY - pad;
+      view.y = lv.gravity ? cb.maxY + pad + foot - vh : cb.minY - pad;
     }
     view.w = vw; view.h = vh; view.scale = W / vw;
     board.setAttribute('viewBox', view.x + ' ' + view.y + ' ' + vw + ' ' + vh);
@@ -284,19 +286,21 @@
     return found;
   }
 
-  // Where loose pieces wait: beside the box on a wide screen, under it on a tall one.
+  // Where loose pieces wait: beside the box on a wide screen, under it on a tall one (over it, where shapes fall).
   function trays() {
     var m = view.land ? 0.85 : 0.7, gap = view.land ? 0.85 : 0.75;
     // On a wide screen the trays keep near the box, as wide as the shapes of this level need and no wider:
     // they are dealt round it, not out at the far edges of the window.
     var rows = Math.floor(Math.max(view.h - 2 * m, 0) / 1.3) + 1, cols = Math.ceil(lv.pieces.length / (2 * rows)), reach = Math.max(1.5, (cols - 1) * 1.5 + 1);
     return view.land ? [[Math.max(view.x + m, cb.minX - gap - reach), view.y + m, cb.minX - gap, view.y + view.h - m], [cb.maxX + gap, view.y + m, Math.min(view.x + view.w - m, cb.maxX + gap + reach), view.y + view.h - m]]
+      : lv.gravity ? [[view.x + 1, view.y + 1, view.x + view.w - 1, (cb.minY + cb.maxY) / 2 - 1]]   // (far enough in for a shape dealt turned, and down beside the box: see standOff)
       : [[view.x + m, cb.maxY + gap, view.x + view.w - m, view.y + view.h - m]];
   }
   // A long shape dealt close to the box would lie across its wall. It is moved off, the way the tray lies.
   function standOff(p) {
     if (G.zone(G.verts(p), C) === 'out') return;
     var far = (p.type === 'domino' || p.type === 'hexagon' ? 1 : 0.6) + 0.3;
+    if (!view.land && lv.gravity) { shove(p); return; }   // (out over the side of the box it is nearest)
     if (!view.land) p.y = Math.max(p.y, cb.maxY + far);
     else if (p.x > (cb.minX + cb.maxX) / 2) p.x = Math.max(p.x, cb.maxX + far);
     else p.x = Math.min(p.x, cb.minX - far);
@@ -340,11 +344,21 @@
           slots.push([z[0] + (cols > 1 ? c * w / (cols - 1) : w / 2), z[1] + (rows > 1 ? r * h / (rows - 1) : h / 2)]);
         }
       });
+      if (lv.gravity && !view.land) slots = slots.filter(function (s) { return C.walls.some(function (w) { return s[0] * w.nx + s[1] * w.ny - w.d > 1.1; }); });   // (beside the box, clear of it)
       if (mid.length) slots = slots.filter(function (s) { return !mid.some(function (m) { return Math.abs(s[0] - m[0]) < 1.08 && Math.abs(s[1] - m[1]) < 1.08; }); });
       if (slots.length >= pieces.length - mid.length && (!mid.length || (room(-1) >= sides['-1'] && room(1) >= sides['1']))) break;
       cell *= 0.85;
     }
     slots = shuffled(slots);
+    if (lv.gravity && !view.land) {   // as far apart as they will go: each spot the one furthest from all those taken
+      var took = slots.splice(0, 1);
+      while (took.length < pieces.length && slots.length) {
+        var far = -1, at = 0;
+        slots.forEach(function (s, k) { var d = Math.min.apply(null, took.map(function (t) { return Math.hypot(s[0] - t[0], s[1] - t[1]); })); if (d > far) { far = d; at = k; } });
+        took.push(slots.splice(at, 1)[0]);
+      }
+      slots = took.concat(slots);
+    }
     // a shape that keeps to one side of the board is dealt on that side; the others take what is left
     var deal = pieces.map(function (p) {
       if (!p.half) return mid.shift() || null;
@@ -355,10 +369,10 @@
       var s = deal[i] || slots[i % slots.length], j = Math.min(0.12, cell / 8);
       p.x = s[0] + (lv.divide != null && !p.half && deal[i] ? 0 : (Math.random() - 0.5) * j);   // (dead on the line, if that is where it is dealt)
       p.y = s[1] + (Math.random() - 0.5) * j;
-      // Dealt straight, or, on a level that scrambles them, at any of the angles that put one
+      // Dealt straight (or at the level's own tilt), or, on a level that scrambles them, at any of the angles that put one
       // of the shape's sides square to a wall of this box. Never anything else: a shape dealt
       // at an angle no wall shares could not sit flush against anything until it was turned.
-      var ways = lv.scramble ? squared(p.type) : [0];
+      var ways = lv.scramble ? squared(p.type) : [lv.tilt || 0];
       p.angle = ways[Math.floor(Math.random() * ways.length)];
       keepInView(p); standOff(p);
     });
@@ -1583,7 +1597,10 @@
       s.el.classList.remove('bump'); void s.el.getBoundingClientRect(); s.el.classList.add('bump');
     });
   }
-  function solids(i) { return slabs.map(function (s) { return s.V; }).concat(pieces.filter(function (q, j) { return j !== i && inPlay(q); }).map(G.verts)); }
+  // A wall is solid only from the box's side of it: a shape whose middle is out beyond it is carried through it, on its way in.
+  function facing(p) { return slabs.filter(function (s) { return (p.x - s.a[0]) * s.nx + (p.y - s.a[1]) * s.ny < 0; }); }
+  function beyond(p) { return slabs.length > facing(p).length; }
+  function solids(i) { return facing(pieces[i]).map(function (s) { return s.V; }).concat(pieces.filter(function (q, j) { return j !== i && inPlay(q); }).map(G.verts)); }
   // is shape i into a wall, or into a shape in the box?
   function blocked(i) {
     var A = G.verts(pieces[i]);
@@ -1591,8 +1608,24 @@
   }
   // Carry shape i towards (x, y) as far as it will go, sliding along whatever it meets on the way. Whatever it is
   // already lying over (a wall it was dealt against, or a shape it was put down on badly) it may come out of, or
-  // move along, but not go any further into.
+  // move along, but not go any further into. Carried in through a wall, it comes out of the wall on the inside.
   function haul(i, x, y) {
+    var p = pieces[i], x0 = p.x, y0 = p.y;
+    slide(i, x, y);
+    if (!clear(i)) { p.x = x0; p.y = y0; }   // (no room inside for it: it stays where it was)
+  }
+  // a shape lying across a wall its middle is inside of is lifted clear of it, inwards; false if that puts it into another shape
+  function clear(i) {
+    var p = pieces[i], moved = false;
+    facing(p).forEach(function (s) {
+      var A = G.verts(p), o = G.overlap(A, s.V), out;
+      if (!o || o.depth <= G.EPS) return;
+      out = Math.max.apply(null, A.map(function (v) { return (v[0] - s.a[0]) * s.nx + (v[1] - s.a[1]) * s.ny; })) + 1e-4;
+      if (out > 0) { p.x -= s.nx * out; p.y -= s.ny * out; moved = true; }
+    });
+    return !moved || !blocked(i);
+  }
+  function slide(i, x, y) {
     var p = pieces[i], A = G.verts(p), B = [], over = [];
     solids(i).forEach(function (b) { var o = G.overlap(A, b); if (o) over.push(o); else B.push(b); });   // (even by a hair: two shapes put flush may slide along each other)
     for (var n = 0; n < 6; n++) {
@@ -1651,15 +1684,18 @@
     return [lo, hi];
   }
   // Landslide (gravity): every shape in the box slides down as far as it can, the lowest first, over and over
-  // until nothing moves. A shape on a slope slides down it; one with something under each side stays.
+  // until nothing moves. A shape on a slope slides down it; one with something under each side stays. A shape left
+  // across a wall from outside it is pushed back out; one that would fall past the box, clear of it, stays where it was put.
   function fall() {
     var from = pieces.map(pose), any = true;
+    pieces.forEach(function (p) { if (inPlay(p) && beyond(p)) shove(p); });
     for (var pass = 0; pass < 24 && any; pass++) {
       any = false;
-      pieces.map(function (p, i) { return i; }).filter(function (i) { return inPlay(pieces[i]); })
+      pieces.map(function (p, i) { return i; }).filter(function (i) { return inPlay(pieces[i]) && !beyond(pieces[i]); })
         .sort(function (a, b) { return pieces[b].y - pieces[a].y; }).forEach(function (i) {
           var p = pieces[i], x = p.x, y = p.y;
           haul(i, p.x, p.y + 20);
+          if (!inPlay(p)) { p.x = x; p.y = y; return; }
           if (Math.hypot(p.x - x, p.y - y) > 1e-4) any = true; else { p.x = x; p.y = y; }
         });
     }
@@ -1669,6 +1705,13 @@
     }
     glide(from, calm ? 0 : 380, function () { commit(true, true); });
     return true;
+  }
+
+  // out of the box, past the wall it is furthest beyond
+  function shove(p) {
+    var w = C.walls.reduce(function (b, w) { return p.x * w.nx + p.y * w.ny - w.d > p.x * b.nx + p.y * b.ny - b.d ? w : b; });
+    var s = w.d - Math.min.apply(null, G.verts(p).map(function (v) { return v[0] * w.nx + v[1] * w.ny; })) + 1e-3;
+    if (s > 0) { p.x += w.nx * s; p.y += w.ny * s; keepInView(p); }
   }
 
   // One Shot (once): a shape let go of in the box is nailed down where it is, and is not picked up or turned again.

@@ -1104,7 +1104,7 @@ var PackmanLevels = (function () {
     },
     // The fifth chapter (invent: true): inventions, each level with a rule or a thing the game has nowhere else.
     // A level may have: a box that shows only just round each shape (blind); shapes that are copied round the box's middle, the first
-    // echo of them dealt and the rest following (echo); gravity; walls that shapes cannot be carried through,
+    // echo of them dealt and the rest following (echo); gravity; shapes dealt turned, by so many degrees (tilt); walls that shapes cannot be carried through,
     // listed as [x1, y1, x2, y2], where the box is open or has a door wherever there is none (walls); shapes
     // that are nailed down once let go in the box (once); a pivot to balance on (balance); and guests, a
     // personality for every shape, each with a wish that has to be kept (guests: see verdict in geom.js). A box with a
@@ -1133,6 +1133,7 @@ var PackmanLevels = (function () {
       name: 'Landslide',
       invent: true,
       gravity: true,
+      tilt: 45,   // dealt turned to 45°, square to the walls
       // the two walls under the box; the two over it are open, and the way in
       walls: [[2.8369, 0, 0, 2.8369], [0, 2.8369, -2.8369, 0]],
       intro: 'The box stands on its corner, and shapes slide downhill. Nothing passes through anything in it.',
