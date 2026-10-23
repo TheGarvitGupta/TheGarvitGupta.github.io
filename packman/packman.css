@@ -508,7 +508,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 @keyframes stamp{from{transform:translateY(-22px); opacity:0}}
 
 /* three buttons that take the list of levels straight to a chapter; they stay at the top as it scrolls */
-.jump{position:sticky; top:0; z-index:3; display:grid; grid-template-columns:repeat(6, 1fr); gap:6px; margin:12px -6px 0; padding:8px 6px; background:var(--card)}
+.jump{position:sticky; top:0; z-index:3; display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin:12px -6px 0; padding:8px 6px; background:var(--card)}
 .jump button{flex:1; min-width:0; padding:6px 4px 7px; font-weight:600; font-size:13.5px; line-height:1.15; color:var(--text); background:var(--wash);
   border:var(--bw) solid var(--ink); border-radius:13px; transition:transform .12s var(--pop)}
 .jump button:hover{transform:translateY(-2px)} .jump button:active{transform:translateY(1px)}
@@ -792,11 +792,12 @@ body.rivals #pips{display:none}
 /* Rival: a rock on a square of the box, that nothing can go on */
 .rock{fill:#6E7B72; stroke:#3F4A43; stroke-width:calc(2px * var(--u)); filter:drop-shadow(0 calc(2px * var(--u)) 0 rgba(0,0,0,.25))}
 /* a level not out yet: under it, the day it opens */
+.lv.soon{margin-bottom:14px}
 .lv .when{position:absolute; left:0; right:0; bottom:-17px; font-size:10.5px; font-weight:600; color:var(--mut); text-align:center}
 /* A level not out yet: everything on the board dimmed and still, and over it a banner with the day it opens and how long to go */
-.soon{position:absolute; z-index:5; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; align-items:center; gap:12px; padding:12px 22px 13px 16px;
+#soon{position:absolute; z-index:5; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; align-items:center; gap:12px; padding:12px 22px 13px 16px;
   color:#2B2140; background:var(--sun); border:var(--bw) solid var(--ink); border-radius:18px; box-shadow:0 8px 0 rgba(0,0,0,.18); pointer-events:none; white-space:nowrap; animation:note .35s var(--pop) both}
-.soon svg{width:30px; height:30px; flex:none; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round}
-.soon b{display:block; font-size:19px; line-height:1.15} .soon small{display:block; font-size:13.5px; font-weight:500; opacity:.75}
+#soon svg{width:30px; height:30px; flex:none; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round}
+#soon b{display:block; font-size:19px; line-height:1.15} #soon small{display:block; font-size:13.5px; font-weight:500; opacity:.75}
 body.early #board{opacity:.45; filter:saturate(.6)}
 body.early .dock .tip{opacity:0}

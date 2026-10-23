@@ -3198,7 +3198,7 @@
       b.dataset.name = l.name; b.dataset.label = label(n) + (soon ? ', ' + l.name + ', opens ' + opensOn(l) : shut ? ', locked until the one before it is packed' : ', ' + l.name + (done ? ', packed in ' + clock(done.t) : ''));
       b.setAttribute('aria-label', b.dataset.label);
       b.title = soon ? l.name + ' · opens ' + opensOn(l) : shut ? 'Pack the one before it first' : l.name + (done ? ' · best ' + clock(done.t) : '');
-      if (soon) { b.classList.add('soon'); var w = document.createElement('small'); w.className = 'when'; w.textContent = new Date(l.opens + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short' }); b.appendChild(w); }   // and under it, the day
+      if (soon) { b.classList.add('soon'); var w = document.createElement('small'); w.className = 'when'; w.textContent = new Date(l.opens + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); b.appendChild(w); }   // and under it, the day
       s.setAttribute('viewBox', bb.minX + ' ' + bb.minY + ' ' + (bb.maxX - bb.minX) + ' ' + (bb.maxY - bb.minY));
       (l.containers || [l.container]).forEach(function (c) { var poly = el('polygon', l.blind ? 'hid' : ''); poly.setAttribute('points', pts(c)); s.appendChild(poly); });
       b.appendChild(s);
