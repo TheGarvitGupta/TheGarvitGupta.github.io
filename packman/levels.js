@@ -2,8 +2,8 @@
 // same units as the pieces (every piece has side 1). Each solution is one packed
 // [x, y, angle] per piece, in the order the pieces are listed. The levels run
 // from easiest to hardest; saved progress goes by name, so they can be reordered.
-// There are five chapters, played in this order: the seventeen; then the powers; then the bricks and
-// hexagons; then the twists; then the inventions, which are listed last here. In this file: the first is the seventeen; the next (bonus: true) brings
+// There are six chapters, played in this order: the seventeen; then the powers; then the bricks and
+// hexagons; then the twists; then the inventions; then the rivals (rival: a duel with Packman), which are listed last here. In this file: the first is the seventeen; the next (bonus: true) brings
 // the brick and the hexagon; the third (powers: n) deals n of its shapes a power each time,
 // picked at random, but for any named in sure, which always come. A chameleon is dealt to
 // any shape, unless chameleon: n names one; masked is the hint to give when there is a chameleon in the deal.
@@ -621,6 +621,76 @@ var PackmanLevels = (function () {
       container: rect(4.006, 3.006),
       pieces: pieces(0, 0, 3).concat(pieces(6, 0)),
       solution: [[-1, -1, 0], [0, 1, 0], [1.5, -0.5, 90], [1.5, 1, 0], [-1.5, 0, 0], [-1.5, 1, 0], [0.5, 0, 0], [-0.5, 0, 0], [0.5, -1, 0]]
+    },
+    {
+      name: 'Rival 1',
+      opens: '2026-10-25',   // one a week, on Sundays: until its day a level can be looked at, not played
+      rival: { sam: [3, 4, 5] },   // Packman's shapes, in the order it plays them (each side plays its own in order, turn about, and whoever cannot fit theirs loses)
+      intro: 'Take turns with Packman: your bricks lie down, its stand up. Whoever cannot fit their next brick loses.',
+      hint: 'Lay your first brick in the middle of a row. When Packman stands one at an end, lay your next across the far corner, so the squares left are no column of two.',
+      container: rect(4, 2),
+      pieces: ['domino', 'domino', 'domino', 'domino', 'domino', 'domino'],
+      solution: [[0, -0.5, 0], [1, 0.5, 0], [9, 9, 0], [-1.5, 0, 90], [9, 9, 90], [9, 9, 90]]   // (a duel has no packing: shapes that never go in are kept off the board)
+    },
+    {
+      name: 'Rival 2',
+      opens: '2026-11-01',
+      rival: { sam: [3, 4, 5] },   // Packman's shapes, in the order it plays them (each side plays its own in order, turn about, and whoever cannot fit theirs loses)
+      intro: 'Now you play a square first. Your bricks lie down, Packman’s stand up. Whoever cannot fit theirs loses.',
+      hint: 'Take the middle: your square goes in the very centre. Then wherever Packman stands a brick, lay yours so it leaves it no column of two.',
+      container: rect(3, 3),
+      pieces: ['square', 'domino', 'domino', 'domino', 'domino', 'domino'],
+      solution: [[0, 0, 0], [-0.5, -1, 0], [0.5, 1, 0], [9, 9, 90], [9, 9, 90], [9, 9, 90]]   // (a duel has no packing: shapes that never go in are kept off the board)
+    },
+    {
+      name: 'Rival 3',
+      opens: '2026-11-08',
+      rival: { sam: [4, 5, 6, 7], stand: [4, 5, 7], rocks: [[0, 1], [3, 1]] },   // rocks: squares of the box (column, row) nothing can go on
+      intro: 'Two rocks are in the box: nothing can go on them. Your bricks lie down, Packman’s stand up.',
+      hint: 'Lay your first brick in the gap between the two rocks.',
+      container: rect(4, 4),
+      pieces: ['domino', 'domino', 'domino', 'domino', 'domino', 'domino', 'square', 'domino'],
+      solution: [[9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 90], [9, 9, 0], [9, 9, 90]]
+    },
+    {
+      name: 'Rival 4',
+      opens: '2026-11-15',
+      rival: { sam: [5, 6, 7, 8, 9], stand: [5, 7, 8, 9], first: true },   // first: Packman opens
+      intro: 'This time Packman goes first. Answer it well.',
+      hint: 'Put your square right beside Packman’s first brick, on its left, against the wall, level with the top of it.',
+      container: rect(4, 4),
+      pieces: ['square', 'domino', 'domino', 'domino', 'domino', 'domino', 'square', 'domino', 'domino', 'domino'],
+      solution: [[9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 0], [9, 9, 90], [9, 9, 90], [9, 9, 90]]
+    },
+    {
+      name: 'Rival 5',
+      opens: '2026-11-22',
+      rival: { sam: [5, 6, 7, 8, 9], stand: [2, 5, 7, 8, 9] },
+      intro: 'Turncoats: one of your bricks stands up, and one of Packman’s lies down. Watch the queues.',
+      hint: 'Lay your first brick across the middle two columns, in either middle row. Keep a column of two open for your standing brick.',
+      container: rect(4, 4),
+      pieces: ['domino', 'domino', 'domino', 'domino', 'domino', 'domino', 'domino', 'domino', 'domino', 'domino'],
+      solution: [[9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 0], [9, 9, 90], [9, 9, 90], [9, 9, 90]]
+    },
+    {
+      name: 'Rival 6',
+      opens: '2026-11-29',
+      rival: { sam: [5, 6, 7, 8, 9], stand: [5, 6, 7, 9] },
+      intro: 'A long, low table. Your bricks lie down, Packman’s stand up. Whoever cannot fit their next shape loses.',
+      hint: 'Put your square in the middle row, one square in from either end. After that, lay each brick so that what Packman leaves is split into single squares.',
+      container: rect(6, 3),
+      pieces: ['square', 'domino', 'domino', 'domino', 'domino', 'domino', 'domino', 'domino', 'square', 'domino'],
+      solution: [[9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 90], [9, 9, 90], [9, 9, 0], [9, 9, 90]]
+    },
+    {
+      name: 'Rival 7',
+      opens: '2026-12-06',
+      rival: { sam: [5, 6, 7, 8, 9] },
+      intro: 'The last duel, and the toughest. Your bricks lie down, Packman’s stand up. Whoever cannot fit their next shape loses.',
+      hint: 'Lay your first brick across the middle of the box, one square in from the left, in either of the two middle rows.',
+      container: rect(4, 4),
+      pieces: ['domino', 'domino', 'square', 'domino', 'domino', 'domino', 'square', 'domino', 'domino', 'domino'],
+      solution: [[-0.5, -0.5, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 0], [9, 9, 90], [9, 9, 90], [9, 9, 90]]
     }
   ];
 })();

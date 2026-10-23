@@ -1,7 +1,7 @@
 # The levels are sound: levels.js looked at by itself, with the game's own geometry to judge the solutions.
 from harness import read
 
-CHAPTERS = [17, 15, 9, 9, 7]   # the seventeen, the powers, the bricks and hexagons, the twists, the inventions
+CHAPTERS = [17, 15, 9, 9, 7, 7]   # the seventeen, the powers, the bricks and hexagons, the twists, the inventions, the rivals
 TURNS = {'square': 90, 'triangle': 120, 'domino': 180, 'hexagon': 60}
 
 # Everything the tests ask of a level, worked out in the page and handed back as plain numbers and words.
@@ -22,7 +22,7 @@ LOOK = '''(function () {
       return { corners: n, convex: turn !== 3 };
     });
     return { name: l.name, intro: l.intro, hint: l.hint, pieces: l.pieces, places: sol.length, solved: ev.solved, good: ev.states.map(function (s) { return s.good; }), deep: deep,
-      boxes: boxes, invent: !!l.invent, twist: !!l.twist, powers: l.powers || 0, bonus: !!l.bonus, sure: l.sure || [], pool: l.pool || null, pin: l.pin || {}, chameleon: l.chameleon, masked: l.masked,
+      boxes: boxes, rival: l.rival || null, opens: l.opens || null, container: l.container, invent: !!l.invent, twist: !!l.twist, powers: l.powers || 0, bonus: !!l.bonus, sure: l.sure || [], pool: l.pool || null, pin: l.pin || {}, chameleon: l.chameleon, masked: l.masked,
       twins: l.twins || [], gears: l.gears || [], divide: l.divide == null ? null : l.divide, ghost: l.ghost || null, haunt: l.haunt || null,
       xs: V.map(function (v) { return [Math.min.apply(null, v.map(function (q) { return q[0]; })), Math.max.apply(null, v.map(function (q) { return q[0]; }))]; }),
       angles: sol.map(function (s) { return s[2]; }), eps: G.EPS };
@@ -36,16 +36,16 @@ async def levels(t):
     assert not page.errors, page.errors
     return L, powers
 
-def chap(l): return 4 if l['invent'] else 3 if l['twist'] else 1 if l['powers'] else 2 if l['bonus'] else 0
+def chap(l): return 5 if l['rival'] else 4 if l['invent'] else 3 if l['twist'] else 1 if l['powers'] else 2 if l['bonus'] else 0
 
 def each(L, wrong):
     """Every level put to a question; the ones that fail it, named."""
     bad = ['%s: %s' % (l['name'], w) for l in L for w in [wrong(l)] if w]
     assert not bad, '\n'.join(bad)
 
-async def test_there_are_fifty_seven_in_five_chapters(t):
+async def test_there_are_sixty_four_in_six_chapters(t):
     L, _ = await levels(t)
-    sizes = [sum(1 for l in L if chap(l) == k) for k in range(5)]
+    sizes = [sum(1 for l in L if chap(l) == k) for k in range(6)]
     assert sizes == CHAPTERS, 'chapters hold %s levels, and should hold %s' % (sizes, CHAPTERS)
 
 async def test_names_are_all_different(t):
@@ -67,6 +67,7 @@ async def test_every_box_is_convex(t):
 async def test_every_solution_packs(t):
     L, _ = await levels(t)
     def wrong(l):
+        if l['rival']: return ''   # a duel is won with the box not full: see test_every_duel_is_set_out_right
         if l['places'] != len(l['pieces']): return '%d shapes and %d places in the solution' % (len(l['pieces']), l['places'])
         if not l['solved']: return 'the solution does not pack: shapes %s are not in' % [i for i, g in enumerate(l['good']) if not g]
     each(L, wrong)
@@ -76,7 +77,7 @@ async def test_no_solution_is_at_the_edge_of_the_tolerance(t):
     four places of decimals and whole degrees, so a tight one does sink a little; one that uses nearly all of the
     hair would stop packing at the least change to the box or the judge. (The deepest now: Eleven Bricks, at 86%.)"""
     L, _ = await levels(t)
-    each(L, lambda l: 'its shapes are %.5f into each other or a wall, of the %.3f allowed' % (l['deep'], l['eps']) if l['deep'] > 0.9 * l['eps'] else '')
+    each(L, lambda l: 'its shapes are %.5f into each other or a wall, of the %.3f allowed' % (l['deep'], l['eps']) if not l['rival'] and l['deep'] > 0.9 * l['eps'] else '')
 
 async def test_powers_named_by_a_level_exist(t):
     L, powers = await levels(t)
@@ -135,10 +136,36 @@ async def test_entangled_shapes_can_be_packed_on_their_own_sides(t):
     assert any(l['divide'] is not None for l in L), 'no level has a line: has Duality gone?'
 
 async def test_the_first_level_of_each_chapter_is_where_the_game_thinks(t):
-    """The chapters are told apart by what a level has (invent, twist, powers, bonus), and each must be all together in the
+    """The chapters are told apart by what a level has (rival, invent, twist, powers, bonus), and each must be all together in the
     list but for the fourth, which the game numbers on its own: a level put in the wrong place would be numbered into the wrong chapter."""
     L, _ = await levels(t)
     order = [chap(l) for l in L]
-    for k in range(5):
+    for k in range(6):
         where = [i for i, c in enumerate(order) if c == k]
         assert where == list(range(where[0], where[0] + len(where))), 'chapter %d is not all together: its levels are at %s' % (k + 1, where)
+
+async def test_every_duel_is_set_out_right(t):
+    """A Rival level is a duel on the squares of a box with straight sides: Packman's shapes are some of the level's,
+    the ones that stand are bricks, a rock is on a square of the box, and it opens on a Sunday, a week after the one
+    before it (the first, on 25 October 2026)."""
+    import datetime
+    L, _ = await levels(t)
+    duels = [l for l in L if l['rival']]
+    def wrong(l):
+        R, n, out = l['rival'], len(l['pieces']), []
+        xs = sorted(set(q[0] for q in l['container'])); ys = sorted(set(q[1] for q in l['container']))
+        if len(l['container']) != 4 or len(xs) != 2 or len(ys) != 2 or any(abs(v - round(v * 2) / 2) > 1e-9 for v in xs + ys): out.append('the box is not a rectangle of whole squares')
+        W, H = round(xs[1] - xs[0]), round(ys[1] - ys[0])
+        if not R['sam'] or any(not (isinstance(i, int) and 0 <= i < n) for i in R['sam']) or len(set(R['sam'])) != len(R['sam']): out.append('Packman\'s shapes are not shapes of the level: %s' % R['sam'])
+        if len(R['sam']) == n: out.append('every shape is Packman\'s')
+        if any(l['pieces'][i] not in ('square', 'domino') for i in range(n)): out.append('only squares and bricks fit the squares of the box')
+        for i in R.get('stand') or []:
+            if not (0 <= i < n and l['pieces'][i] == 'domino'): out.append('shape %s stands and is not a brick' % i)
+        for q in R.get('rocks') or []:
+            if not (0 <= q[0] < W and 0 <= q[1] < H): out.append('a rock off the box: %s' % q)
+        if not l['opens']: out.append('has no day to open on')
+        elif datetime.date.fromisoformat(l['opens']).weekday() != 6: out.append('opens on %s, not a Sunday' % l['opens'])
+        return '; '.join(out)
+    each(duels, wrong)
+    days = [datetime.date.fromisoformat(l['opens']) for l in duels]
+    assert days[0] == datetime.date(2026, 10, 25) and all((b - a).days == 7 for a, b in zip(days, days[1:])), 'the Rival levels open on %s' % [str(d) for d in days]

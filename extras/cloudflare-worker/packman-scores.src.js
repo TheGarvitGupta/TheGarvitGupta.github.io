@@ -49,6 +49,41 @@ function packed(level, spots) {
 	return G.evaluate(pieces, C).solved && G.verdict(level, pieces, C).ok;
 }
 
+// Is this the end of a duel won against Packman (Rival)? Nothing turns there, and everything in the box is on its
+// squares: the shapes in it have to be where the game could have put them, side by side, each side's the first of its
+// queue, in turn, with Packman to play next and nowhere for its next shape (or none left to play).
+function duelWon(level, spots) {
+	if (!Array.isArray(spots) || spots.length !== level.pieces.length) return false;
+	const R = level.rival, B = level.container, xs = B.map((q) => q[0]), ys = B.map((q) => q[1]);
+	const x0 = Math.min(...xs), y0 = Math.min(...ys), W = Math.round(Math.max(...xs) - x0), H = Math.round(Math.max(...ys) - y0);
+	const stands = (i) => R.stand ? R.stand.includes(i) : level.pieces[i] === "domino" && R.sam.includes(i);
+	const size = (i) => level.pieces[i] === "domino" ? (stands(i) ? [1, 2] : [2, 1]) : [1, 1];
+	const cells = (c, r, w, h) => { let m = 0n; for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) m |= 1n << BigInt((r + j) * W + c + i); return m; };
+	let occ = 0n;
+	for (const q of R.rocks || []) occ |= cells(q[0], q[1], 1, 1);
+	const placed = [];
+	for (let i = 0; i < spots.length; i++) {
+		const s = spots[i];
+		if (!Array.isArray(s) || s.length !== 3 || !s.every((v) => typeof v === "number" && isFinite(v) && Math.abs(v) < 1e4)) return false;
+		const [w, h] = size(i), c = s[0] - w / 2 - x0, r = s[1] - h / 2 - y0;
+		if (s[0] < x0 || s[0] > x0 + W || s[1] < y0 || s[1] > y0 + H) { placed[i] = false; continue; }   // still in its tray
+		if (Math.abs(c - Math.round(c)) > 0.01 || Math.abs(r - Math.round(r)) > 0.01 || ((s[2] % 360) + 360) % 360 !== (stands(i) ? 90 : 0)) return false;
+		const C = Math.round(c), Rr = Math.round(r);
+		if (C < 0 || Rr < 0 || C + w > W || Rr + h > H) return false;
+		const m = cells(C, Rr, w, h);
+		if (m & occ) return false;
+		occ |= m; placed[i] = true;
+	}
+	const mine = level.pieces.map((_, i) => i).filter((i) => !R.sam.includes(i));
+	const run = (q) => { let k = 0; while (k < q.length && placed[q[k]]) k++; return q.slice(k).some((i) => placed[i]) ? -1 : k; };   // how many of a queue are in, from its start
+	const a = run(mine), b = run(R.sam);
+	if (a < 1 || b < 0 || a - b !== (R.first ? 0 : 1)) return false;   // Packman to play next
+	if (b === R.sam.length) return true;   // and it has nothing left
+	const [w, h] = size(R.sam[b]);
+	for (let r = 0; r + h <= H; r++) for (let c = 0; c + w <= W; c++) if (!(cells(c, r, w, h) & occ)) return false;   // its next shape would still fit
+	return true;
+}
+
 let ready = false;
 async function tables(db) {
 	if (ready) return;
@@ -113,11 +148,14 @@ async function submit(db, request) {
 	if (!name || BLOCKED.test(name.replace(/[^a-z]/gi, ""))) return json({ error: "name" }, 400);
 	const t = Math.round(Number(b.t) * 10) / 10, m = Math.round(Number(b.m));
 	// every piece has to be moved at least once, and nobody does that in under half a second each
-	const n = level.pieces.length;
+	// (on Kaleidoscope only the dealt shapes are moved: the copies go with them; in a duel, as few as one of yours)
+	const n = level.rival ? 1 : level.echo || level.pieces.length;
 	if (!isFinite(t) || !isFinite(m) || m < n || m > 100000 || t < n * 0.5 || t > 86400) return json({ error: "score" }, 400);
 	// A level with powers is taken on trust: a ghost shares a space, and a chameleon is not
 	// always the shape the level lists, so the plain rules cannot judge where its shapes ended up.
-	if (!level.powers && !packed(level, b.p)) return json({ error: "unpacked" }, 400);
+	if (level.rival ? !duelWon(level, b.p) : !level.powers && !packed(level, b.p)) return json({ error: "unpacked" }, 400);
+	// a level that is let out on a day of its own takes no scores before then (a day early anywhere on Earth, at the most)
+	if (level.opens && Date.now() < Date.parse(level.opens + "T00:00:00Z") - 14 * 3600000) return json({ error: "not yet" }, 400);
 	if (await tooMany(db, request)) return json({ error: "slow down" }, 429);
 
 	const now = Math.floor(Date.now() / 1000);

@@ -21,7 +21,7 @@
   if (SHOW) {
     STORE = 'packman.show';
     (function () {
-      var all = PackmanLevels, on = SHOW === 'seventeen' ? 'Seventeen' : SHOW === 'finished' ? all[all.length - 1].name : 'Four Square', done = {};
+      var all = PackmanLevels, on = SHOW === 'seventeen' ? 'Seventeen' : SHOW === 'finished' ? all.filter(function (l) { return !l.rival; }).pop().name : 'Four Square', done = {};
       all.forEach(function (l, n) { if (l.name !== on && (SHOW === 'finished' || (SHOW === 'seventeen' && n < 17))) done[l.name] = { t: 40 + n * 7, m: 8 + n }; });
       var seed = { v: 3, done: done, last: on, name: 'Packer', pid: 'show-0000-0000-0000-0000', seen: true, eyeTip: 1 };
       if (SHOW === 'prize') seed.top3 = { rank: 3, over: 'Sonam', at: 0 };
@@ -36,9 +36,9 @@
     'Dolphin', 'Moose', 'Raven', 'Gecko', 'Bison', 'Puffin', 'Hare', 'Seal', 'Yak', 'Crane', 'Lemur', 'Ibex'];
   // Three chapters: the seventeen, then the powers, then the bricks and hexagons. The file lists the
   // powers last (they were written last), so the levels are put in chapter order here.
-  var CHAPTERS = ['Seventeen', 'Powers', 'Bricks and hexagons', 'Twists', 'Inventions'];
-  function chap(l) { return l.invent ? 4 : l.twist ? 3 : l.powers ? 1 : l.bonus ? 2 : 0; }   // (the fourth has powers on some levels and none on others)
-  LEVELS = [0, 1, 2, 3, 4].reduce(function (all, k) { return all.concat(LEVELS.filter(function (l) { return chap(l) === k; })); }, []);
+  var CHAPTERS = ['Seventeen', 'Powers', 'Bricks and hexagons', 'Twists', 'Inventions', 'Rivals'];
+  function chap(l) { return l.rival ? 5 : l.invent ? 4 : l.twist ? 3 : l.powers ? 1 : l.bonus ? 2 : 0; }   // (the fourth has powers on some levels and none on others)
+  LEVELS = [0, 1, 2, 3, 4, 5].reduce(function (all, k) { return all.concat(LEVELS.filter(function (l) { return chap(l) === k; })); }, []);
   var FIRST = CHAPTERS.map(function (c, k) { return LEVELS.map(chap).indexOf(k); });   // where each chapter starts
   var MAIN = LEVELS.filter(function (l) { return !chap(l); }).length;   // the seventeen
   function among(n) { return n - FIRST[chap(LEVELS[n])] + 1; }   // a level's number within its chapter
@@ -94,6 +94,14 @@
   // Every chapter is open from the start. Inside one, a level opens once the one before it
   // is packed, and anything already packed stays open.
   function unlocked(n) { return LOCAL || n === FIRST[chap(LEVELS[n])] || !!save.done[LEVELS[n].name] || !!save.done[LEVELS[n - 1].name]; }   // (on a copy on this machine every level is open, for trying things out)
+  // A level with a day of its own (opens) can be opened and looked at before then, but not played, until that day comes on
+  // the player's own calendar (on this machine, it is always out).
+  function today() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function released(l) { return LOCAL || !l.opens || today() >= l.opens; }
+  function opensOn(l) {   // 'tomorrow', or the day of the week, or the date if it is further off than that
+    var at = new Date(l.opens + 'T00:00:00'), now = new Date(today() + 'T00:00:00'), days = Math.round((at - now) / 864e5);
+    return days <= 1 ? 'tomorrow' : days < 7 ? 'on ' + at.toLocaleDateString('en-GB', { weekday: 'long' }) : 'on ' + at.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
+  }
   function label(n) { var c = chap(LEVELS[n]); return (c ? 'Chapter ' + (c + 1) + ', level ' : 'Level ') + among(n); }
   function clock(sec) { sec = Math.round(sec); return Math.floor(sec / 60) + ':' + ('0' + sec % 60).slice(-2); }
   function shuffled(a) {
@@ -116,6 +124,9 @@
   // Minefield was called Short Fuse for its first day: a win of it then is a win of it now, so the level after it stays open.
   if (save.done && save.done['Short Fuse']) { if (!save.done.Minefield) save.done.Minefield = save.done['Short Fuse']; delete save.done['Short Fuse']; }
   if (save.last === 'Short Fuse') save.last = 'Minefield';
+  // The board turned away a win of Kaleidoscope in fewer moves than it has shapes, copies and all, and the win
+  // was never sent again. It takes them now: once, whatever was sent of it goes up again.
+  if (!save.kaleido) { if (save.sent) delete save.sent.Kaleidoscope; save.kaleido = 1; }
   // Progress used to be kept by level number: ten levels at first, then
   // thirteen. It is kept by name now, so levels can be added and reordered.
   if (save.v !== 3) {
@@ -137,6 +148,7 @@
 
   var level = 0, lv, C, cb;            // current level, its container, the container's bounds
   var pieces = [], sel = -1, drag = null, won = false;
+  var early = false, soonTimer = 0;   // a level not out yet (see startLevel)
   var view = { x: 0, y: 0, w: 10, h: 10, scale: 50, land: true };
   var moves = 0, t0 = 0, elapsed = 0, carried = 0, ticker = 0;
   var shakeTimer = 0, shaking = false;
@@ -239,6 +251,7 @@
       view.x = (cb.minX + cb.maxX) / 2 - vw / 2;
       view.y = lv.gravity ? cb.maxY + pad + foot - vh : cb.minY - pad - head;
     }
+    if (lv.rival) { var rv = rivalView(W, Hp); vw = rv[0]; vh = rv[1]; }   // (Rival: room for both queues, see rivalView)
     view.w = vw; view.h = vh; view.scale = W / vw;
     board.setAttribute('viewBox', view.x + ' ' + view.y + ' ' + vw + ' ' + vh);
     var px = 1 / view.scale;
@@ -256,6 +269,7 @@
     $('knob').setAttribute('r', 11 * px);
     $('knob-hit').setAttribute('r', 22 * px);
     $('knob-dot').setAttribute('r', 4 * px);
+    if (lv.rival && rq) queuePlace();
     for (var i = 0; i < pieces.length; i++) { keepInView(pieces[i]); if (pieces[i].el) render(i); }
     placeHandle();
     if (coachOn) seatCoach();
@@ -604,7 +618,7 @@
       p.good = s.good;
     });
     for (var k = 0; k < pips.length; k++) pips[k].classList.toggle('on', !!lit[k]);
-    $('count').textContent = shown + ' of ' + pieces.length + ' packed';
+    if (!lv.rival) $('count').textContent = shown + ' of ' + pieces.length + ' packed';
     // all packed, but for a chameleon in disguise?
     almost = !ev.solved && pieces.some(function (p) { return p.fake; }) && pieces.every(function (p, i) { return ev.states[i].good || p.fake; });
     card();
@@ -671,6 +685,7 @@
 
   var snored = 0;
   function spin(i, by) {
+    if (lv.rival) return;   // nothing turns in a duel
     if (!by || won) return;
     var p = pieces[i];
     if (asleep(p)) { var now = performance.now(); if (now - snored > 800) { snored = now; sfx.snore(); } return; }
@@ -828,6 +843,7 @@
       render(drag.i); judge(); showAngle();
       return;
     }
+    if (lv.rival) { rivalHover(drag.i, w.x + drag.ox, w.y + drag.oy); return; }
     // Only the dragged piece moves, and what you see while dragging is exactly
     // what you get when you let go.
     p.x = w.x + drag.ox; p.y = w.y + drag.oy; p.angle = drag.a0;
@@ -860,6 +876,7 @@
     var p = pieces[d.i];
     p.el.classList.remove('held', 'aim');
     if (lv.once && d.moved && inPlay(p)) { nail(d.i); select(-1); }   // let go of in the box: there it stays
+    if (lv.rival && d.moved) { rivalDrop(d.i); placeHandle(); return; }
     if (d.moved) commit(); else lookForShake();
     placeHandle();
   }
@@ -1770,7 +1787,7 @@
     if (p.nailed) return;
     p.nailed = true; p.el.classList.remove('aim'); p.el.classList.add('nailed');
     if (!quiet) { p.el.classList.add('struck'); sfx.nail(); haptic(); setTimeout(function () { p.el.classList.remove('struck'); }, 600); }
-    shots();
+    if (lv.rival) rivalStrip(); else shots();
   }
   // The strip over the board keeps count: a nail for each shape, struck through as it goes in.
   function shots() {
@@ -1785,7 +1802,297 @@
   function aim() {
     pieces.forEach(function (p, i) { p.el.classList.toggle('aim', !!drag && drag.mode === 'move' && drag.i === i && drag.moved && !p.nailed && inPlay(p)); });
   }
-  function fixed(i) { return pieces[i].nailed || copy(i); }   // a shape that cannot be picked up
+  function fixed(i) { return early || pieces[i].nailed || copy(i) || (lv.rival && rivalHeld(i)); }   // a shape that cannot be picked up (nor any, on a level not out yet)
+
+  // Rival: a duel with Packman, on the box's own squares. Each side plays its shapes in the order they are queued,
+  // turn about, and nobody turns anything: a shape of yours let go of over the box goes onto the squares it fits, and is
+  // nailed, and then Packman plays, looking ahead to win. Whoever cannot fit their next shape loses.
+  var thinking = false, over = '';
+  function grid() {
+    var B = lv.container, xs = B.map(function (q) { return q[0]; }), ys = B.map(function (q) { return q[1]; });
+    var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys);
+    return { x0: x0, y0: y0, W: Math.round(Math.max.apply(null, xs) - x0), H: Math.round(Math.max.apply(null, ys) - y0) };
+  }
+  function footprint(p, a) {   // how many squares across and down the shape is, turned to a
+    var V = G.verts({ type: p.type, size: p.size || 1, x: 0, y: 0, angle: a }), xs = V.map(function (v) { return v[0]; }), ys = V.map(function (v) { return v[1]; });
+    return { w: Math.round(Math.max.apply(null, xs) - Math.min.apply(null, xs)), h: Math.round(Math.max.apply(null, ys) - Math.min.apply(null, ys)) };
+  }
+  function cells(c, r, f, g) { var m = 0; for (var i = 0; i < f.w; i++) for (var j = 0; j < f.h; j++) m |= 1 << ((r + j) * g.W + c + i); return m; }
+  function taken() {
+    var g = grid(), m = 0;
+    pieces.forEach(function (p) {
+      if (!p.nailed) return;
+      var f = footprint(p, p.angle); m |= cells(Math.round(p.x - f.w / 2 - g.x0), Math.round(p.y - f.h / 2 - g.y0), f, g);
+    });
+    return m | rocks();
+  }
+  // squares of the box a rock sits on, that nothing can be put over
+  function rocks() { var g = grid(), m = 0; (lv.rival.rocks || []).forEach(function (q) { m |= 1 << (q[1] * g.W + q[0]); }); return m; }
+  // every way shape n can go on the squares, in the order Packman prefers them (nearest the middle, then lowest, then furthest left)
+  function spots(n) {
+    var p = pieces[n], g = grid(), out = [], cx = g.x0 + g.W / 2, cy = g.y0 + g.H / 2, f = footprint(p, p.angle);
+    for (var r = 0; r + f.h <= g.H; r++) for (var c = 0; c + f.w <= g.W; c++) {
+      var x = g.x0 + c + f.w / 2, y = g.y0 + r + f.h / 2;
+      out.push({ m: cells(c, r, f, g), x: x, y: y, a: p.angle, key: [Math.round(((x - cx) * (x - cx) + (y - cy) * (y - cy)) * 1000), -y, x] });
+    }
+    return out.sort(function (A, B) { for (var k = 0; k < A.key.length; k++) if (A.key[k] !== B.key[k]) return A.key[k] - B.key[k]; return 0; });
+  }
+  function free(n, occ) { return spots(n).filter(function (s) { return !(s.m & occ); }); }
+  function mine() { return pieces.map(function (p, i) { return i; }).filter(function (i) { return !pieces[i].sam; }); }
+  function yourNext() { return mine().filter(function (i) { return !pieces[i].nailed; })[0]; }
+  function samNext() { return lv.rival.sam.filter(function (n) { return !pieces[n].nailed; })[0]; }
+  function rivalHeld(i) { return !!(thinking || over || pieces[i].sam || i !== yourNext()); }   // only your next shape can be picked up, and only on your turn
+  function shapeWord(p) { return p.type === 'domino' ? (p.angle % 180 ? 'standing brick' : 'lying brick') : p.type; }
+  // Whose turn it is, and how it ends, all said by the trays: the tray of the side to play is lit, with its name on
+  // a pill of its colour, and the two shapes up next glow in them. (In words, for a screen reader.)
+  function rivalStrip() {
+    var n = samNext(), y = yourNext(), samWon = !!over && !won, youWon = won || (!!over && over.indexOf('You win') >= 0);
+    // the two shapes up next glow in their rows; yours, the one to play now, glows brightest and bobs, and the rest still waiting are dimmed
+    pieces.forEach(function (p, i) {
+      if (!p.el) return;
+      var live = !over && !won, next = live && (i === y || i === n);
+      p.el.classList.toggle('next', next);
+      p.el.classList.toggle('go', next && i === y && !thinking);
+      p.el.classList.toggle('wait', live && !next && !p.nailed);
+    });
+    trayState('you', youWon ? 'won' : !over && !thinking ? 'go' : '', called() + (youWon ? ' wins!' : ''));   // (your own name, as on the leaderboard)
+    trayState('sam', samWon ? 'won' : !over && thinking ? 'go' : '', samWon ? 'Packman wins' : 'Packman');
+    $('count').textContent = over || (thinking ? 'Packman’s turn' : 'Your turn');
+    var tip = document.querySelector('.dock .tip');
+    if (tip) tip.textContent = samWon ? 'Packman wins this one. Tap ↺ to start over' : 'Drag your glowing shape onto the squares';
+  }
+  // Packman's shapes show how it feels about it: a smug bounce when it has you, a sulk when you have it
+  function mood(m) { lv.rival.sam.forEach(function (n) { var e = pieces[n].el; if (!e) return; e.classList.toggle('smug', m === 'smug'); e.classList.toggle('sulk', m === 'sulk'); }); }
+  // Lost: the box shudders, your shapes are glum while Packman's hop for joy, a sad trombone, and then a sheet with the way back in
+  var TAUNTS = ['Outpacked!', 'Squeezed out!', 'No room left!', 'Packman wins!'];
+  function lose(say, shape) {
+    over = say; thinking = false; mood('smug'); rivalStrip();
+    clearInterval(ticker); select(-1); showGhost(null);
+    sfx.lose();
+    bin.setAttribute('class', 'lost');
+    pieces.forEach(function (p) { if (!p.sam) p.el.classList.add('sulk'); });
+    cheer(pieces.filter(function (p) { return p.sam; }));
+    $('lose-title').textContent = TAUNTS[Math.floor(Math.random() * TAUNTS.length)];
+    $('lose-sub').textContent = (shape ? 'No room for your ' + shape + '. ' : '') + 'Packman got the better of you this time.';
+    $('lose-face').textContent = ''; $('lose-face').appendChild(document.querySelector('.logo svg').cloneNode(true));
+    var at = level;
+    setTimeout(function () { if (over && level === at && !won) openSheet($('m-lose')); }, calm ? 200 : 1900);
+  }
+  function beaten(n) { over = 'Packman has nowhere to put its ' + shapeWord(pieces[n]) + '. You win!'; thinking = false; mood('sulk'); rivalStrip(); setTimeout(win, 500); }
+  // the duel, looked at to the end: does whoever is to move win, with a and b of each side's shapes played?
+  function duelWins(occ, a, b, you, memo) {
+    var key = occ + ',' + a + ',' + b + ',' + (you ? 1 : 0);
+    if (memo.has(key)) return memo.get(key);
+    var Q = you ? mine() : lv.rival.sam, i = you ? a : b, out = false;
+    if (i < Q.length) out = memo.spots[Q[i]].some(function (s) { return !(s.m & occ) && !duelWins(occ | s.m, a + (you ? 1 : 0), b + (you ? 0 : 1), !you, memo); });
+    memo.set(key, out);
+    return out;
+  }
+  function duelMemo() { var memo = new Map(); memo.spots = {}; pieces.forEach(function (p, i) { memo.spots[i] = spots(i); }); return memo; }
+  function played(list) { return list.filter(function (i) { return pieces[i].nailed; }).length; }
+  // Of these spots for its shape n, the one that leaves most room for the shapes it has still to play (counted as every
+  // spot each of them could still go); between equals, the one it prefers
+  function roomiest(n, occ, open) {
+    var rest = lv.rival.sam.slice(lv.rival.sam.indexOf(n) + 1), best = null, most = -1;
+    open.forEach(function (s) {
+      var room = rest.reduce(function (t, k) { return t + free(k, occ | s.m).length; }, 0);
+      if (room > most) { most = room; best = s; }
+    });
+    return best;
+  }
+  function samPick(n) {
+    var occ = taken(), open = free(n, occ);
+    if (open.length < 2) return open[0];
+    var memo = duelMemo(), a = played(mine()), b = lv.rival.sam.indexOf(n);
+    var win = open.filter(function (s) { return !duelWins(occ | s.m, a, b + 1, true, memo); });   // the moves that leave you lost, if there are any
+    return roomiest(n, occ, win.length ? win : open);
+  }
+  // The hint's spot at Rival: where your next shape goes to win from here, if anywhere
+  function rivalSpot() {
+    var y = yourNext();
+    if (y == null || over || thinking) return null;
+    var occ = taken(), a = played(mine()), b = played(lv.rival.sam), memo = duelMemo();
+    var s = free(y, occ).filter(function (s) { return !duelWins(occ | s.m, a + 1, b, false, memo); })[0];
+    return s ? { type: pieces[y].type, x: s.x, y: s.y, angle: s.a, i: y } : null;
+  }
+  // The Solver at Rival plays your winning line, move after move, while Packman answers
+  function rivalSolve() {
+    if (won || over || !lv.rival) return;
+    if (thinking) { setTimeout(rivalSolve, 300); return; }
+    var s = rivalSpot();
+    if (!s) return;
+    var p = pieces[s.i];
+    p.x = s.x; p.y = s.y; p.angle = s.angle; render(s.i);
+    startClock(); rivalDrop(s.i);
+    setTimeout(rivalSolve, 1200);
+  }
+  function samPlays() {
+    var n = samNext();
+    if (n == null) { thinking = false; rivalStrip(); return; }
+    var p = pieces[n], to = samPick(n);
+    if (!to) { beaten(n); return; }
+    var from = { x: p.x, y: p.y, a: p.angle }, t0s = performance.now();
+    (function step(now) {
+      var k = Math.min(1, (now - t0s) / 450), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      p.x = from.x + (to.x - from.x) * e; p.y = from.y + (to.y - from.y) * e; p.angle = Math.round(from.a + (to.a - from.a) * e); render(n);
+      if (k < 1) { requestAnimationFrame(step); return; }
+      p.x = to.x; p.y = to.y; p.angle = to.a; render(n);
+      nail(n); commit(true);
+      if (won) return;
+      thinking = false;
+      var y = yourNext();
+      if (y == null || !free(y, taken()).length) lose('“Ha! Nowhere for your ' + (y == null ? 'next shape' : shapeWord(pieces[y])) + '.” Packman wins this one.', y == null ? '' : shapeWord(pieces[y]));
+      else rivalStrip();
+    })(t0s);
+  }
+  // Carried, a shape keeps clear of the box until it is over squares it fits: then it sits on the nearest of them,
+  // and jumps from fit to fit as it is moved, never anywhere in between. Where nothing fits it stays outside.
+  function rivalHover(i, x, y) {
+    var p = pieces[i], g = grid(), f = footprint(p, p.angle);
+    var over = x + f.w / 2 > g.x0 + 0.02 && x - f.w / 2 < g.x0 + g.W - 0.02 && y + f.h / 2 > g.y0 + 0.02 && y - f.h / 2 < g.y0 + g.H - 0.02;
+    var spot = null;
+    if (over) {
+      var d = Infinity;
+      free(i, taken()).forEach(function (s) { if (s.a % 180 !== p.angle % 180) return; var e = Math.hypot(s.x - x, s.y - y); if (e < d) { d = e; spot = s; } });
+      if (!spot) return;   // nowhere in the box: it stays where it was, outside
+      if (spot !== drag.spot && (!drag.spot || drag.spot.m !== spot.m)) { sfx.snap(); haptic(); }
+      p.x = spot.x; p.y = spot.y;
+    } else { p.x = x; p.y = y; keepInView(p); }
+    drag.spot = spot;
+    render(i);
+  }
+  // let go of over the box: onto the nearest squares, or back where it came from
+  function rivalDrop(i) {
+    var p = pieces[i], g = grid();
+    if (p.x < g.x0 || p.x > g.x0 + g.W || p.y < g.y0 || p.y > g.y0 + g.H) { p.x = p.home.x; p.y = p.home.y; render(i); select(-1); return; }   // let go of outside the box: back to its place in the queue
+    var f = footprint(p, p.angle), c = Math.round(p.x - f.w / 2 - g.x0), r = Math.round(p.y - f.h / 2 - g.y0);
+    if (c < 0 || r < 0 || c + f.w > g.W || r + f.h > g.H || cells(c, r, f, g) & taken()) {
+      p.x = p.home.x; p.y = p.home.y; render(i); sfx.bad(); select(-1); return;
+    }
+    p.x = g.x0 + c + f.w / 2; p.y = g.y0 + r + f.h / 2; render(i);
+    showGhost(null); nail(i); select(-1); commit(true);
+    if (won) return;
+    var n = samNext();
+    if (n == null) { over = 'Packman has run out of shapes. You win!'; mood('sulk'); rivalStrip(); setTimeout(win, 500); return; }
+    if (!free(n, taken()).length) { beaten(n); return; }   // Packman has nowhere to go: yours
+    thinking = true; rivalStrip();
+    setTimeout(samPlays, 500);
+  }
+  // The two queues: each side's shapes in a row, in the order they are played, Packman's over the box and yours under it
+  // (on a wide screen, yours to its left and its to the right). A played shape leaves its place empty.
+  var rq = null, tagEls = [], TAG = 0.4;   // (TAG: room over a queue for its name)
+  function queue(sam) { return sam ? lv.rival.sam.slice() : mine(); }
+  function flow(list, width) {   // shapes laid left to right, onto a new row when one is full
+    var x = 0, y = 0, tall = 0, w = 0, at = [], gap = 0.3;
+    list.forEach(function (n) {
+      var f = footprint(pieces[n], pieces[n].angle);
+      if (x > 0 && x + f.w > width + 1e-6) { y += tall + gap; x = 0; tall = 0; }
+      at.push([x + f.w / 2, y + f.h / 2]); x += f.w + gap; tall = Math.max(tall, f.h); w = Math.max(w, x - gap);
+    });
+    return { at: at, w: w, h: y + tall };
+  }
+  // the view that shows the box biggest with both queues round it
+  // The name pills are a fixed size on the screen, not on the board: so the room kept for them over each tray, and
+  // beside a tray on a wide screen, is so many pixels, and how much board that is depends on the scale, which depends
+  // on the room. Worked out by going round a few times from a guess; it settles at once.
+  var PILL_UP = 20, PILL_W = 160;   // screen pixels a pill reaches over its tray's edge, and its width with the longest name ("Packman wins")
+  function rivalView(W, Hp) {
+    var cw = cb.maxX - cb.minX, ch = cb.maxY - cb.minY, cx = (cb.minX + cb.maxX) / 2, cy = (cb.minY + cb.maxY) / 2;
+    var S = queue(true), Y = queue(false), m = 0.3, gap = 0.45, best = null;
+    for (var k = 0; k < 120; k++) {
+      var wide = (view.land ? 2 : Math.max(cw, 3)) + k * 0.1, fs = flow(S, wide), fy = flow(Y, wide), t = null, sc = 50;
+      for (var round = 0; round < 4; round++) {
+        var tag = 0.18 + PILL_UP / sc, side = Math.max(wide, PILL_W / sc - m);
+        t = view.land ? { vw: cw + 2 * (gap + side + m), vh: Math.max(ch, Math.max(fs.h, fy.h) + tag) + 2 * m }
+          : { vw: Math.max(wide, PILL_W / sc) + 2 * m, vh: 2 * m + tag + fs.h + gap + ch + gap + tag + fy.h };
+        t.tag = tag; sc = Math.min(W / t.vw, Hp / t.vh);
+      }
+      t.fs = fs; t.fy = fy; t.s = sc;
+      if (!best || t.s > best.s + 1e-9) best = t;
+    }
+    var vw = best.vw, vh = best.vh, fs = best.fs, fy = best.fy;
+    TAG = best.tag;
+    if (vw / vh < W / Hp) vw = vh * W / Hp; else vh = vw * Hp / W;
+    view.x = cx - vw / 2;
+    var wy = Math.max(fy.w, PILL_W / (W / vw) - 0.36), ws = Math.max(fs.w, PILL_W / (W / vw) - 0.36);   // a tray is never narrower than its pill
+    if (view.land) {
+      view.y = cy - vh / 2;
+      rq = { you: { list: Y, f: fy, w: wy, x: cb.minX - gap - wy, y: cy - (fy.h - TAG) / 2 }, sam: { list: S, f: fs, w: ws, x: cb.maxX + gap, y: cy - (fs.h - TAG) / 2 } };
+    } else {
+      view.y = cb.minY - gap - fs.h - TAG - m - (vh - best.vh) / 2;
+      rq = { you: { list: Y, f: fy, w: wy, x: cx - wy / 2, y: cb.maxY + gap + TAG }, sam: { list: S, f: fs, w: ws, x: cx - ws / 2, y: cb.minY - gap - fs.h } };
+    }
+    return [vw, vh];
+  }
+  function queuePlace() {
+    ['you', 'sam'].forEach(function (side) {
+      var z = rq[side];
+      z.list.forEach(function (n, k) {
+        var p = pieces[n];
+        if (p.nailed || (drag && drag.i === n)) return;
+        p.x = z.x + z.f.at[k][0]; p.y = z.y + z.f.at[k][1]; p.home = { x: p.x, y: p.y };
+      });
+    });
+    tags();
+  }
+  // each side's tray: a panel round its queue, with its name on a pill sitting on the panel's top edge
+  function tags() {
+    tagEls.forEach(function (t) { t.parentNode.removeChild(t); }); tagEls = [];
+    if (!lv.rival || !rq) return;
+    var px = 1 / view.scale, pad = 0.18;
+    ['you', 'sam'].forEach(function (side) {
+      var z = rq[side], g = el('g', 'tray ' + side), r = el('rect', 'panel'), pill = el('g', 'pill'), back = el('rect', 'bg'), t = el('text'), face = side === 'you' ? avatar(me) : document.querySelector('.logo svg').cloneNode(true);   // (Packman's picture is the game's own, from the logo)
+      r.setAttribute('x', z.x - pad); r.setAttribute('y', z.y - pad); r.setAttribute('width', z.w + 2 * pad); r.setAttribute('height', z.f.h + 2 * pad);
+      r.setAttribute('rx', 0.16);
+      // each side's picture at the start of the pill: yours as the leaderboard shows it, Packman's the logo
+      face.setAttribute('x', z.x - pad + 10 * px); face.setAttribute('y', z.y - pad - 11 * px); face.setAttribute('width', 22 * px); face.setAttribute('height', 22 * px);
+      t.setAttribute('x', z.x - pad + 38 * px); t.setAttribute('y', z.y - pad); t.setAttribute('dy', '0.35em');
+      pill.appendChild(back); pill.appendChild(face); pill.appendChild(t); g.appendChild(r); g.appendChild(pill);
+      board.insertBefore(g, layer); tagEls.push(g);
+      g.side = side;
+    });
+    rivalStrip();
+  }
+  // Each shape wears its number in its side's queue, small at its top left corner, and keeps it in the box: the order of play stays readable
+  function numbers() {
+    [queue(false), queue(true)].forEach(function (list) {
+      list.forEach(function (n, k) {
+        var p = pieces[n], f = footprint(p, p.angle), g = el('g', 'order'), t = el('text');
+        g.setAttribute('transform', 'translate(' + (-f.w / 2 + 0.17) + ' ' + (-f.h / 2 + 0.19) + ')');
+        t.setAttribute('dy', '0.36em'); t.setAttribute('text-anchor', 'middle'); t.textContent = k + 1;
+        g.appendChild(t); p.pop.appendChild(g);
+        p.el.classList.toggle('sam', !!p.sam);   // (Packman's)
+      });
+    });
+  }
+  function trayState(side, state, name) {
+    var g = tagEls.filter(function (t) { return t.side === side; })[0];
+    if (!g) return;
+    g.setAttribute('class', 'tray ' + side + (state ? ' ' + state : ''));
+    var t = g.querySelector('text'), back = g.querySelector('.pill .bg'), px = 1 / view.scale;
+    t.textContent = name;
+    if (state === 'go' && side === 'sam') { var d = el('tspan', 'dots'); d.textContent = ' …'; t.appendChild(d); }
+    var b = t.getBBox(), h = 30 * px, x0 = b.x - 34 * px;   // (room for the picture before the name)
+    back.setAttribute('x', x0); back.setAttribute('y', b.y + b.height / 2 - h / 2); back.setAttribute('width', b.x + b.width + 12 * px - x0); back.setAttribute('height', h);
+    back.setAttribute('rx', h / 2);
+  }
+  // the box's squares, drawn in it
+  var lines = null;
+  function gridLines() {
+    if (lines) { lines.parentNode.removeChild(lines); lines = null; }
+    tags();
+    if (!lv.rival) return;
+    var g = grid(), d = '';
+    for (var c = 1; c < g.W; c++) d += 'M' + (g.x0 + c) + ' ' + g.y0 + 'v' + g.H;
+    for (var r = 1; r < g.H; r++) d += 'M' + g.x0 + ' ' + (g.y0 + r) + 'h' + g.W;
+    lines = el('g'); var sq = el('path', 'squares'); sq.setAttribute('d', d); lines.appendChild(sq);
+    board.insertBefore(lines, layer);
+    (lv.rival.rocks || []).forEach(function (q) {   // a rock on each square the level says, filling it
+      var r = el('rect', 'rock');
+      r.setAttribute('x', g.x0 + q[0] + 0.06); r.setAttribute('y', g.y0 + q[1] + 0.06); r.setAttribute('width', 0.88); r.setAttribute('height', 0.88); r.setAttribute('rx', 0.22);
+      lines.appendChild(r);
+    });
+  }
 
   // Blind Box (blind): the box cannot be seen, but just round each shape: the box is drawn through a mask that has
   // in it, for every shape, the shape itself and a rim a few pixels wide round it (packman.css), where it is now.
@@ -2017,6 +2324,7 @@
     if (lv.powers) { var told = save.powerTip || 0; $('power-row').classList.toggle('told', told >= 3); if (told < 3) { save.powerTip = told + 1; persist(); } }
     document.body.classList.toggle('twists', !!lv.twist);   // and the chapter of twists on squared paper
     document.body.classList.toggle('invent', !!lv.invent);   // and the inventions on a blueprint
+    document.body.classList.toggle('rivals', !!lv.rival);   // and the rivals at a games table
     document.body.classList.toggle('blind', !!lv.blind); unsee();
     document.body.classList.toggle('guests', !!lv.guests); decorate();
     document.body.classList.toggle('once', !!lv.once);   // which has the strip for the shots left   // which has the strip over the board for what the guest in hand wants
@@ -2060,6 +2368,11 @@
         });
       });
     });
+    if (lv.rival) {
+      rq = null;
+      lv.rival.sam.forEach(function (n) { pieces[n].sam = true; pieces[n].color = '#FF8FCB'; });
+      pieces.forEach(function (p, n) { p.angle = (lv.rival.stand ? lv.rival.stand.indexOf(n) >= 0 : p.type === 'domino' && p.sam) ? 90 : 0; });   // yours lie, Packman's stand (or as the level says)
+    }
     // At a dinner party every shape is the guest the level says, and in the Kaleidoscope a copy looks just like its shape.
     if (lv.guests) pieces.forEach(function (p, n) { p.kit = OUTFITS.filter(function (k) { return k.voice === lv.guests[n].kit; })[0]; p.color = p.kit.color || colors[n % colors.length]; });
     if (lv.echo) pieces.forEach(function (p, n) { if (n >= lv.echo) { p.kit = pieces[n % lv.echo].kit; p.color = pieces[n % lv.echo].color; } });
@@ -2086,18 +2399,42 @@
       });
     }
     layout();
-    if (!fresh && kept && kept.l === lv.name && kept.p && kept.p.length === pieces.length) {
+    if (!fresh && !lv.rival && kept && kept.l === lv.name && kept.p && kept.p.length === pieces.length) {
       pieces.forEach(function (p, n) { p.x = kept.p[n][0]; p.y = kept.p[n][1]; p.angle = kept.p[n][2]; keepInView(p); });
       moves = kept.m || 0; carried = kept.t || 0;
       $('clock').textContent = clock(carried);
     } else {
-      scatter(); sfx.deal(pieces.length);
+      if (lv.rival) queuePlace(); else scatter();
+      sfx.deal(pieces.length);
       pieces.forEach(function (p, n) { (p.kin || []).forEach(function (k) { if (k.i > n) pieces[k.i].angle = k.s * p.angle + k.k; }); });
     }
     pieces.forEach(function (p, n) { buildPiece(p, n); render(n); if (copy(n)) p.el.classList.add('echo'); });
     if (lv.echo) for (var n = 0; n < lv.echo; n++) mirror(n);
     if (lv.once && !fresh && kept && kept.l === lv.name && kept.n) kept.n.forEach(function (n) { if (pieces[n]) nail(n, true); });
     if (lv.once) shots();
+    if (lv.rival) {
+      thinking = false; over = '';
+      numbers();
+      rivalStrip();
+      if (lv.rival.first && !early) { thinking = true; rivalStrip(); var at = level; setTimeout(function () { if (level === at && thinking) samPlays(); }, 900); }   // Packman opens
+    }
+    document.body.classList.toggle('duel', !!lv.rival);
+    // A level not out yet is shown as it will be, with nothing to be picked up, and a banner over it saying when it opens;
+    // at midnight on its day it starts of itself.
+    early = !released(lv); clearTimeout(soonTimer);
+    $('soon').hidden = !early; document.body.classList.toggle('early', early);
+    if (early) {
+      $('soon-when').textContent = 'Opens ' + opensOn(lv);
+      var ticks = function () {
+        var left = new Date(lv.opens + 'T00:00:00').getTime() - Date.now(), at = level;
+        if (left <= 0) { startLevel(at, true); return; }
+        $('soon-left').textContent = 'in ' + wait(left);
+        soonTimer = setTimeout(ticks, Math.min(left, 30000));
+      };
+      ticks();
+    }
+    document.querySelector('.dock .tip').textContent = lv.rival ? 'Drag your glowing shape onto the squares' : 'Pick up a shape to spin it';
+    gridLines();
     tether();
     notePower(null); countHints();
     if (masked()) $('lv-intro').textContent = 'One of these is a chameleon in disguise. Its true shape is for you to find.';   // the usual line would count the shapes out
@@ -2116,6 +2453,7 @@
   // (every piece within a hair and a degree of a solved spot). If it would,
   // the box shakes itself.
   function lookForShake() {
+    if (lv.rival) return;   // (a duel has no packing to shake into)
     clearTimeout(shakeTimer);
     shakeTimer = setTimeout(function () {
       if (won || drag || shaking || lv.echo) return;   // (a shake moves every shape its own way, and copies may only go with their shape)
@@ -2231,7 +2569,9 @@
   }
   // An empty spot from the solution, for one piece that is not packed yet.
   function pickSpot() {
+    if (early) return null;
     if (lv.steps) return stepSpot();
+    if (lv.rival) return rivalSpot();
     var best = null;
     syms.forEach(function (t) {
       var slots = slotsFor(t);
@@ -2297,6 +2637,7 @@
 
   function win() {
     won = true; see();   // (a box nobody could see shows whole)
+    if (lv.rival) { thinking = false; mood('sulk'); pieces.forEach(function (p) { if (!p.sam) p.el.classList.add('smug'); }); rivalStrip(); }   // (yours glad, Packman's glum)
     if (level === EYE_LEVEL) eye(false);   // the eyesight level is over: the shapes get their faces back for the party
     countMove();
     clearTimeout(shakeTimer);
@@ -2353,7 +2694,9 @@
     $('win-best').textContent = clock(best);
     $('win-fact').hidden = !lv.fact;
     $('win-fact').textContent = lv.fact || '';
+    var later = level < LEVELS.length - 1 && !released(LEVELS[level + 1]);   // the next one is not out yet: it can be looked at, and the sheet says when it opens
     $('win-next').hidden = level === LEVELS.length - 1;
+    if (later) $('win-sub').textContent += ' The next one opens ' + opensOn(LEVELS[level + 1]) + '.';
     // once the win sheet is put away, the way on stays in the bar at the bottom
     $('go-next').hidden = level === LEVELS.length - 1; dock.classList.add('won');
     setTimeout(function () { if (won) openSheet($('m-win')); }, calm ? (whole ? 3200 : 200) : whole ? 6600 : finale ? 3300 : again ? 1250 : 1700);
@@ -2453,13 +2796,13 @@
   }
 
   // The crowd goes wild: a wave runs across the box, left to right.
-  function cheer() {
+  function cheer(only) {   // (only: just these shapes hop, as Packman's do when it wins)
     if (calm || eyeOn) return;   // under eyesight the shapes are a diagram, and a diagram does not hop
     var crowd = pieces, start = performance.now(), wide = cb.maxX - cb.minX;
     (function frame(t) {
       if (crowd !== pieces) return;
       var live = false;
-      crowd.forEach(function (p) {
+      (only || crowd).forEach(function (p) {
         var k = (t - start) / 1000 - 0.1 - (p.x - cb.minX) / wide * 0.5, hop = 0;
         if (k < 1) live = true;
         if (k > 0 && k < 1) hop = Math.abs(Math.sin(k * 2 * Math.PI)) * 0.14 * (1 - k * 0.6);
@@ -2486,21 +2829,19 @@
     s.addEventListener('click', function (e) { if (e.target === s || e.target.hasAttribute('data-close')) closeSheet(s); });
   });
 
-  // 'Show a spot' is on offer ten times a chapter, to spend on whichever of its levels they are
-  // wanted. A chapter that is short of its ten gets one back every eight hours. What is kept for a
-  // chapter is how many it has (n), and when the eight hours it is now waiting through began (at).
-  var HINTS = 10, EVERY = 8 * 36e5, waiter = 0;
+  // 'Show a spot' is on offer three times a day in each chapter, to spend on whichever of its levels they
+  // are wanted: at midnight a chapter has its three again. What is kept for a chapter is how many it has
+  // left (n), and the day they are for (day, as today() has it).
+  var HINTS = 3, waiter = 0;
   function purse() {
     save.hints = save.hints || {};
-    var key = 'chapter ' + (lv.invent ? 4 : lv.twist ? 3 : lv.powers ? 2 : lv.bonus ? 1 : 0), h = save.hints[key], now = Date.now();   // (numbered as the chapters were when hints were first kept this way)
-    if (!h || Array.isArray(h)) h = save.hints[key] = { n: HINTS - (Array.isArray(h) ? Math.min(h.length, HINTS) : 0), at: now };   // (a list of times, from when each came back after a day)
-    if (h.n < HINTS) {
-      if (!(h.at <= now)) h.at = now;   // a clock that has been put back
-      var back = Math.floor((now - h.at) / EVERY);
-      if (back > 0) { h.n = Math.min(HINTS, h.n + back); h.at += back * EVERY; }
-    }
+    var key = 'chapter ' + (lv.rival ? 5 : lv.invent ? 4 : lv.twist ? 3 : lv.powers ? 2 : lv.bonus ? 1 : 0), h = save.hints[key], day = today();   // (numbered as the chapters were when hints were first kept this way)
+    // (kept the old way, as a list of times or a count with the time the next came back, it is this day's three, less any already spent today)
+    if (!h || Array.isArray(h) || h.day == null) h = save.hints[key] = { n: h && !Array.isArray(h) && h.n != null ? Math.min(h.n, HINTS) : HINTS, day: day };
+    if (h.day !== day) { h.n = HINTS; h.day = day; }
     return h;
   }
+  function midnight() { var d = new Date(); d.setHours(24, 0, 0, 0); return d.getTime(); }
   // How long until the next one comes back: hours, then minutes inside the last hour, then seconds inside the
   // last minute, each rounded down. With 7 hours 59 minutes to go it says 7 hours.
   function wait(ms) {
@@ -2516,12 +2857,12 @@
   function showSpots() {
     var h = purse(), left = h.n;
     countHints();
-    var none = !won && masked() && !pickSpot();   // nothing to show that would not unmask the chameleon
+    var none = !won && (masked() || lv.rival) && !pickSpot();   // nothing to show that would not unmask the chameleon (at Rival: no move wins from here)
     $('hint-spot').disabled = !left || none;
     $('spots').textContent = left;
     $('hint-wait').hidden = (!!left && !none) || won;
-    if (!left) $('hint-wait').textContent = 'Next hint in ' + wait(h.at + EVERY - Date.now()) + '.';
-    else if (none) $('hint-wait').textContent = 'The only spots left would give the chameleon away.';
+    if (!left) $('hint-wait').textContent = 'Three more at midnight, in ' + wait(midnight() - Date.now()) + '.';
+    else if (none) $('hint-wait').textContent = early ? 'This level opens ' + opensOn(lv) + '.' : lv.rival ? (thinking ? 'Wait for Packman to play.' : 'No move wins from here: Packman has you. Start again with ↺.') : 'The only spots left would give the chameleon away.';
   }
 
   function showHint() {
@@ -2853,9 +3194,11 @@
       b.className = 'lv' + (done ? ' done' : '') + (n === level ? ' here' : '') + (shut ? ' locked' : '');
       b.disabled = shut;
       b.style.setProperty('--n', Math.min(among(n) + 2 * chap(l), 22));
-      b.dataset.name = l.name; b.dataset.label = label(n) + (shut ? ', locked until the one before it is packed' : ', ' + l.name + (done ? ', packed in ' + clock(done.t) : ''));
+      var soon = !released(l);   // not out yet
+      b.dataset.name = l.name; b.dataset.label = label(n) + (soon ? ', ' + l.name + ', opens ' + opensOn(l) : shut ? ', locked until the one before it is packed' : ', ' + l.name + (done ? ', packed in ' + clock(done.t) : ''));
       b.setAttribute('aria-label', b.dataset.label);
-      b.title = shut ? 'Pack the one before it first' : l.name + (done ? ' · best ' + clock(done.t) : '');
+      b.title = soon ? l.name + ' · opens ' + opensOn(l) : shut ? 'Pack the one before it first' : l.name + (done ? ' · best ' + clock(done.t) : '');
+      if (soon) { b.classList.add('soon'); var w = document.createElement('small'); w.className = 'when'; w.textContent = new Date(l.opens + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short' }); b.appendChild(w); }   // and under it, the day
       s.setAttribute('viewBox', bb.minX + ' ' + bb.minY + ' ' + (bb.maxX - bb.minX) + ' ' + (bb.maxY - bb.minY));
       (l.containers || [l.container]).forEach(function (c) { var poly = el('polygon', l.blind ? 'hid' : ''); poly.setAttribute('points', pts(c)); s.appendChild(poly); });
       b.appendChild(s);
@@ -2892,8 +3235,8 @@
   $('hint-spot').addEventListener('click', function () {
     if (purse().n < 1) return;
     var spot = pickSpot();
-    if (!spot && masked()) return;   // nothing to show that would not unmask the chameleon; the hint is not used up
-    if (spot) { var h = purse(); if (h.n === HINTS) h.at = Date.now(); h.n--; persist(); countHints(); }   // the wait for one to come back starts when the purse stops being full
+    if (!spot && (masked() || lv.rival)) return;   // nothing to show that would not unmask the chameleon; the hint is not used up
+    if (spot) { purse().n--; persist(); countHints(); }
     closeSheet($('m-hint')); showGhost(spot);
     if (spot) sfx.spot();
   });
@@ -2998,6 +3341,9 @@
   $('go-next').addEventListener('click', function () { startLevel(Math.min(level + 1, LEVELS.length - 1)); });
   $('win-again').addEventListener('click', function () { closeSheet($('m-win')); startLevel(level, true); });
   $('win-levels').addEventListener('click', function () { closeSheet($('m-win')); showLevels(); });
+  $('lose-again').addEventListener('click', function () { closeSheet($('m-lose')); wake(); startLevel(level, true); sfx.drop(); });
+  $('lose-hint').addEventListener('click', function () { closeSheet($('m-lose')); startLevel(level, true); showHint(); });
+  $('lose-levels').addEventListener('click', function () { closeSheet($('m-lose')); showLevels(); });
   // Share sheet on a phone; elsewhere the brag and the link go on the clipboard.
   $('win-share').addEventListener('click', function () {
     var b = this.lastChild, url = location.href.split(/[?#]/)[0] + '?level=' + (level + 1);
@@ -3139,6 +3485,7 @@
   function solve() {
     if (won) return;
     select(-1);
+    if (lv.rival) { rivalSolve(); return; }
     pieces.forEach(function (p, i) {
       while (p.power === 'chameleon' && p.form) morph(p, i);
       var s = lv.solution[i] || lv.solution[lv.pieces.indexOf(p.type)] || lv.haunt;   // the ghost lies over one of its own kind, or where the level says

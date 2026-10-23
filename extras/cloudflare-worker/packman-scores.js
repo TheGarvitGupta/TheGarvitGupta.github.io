@@ -575,8 +575,8 @@ var PackmanGeom = (function () {
 // same units as the pieces (every piece has side 1). Each solution is one packed
 // [x, y, angle] per piece, in the order the pieces are listed. The levels run
 // from easiest to hardest; saved progress goes by name, so they can be reordered.
-// There are five chapters, played in this order: the seventeen; then the powers; then the bricks and
-// hexagons; then the twists; then the inventions, which are listed last here. In this file: the first is the seventeen; the next (bonus: true) brings
+// There are six chapters, played in this order: the seventeen; then the powers; then the bricks and
+// hexagons; then the twists; then the inventions; then the rivals (rival: a duel with Packman), which are listed last here. In this file: the first is the seventeen; the next (bonus: true) brings
 // the brick and the hexagon; the third (powers: n) deals n of its shapes a power each time,
 // picked at random, but for any named in sure, which always come. A chameleon is dealt to
 // any shape, unless chameleon: n names one; masked is the hint to give when there is a chameleon in the deal.
@@ -1194,6 +1194,76 @@ var PackmanLevels = (function () {
       container: rect(4.006, 3.006),
       pieces: pieces(0, 0, 3).concat(pieces(6, 0)),
       solution: [[-1, -1, 0], [0, 1, 0], [1.5, -0.5, 90], [1.5, 1, 0], [-1.5, 0, 0], [-1.5, 1, 0], [0.5, 0, 0], [-0.5, 0, 0], [0.5, -1, 0]]
+    },
+    {
+      name: 'Rival 1',
+      opens: '2026-10-25',   // one a week, on Sundays: until its day a level can be looked at, not played
+      rival: { sam: [3, 4, 5] },   // Packman's shapes, in the order it plays them (each side plays its own in order, turn about, and whoever cannot fit theirs loses)
+      intro: 'Take turns with Packman: your bricks lie down, its stand up. Whoever cannot fit their next brick loses.',
+      hint: 'Lay your first brick in the middle of a row. When Packman stands one at an end, lay your next across the far corner, so the squares left are no column of two.',
+      container: rect(4, 2),
+      pieces: ['domino', 'domino', 'domino', 'domino', 'domino', 'domino'],
+      solution: [[0, -0.5, 0], [1, 0.5, 0], [9, 9, 0], [-1.5, 0, 90], [9, 9, 90], [9, 9, 90]]   // (a duel has no packing: shapes that never go in are kept off the board)
+    },
+    {
+      name: 'Rival 2',
+      opens: '2026-11-01',
+      rival: { sam: [3, 4, 5] },   // Packman's shapes, in the order it plays them (each side plays its own in order, turn about, and whoever cannot fit theirs loses)
+      intro: 'Now you play a square first. Your bricks lie down, Packman’s stand up. Whoever cannot fit theirs loses.',
+      hint: 'Take the middle: your square goes in the very centre. Then wherever Packman stands a brick, lay yours so it leaves it no column of two.',
+      container: rect(3, 3),
+      pieces: ['square', 'domino', 'domino', 'domino', 'domino', 'domino'],
+      solution: [[0, 0, 0], [-0.5, -1, 0], [0.5, 1, 0], [9, 9, 90], [9, 9, 90], [9, 9, 90]]   // (a duel has no packing: shapes that never go in are kept off the board)
+    },
+    {
+      name: 'Rival 3',
+      opens: '2026-11-08',
+      rival: { sam: [4, 5, 6, 7], stand: [4, 5, 7], rocks: [[0, 1], [3, 1]] },   // rocks: squares of the box (column, row) nothing can go on
+      intro: 'Two rocks are in the box: nothing can go on them. Your bricks lie down, Packman’s stand up.',
+      hint: 'Lay your first brick in the gap between the two rocks.',
+      container: rect(4, 4),
+      pieces: ['domino', 'domino', 'domino', 'domino', 'domino', 'domino', 'square', 'domino'],
+      solution: [[9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 90], [9, 9, 0], [9, 9, 90]]
+    },
+    {
+      name: 'Rival 4',
+      opens: '2026-11-15',
+      rival: { sam: [5, 6, 7, 8, 9], stand: [5, 7, 8, 9], first: true },   // first: Packman opens
+      intro: 'This time Packman goes first. Answer it well.',
+      hint: 'Put your square right beside Packman’s first brick, on its left, against the wall, level with the top of it.',
+      container: rect(4, 4),
+      pieces: ['square', 'domino', 'domino', 'domino', 'domino', 'domino', 'square', 'domino', 'domino', 'domino'],
+      solution: [[9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 0], [9, 9, 90], [9, 9, 90], [9, 9, 90]]
+    },
+    {
+      name: 'Rival 5',
+      opens: '2026-11-22',
+      rival: { sam: [5, 6, 7, 8, 9], stand: [2, 5, 7, 8, 9] },
+      intro: 'Turncoats: one of your bricks stands up, and one of Packman’s lies down. Watch the queues.',
+      hint: 'Lay your first brick across the middle two columns, in either middle row. Keep a column of two open for your standing brick.',
+      container: rect(4, 4),
+      pieces: ['domino', 'domino', 'domino', 'domino', 'domino', 'domino', 'domino', 'domino', 'domino', 'domino'],
+      solution: [[9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 0], [9, 9, 90], [9, 9, 90], [9, 9, 90]]
+    },
+    {
+      name: 'Rival 6',
+      opens: '2026-11-29',
+      rival: { sam: [5, 6, 7, 8, 9], stand: [5, 6, 7, 9] },
+      intro: 'A long, low table. Your bricks lie down, Packman’s stand up. Whoever cannot fit their next shape loses.',
+      hint: 'Put your square in the middle row, one square in from either end. After that, lay each brick so that what Packman leaves is split into single squares.',
+      container: rect(6, 3),
+      pieces: ['square', 'domino', 'domino', 'domino', 'domino', 'domino', 'domino', 'domino', 'square', 'domino'],
+      solution: [[9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 90], [9, 9, 90], [9, 9, 0], [9, 9, 90]]
+    },
+    {
+      name: 'Rival 7',
+      opens: '2026-12-06',
+      rival: { sam: [5, 6, 7, 8, 9] },
+      intro: 'The last duel, and the toughest. Your bricks lie down, Packman’s stand up. Whoever cannot fit their next shape loses.',
+      hint: 'Lay your first brick across the middle of the box, one square in from the left, in either of the two middle rows.',
+      container: rect(4, 4),
+      pieces: ['domino', 'domino', 'square', 'domino', 'domino', 'domino', 'square', 'domino', 'domino', 'domino'],
+      solution: [[-0.5, -0.5, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 0], [9, 9, 90], [9, 9, 90], [9, 9, 90]]
     }
   ];
 })();
@@ -1247,6 +1317,41 @@ function packed(level, spots) {
 	const C = level.containers ? G.makeBoxes(level.containers) : G.makeContainer(level.container);
 	// and a level with rules of its own (a pivot to balance on, guests with wishes) has them kept too
 	return G.evaluate(pieces, C).solved && G.verdict(level, pieces, C).ok;
+}
+
+// Is this the end of a duel won against Packman (Rival)? Nothing turns there, and everything in the box is on its
+// squares: the shapes in it have to be where the game could have put them, side by side, each side's the first of its
+// queue, in turn, with Packman to play next and nowhere for its next shape (or none left to play).
+function duelWon(level, spots) {
+	if (!Array.isArray(spots) || spots.length !== level.pieces.length) return false;
+	const R = level.rival, B = level.container, xs = B.map((q) => q[0]), ys = B.map((q) => q[1]);
+	const x0 = Math.min(...xs), y0 = Math.min(...ys), W = Math.round(Math.max(...xs) - x0), H = Math.round(Math.max(...ys) - y0);
+	const stands = (i) => R.stand ? R.stand.includes(i) : level.pieces[i] === "domino" && R.sam.includes(i);
+	const size = (i) => level.pieces[i] === "domino" ? (stands(i) ? [1, 2] : [2, 1]) : [1, 1];
+	const cells = (c, r, w, h) => { let m = 0n; for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) m |= 1n << BigInt((r + j) * W + c + i); return m; };
+	let occ = 0n;
+	for (const q of R.rocks || []) occ |= cells(q[0], q[1], 1, 1);
+	const placed = [];
+	for (let i = 0; i < spots.length; i++) {
+		const s = spots[i];
+		if (!Array.isArray(s) || s.length !== 3 || !s.every((v) => typeof v === "number" && isFinite(v) && Math.abs(v) < 1e4)) return false;
+		const [w, h] = size(i), c = s[0] - w / 2 - x0, r = s[1] - h / 2 - y0;
+		if (s[0] < x0 || s[0] > x0 + W || s[1] < y0 || s[1] > y0 + H) { placed[i] = false; continue; }   // still in its tray
+		if (Math.abs(c - Math.round(c)) > 0.01 || Math.abs(r - Math.round(r)) > 0.01 || ((s[2] % 360) + 360) % 360 !== (stands(i) ? 90 : 0)) return false;
+		const C = Math.round(c), Rr = Math.round(r);
+		if (C < 0 || Rr < 0 || C + w > W || Rr + h > H) return false;
+		const m = cells(C, Rr, w, h);
+		if (m & occ) return false;
+		occ |= m; placed[i] = true;
+	}
+	const mine = level.pieces.map((_, i) => i).filter((i) => !R.sam.includes(i));
+	const run = (q) => { let k = 0; while (k < q.length && placed[q[k]]) k++; return q.slice(k).some((i) => placed[i]) ? -1 : k; };   // how many of a queue are in, from its start
+	const a = run(mine), b = run(R.sam);
+	if (a < 1 || b < 0 || a - b !== (R.first ? 0 : 1)) return false;   // Packman to play next
+	if (b === R.sam.length) return true;   // and it has nothing left
+	const [w, h] = size(R.sam[b]);
+	for (let r = 0; r + h <= H; r++) for (let c = 0; c + w <= W; c++) if (!(cells(c, r, w, h) & occ)) return false;   // its next shape would still fit
+	return true;
 }
 
 let ready = false;
@@ -1313,11 +1418,14 @@ async function submit(db, request) {
 	if (!name || BLOCKED.test(name.replace(/[^a-z]/gi, ""))) return json({ error: "name" }, 400);
 	const t = Math.round(Number(b.t) * 10) / 10, m = Math.round(Number(b.m));
 	// every piece has to be moved at least once, and nobody does that in under half a second each
-	const n = level.pieces.length;
+	// (on Kaleidoscope only the dealt shapes are moved: the copies go with them; in a duel, as few as one of yours)
+	const n = level.rival ? 1 : level.echo || level.pieces.length;
 	if (!isFinite(t) || !isFinite(m) || m < n || m > 100000 || t < n * 0.5 || t > 86400) return json({ error: "score" }, 400);
 	// A level with powers is taken on trust: a ghost shares a space, and a chameleon is not
 	// always the shape the level lists, so the plain rules cannot judge where its shapes ended up.
-	if (!level.powers && !packed(level, b.p)) return json({ error: "unpacked" }, 400);
+	if (level.rival ? !duelWon(level, b.p) : !level.powers && !packed(level, b.p)) return json({ error: "unpacked" }, 400);
+	// a level that is let out on a day of its own takes no scores before then (a day early anywhere on Earth, at the most)
+	if (level.opens && Date.now() < Date.parse(level.opens + "T00:00:00Z") - 14 * 3600000) return json({ error: "not yet" }, 400);
 	if (await tooMany(db, request)) return json({ error: "slow down" }, 429);
 
 	const now = Math.floor(Date.now() / 1000);

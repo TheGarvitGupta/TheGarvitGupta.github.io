@@ -43,6 +43,12 @@ var PackmanSounds = function (tone) {
     snap: function () { tone(880, 0.05, { type: 'triangle', to: 1320, vol: 0.06 }); },
     tick: function () { tone(1250, 0.025, { type: 'triangle', vol: 0.035 }); },
     nail: function () { tone(95, 0.09, { type: 'square', to: 55, vol: 0.09 }); tone(2100, 0.05, { at: 0.01, type: 'triangle', to: 1900, vol: 0.05 }); tone(1400, 0.12, { at: 0.03, type: 'triangle', vol: 0.025 }); },   // a hammer on a nail: the thud and the ring of it
+    // lost to Packman: a sad trombone, three steps down and a long wobbling last note
+    lose: function () {
+      [[392, 0], [370, 0.32], [349, 0.64]].forEach(function (n) { tone(n[0], 0.28, { at: n[1], type: 'triangle', to: n[0] * 0.97, vol: 0.12 }); });
+      for (var k = 0; k < 6; k++) tone(k % 2 ? 322 : 338, 0.14, { at: 0.98 + k * 0.13, type: 'triangle', vol: 0.12 });
+      tone(330, 0.5, { at: 1.76, type: 'triangle', to: 262, vol: 0.11 });
+    },
     bad: function () { tone(160, 0.12, { type: 'triangle', to: 110, vol: 0.1 }); },
     // Landslide: shapes slide down the box, a falling whoosh, and come to rest one after another, a wooden clack for each (n, up to four)
     slide: function (n) {

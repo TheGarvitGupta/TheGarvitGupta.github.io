@@ -30,7 +30,7 @@
 
 <link rel="stylesheet" href="faces.css?v=2.99">
 <link rel="stylesheet" href="mug/mug.css?v=3.13">
-<link rel="stylesheet" href="packman.css?v=3.37">
+<link rel="stylesheet" href="packman.css?v=3.38">
 </head>
 <body>
 
@@ -68,6 +68,7 @@
   <div id="power-row"><p id="power-idle">Pick up a shape with a power to see what it does.</p><div id="power-note" hidden></div></div>
 
   <main id="stage">
+    <div class="soon" id="soon" hidden role="status"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><div><b id="soon-when">Opens tomorrow</b><small id="soon-left"></small></div></div>
     <svg id="board" role="application" aria-label="Puzzle board">
       <g id="bin"><path class="bin-fill"/><path id="true-box"/></g>
       <g id="seams"></g>
@@ -162,7 +163,7 @@
     <h2 id="hint-h">Hint</h2>
     <p id="hint-text"></p>
     <p class="fact" id="hint-fact"></p>
-    <div class="row"><button class="btn plain" id="hint-spot">Show a spot<span class="badge" id="spots">10</span></button><button class="btn go" data-close>Got it</button></div>
+    <div class="row"><button class="btn plain" id="hint-spot">Show a spot<span class="badge" id="spots">3</span></button><button class="btn go" data-close>Got it</button></div>
     <p class="note" id="hint-wait" hidden></p>
   </div>
 </div>
@@ -216,16 +217,26 @@
       <p class="note" id="win-lb-note" hidden></p>
     </div>
     <button class="btn" id="win-next">Next level</button>
-    <div><button class="btn plain" id="win-again"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5"/></svg>Play again</button><button class="btn plain" id="win-levels"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 4.5h5.5v5.5h-5.5zM14 4.5h5.5v5.5H14zM4.5 14h5.5v5.5h-5.5zM14 14h5.5v5.5H14z"/></svg>Levels</button><button class="btn plain" id="win-share"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8M6 12v7.5h12V12"/></svg><span>Share</span></button></div>
+    <div><button class="btn plain" id="win-again"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5"/></svg>Start over</button><button class="btn plain" id="win-levels"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 4.5h5.5v5.5h-5.5zM14 4.5h5.5v5.5H14zM4.5 14h5.5v5.5h-5.5zM14 14h5.5v5.5H14z"/></svg>Levels</button><button class="btn plain" id="win-share"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8M6 12v7.5h12V12"/></svg><span>Share</span></button></div>
+  </div>
+</div>
+
+<div class="sheet" id="m-lose" role="dialog" aria-modal="true" aria-labelledby="lose-title">
+  <div class="card">
+    <div class="lose-face" id="lose-face" aria-hidden="true"></div>
+    <h2 id="lose-title">Outpacked!</h2>
+    <p class="sub" id="lose-sub"></p>
+    <button class="btn go" id="lose-again"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5"/></svg>Start over</button>
+    <div><button class="btn plain" id="lose-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>Hint</button><button class="btn plain" id="lose-levels"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 4.5h5.5v5.5h-5.5zM14 4.5h5.5v5.5H14zM4.5 14h5.5v5.5h-5.5zM14 14h5.5v5.5H14z"/></svg>Levels</button></div>
   </div>
 </div>
 
 <script src="geom.js?v=3.16"></script>
-<script src="levels.js?v=3.24"></script>
+<script src="levels.js?v=3.25"></script>
 <script src="faces.js?v=2.80"></script>
-<script src="sounds.js?v=3.17"></script>
+<script src="sounds.js?v=3.18"></script>
 <script src="mug/mug.js?v=3.13"></script>
-<script src="game.js?v=3.36"></script>
+<script src="game.js?v=3.38"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

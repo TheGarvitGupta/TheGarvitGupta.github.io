@@ -45,6 +45,18 @@ body.invent{
   background-size:120px 120px, 120px 120px, 24px 24px, 24px 24px; background-position:0 0;
 }
 body.invent .bin-fill{stroke:#EEF5FF}
+/* The chapter of rivals is played at a games table, whatever the theme: green baize with a soft lamp-lit middle and a
+   fine weave, the box rimmed in brass, and Sam's corner of the table washed in her pink. */
+body.rivals{
+  --bg:#1D5A43; --ink:#0B241A; --text:#F4F1E4; --mut:#B7D3C2; --rim:#F4F1E4; --dot:rgba(244,241,228,.06);
+  --card:#22694F; --bin:#2A7A5C; --wash:rgba(244,241,228,.09); --win:#2E7D6E;
+  background-image:radial-gradient(ellipse 70% 55% at 50% 45%, rgba(255,236,170,.13), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255,143,203,.12), transparent 75%),
+    repeating-linear-gradient(45deg, rgba(0,0,0,.05) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgba(255,255,255,.025) 0 1px, transparent 1px 4px);
+  background-size:auto;
+}
+body.rivals .bin-fill{stroke:#E8C36A}
+body.rivals .squares{stroke:#F4F1E4; stroke-opacity:.35}
 /* In the chapter of powers a strip between the level's name and the board is kept for the power in hand:
    its face, its name and one line, on a gold card. The strip is always there, so nothing moves when the
    card comes and goes, and it covers neither the name nor the board. Empty, it says what it is for. */
@@ -286,6 +298,8 @@ body:has(#stage.eyes) .sky i{opacity:0}   /* and none of them shows round the ta
 .piece.fresh .pop{animation:fadein .4s both; animation-delay:var(--d)}
 .piece.held{cursor:grabbing}
 .piece.sel .fill{stroke-width:calc(4px * var(--u))}
+.squares{fill:none; stroke:var(--rim); stroke-opacity:.28; stroke-width:calc(1.5px * var(--u)); stroke-dasharray:calc(4px * var(--u)) calc(4px * var(--u)); pointer-events:none}   /* Rival: the box's squares */
+body.duel #handle,body.duel .dock .spin .rb,body.duel .dock .spin .angle{display:none} body.duel .dock .tip{opacity:1}   /* a duel: nothing turns, so no handle and no angle buttons, only the line of what to do */
 .piece.twin .fill{stroke-width:calc(4px * var(--u))}   /* the entangled twin of the one in hand, and the thread between the two */
 .fence{stroke:var(--rim); stroke-width:calc(2px * var(--u)); stroke-dasharray:calc(6px * var(--u)) calc(8px * var(--u)); stroke-linecap:round; pointer-events:none; opacity:.4}   /* the line down a board that entangled shapes may not cross */
 .thread{stroke:var(--rim); stroke-width:calc(2.5px * var(--u)); stroke-dasharray:calc(1px * var(--u)) calc(7px * var(--u)); stroke-linecap:round; fill:none; pointer-events:none; opacity:.75}
@@ -409,7 +423,7 @@ body.powers .dock.idle .tip{opacity:0}   /* among the powers the strip over the 
 .tick-row{display:flex; align-items:center; justify-content:center; gap:9px; margin:14px 0 2px; font-size:15.5px; font-weight:500; cursor:pointer}
 .tick-row input{width:20px; height:20px; margin:0; accent-color:var(--coral); cursor:pointer}
 .btn.plain.star{background:var(--sun); color:#2B2140; font-weight:700; font-size:18px; padding:11px 22px 12px}
-.btn.plain svg{width:17px; height:17px; margin:-3px 6px 0 -2px; vertical-align:middle; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round}
+#lose-again svg,.btn.plain svg{width:17px; height:17px; margin:-3px 6px 0 -2px; vertical-align:middle; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round}
 .how{list-style:none; margin:10px 0 2px; padding:0; text-align:left}
 .how li{display:flex; align-items:center; gap:10px; padding:5px 0; font-size:14.5px; line-height:1.3}
 .how li > span{flex:none; width:32px; height:32px; display:grid; place-items:center; font-weight:700; font-size:15px; color:#2B2140;
@@ -494,7 +508,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 @keyframes stamp{from{transform:translateY(-22px); opacity:0}}
 
 /* three buttons that take the list of levels straight to a chapter; they stay at the top as it scrolls */
-.jump{position:sticky; top:0; z-index:3; display:flex; gap:6px; margin:12px -6px 0; padding:8px 6px; background:var(--card)}
+.jump{position:sticky; top:0; z-index:3; display:grid; grid-template-columns:repeat(6, 1fr); gap:6px; margin:12px -6px 0; padding:8px 6px; background:var(--card)}
 .jump button{flex:1; min-width:0; padding:6px 4px 7px; font-weight:600; font-size:13.5px; line-height:1.15; color:var(--text); background:var(--wash);
   border:var(--bw) solid var(--ink); border-radius:13px; transition:transform .12s var(--pop)}
 .jump button:hover{transform:translateY(-2px)} .jump button:active{transform:translateY(1px)}
@@ -577,7 +591,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   .dock{gap:6px} .spin{gap:5px} .dock .rb{min-width:44px; padding:0 5px; font-size:14.5px} .angle{padding:0 9px 0 4px} .angle input{width:44px}
   .dock .tip{font-size:14px}
   .grid{gap:8px} .lv{border-radius:13px; font-size:15px}
-  .card{padding:20px 16px 18px} .jump{gap:4px} .jump button{font-size:11.5px; padding:6px 1px 7px} .jump small{font-size:10.5px}   /* five chapters across a phone */
+  .card{padding:20px 16px 18px} .jump{gap:4px; grid-template-columns:repeat(3, 1fr)} .jump button{font-size:12.5px; padding:5px 2px 6px} .jump small{font-size:10.5px}   /* six chapters on a phone: two rows of three */
 }
 /* six buttons and the name do not fit side by side on a phone: the name gives way, the face stays */
 @media (max-width:460px){ .word{display:none} }
@@ -738,3 +752,51 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 .scale .bob{fill:var(--sun); stroke:var(--ink); stroke-width:calc(2.5px * var(--u))}
 .scale .bob.even,.scale .say.even{fill:var(--mint)}
 .scale .say{font-family:var(--f); font-size:0.26px; font-weight:600; fill:var(--text)}
+
+/* Rival: the queues' names, the two shapes up next, and Sam's moods (after .piece.good, which they override) */
+.piece.next .fill{stroke:#fff; stroke-width:calc(3px * var(--u)); filter:drop-shadow(0 0 calc(6px * var(--u)) rgba(255,255,255,.75))}
+.piece.smug .m-good{visibility:visible} .piece.smug .m-idle,.piece.smug .w-idle{visibility:hidden}
+.piece.smug .face{animation:bounce .45s ease-in-out infinite alternate}
+.piece.sulk .eye,.piece.sulk .shut{visibility:hidden} .piece.sulk .wince{visibility:visible}
+.piece.sulk .m-bad{visibility:visible; fill:var(--face)} .piece.sulk .m-idle,.piece.sulk .w-idle,.piece.sulk .m-good,.piece.sulk .w-good{visibility:hidden}
+/* Rival: each side's tray, its name on a pill on the top edge; lit (white rim, the pill in the side's colour) when that
+   side is to play or has won. The meter in the corner has nothing to count. */
+body.rivals #pips{display:none}
+.tray{pointer-events:none}
+.tray .panel{fill:rgba(0,0,0,.12); stroke:rgba(255,255,255,.14); stroke-width:calc(1.5px * var(--u)); transition:fill .2s, stroke .2s}
+.tray .pill .bg{fill:#2C5E4A; stroke:rgba(255,255,255,.14); stroke-width:calc(1.5px * var(--u))}
+.tray text{font-size:calc(13px * var(--u)); font-weight:700; letter-spacing:.03em; fill:var(--mut)}
+.tray.go .panel,.tray.won .panel{fill:rgba(255,255,255,.07); stroke:#fff; stroke-width:calc(2.5px * var(--u))}
+.tray.you.go .pill .bg,.tray.you.won .pill .bg{fill:var(--mint); stroke:#fff} .tray.you.go text,.tray.you.won text{fill:#14353A}
+.tray.sam.go .pill .bg,.tray.sam.won .pill .bg{fill:var(--pink); stroke:#fff} .tray.sam.go text,.tray.sam.won text{fill:#2B2140}
+.tray .dots{animation:think 1s ease-in-out infinite alternate}
+@keyframes think{from{opacity:.25} to{opacity:1}}
+.order{pointer-events:none} .order text{font-size:.21px; font-weight:700; fill:var(--face); opacity:.6}   /* Rival: a shape's place in its queue, quietly */
+/* Rival, lost: the box shudders and blushes red, and the sheet has Packman on top, bobbing smugly */
+#bin.lost{animation:shudder .5s ease-in-out both} #bin.lost .bin-fill{fill:#5B2B35; transition:fill .4s}
+@keyframes shudder{0%,100%{transform:none} 15%{transform:translateX(-.08px)} 35%{transform:translateX(.07px)} 55%{transform:translateX(-.05px)} 75%{transform:translateX(.03px)}}
+#bin{transform-box:fill-box}
+.lose-face{display:flex; justify-content:center; margin:-4px 0 4px} .lose-face svg{width:64px; height:64px}
+.sheet.open .lose-face svg{animation:smug 1.1s ease-in-out .2s infinite alternate}
+@keyframes smug{from{transform:rotate(-8deg) translateY(0)} to{transform:rotate(8deg) translateY(-4px)}}
+#lose-title{font-size:40px; color:var(--pink); -webkit-text-stroke:2.5px var(--ink); paint-order:stroke fill}
+.sheet.open #lose-title{animation:stamp .6s var(--pop) .1s both}
+@media (max-width:460px){ #lose-title{font-size:30px} }
+@media (prefers-reduced-motion:reduce){ #bin.lost,.sheet.open .lose-face svg{animation:none} }
+/* Rival: the shape you play now glows and bobs; shapes still waiting their turn sit back, dimmed */
+.piece.go .fill{filter:drop-shadow(0 0 calc(12px * var(--u)) rgba(255,255,255,.95)) drop-shadow(0 0 calc(4px * var(--u)) rgba(255,255,255,.9))}
+.piece.go:not(.held) .pop{animation:nudge 1.1s ease-in-out infinite alternate}
+@keyframes nudge{from{transform:translateY(0)} to{transform:translateY(-.07px)}}
+.piece.wait .body{opacity:.45; transition:opacity .25s}
+@media (prefers-reduced-motion:reduce){ .piece.go:not(.held) .pop{animation:none} }
+/* Rival: a rock on a square of the box, that nothing can go on */
+.rock{fill:#6E7B72; stroke:#3F4A43; stroke-width:calc(2px * var(--u)); filter:drop-shadow(0 calc(2px * var(--u)) 0 rgba(0,0,0,.25))}
+/* a level not out yet: under it, the day it opens */
+.lv .when{position:absolute; left:0; right:0; bottom:-17px; font-size:10.5px; font-weight:600; color:var(--mut); text-align:center}
+/* A level not out yet: everything on the board dimmed and still, and over it a banner with the day it opens and how long to go */
+.soon{position:absolute; z-index:5; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; align-items:center; gap:12px; padding:12px 22px 13px 16px;
+  color:#2B2140; background:var(--sun); border:var(--bw) solid var(--ink); border-radius:18px; box-shadow:0 8px 0 rgba(0,0,0,.18); pointer-events:none; white-space:nowrap; animation:note .35s var(--pop) both}
+.soon svg{width:30px; height:30px; flex:none; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round}
+.soon b{display:block; font-size:19px; line-height:1.15} .soon small{display:block; font-size:13.5px; font-weight:500; opacity:.75}
+body.early #board{opacity:.45; filter:saturate(.6)}
+body.early .dock .tip{opacity:0}

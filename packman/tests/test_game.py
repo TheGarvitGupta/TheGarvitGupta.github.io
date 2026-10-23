@@ -33,7 +33,7 @@ async def every_level_opens(t, width, height):
             var c = T.screen(p.x, p.y), slack = one / 3 + 1;
             if (c[0] < 0 || c[1] < 0 || c[0] > W || c[1] > Hh) out.push('shape ' + i + ' is dealt with its middle off the screen');
             else if (r.left < -slack || r.top < -slack || r.right > W + slack || r.bottom > Hh + slack) out.push('shape ' + i + ' hangs off the screen: ' + [r.left, r.top, r.right, r.bottom].map(Math.round));
-            if (PackmanGeom.zone(PackmanGeom.verts(p), C) !== 'out') out.push('shape ' + i + ' is dealt into the box');
+            if (!p.nailed && PackmanGeom.zone(PackmanGeom.verts(p), C) !== 'out') out.push('shape ' + i + ' is dealt into the box');   // (but Packman may open a duel)
             if (p.half && (p.x - lv.divide) * p.half < 0) out.push('entangled shape ' + i + ' is dealt on the wrong side of the line');
           });
           var bin = document.getElementById('bin').getBoundingClientRect();
