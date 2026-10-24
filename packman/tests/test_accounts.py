@@ -44,6 +44,7 @@ def board(taken=False, back=None):
         if path.endswith('/player'): return {'error': 'taken'} if taken and 'claimed' not in request.url else {'ok': True, 'fresh': True}
         if path.endswith('/recover'): return {'ok': True}
         if path.endswith('/signin'): return back or {'error': 'link'}
+        if request.method == 'DELETE': return {'gone': 3}
         return {'top': [], 'of': 0, 'levels': 50}
     return answer
 
@@ -94,6 +95,9 @@ async def test_a_link_opens_the_game_from_the_email(t):
     wins = posts(page, '/api/packman')
     assert any(b['level'] == 'Flip' and b['pid'] == s['pid'] and b['t'] == 3 for b in wins), 'and not sent to the board under the game\'s id'
     assert 'signin' not in page.url and await sheet(page) != 'm-name'
+    gone = [u for m, u, b in page.asked if m == 'DELETE']
+    assert len(gone) == 1 and gone[0].endswith('?pid=test-0000-0000-0000-0000'), 'this device\'s own line was not taken off the board: %s' % gone
+    assert await page.evaluate('localStorage.getItem("packman.gone")') == '[]', 'and it is still waiting to go'
     assert not page.errors, page.errors
 
 async def test_a_used_link_says_so_and_offers_a_new_one(t):

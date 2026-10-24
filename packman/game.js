@@ -3060,7 +3060,12 @@
       if (!b || a.m < b.m || (a.m === b.m && a.t < b.t)) { got.done[k] = a; if (got.sent) delete got.sent[k]; }
     });
     wiped = true;   // (nothing of this one is written back over it)
-    try { localStorage.setItem(STORE, JSON.stringify(got)); } catch (e) {}
+    try {
+      localStorage.setItem(STORE, JSON.stringify(got));
+      // and this device's own line comes off the board, as a reset with that box ticked does: what it packed goes up again
+      // under the game's id (above), so the player is on the board once
+      if (save.pid !== d.pid && !LOCAL) localStorage.setItem(GONE, JSON.stringify(gone().concat(save.pid)));
+    } catch (e) {}
     location.replace(location.pathname);
   }
   function signIn(then) {
