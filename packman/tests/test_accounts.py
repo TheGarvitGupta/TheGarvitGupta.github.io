@@ -105,11 +105,11 @@ async def test_a_game_got_back_opens_on_its_next_level(t):
     got = {'pid': 'game-1111-2222-3333-4444', 'name': 'Ada', 'email': 'ada@example.com',
            'save': {'v': 3, 'done': {'Rival 1': {'t': 90, 'm': 6}}, 'sent': {'Rival 1': 1}, 'last': 'Rival 1', 'seen': True, 'name': 'Ada', 'email': 'ada@example.com'}}
     page = await t.page('/packman/?signin=' + TOKEN, live=True, board=board(back=got), save=saved('Home', email=None, name='Bo'))
-    await tick(page, 3000); page = await player(page)
+    await tick(page, 3000); await page.wait_for_load_state(); await tick(page, 1000); await page.wait_for_function('document.getElementById("lv-name").textContent'); page = await player(page)
     assert (await page.evaluate('T.state()'))['level'] == 'Square Off'
     got['save']['done'] = {}; got['save']['last'] = 'Flip'
     page = await t.page('/packman/?signin=' + TOKEN, live=True, board=board(back=got), save=saved('Home', email=None, name='Bo', done={'Home': {'t': 5, 'm': 4}}))
-    await tick(page, 3000); page = await player(page)
+    await tick(page, 3000); await page.wait_for_load_state(); await tick(page, 1000); await page.wait_for_function('document.getElementById("lv-name").textContent'); page = await player(page)
     s = await page.evaluate('T.state()')
     assert s['level'] != 'Home' and s['level'] not in s['save']['done'], s['level']   # (the first of the seventeen not packed here)
     assert not page.errors, page.errors
@@ -119,7 +119,7 @@ async def test_delete_everything_deletes_it_on_the_server_too(t):
     await page.click('#reset-ask'); await tick(page, 500)
     assert await sheet(page) == 'm-reset' and 'every device' in await page.inner_text('#m-reset')
     assert not await page.query_selector('#reset-board'), 'there is still a choice to keep some of it'
-    await page.click('#reset-go'); await page.wait_for_load_state(); await tick(page, 3000); page = await player(page)
+    await page.click('#reset-go'); await page.wait_for_url('**reset=**'); await page.wait_for_load_state(); await tick(page, 3000); page = await player(page)
     s = await page.evaluate('T.state().save')
     assert not s.get('done') and s.get('pid') != 'test-0000-0000-0000-0000', s
     gone = [u for m, u, b in page.asked if m == 'DELETE']

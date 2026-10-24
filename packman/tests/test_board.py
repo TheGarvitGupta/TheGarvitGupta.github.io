@@ -239,7 +239,7 @@ async def test_whose_game_it_is_the_shapes_and_reset_are_at_the_foot_of_the_page
     for size in ({'width': 1280, 'height': 800}, {'width': 393, 'height': 852}, {'width': 360, 'height': 640}, {'width': 820, 'height': 1100}, {'width': 844, 'height': 390}):
         page = await player(await t.page(**size))
         r = await page.evaluate(LOOK)
-        assert r['says'] == ['Game by Garvit Gupta', 'Meet the shapes', 'Reset'] and r['line'] < 4 and not r['hit'], '%s: %s' % (size, r)
+        assert r['says'] == ['Game by Garvit Gupta', 'Meet the shapes', 'Delete game'] and r['line'] < 4 and not r['hit'], '%s: %s' % (size, r)
         assert abs(r['below'] - r['toolsTop']) < 4, '%s: they are %.0f from the bottom, and the buttons %.0f from the top' % (size, r['below'], r['toolsTop'])
         if size['width'] > 1040 or size['height'] < 480: assert abs(r['right'] - r['toolsRight']) < 2, '%s: %s' % (size, r)
         else: assert abs(r['left'] - r['right']) < 2, '%s: not in the middle: %s' % (size, r)

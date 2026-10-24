@@ -3336,7 +3336,7 @@
       b.addEventListener('click', function () { closeSheet($('m-levels')); startLevel(n); });
       grid.appendChild(b);
     });
-    $('levels-sub').textContent = (count ? count + ' of ' + LEVELS.length + ' packed. ' : '') + 'Start any chapter. Its levels open one by one.';
+    $('levels-sub').textContent = (count ? count + ' of ' + LEVELS.length + ' packed. ' : '') + 'Start any chapter; its levels unlock in order.';
     medals();
     if (count && !offRecord()) ask(SCORES + '?pid=' + save.pid).then(keepPlaces).catch(function () {});   // (and as they stand now)
     // a button for each chapter, saying how much of it is packed; it brings that chapter to the top of the list
