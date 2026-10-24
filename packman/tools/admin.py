@@ -201,7 +201,7 @@ dialog button { margin-top: 14px; font: inherit; padding: 6px 12px; border-radiu
   <div class="tiles" id="p-tiles"></div>
   <div class="bar">
     <input id="pq" type="search" placeholder="Find a player or an email" aria-label="Find a player or an email">
-    <label><input type="checkbox" id="p-noemail"> Only players with no email yet</label>
+    <select id="p-show" aria-label="Show"><option value="">Everyone</option><option value="subscribed">Subscribed</option><option value="unsubscribed">Unsubscribed</option><option value="none">No email yet</option></select>
   </div>
   <div class="wrap list" id="p-wrap"><div class="loading">Reading the players…</div></div>
 </section>
@@ -368,7 +368,7 @@ Start is when that packing began (when it was sent, less how long it took). Trie
     var sent = {};
     raw.mails.forEach(function (m) { if (m.pid) sent[m.pid] = (sent[m.pid] || 0) + 1; });
     return Object.keys(by).map(function (k) {
-      var p = by[k]; p.mails = sent[k] || 0;
+      var p = by[k]; p.mails = sent[k] || 0; p.notify = p.email ? (p.quiet ? 'unsubscribed' : 'subscribed') : '';
       p.joined = Math.min(p.made || Infinity, p.first); if (!isFinite(p.joined)) p.joined = null;
       p.active = Math.max(p.seen || 0, p.last || 0) || null;
       p.levels = Math.max(p.packed || 0, p.board || 0);
@@ -389,35 +389,36 @@ Start is when that packing began (when it was sent, less how long it took). Trie
       ['Players', all.length, withEmail.length + ' with an email'],
       ['New this week', count(function (p) { return p.joined && now - p.joined < 7 * day; }), count(function (p) { return p.joined && now - p.joined < day; }) + ' today'],
       ['Active today', count(function (p) { return p.active && now - p.active < day; }), count(function (p) { return p.active && now - p.active < 7 * day; }) + ' this week'],
-      ['No email yet', all.length - withEmail.length, 'asked on their next visit'],
+      ['Subscribed', count(function (p) { return p.email && !p.quiet; }), count(function (p) { return p.quiet; }) + ' unsubscribed · ' + (all.length - withEmail.length) + ' with no email yet'],
       ['Levels packed', all.reduce(function (x, p) { return x + p.levels; }, 0), (all.length ? (all.reduce(function (x, p) { return x + p.levels; }, 0) / all.length).toFixed(1) : 0) + ' a player'],
       ['Devices', kinds.length ? kinds[0].split(' ')[1] : 0, kinds.join(' · ') || 'from players with an email'],
       ['Countries', tally(withEmail, 'country').length, tally(withEmail, 'country').slice(0, 4).join(' · ')],
-      ['Emails sent', raw.mails.filter(function (m) { return m.ok; }).length, raw.mails.filter(function (m) { return !m.ok; }).length + ' failed · ' + count(function (p) { return p.quiet; }) + ' turned off'],
+      ['Emails sent', raw.mails.filter(function (m) { return m.ok; }).length, raw.mails.filter(function (m) { return !m.ok; }).length + ' failed'],
     ];
     $('p-tiles').innerHTML = tiles.map(function (t) { return '<div class="tile"><span>' + esc(t[0]) + '</span><b>' + esc(t[1]) + '</b><small>' + esc(t[2]) + '</small></div>'; }).join('');
-    var q = $('pq').value.trim().toLowerCase(), only = $('p-noemail').checked;
-    var rows = all.filter(function (p) { return (!q || (p.name + ' ' + (p.email || '') + ' ' + p.pid).toLowerCase().indexOf(q) >= 0) && (!only || !p.email); });
+    var q = $('pq').value.trim().toLowerCase(), only = $('p-show').value;
+    var rows = all.filter(function (p) { return (!q || (p.name + ' ' + (p.email || '') + ' ' + p.pid).toLowerCase().indexOf(q) >= 0) && (!only || (only === 'none' ? !p.email : p.notify === only)); });
     rows.sort(function (a, b) {
       var x = a[pSort], y = b[pSort];
       if (x == null || x === '') return 1; if (y == null || y === '') return -1;
       var d = typeof x === 'string' ? x.localeCompare(y) : x - y;
       return pDesc ? -d : d;
     });
-    var cols = [['name', 'Name'], ['email', 'Email'], ['joined', 'Joined'], ['active', 'Last seen'], ['levels', 'Levels', 1], ['boardTime', 'Time on the board', 1],
+    var cols = [['name', 'Name'], ['email', 'Email'], ['notify', 'Notifications'], ['joined', 'Joined'], ['active', 'Last seen'], ['levels', 'Levels', 1], ['boardTime', 'Time on the board', 1],
                 ['playing', 'On level'], ['device', 'Device'], ['country', 'Country'], ['mails', 'Emails', 1], ['pid', 'Id']];
     var h = '<table class="list"><thead><tr>' + cols.map(function (c) { return '<th data-sort="' + c[0] + '"' + (c[2] ? ' class="num"' : '') + '>' + c[1] + (pSort === c[0] ? (pDesc ? ' ↓' : ' ↑') : '') + '</th>'; }).join('') + '</tr></thead><tbody>';
     rows.forEach(function (p) {
       h += '<tr><td><b>' + esc(p.name || '') + '</b></td><td>' + (p.email ? esc(p.email) : '<span class="dim">none yet</span>') + '</td>' +
+        '<td>' + (!p.email ? '<span class="dim">·</span>' : p.quiet ? '<span class="bad">Unsubscribed</span>' : '<span class="ok">Subscribed</span>') + '</td>' +
         '<td>' + (p.joined ? stamp(p.joined) : '') + '</td><td>' + (p.active ? ago(p.active) : '') + '</td>' +
         '<td class="num">' + p.levels + '</td><td class="num">' + (p.boardTime ? dur(p.boardTime) : '') + '</td>' +
         '<td>' + esc(p.playing || '') + '</td><td>' + esc(p.device || '') + '</td><td>' + esc(p.country || '') + '</td>' +
-        '<td class="num">' + (p.mails || '') + (p.quiet ? ' <span class="dim" title="Turned off the emails about the board and new levels">· off</span>' : '') + '</td><td class="dim">' + esc(p.pid.slice(0, 8)) + '</td></tr>';
+        '<td class="num">' + (p.mails || '') + '</td><td class="dim">' + esc(p.pid.slice(0, 8)) + '</td></tr>';
     });
     $('p-wrap').innerHTML = h + '</tbody></table>' + (rows.length ? '' : '<div class="loading">Nobody here.</div>');
     $('p-wrap').querySelector('thead').onclick = function (e) {
       var th = e.target.closest('th'); if (!th) return;
-      if (pSort === th.dataset.sort) pDesc = !pDesc; else { pSort = th.dataset.sort; pDesc = !/^(name|email|playing|device|country|pid)$/.test(pSort); }
+      if (pSort === th.dataset.sort) pDesc = !pDesc; else { pSort = th.dataset.sort; pDesc = !/^(name|email|notify|playing|device|country|pid)$/.test(pSort); }
       renderPlayers();
     };
     $('n-players').textContent = all.length;
@@ -462,7 +463,7 @@ Start is when that packing began (when it was sent, less how long it took). Trie
     $('m-wrap').innerHTML = h + '</tbody></table>' + (rows.length ? '' : '<div class="loading">None yet.</div>');
     $('n-mails').textContent = raw.mails.length;
   }
-  $('pq').oninput = renderPlayers; $('p-noemail').onchange = renderPlayers;
+  $('pq').oninput = renderPlayers; $('p-show').onchange = renderPlayers;
   $('mq').oninput = renderMails; $('m-kind').onchange = renderMails; $('m-failed').onchange = renderMails;
   function tab(name) {
     document.querySelectorAll('nav.tabs button').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tab === name); });
