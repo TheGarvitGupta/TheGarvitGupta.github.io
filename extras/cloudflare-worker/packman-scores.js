@@ -1303,12 +1303,12 @@ var PackmanMail = (function () {
       row('<p style="margin:0;font:13px/1.55 ' + FONT + ';color:' + MUT + '">' + (o.foot ? o.foot + '<br>' : '') + 'Or paste this into your browser:<br>' +
         '<a href="' + esc(o.link) + '" style="color:' + MUT + ';word-break:break-all">' + esc(o.link) + '</a></p>', '6px 28px 24px') +
       '</table>' +
-      (d.quiet ? '<p style="margin:16px 0 0;font:12px/1.5 ' + FONT + ';color:' + MUT + '">You get these because you play Packman. <a href="' + esc(d.quiet) +
-        '" style="color:' + MUT + '">No more emails like this</a></p>' : '') +
+      (d.quiet ? '<p style="margin:16px 0 0;font:12px/1.5 ' + FONT + ';color:' + MUT + '">You’re getting this because you play Packman. <a href="' + esc(d.quiet) +
+        '" style="color:' + MUT + '">Unsubscribe</a></p>' : '') +
       '</td></tr></table></body></html>';
   }
   function text(lines, link, foot, quiet) {
-    return lines.join('\n\n') + '\n\n' + link + (foot ? '\n\n' + foot : '') + (quiet ? '\n\n--\nNo more emails like this: ' + quiet : '');
+    return lines.join('\n\n') + '\n\n' + link + (foot ? '\n\n' + foot : '') + (quiet ? '\n\n--\nUnsubscribe: ' + quiet : '');
   }
   var plain = function (s) { return s.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' '); };
   var KINDS = {
@@ -1317,8 +1317,8 @@ var PackmanMail = (function () {
       when: 'Sent once, when a player first gives their email (or changes it). Its link opens their game on any device.',
       sample: { name: 'Ada', link: SITE + '?signin=0123456789abcdef0123456789abcdef0123456789abcdef' },
       make: function (d) {
-        var lines = ['Hi ' + esc(d.name) + ',', 'Your game is saved under this email address. If you ever play on another phone or computer, open the link below there and everything you’ve packed comes with you.',
-          'There’s no password. Whenever you need a new link, tap <b>Get your game back</b> in Packman.'];
+        var lines = ['Hi ' + esc(d.name) + ',', 'Your game is saved to this email. To play on another phone or computer, open the link below there and your progress comes with you.',
+          'No password needed. Need a new link? Tap <b>Get your game back</b> in Packman.'];
         return {
           subject: 'Your Packman game is saved',
           html: page(d, { preview: 'Open it on any device with this link.', title: 'Your game is saved', lines: lines, button: 'Open my game', link: d.link,
@@ -1332,8 +1332,8 @@ var PackmanMail = (function () {
       when: 'Sent when someone asks for their game on the Get your game back sheet. Its link works once, for an hour.',
       sample: { name: 'Ada', link: SITE + '?signin=0123456789abcdef0123456789abcdef0123456789abcdef' },
       make: function (d) {
-        var lines = ['Hi ' + esc(d.name) + ',', 'Here’s the link you asked for. Open it on the device you want to play on, and your game will be there.'];
-        var foot = 'It works once, for the next hour. If you didn’t ask for it, you can ignore this email.';
+        var lines = ['Hi ' + esc(d.name) + ',', 'Open this link on the device you want to play on.'];
+        var foot = 'It works once, within an hour. Didn’t ask for it? Ignore this email.';
         return {
           subject: 'Your link to Packman',
           html: page(d, { preview: 'Open it on the device you want to play on.', title: 'Here’s your game', lines: lines, button: 'Get my game back', link: d.link, foot: foot }),
@@ -1822,13 +1822,13 @@ async function quiet(db, request, url) {
 	const k = url.searchParams.get("k") || "", on = url.searchParams.get("on") === "1";
 	const p = /^[0-9a-f]{32}$/.test(k) ? await db.prepare("SELECT name, quiet FROM players WHERE key = ?").bind(k).first() : null;
 	let say, button = "", q = p && p.quiet;
-	if (!p) say = "That link isn’t right. Copy the whole of it from the email.";
+	if (!p) say = "This link is incomplete. Copy the full link from the email.";
 	else if (request.method === "POST") {
 		q = on ? 0 : 1;
 		await db.prepare("UPDATE players SET quiet = ? WHERE key = ?").bind(q, k).run();
-		say = q ? "Done: no more emails about the leaderboard or new levels." : "They’re back on: you’ll hear when you’re passed, and when a new level opens.";
-	} else say = q ? "Emails about the leaderboard and new levels are off." : "Packman emails you when someone passes you on the leaderboard, and when a new level opens.";
-	if (p) button = '<form method="post" action="?k=' + k + (q ? "&on=1" : "") + '"><button>' + (q ? "Turn them back on" : "Stop these emails") + "</button></form>";
+		say = q ? "Done. You won’t get leaderboard or new-level emails." : "You’re subscribed again. We’ll email you when you’re passed or a new level opens.";
+	} else say = q ? "You’re unsubscribed from leaderboard and new-level emails." : "Packman emails you when someone passes you on the leaderboard or a new level opens.";
+	if (p) button = '<form method="post" action="?k=' + k + (q ? "&on=1" : "") + '"><button>' + (q ? "Resubscribe" : "Unsubscribe") + "</button></form>";
 	const html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Packman emails</title><style>' +
 		"body{margin:0;min-height:100vh;display:grid;place-items:center;background:#FFF6E5;font:17px/1.5 Nunito,Avenir Next,Segoe UI,Arial,sans-serif;color:#2B2140}" +
 		"main{max-width:420px;margin:24px;padding:28px;background:#fff;border:3px solid #2B2140;border-radius:24px;text-align:center}h1{margin:0 0 8px;font-size:24px}" +

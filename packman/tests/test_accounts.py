@@ -117,7 +117,7 @@ async def test_a_game_got_back_opens_on_its_next_level(t):
 async def test_a_used_link_says_so_and_offers_a_new_one(t):
     page = await t.page('/packman/?signin=' + TOKEN, live=True, board=board(), save=saved('Home'))
     await tick(page, 3000); page = await player(page)
-    assert await sheet(page) == 'm-recover' and 'run out' in await page.inner_text('#recover-h')
+    assert await sheet(page) == 'm-recover' and 'expired' in await page.inner_text('#recover-h')
     assert await page.input_value('#recover-email') == 'packer@example.com'
     await page.click('#recover-back'); await tick(page, 600)
     assert await sheet(page) is None and (await page.evaluate('T.state().save'))['pid'] == 'test-0000-0000-0000-0000'
@@ -159,8 +159,8 @@ async def test_every_email_has_its_pictures_a_way_in_and_plain_text(t):
         assert 'logo.png' in m['html'], what
         assert m['subject'] and len(m['subject']) < 80 and m['text'].strip(), what
         assert re.search(r'<a href="https://www\.garvitgupta\.com/packman/[^"]*"[^>]*>(Open my game|Get my game back|Play now)</a>', m['html']), '%s: no button into the game' % what
-        if m['kind'] in ('passed', 'level'): assert 'No more emails like this' in m['html'] and 'No more emails like this' in m['text'], '%s: no way to turn it off' % what
-        else: assert 'No more emails' not in m['html'], '%s: a way to turn off an email that is not a notification' % what
+        if m['kind'] in ('passed', 'level'): assert 'Unsubscribe' in m['html'] and 'Unsubscribe: ' in m['text'], '%s: no way to turn it off' % what
+        else: assert 'Unsubscribe' not in m['html'], '%s: a way to turn off an email that is not a notification' % what
         assert '<script' not in m['html'].lower() and 'undefined' not in m['html'] and 'undefined' not in m['text'], what
     levels = [m for m in made if m['kind'] == 'level' and m['title'] != 'A new level is open']
     assert len(levels) == 7 and all('Play now' in m['html'] and '?play=' in m['html'] and 'rival-' in m['html'] for m in levels)

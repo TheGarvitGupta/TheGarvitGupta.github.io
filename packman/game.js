@@ -2864,7 +2864,7 @@
     $('spots').textContent = left;
     $('hint-wait').hidden = (!!left && !none) || won;
     if (!left) $('hint-wait').textContent = 'Three more at midnight, in ' + wait(midnight() - Date.now()) + '.';
-    else if (none) $('hint-wait').textContent = early ? 'This level opens ' + opensOn(lv) + '.' : lv.rival ? (thinking ? 'Wait for Packman to play.' : 'No move wins from here: Packman has you. Start again with ↺.') : 'The only spots left would give the chameleon away.';
+    else if (none) $('hint-wait').textContent = early ? 'This level opens ' + opensOn(lv) + '.' : lv.rival ? (thinking ? 'Wait for Packman to play.' : 'Packman has you: no move wins from here. Tap ↺ to restart.') : 'The only spots left would give the chameleon away.';
   }
 
   function showHint() {
@@ -3049,7 +3049,7 @@
   }
   function askBack(email, now) {
     $('recover-h').textContent = 'Get your game back';
-    $('recover-sub').hidden = false; $('recover-sub').textContent = 'Enter the email you play with. We\u2019ll send you a link: open it on this device, and your game will be here.';
+    $('recover-sub').hidden = false; $('recover-sub').textContent = 'We\u2019ll email you a link. Open it on this device to bring your game here.';
     $('recover-back').textContent = 'Back';
     $('recover-email').value = email || ''; backSays('', true);
     openSheet($('m-recover'));
@@ -3058,15 +3058,15 @@
   function sendBack() {
     var email = $('recover-email').value.trim().toLowerCase(), go = $('recover-go');
     if (!EMAIL.test(email)) return wanted($('recover-email'));
-    if (LOCAL) return backSays('Emails are not sent from a copy on this machine.');
+    if (LOCAL) return backSays('No emails are sent from a local copy.');
     go.disabled = true;
     ask(SCORES + '/recover', { email: email }).then(function (d) {
       go.disabled = false;
-      if (d.error === 'slow down') return backSays('That\u2019s a lot of links for one hour. Use the newest one already sent, or try again in an hour.', true);
-      if (d.error === 'send') return backSays('The email couldn\u2019t be sent just now. Try again in a minute.', true);
-      if (!d.ok) return backSays('That didn\u2019t work. Check the email and try again.', true);
-      backSays('If ' + email + ' has a game, a link to it is on its way. Open it on this device: it works once, for an hour. Nothing yet? Look in your spam folder.');
-    }, function () { go.disabled = false; backSays('Couldn\u2019t reach the server. Check your connection and try again.', true); });
+      if (d.error === 'slow down') return backSays('Too many links this hour. Use the latest one, or try again later.', true);
+      if (d.error === 'send') return backSays('Couldn\u2019t send the email. Try again in a minute.', true);
+      if (!d.ok) return backSays('Check the email and try again.', true);
+      backSays('If ' + email + ' has a game, a link is on its way. Open it on this device within the hour. Not there? Check spam.');
+    }, function () { go.disabled = false; backSays('Couldn\u2019t connect. Check your internet and try again.', true); });
   }
   $('recover-form').addEventListener('submit', function (e) { e.preventDefault(); sendBack(); });
   // The game from the link takes this one's place; anything this device packed that it has not, or packed better here,
@@ -3104,8 +3104,8 @@
       if (d.pid) return adopt(d);
       throw 0;
     }).catch(function () {
-      $('recover-h').textContent = 'That link has run out';
-      $('recover-sub').hidden = false; $('recover-sub').textContent = 'A link you asked for works once, for an hour. Send yourself a new one:';
+      $('recover-h').textContent = 'That link has expired';
+      $('recover-sub').hidden = false; $('recover-sub').textContent = 'Links work once, within an hour. Get a new one:';
       $('recover-email').value = save.email || ''; backSays('', true);
       $('recover-back').textContent = 'Not now';
       backThen = then;
@@ -3264,7 +3264,7 @@
       list.scrollTop = 0;
       note.textContent = standing(d);
     }).catch(function () {
-      list.textContent = ''; note.textContent = 'The leaderboard is not available right now.';
+      list.textContent = ''; note.textContent = 'The leaderboard isn’t available right now.';
     }).then(function () { list.classList.remove('wait'); });
     openSheet($('m-board'));
   }

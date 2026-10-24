@@ -101,7 +101,7 @@ let pm = mails('passed');
 ok(pm.length === 1 && to(pm[0]) === 'ada@example.com' && pm[0].subject === 'Bo just passed you in Packman', 'four levels to three: Ada hears Bo passed her');
 ok(/You’re 2nd of \d/.test(pm[0].text) && /passed\.gif/.test(pm[0].html) && /Play now/.test(pm[0].html), 'with her new place, the picture, and Play now');
 ok(pm[0].headers && /quiet\?k=[0-9a-f]{32}/.test(pm[0].headers['List-Unsubscribe']) && pm[0].headers['List-Unsubscribe-Post'], 'and a way to turn them off, in the headers too');
-const quietUrl = /No more emails like this: (\S+)/.exec(pm[0].text)[1];
+const quietUrl = /Unsubscribe: (\S+)/.exec(pm[0].text)[1];
 for (const l of LV.slice(3, 5)) await win(A, 'Ada', l);   // Ada back ahead: Bo is passed
 ok(mails('passed').length === 2 && to(mails('passed')[1]) === 'bo@example.com', 'Ada takes it back: Bo hears');
 await win(B, 'Bo', LV[4]); await win(B, 'Bo', LV[5]);
@@ -110,17 +110,17 @@ clock += 13 * 3600 * 1000;
 await win(A, 'Ada', LV[5], LV[5].pieces.length);   // (level with Bo again on everything but time)
 // Cy turns them off, then is passed: no email
 [s, d] = await call(quietUrl.replace('https://www.garvitgupta.com/api/packman', ''));
-ok(s === 200 && /Stop these emails/.test(d), 'the link opens a page with a button, and changes nothing by itself');
+ok(s === 200 && />Unsubscribe</.test(d), 'the link opens a page with a button, and changes nothing by itself');
 ok(sql.prepare("SELECT quiet FROM players WHERE pid = ?").get(A).quiet === 0, 'still on after only looking');
 [s, d] = await call(quietUrl.replace('https://www.garvitgupta.com/api/packman', ''), null, 'POST');
-ok(s === 200 && /no more emails/i.test(d) && sql.prepare("SELECT quiet FROM players WHERE pid = ?").get(A).quiet === 1, 'the button turns them off');
+ok(s === 200 && /won’t get/.test(d) && sql.prepare("SELECT quiet FROM players WHERE pid = ?").get(A).quiet === 1, 'the button turns them off');
 const before = mails('passed').length;
 clock += 13 * 3600 * 1000;   // (Bo was told of Ada a moment ago)
 for (const l of LV) await win(C, 'Cy', l, l.pieces.length);
 ok(!mails('passed').slice(before).some((m) => to(m) === 'ada@example.com'), 'Ada, turned off, is not told she was passed');
 ok(mails('passed').slice(before).some((m) => to(m) === 'bo@example.com' && /Cy just passed/.test(m.subject)), 'Bo is');
 [s, d] = await call(quietUrl.replace('https://www.garvitgupta.com/api/packman', '') + '&on=1', null, 'POST');
-ok(/back on/.test(d) && sql.prepare("SELECT quiet FROM players WHERE pid = ?").get(A).quiet === 0, 'and they can be turned back on');
+ok(/subscribed again/.test(d) && sql.prepare("SELECT quiet FROM players WHERE pid = ?").get(A).quiet === 0, 'and they can be turned back on');
 ok((await call('/quiet?k=' + '0'.repeat(32)))[0] === 404, 'a made-up key opens nothing');
 
 // ---- a new level is open ----

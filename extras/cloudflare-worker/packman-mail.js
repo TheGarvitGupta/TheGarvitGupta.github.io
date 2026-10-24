@@ -27,12 +27,12 @@ var PackmanMail = (function () {
       row('<p style="margin:0;font:13px/1.55 ' + FONT + ';color:' + MUT + '">' + (o.foot ? o.foot + '<br>' : '') + 'Or paste this into your browser:<br>' +
         '<a href="' + esc(o.link) + '" style="color:' + MUT + ';word-break:break-all">' + esc(o.link) + '</a></p>', '6px 28px 24px') +
       '</table>' +
-      (d.quiet ? '<p style="margin:16px 0 0;font:12px/1.5 ' + FONT + ';color:' + MUT + '">You get these because you play Packman. <a href="' + esc(d.quiet) +
-        '" style="color:' + MUT + '">No more emails like this</a></p>' : '') +
+      (d.quiet ? '<p style="margin:16px 0 0;font:12px/1.5 ' + FONT + ';color:' + MUT + '">You’re getting this because you play Packman. <a href="' + esc(d.quiet) +
+        '" style="color:' + MUT + '">Unsubscribe</a></p>' : '') +
       '</td></tr></table></body></html>';
   }
   function text(lines, link, foot, quiet) {
-    return lines.join('\n\n') + '\n\n' + link + (foot ? '\n\n' + foot : '') + (quiet ? '\n\n--\nNo more emails like this: ' + quiet : '');
+    return lines.join('\n\n') + '\n\n' + link + (foot ? '\n\n' + foot : '') + (quiet ? '\n\n--\nUnsubscribe: ' + quiet : '');
   }
   var plain = function (s) { return s.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' '); };
   var KINDS = {
@@ -41,8 +41,8 @@ var PackmanMail = (function () {
       when: 'Sent once, when a player first gives their email (or changes it). Its link opens their game on any device.',
       sample: { name: 'Ada', link: SITE + '?signin=0123456789abcdef0123456789abcdef0123456789abcdef' },
       make: function (d) {
-        var lines = ['Hi ' + esc(d.name) + ',', 'Your game is saved under this email address. If you ever play on another phone or computer, open the link below there and everything you’ve packed comes with you.',
-          'There’s no password. Whenever you need a new link, tap <b>Get your game back</b> in Packman.'];
+        var lines = ['Hi ' + esc(d.name) + ',', 'Your game is saved to this email. To play on another phone or computer, open the link below there and your progress comes with you.',
+          'No password needed. Need a new link? Tap <b>Get your game back</b> in Packman.'];
         return {
           subject: 'Your Packman game is saved',
           html: page(d, { preview: 'Open it on any device with this link.', title: 'Your game is saved', lines: lines, button: 'Open my game', link: d.link,
@@ -56,8 +56,8 @@ var PackmanMail = (function () {
       when: 'Sent when someone asks for their game on the Get your game back sheet. Its link works once, for an hour.',
       sample: { name: 'Ada', link: SITE + '?signin=0123456789abcdef0123456789abcdef0123456789abcdef' },
       make: function (d) {
-        var lines = ['Hi ' + esc(d.name) + ',', 'Here’s the link you asked for. Open it on the device you want to play on, and your game will be there.'];
-        var foot = 'It works once, for the next hour. If you didn’t ask for it, you can ignore this email.';
+        var lines = ['Hi ' + esc(d.name) + ',', 'Open this link on the device you want to play on.'];
+        var foot = 'It works once, within an hour. Didn’t ask for it? Ignore this email.';
         return {
           subject: 'Your link to Packman',
           html: page(d, { preview: 'Open it on the device you want to play on.', title: 'Here’s your game', lines: lines, button: 'Get my game back', link: d.link, foot: foot }),

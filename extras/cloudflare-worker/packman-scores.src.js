@@ -351,13 +351,13 @@ async function quiet(db, request, url) {
 	const k = url.searchParams.get("k") || "", on = url.searchParams.get("on") === "1";
 	const p = /^[0-9a-f]{32}$/.test(k) ? await db.prepare("SELECT name, quiet FROM players WHERE key = ?").bind(k).first() : null;
 	let say, button = "", q = p && p.quiet;
-	if (!p) say = "That link isn’t right. Copy the whole of it from the email.";
+	if (!p) say = "This link is incomplete. Copy the full link from the email.";
 	else if (request.method === "POST") {
 		q = on ? 0 : 1;
 		await db.prepare("UPDATE players SET quiet = ? WHERE key = ?").bind(q, k).run();
-		say = q ? "Done: no more emails about the leaderboard or new levels." : "They’re back on: you’ll hear when you’re passed, and when a new level opens.";
-	} else say = q ? "Emails about the leaderboard and new levels are off." : "Packman emails you when someone passes you on the leaderboard, and when a new level opens.";
-	if (p) button = '<form method="post" action="?k=' + k + (q ? "&on=1" : "") + '"><button>' + (q ? "Turn them back on" : "Stop these emails") + "</button></form>";
+		say = q ? "Done. You won’t get leaderboard or new-level emails." : "You’re subscribed again. We’ll email you when you’re passed or a new level opens.";
+	} else say = q ? "You’re unsubscribed from leaderboard and new-level emails." : "Packman emails you when someone passes you on the leaderboard or a new level opens.";
+	if (p) button = '<form method="post" action="?k=' + k + (q ? "&on=1" : "") + '"><button>' + (q ? "Resubscribe" : "Unsubscribe") + "</button></form>";
 	const html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Packman emails</title><style>' +
 		"body{margin:0;min-height:100vh;display:grid;place-items:center;background:#FFF6E5;font:17px/1.5 Nunito,Avenir Next,Segoe UI,Arial,sans-serif;color:#2B2140}" +
 		"main{max-width:420px;margin:24px;padding:28px;background:#fff;border:3px solid #2B2140;border-radius:24px;text-align:center}h1{margin:0 0 8px;font-size:24px}" +
