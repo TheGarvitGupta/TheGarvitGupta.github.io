@@ -2299,6 +2299,8 @@
 
   // fresh: deal the pieces out again even if a half-packed board was saved.
   function startLevel(i, fresh) {
+    if (!unlocked(i)) return;   // never a level not reached yet, however it is asked for
+    if (begun && unsigned() && !$('m-name').classList.contains('open')) setTimeout(function () { if (unsigned()) askName(); }, 400);   // the tenth level: the email, now
     level = i; lv = LEVELS[i];
     coach(false); clearTimeout(coachTimer);
     var was = save.done[lv.name];
@@ -2834,8 +2836,19 @@
   // 'Show a spot' is on offer three times a day in each chapter, to spend on whichever of its levels they
   // are wanted: at midnight a chapter has its three again. What is kept for a chapter is how many it has
   // left (n), and the day they are for (day, as today() has it).
-  var HINTS = 3, waiter = 0;
-  function purse() {
+  // The seventeenth level, the hard one, has five more of its own as well, each day: eight there, the five spent first.
+  var HINTS = 3, EXTRA = 5, waiter = 0;
+  function extra() {
+    if (level !== MAIN - 1) return null;
+    save.hints = save.hints || {};
+    var key = 'level ' + lv.name, h = save.hints[key], day = today();
+    if (!h || typeof h !== 'object' || h.day !== day) h = save.hints[key] = { n: EXTRA, day: day };
+    return h;
+  }
+  // what is left to spend here, today: the chapter's three, and the level's own five if it has them
+  function purse() { var a = chapterPurse(), b = extra(); return { n: a.n + (b ? b.n : 0), most: HINTS + (b ? EXTRA : 0) }; }
+  function spend() { var b = extra(); if (b && b.n > 0) b.n--; else chapterPurse().n--; }
+  function chapterPurse() {
     save.hints = save.hints || {};
     var key = 'chapter ' + (lv.rival ? 5 : lv.invent ? 4 : lv.twist ? 3 : lv.powers ? 2 : lv.bonus ? 1 : 0), h = save.hints[key], day = today();   // (numbered as the chapters were when hints were first kept this way)
     // (kept the old way, as a list of times or a count with the time the next came back, it is this day's three, less any already spent today)
@@ -2864,7 +2877,7 @@
     $('hint-spot').disabled = !left || none;
     $('spots').textContent = left;
     $('hint-wait').hidden = (!!left && !none) || won;
-    if (!left) $('hint-wait').textContent = 'Three more at midnight, in ' + wait(midnight() - Date.now()) + '.';
+    if (!left) $('hint-wait').textContent = (h.most === HINTS ? 'Three' : 'Eight') + ' more at midnight, in ' + wait(midnight() - Date.now()) + '.';
     else if (none) $('hint-wait').textContent = early ? 'This level opens ' + opensOn(lv) + '.' : lv.rival ? (thinking ? 'Wait for Packman to play.' : 'Packman has you: no move wins from here. Tap ↺ to restart.') : 'The only spots left would give the chameleon away.';
   }
 
@@ -2971,7 +2984,11 @@
   // kept under it on the board's server, and a link sent to it opens the game anywhere.
   var afterName = null, EMAIL = /^[^\s@<>()",;:]{1,64}@[^\s@<>()",;:]+\.[^\s@<>()",;:]{2,}$/;
   function nameless() { return !save.name || save.name === alias(me); }
-  function unsigned() { return nameless() || !save.email; }
+  // The email is asked for from the start, but needed only from the tenth level on: once nine are packed, there is no
+  // playing on without one (it is the way back to all that, on another device).
+  var EMAIL_FROM = 9;
+  function needsEmail() { return Object.keys(save.done || {}).filter(function (k) { return save.done[k]; }).length >= EMAIL_FROM; }
+  function unsigned() { return nameless() || (!save.email && needsEmail()); }
   function wanted(f) { f = f || $('name'); f.classList.remove('no'); void f.offsetWidth; f.classList.add('no'); f.focus(); }
   function askName(then) {
     afterName = then || null;
@@ -2981,6 +2998,12 @@
     $('name-taken').hidden = true; $('name-back').hidden = !!save.email;
     $('name-gone').hidden = RESET !== 'elsewhere' || !!save.email;
     $('name-go').textContent = save.name && save.email ? 'Save' : 'Start \u2192';
+    var must = !save.email && needsEmail() && !nameless();   // (named already: it is the email they are here for)
+    $('name-h').textContent = must ? 'Keep your game safe' : 'Who\u2019s packing?';
+    $('name-sub').textContent = must ? 'You\u2019ve packed ' + EMAIL_FROM + ' levels! Add your email to keep playing. It gets your game back on any device and brings important alerts, like a new level. No password.'
+      : 'Your name goes on the leaderboard. Add your email to get your game back on any device and hear about new levels. No password.';
+    $('email').placeholder = needsEmail() || save.email ? 'Your email' : 'Your email (optional)';
+    if (must) $('name-go').textContent = 'Keep playing \u2192';
     openSheet($('m-name'));
   }
   function named() {
@@ -2992,11 +3015,11 @@
     e.preventDefault();
     var name = tidy($('name').value), email = $('email').value.trim().toLowerCase(), go = $('name-go');
     if (!name || name === alias(me)) return wanted($('name'));
-    if (!EMAIL.test(email)) return wanted($('email'));
+    if (email ? !EMAIL.test(email) : needsEmail()) return wanted($('email'));   // (none at all is fine, before the tenth level)
     $('name-taken').hidden = true;
     function done() { save.name = name; save.email = email; save.named = Date.now(); persist(); $('name').blur(); $('email').blur(); closeSheet($('m-name')); }
     // (on this machine, and under the name that plays off the record, nothing is sent)
-    if (LOCAL || /^swordfish$/i.test(name) || email === save.email) return done();
+    if (LOCAL || /^swordfish$/i.test(name) || email === (save.email || '')) return done();
     var copy = JSON.parse(JSON.stringify(save)); copy.name = name; copy.email = email;
     go.disabled = true;
     ask(SCORES + '/player', { pid: save.pid, name: name, email: email, save: copy }).then(function (d) {
@@ -3333,7 +3356,7 @@
       b.appendChild(s);
       b.appendChild(document.createTextNode(among(n)));
       if (done || shut) { var t = document.createElement('span'); t.className = 'tick'; t.textContent = done ? '✓' : '\uD83D\uDD12'; b.appendChild(t); }
-      b.addEventListener('click', function () { closeSheet($('m-levels')); startLevel(n); });
+      b.addEventListener('click', function () { if (!unlocked(n)) return; closeSheet($('m-levels')); startLevel(n); });   // (a locked one is disabled as well; this is for a browser that lets a tap through)
       grid.appendChild(b);
     });
     $('levels-sub').textContent = (count ? count + ' of ' + LEVELS.length + ' packed. ' : '') + 'Start any chapter; its levels unlock in order.';
@@ -3365,7 +3388,7 @@
     if (purse().n < 1) return;
     var spot = pickSpot();
     if (!spot && (masked() || lv.rival)) return;   // nothing to show that would not unmask the chameleon; the hint is not used up
-    if (spot) { purse().n--; persist(); countHints(); }
+    if (spot) { spend(); persist(); countHints(); }
     closeSheet($('m-hint')); showGhost(spot);
     if (spot) sfx.spot();
   });
@@ -3612,7 +3635,8 @@
     if (!save.seen) showHelp();
   };
   sync();
-  function begin() { if (unsigned()) askName(opening); else opening(); setTimeout(function () { pushNow(false, true); }, 1200); }   // (and what the player's other devices have done)
+  var begun = false;
+  function begin() { begun = true; if (unsigned()) askName(opening); else opening(); setTimeout(function () { pushNow(false, true); }, 1200); }   // (and what the player's other devices have done)
   if (SIGNIN) signIn(begin); else begin();
   persist();
 

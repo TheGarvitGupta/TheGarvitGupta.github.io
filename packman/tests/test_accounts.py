@@ -13,29 +13,48 @@ async def test_the_worker_keeps_players_and_sends_their_emails(t):
                        capture_output=True, text=True)
     assert r.returncode == 0 and 'FAIL' not in r.stdout and r.stdout.count('ok  ') >= 47, r.stdout + r.stderr[-1500:]
 
-async def test_a_new_player_cannot_start_without_an_email(t):
+NINE = ['Four Square', 'Flip', 'Honeycomb', 'Home', 'Lantern', 'Tilt', 'Squeeze', 'Five Alive', 'Dozen']   # the first nine levels
+NINED = {k: {'t': 9, 'm': 4} for k in NINE}   # (packed: so the email is needed, and asked for)
+
+async def test_a_new_player_can_start_without_an_email(t):
     page = await player(await t.page(save=False))
     if await sheet(page) == 'm-help': await page.click('#m-help .btn.go'); await tick(page, 600)
-    assert await sheet(page) == 'm-name'
-    await page.fill('#name', 'Ada'); await page.click('#name-go'); await tick(page, 400)
-    assert await sheet(page) == 'm-name', 'started with no email'
-    await page.fill('#email', 'ada at home'); await page.click('#name-go'); await tick(page, 400)
+    assert await sheet(page) == 'm-name' and 'optional' in await page.get_attribute('#email', 'placeholder')
+    await page.click('#name-go'); await tick(page, 400)
+    assert await sheet(page) == 'm-name', 'started with no name'
+    await page.fill('#name', 'Ada'); await page.fill('#email', 'ada at home'); await page.click('#name-go'); await tick(page, 400)
     assert await sheet(page) == 'm-name', 'started with an email that is not one'
-    await page.fill('#email', ' Ada@Example.com '); await page.click('#name-go'); await tick(page, 600)
-    assert await sheet(page) != 'm-name'
+    await page.fill('#email', ''); await page.click('#name-go'); await tick(page, 600)
+    assert await sheet(page) != 'm-name', 'an email was needed at the start'
     s = await page.evaluate('T.state().save')
-    assert s['name'] == 'Ada' and s['email'] == 'ada@example.com', s
+    assert s['name'] == 'Ada' and not s.get('email'), s
     assert not page.errors, page.errors
 
-async def test_a_player_from_before_emails_is_asked_for_one_and_keeps_their_game(t):
-    page = await player(await t.page(save=saved('Home', email=None, done={'Four Square': {'t': 5, 'm': 4}})))
-    assert await sheet(page) == 'm-name'
-    assert await page.input_value('#name') == 'Packer' and await page.input_value('#email') == ''
+async def test_a_player_without_an_email_is_not_asked_for_one_before_the_tenth_level(t):
+    page = await player(await t.page(save=saved('Home', email=None, done={k: {'t': 5, 'm': 4} for k in NINE[:8]})))
+    assert await sheet(page) is None
+    assert not page.errors, page.errors
+
+async def test_from_the_tenth_level_an_email_is_needed_to_play_on(t):
+    page = await player(await t.page(save=saved('Diamond', email=None, done={k: {'t': 5, 'm': 4} for k in NINE})))
+    assert await sheet(page) == 'm-name' and 'safe' in await page.inner_text('#name-h')
+    assert await page.input_value('#name') == 'Packer' and await page.get_attribute('#email', 'placeholder') == 'Your email'
     await page.evaluate('document.getElementById("m-name").click()'); await tick(page, 400)   # (a tap on the dark round the sheet)
     assert await sheet(page) == 'm-name', 'the sheet could be closed with no email'
+    await page.click('#name-go'); await tick(page, 400)
+    assert await sheet(page) == 'm-name', 'played on with no email'
     await page.fill('#email', 'packer@example.com'); await page.click('#name-go'); await tick(page, 600)
     s = await page.evaluate('T.state().save')
-    assert await sheet(page) != 'm-name' and s['email'] == 'packer@example.com' and 'Four Square' in s['done']
+    assert await sheet(page) != 'm-name' and s['email'] == 'packer@example.com' and len(s['done']) == 9
+    assert not page.errors, page.errors
+
+async def test_the_ninth_win_asks_for_the_email_before_the_tenth_level(t):
+    page = await player(await t.page(save=saved('Dozen', email=None, done={k: {'t': 5, 'm': 4} for k in NINE[:8]})))
+    assert await sheet(page) is None
+    await page.click('.dev button:has-text("Solver")'); await tick(page, 9000)
+    assert await sheet(page) == 'm-win'
+    await page.click('#win-next'); await tick(page, 1200)
+    assert await sheet(page) == 'm-name' and 'safe' in await page.inner_text('#name-h')
     assert not page.errors, page.errors
 
 def board(taken=False, back=None):
@@ -49,7 +68,7 @@ def board(taken=False, back=None):
     return answer
 
 async def test_the_email_and_the_whole_game_go_to_the_server(t):
-    page = await player(await t.page(live=True, board=board(), save=saved('Home', email=None, done={'Flip': {'t': 9, 'm': 4}})))
+    page = await player(await t.page(live=True, board=board(), save=saved('Home', email=None, done=NINED)))
     await page.fill('#email', 'packer@example.com'); await page.click('#name-go'); await tick(page, 800)
     sent = posts(page, '/player')
     assert sent and sent[0]['email'] == 'packer@example.com' and sent[0]['pid'] == 'test-0000-0000-0000-0000' and 'Flip' in sent[0]['save']['done'], sent
@@ -60,7 +79,7 @@ async def test_the_email_and_the_whole_game_go_to_the_server(t):
     assert not page.errors, page.errors
 
 async def test_an_email_with_a_game_already_offers_a_link_to_it(t):
-    page = await player(await t.page(live=True, board=board(taken=True), save=saved('Home', email=None)))
+    page = await player(await t.page(live=True, board=board(taken=True), save=saved('Home', email=None, done=NINED)))
     await page.fill('#email', 'ada@example.com'); await page.click('#name-go'); await tick(page, 800)
     assert await sheet(page) == 'm-name' and await shown(page, 'name-taken'), 'no word that the email has a game'
     await page.click('#name-claim'); await tick(page, 800)
@@ -69,7 +88,7 @@ async def test_an_email_with_a_game_already_offers_a_link_to_it(t):
     assert not page.errors, page.errors
 
 async def test_get_your_game_back_sends_a_link(t):
-    page = await player(await t.page(live=True, board=board(), save=saved('Home', email=None)))
+    page = await player(await t.page(live=True, board=board(), save=saved('Home', email=None, done=NINED)))
     await page.click('#name-back'); await tick(page, 600)
     await page.fill('#recover-email', 'nope'); await page.click('#recover-go'); await tick(page, 400)
     assert not posts(page, '/recover'), 'a link was asked for with no email'
@@ -150,7 +169,7 @@ async def test_a_used_link_says_so_and_offers_a_new_one(t):
     assert not page.errors, page.errors
 
 async def test_on_this_machine_nothing_is_sent(t):
-    page = await player(await t.page(board=board(), save=saved('Home', email=None)))
+    page = await player(await t.page(board=board(), save=saved('Home', email=None, done=NINED)))
     await page.fill('#email', 'packer@example.com'); await page.click('#name-go'); await tick(page, 4000)
     assert not posts(page, '/player')
     await page.evaluate('Packman.play("Flip")'); await tick(page, 4000)

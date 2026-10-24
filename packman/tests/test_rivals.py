@@ -79,6 +79,32 @@ async def test_on_this_machine_every_level_is_open(t):
     assert await page.evaluate('document.getElementById("soon").hidden')
     assert not page.errors, page.errors
 
+async def test_the_seventeenth_level_has_five_spots_more_of_its_own(t):
+    page = await level(t, 'Seventeen')
+    await page.click('#b-hint'); await tick(page, 400)
+    assert int(await page.inner_text('#spots')) == 8
+    for k in range(5):
+        await page.click('#hint-spot'); await tick(page, 800)
+        assert await sheet(page) != 'm-hint', 'no spot shown: %s' % await page.inner_text('#m-hint')
+        await page.click('#b-hint'); await tick(page, 400)
+    assert int(await page.inner_text('#spots')) == 3, 'its own five were not spent first'
+    await page.keyboard.press('Escape'); await tick(page, 600)
+    await page.evaluate('Packman.play("Home")'); await tick(page, 600)
+    await page.click('#b-hint'); await tick(page, 400)
+    assert int(await page.inner_text('#spots')) == 3, 'the five were for the chapter'
+    assert not page.errors, page.errors
+
+async def test_a_locked_level_cannot_be_opened_from_the_list(t):
+    page = await level(t, 'Four Square', live=True)
+    await page.click('#chip'); await tick(page, 700)
+    shut = await page.evaluate('document.querySelectorAll("#grid .lv.locked").length')
+    assert shut > 0
+    for k in range(3):   # (however many times, and even if the browser lets the tap through)
+        await page.evaluate('var b = document.querySelector("#grid .lv.locked"); b.disabled = false; b.click(); b.disabled = true')
+        await tick(page, 300)
+    assert (await page.evaluate('T.state()'))['level'] == 'Four Square'
+    assert not page.errors, page.errors
+
 async def test_three_spots_a_day(t):
     page = await level(t, 'Home')
     for k in range(3):
