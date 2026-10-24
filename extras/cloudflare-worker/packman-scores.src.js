@@ -214,7 +214,7 @@ async function mail(db, env, to, pid, kind, data, about = null) {
 		const r = await fetch("https://api.resend.com/emails", {
 			method: "POST",
 			headers: { Authorization: "Bearer " + env.RESEND_API_KEY, "Content-Type": "application/json" },
-			body: JSON.stringify({ from: env.MAIL_FROM || "Packman <packman@garvitgupta.com>", to: [to], subject: m.subject, html: m.html, text: m.text,
+			body: JSON.stringify({ from: env.MAIL_FROM || "Packman <hello@packman.garvitgupta.com>", to: [to], subject: m.subject, html: m.html, text: m.text,
 				headers: data.quiet ? { "List-Unsubscribe": "<" + data.quiet + ">", "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } : undefined }),
 		});
 		const d = await r.json().catch(() => ({}));

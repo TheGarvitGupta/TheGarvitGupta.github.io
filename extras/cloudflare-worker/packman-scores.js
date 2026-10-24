@@ -13,7 +13,7 @@
 // GET  /api/packman/signin?t=    the game a link opens
 //
 // Secrets (npx wrangler secret put NAME -c extras/cloudflare-worker/packman-scores.wrangler.jsonc):
-//   RESEND_API_KEY   for sending the emails; MAIL_FROM, if not "Packman <packman@garvitgupta.com>"
+//   RESEND_API_KEY   for sending the emails; MAIL_FROM, if not "Packman <hello@packman.garvitgupta.com>"
 //
 // Deploy via the Cloudflare dashboard:
 //   1. Storage & databases -> D1 -> Create database (name: packman).
@@ -1595,7 +1595,7 @@ async function mail(db, env, to, pid, kind, data, about = null) {
 		const r = await fetch("https://api.resend.com/emails", {
 			method: "POST",
 			headers: { Authorization: "Bearer " + env.RESEND_API_KEY, "Content-Type": "application/json" },
-			body: JSON.stringify({ from: env.MAIL_FROM || "Packman <packman@garvitgupta.com>", to: [to], subject: m.subject, html: m.html, text: m.text,
+			body: JSON.stringify({ from: env.MAIL_FROM || "Packman <hello@packman.garvitgupta.com>", to: [to], subject: m.subject, html: m.html, text: m.text,
 				headers: data.quiet ? { "List-Unsubscribe": "<" + data.quiet + ">", "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } : undefined }),
 		});
 		const d = await r.json().catch(() => ({}));

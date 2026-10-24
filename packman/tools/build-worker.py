@@ -27,7 +27,7 @@ head = """// Cloudflare Worker — the Packman leaderboard.
 // GET  /api/packman/signin?t=    the game a link opens
 //
 // Secrets (npx wrangler secret put NAME -c extras/cloudflare-worker/packman-scores.wrangler.jsonc):
-//   RESEND_API_KEY   for sending the emails; MAIL_FROM, if not "Packman <packman@garvitgupta.com>"
+//   RESEND_API_KEY   for sending the emails; MAIL_FROM, if not "Packman <hello@packman.garvitgupta.com>"
 //
 // Deploy via the Cloudflare dashboard:
 //   1. Storage & databases -> D1 -> Create database (name: packman).
