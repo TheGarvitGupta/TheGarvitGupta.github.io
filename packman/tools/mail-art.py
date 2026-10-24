@@ -101,11 +101,11 @@ async def passed(browser, base):
     gif(frames, os.path.join(OUT, 'passed.gif'), 45, hold=900)
 
 async def rival(browser, base, n):
-    """The level as it is dealt: the box, both trays, and the player's next piece glowing and nudging, once round."""
-    page = await page_of(browser, base, 'Rival %d' % n)
+    """The level as it is dealt, laid out sideways to fill an email's width: the box, both trays, and the player's next piece glowing and nudging, once round."""
+    page = await page_of(browser, base, 'Rival %d' % n, width=900, height=600)   # (wide: the trays either side of the box, as on a computer)
     await page.evaluate('document.querySelector(".tray.you .pill text").textContent = "You"')   # (whoever it is sent to)
     r = await page.evaluate(UNION + '("#bin, .piece, .tray")')
-    box = around(r, 14)
+    box = around(r, 18)
     d = await page.evaluate('Math.max.apply(null, document.getAnimations().map(function (a) { var t = a.effect && a.effect.getTiming(); return t && isFinite(t.duration) ? t.duration : 0; }).concat([1200]))')
     d = min(int(d), 2400)
     N = 24

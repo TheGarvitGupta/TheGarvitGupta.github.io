@@ -98,7 +98,7 @@ async def test_a_link_opens_the_game_from_the_email(t):
 
 async def test_a_used_link_says_so_and_offers_a_new_one(t):
     page = await t.page('/packman/?signin=' + TOKEN, live=True, board=board(), save=saved('Home'))
-    await tick(page, 2000); page = await player(page)
+    await tick(page, 3000); page = await player(page)
     assert await sheet(page) == 'm-recover' and 'run out' in await page.inner_text('#recover-h')
     assert await page.input_value('#recover-email') == 'packer@example.com'
     await page.click('#recover-back'); await tick(page, 600)

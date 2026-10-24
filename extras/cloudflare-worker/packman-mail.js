@@ -89,7 +89,7 @@ var PackmanMail = (function () {
         var lines = ['Hi ' + esc(d.name) + ',', '<b>' + esc(d.level) + '</b> is open, and it’s ready for you.' + (d.intro ? ' ' + esc(d.intro) : '')];
         return {
           subject: d.level + ' is open in Packman',
-          html: page(d, { preview: 'A new level, ready when you are.', picture: d.picture || '', wide: 240, alt: d.level + ', as it is dealt', title: esc(d.level) + ' is open',
+          html: page(d, { preview: 'A new level, ready when you are.', picture: d.picture || '', alt: d.level + ', as it is dealt', title: esc(d.level) + ' is open',
             lines: lines, button: 'Play now', link: d.link }),
           text: text(lines.map(plain), d.link, '', d.quiet)
         };
