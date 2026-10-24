@@ -12,6 +12,8 @@
 	"routes": [
 		{ "pattern": "*.garvitgupta.com/api/packman*", "zone_name": "garvitgupta.com" }
 	],
+	// every hour: the "a new level is open" emails, the morning a level comes out
+	"triggers": { "crons": ["0 * * * *"] },
 	"d1_databases": [
 		{ "binding": "DB", "database_name": "packman", "database_id": "eb2c3e34-9c96-4fe1-928e-e635269668d0" }
 	],

@@ -30,7 +30,7 @@
 
 <link rel="stylesheet" href="faces.css?v=2.99">
 <link rel="stylesheet" href="mug/mug.css?v=3.13">
-<link rel="stylesheet" href="packman.css?v=3.40">
+<link rel="stylesheet" href="packman.css?v=3.41">
 </head>
 <body>
 
@@ -112,11 +112,27 @@
   <div class="card">
     <span class="you" id="name-face"></span>
     <h2 id="name-h">Who’s packing?</h2>
-    <p class="sub">Enter your name to see it on the leaderboard.</p>
-    <form id="name-form">
-      <input id="name" type="text" maxlength="18" autocomplete="nickname" autocapitalize="words" spellcheck="false" enterkeyhint="done" placeholder="Your name" aria-label="Your name">
+    <p class="sub">Your name goes on the leaderboard. Your email is only for getting your game back on another device: no password, no newsletters.</p>
+    <form id="name-form" novalidate>
+      <input id="name" class="field" type="text" maxlength="18" autocomplete="nickname" autocapitalize="words" spellcheck="false" enterkeyhint="next" placeholder="Your name" aria-label="Your name">
+      <input id="email" class="field" type="email" maxlength="254" autocomplete="email" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="Your email" aria-label="Your email">
+      <p class="taken" id="name-taken" hidden>That email already has a game. <button class="link" id="name-claim" type="button">Email me a link to it</button></p>
       <div><button class="btn go" id="name-go" type="submit">Start →</button></div>
     </form>
+    <button class="link" id="name-back" type="button">Played before? Get your game back</button>
+  </div>
+</div>
+
+<div class="sheet" id="m-recover" role="dialog" aria-modal="true" aria-labelledby="recover-h">
+  <div class="card">
+    <h2 id="recover-h">Get your game back</h2>
+    <p class="sub" id="recover-sub">Enter the email you play with. We’ll send you a link: open it on this device, and your game will be here.</p>
+    <form id="recover-form" novalidate>
+      <input id="recover-email" class="field" type="email" maxlength="254" autocomplete="email" autocapitalize="off" spellcheck="false" enterkeyhint="send" placeholder="Your email" aria-label="Your email">
+      <div><button class="btn go" id="recover-go" type="submit">Email me a link</button></div>
+    </form>
+    <p class="sub sent" id="recover-sent" hidden role="status"></p>
+    <button class="link" id="recover-back" type="button" data-close>Back</button>
   </div>
 </div>
 
@@ -236,7 +252,7 @@
 <script src="faces.js?v=2.80"></script>
 <script src="sounds.js?v=3.18"></script>
 <script src="mug/mug.js?v=3.13"></script>
-<script src="game.js?v=3.39"></script>
+<script src="game.js?v=3.40"></script>
 <script data-goatcounter="https://garvitgupta.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

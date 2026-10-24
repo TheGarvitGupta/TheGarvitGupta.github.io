@@ -23,7 +23,7 @@
     (function () {
       var all = PackmanLevels, on = SHOW === 'seventeen' ? 'Seventeen' : SHOW === 'finished' ? all.filter(function (l) { return !l.rival; }).pop().name : 'Four Square', done = {};
       all.forEach(function (l, n) { if (l.name !== on && (SHOW === 'finished' || (SHOW === 'seventeen' && n < 17))) done[l.name] = { t: 40 + n * 7, m: 8 + n }; });
-      var seed = { v: 3, done: done, last: on, name: 'Packer', pid: 'show-0000-0000-0000-0000', seen: true, eyeTip: 1 };
+      var seed = { v: 3, done: done, last: on, name: 'Packer', email: 'packer@example.com', pid: 'show-0000-0000-0000-0000', seen: true, eyeTip: 1 };
       if (SHOW === 'prize') seed.top3 = { rank: 3, over: 'Sonam', at: 0 };
       try { localStorage.setItem(STORE, JSON.stringify(seed)); } catch (e) {}
     })();
@@ -144,7 +144,7 @@
       : 'p-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 12);
   }
   var wiped = false;   // set by the hard reset, so nothing is written back before the page reloads
-  function persist() { if (wiped) return; try { localStorage.setItem(STORE, JSON.stringify(save)); } catch (e) {} }
+  function persist() { if (wiped) return; try { localStorage.setItem(STORE, JSON.stringify(save)); } catch (e) {} push(); }
 
   var level = 0, lv, C, cb;            // current level, its container, the container's bounds
   var pieces = [], sel = -1, drag = null, won = false;
@@ -2819,11 +2819,12 @@
   // The welcome counts as seen only once it is closed, so a load nobody looked at does not use it up
   function closeSheet(s) {
     if ((s.id === 'm-board' || s.id === 'm-help') && mugged(s) && !mugGoing) return mugUp(s, false);   // from a closer look at the prize, the way out is back to the sheet it was on
-    if (s.id === 'm-name' && nameless()) return wanted();   // no way out of it without a name
+    if (s.id === 'm-name' && unsigned()) return wanted(nameless() ? $('name') : $('email'));   // no way out of it without a name and an email
     if (s.classList.contains('open')) sfx.close();
     s.classList.remove('open');
     if (s.id === 'm-help' && !save.seen) { save.seen = true; persist(); }
     if (s.id === 'm-name') named();
+    if (s.id === 'm-recover' && backThen) { var then = backThen; backThen = null; then(); }
   }
   Array.prototype.forEach.call(document.querySelectorAll('.sheet'), function (s) {
     s.addEventListener('click', function (e) { if (e.target === s || e.target.hasAttribute('data-close')) closeSheet(s); });
@@ -2962,16 +2963,21 @@
     })(up[Math.floor(Math.random() * up.length)]);
   }, 800);
 
-  // Asked once, before anything else, and there is no skipping it: the sheet stays until there is a name.
-  // Whoever skipped it when they could is asked again.
-  var afterName = null;
+  // Asked once, before anything else, and there is no skipping it: the sheet stays until there is a name, and an
+  // email. Whoever skipped it when they could, or played before there were emails, is asked again.
+  // The email is the way back to the game from another device. Nothing is checked about it: the whole saved game is
+  // kept under it on the board's server, and a link sent to it opens the game anywhere.
+  var afterName = null, EMAIL = /^[^\s@<>()",;:]{1,64}@[^\s@<>()",;:]+\.[^\s@<>()",;:]{2,}$/;
   function nameless() { return !save.name || save.name === alias(me); }
-  function wanted() { var f = $('name'); f.classList.remove('no'); void f.offsetWidth; f.classList.add('no'); f.focus(); }
+  function unsigned() { return nameless() || !save.email; }
+  function wanted(f) { f = f || $('name'); f.classList.remove('no'); void f.offsetWidth; f.classList.add('no'); f.focus(); }
   function askName(then) {
     afterName = then || null;
     $('name-face').textContent = ''; $('name-face').appendChild(avatar(me));
     $('name').value = nameless() ? '' : save.name;
-    $('name-go').textContent = save.name ? 'Save' : 'Start \u2192';
+    $('email').value = save.email || '';
+    $('name-taken').hidden = true; $('name-back').hidden = !!save.email;
+    $('name-go').textContent = save.name && save.email ? 'Save' : 'Start \u2192';
     openSheet($('m-name'));
   }
   function named() {
@@ -2981,12 +2987,97 @@
   }
   $('name-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    var name = tidy($('name').value);
-    if (!name || name === alias(me)) return wanted();
-    save.name = name; persist();
-    $('name').blur();
-    closeSheet($('m-name'));
+    var name = tidy($('name').value), email = $('email').value.trim().toLowerCase(), go = $('name-go');
+    if (!name || name === alias(me)) return wanted($('name'));
+    if (!EMAIL.test(email)) return wanted($('email'));
+    $('name-taken').hidden = true;
+    function done() { save.name = name; save.email = email; persist(); $('name').blur(); $('email').blur(); closeSheet($('m-name')); }
+    // (on this machine, and under the name that plays off the record, nothing is sent)
+    if (LOCAL || /^swordfish$/i.test(name) || email === save.email) return done();
+    var copy = JSON.parse(JSON.stringify(save)); copy.name = name; copy.email = email;
+    go.disabled = true;
+    ask(SCORES + '/player', { pid: save.pid, name: name, email: email, save: copy }).then(function (d) {
+      go.disabled = false;
+      if (d.error === 'taken') { $('name-taken').hidden = false; return; }   // somebody's game already: theirs, most likely
+      if (d.error === 'email') return wanted($('email'));
+      if (d.error === 'name') return wanted($('name'));
+      done();
+    }, function () { go.disabled = false; done(); });   // the board out of reach: kept here, and sent when it can be reached
   });
+  $('name-back').addEventListener('click', function () { askBack($('email').value); });
+  $('name-claim').addEventListener('click', function () { askBack($('email').value, true); });
+
+  // The saved game goes to the board's server a moment after it changes, under the player's email, for opening elsewhere.
+  var pushing = 0, pushed = true;
+  function pushNow(leaving) {
+    clearTimeout(pushing); pushing = 0;
+    if (pushed || LOCAL || wiped || !save.email || offRecord()) return;
+    pushed = true;
+    var body = { pid: save.pid, name: called(), email: save.email, save: save };
+    if (leaving) { try { fetch(SCORES + '/player', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); } catch (e) {} return; }
+    ask(SCORES + '/player', body).then(function (d) {
+      if (d.error === 'taken') { save.email = ''; persist(); askName(); }   // given while the board was out of reach, and somebody else's
+      else if (!d.ok) pushed = false;
+    }).catch(function () { pushed = false; });
+  }
+  function push() { pushed = false; if (!pushing) pushing = setTimeout(pushNow, 2500); }
+  document.addEventListener('visibilitychange', function () { if (document.hidden && pushing) pushNow(true); });
+
+  // Getting a game back: a link to it is sent to its email, and opening the link here puts that game in place of this one.
+  var backThen = null, SIGNIN = (/[?&]signin=([0-9a-f]{48})/.exec(location.search) || [])[1];
+  function backSays(text, again) {
+    $('m-recover').classList.toggle('done', !again);
+    $('recover-sent').textContent = text; $('recover-sent').hidden = !text;
+  }
+  function askBack(email, now) {
+    $('recover-h').textContent = 'Get your game back';
+    $('recover-sub').hidden = false; $('recover-sub').textContent = 'Enter the email you play with. We\u2019ll send you a link: open it on this device, and your game will be here.';
+    $('recover-back').textContent = 'Back';
+    $('recover-email').value = email || ''; backSays('', true);
+    openSheet($('m-recover'));
+    if (now && EMAIL.test(String(email).trim())) $('recover-form').requestSubmit ? $('recover-form').requestSubmit() : sendBack();
+  }
+  function sendBack() {
+    var email = $('recover-email').value.trim().toLowerCase(), go = $('recover-go');
+    if (!EMAIL.test(email)) return wanted($('recover-email'));
+    if (LOCAL) return backSays('Emails are not sent from a copy on this machine.');
+    go.disabled = true;
+    ask(SCORES + '/recover', { email: email }).then(function (d) {
+      go.disabled = false;
+      if (d.error === 'slow down') return backSays('That\u2019s a lot of links for one hour. Try again a little later.', true);
+      if (!d.ok) return backSays('That didn\u2019t work. Check the email and try again.', true);
+      backSays('If ' + email + ' has a game, a link to it is on its way. Open it on this device: it works once, for an hour. Nothing yet? Look in your spam folder.');
+    }, function () { go.disabled = false; backSays('Couldn\u2019t reach the server. Check your connection and try again.', true); });
+  }
+  $('recover-form').addEventListener('submit', function (e) { e.preventDefault(); sendBack(); });
+  // The game from the link takes this one's place; anything this device packed that it has not, or packed better here,
+  // comes along with it, to be sent to the board under the game's own id.
+  function adopt(d) {
+    var got = d.save && d.save.done ? d.save : { v: 3, done: {}, seen: true };
+    got.pid = d.pid; got.name = d.name; got.email = d.email;
+    Object.keys(save.done).forEach(function (k) {
+      var a = save.done[k], b = got.done[k];
+      if (!b || a.m < b.m || (a.m === b.m && a.t < b.t)) { got.done[k] = a; if (got.sent) delete got.sent[k]; }
+    });
+    wiped = true;   // (nothing of this one is written back over it)
+    try { localStorage.setItem(STORE, JSON.stringify(got)); } catch (e) {}
+    location.replace(location.pathname);
+  }
+  function signIn(then) {
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}   // the link does not stay in the address bar
+    $('recover-h').textContent = 'Opening your game\u2026'; $('recover-sub').hidden = true;
+    backSays(''); openSheet($('m-recover'));
+    ask(SCORES + '/signin?t=' + SIGNIN).then(function (d) {
+      if (d.pid) return adopt(d);
+      throw 0;
+    }).catch(function () {
+      $('recover-h').textContent = 'That link has run out';
+      $('recover-sub').hidden = false; $('recover-sub').textContent = 'A link you asked for works once, for an hour. Send yourself a new one:';
+      $('recover-email').value = save.email || ''; backSays('', true);
+      $('recover-back').textContent = 'Not now';
+      backThen = then;
+    });
+  }
 
   function ask(url, body) {
     return fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {})
@@ -3463,8 +3554,9 @@
       timer = setTimeout(function () { b.classList.remove('tip'); }, 2000);
     });
   });
-  var asked = /[?&#]level=(\d+)/.exec(location.search + location.hash);
-  var first = asked ? +asked[1] - 1 : LEVELS.map(function (l) { return l.name; }).indexOf(save.last);
+  var asked = /[?&#]level=(\d+)/.exec(location.search + location.hash), NAMES = LEVELS.map(function (l) { return l.name; });
+  var playing = /[?&]play=([^&#]+)/.exec(location.search), byName = playing ? NAMES.indexOf(decodeURIComponent(playing[1].replace(/\+/g, ' '))) : -1;   // (by name: the emails' Play now)
+  var first = asked ? +asked[1] - 1 : byName >= 0 ? byName : NAMES.indexOf(save.last);
   first = clamp(first, 0, LEVELS.length - 1);
   while (!unlocked(first)) first--;   // a link to a level not reached yet opens the furthest one that is
   startLevel(first);
@@ -3478,7 +3570,8 @@
     if (!save.seen) showHelp();
   };
   sync();
-  if (nameless()) askName(opening); else opening();
+  function begin() { if (unsigned()) askName(opening); else opening(); }
+  if (SIGNIN) signIn(begin); else begin();
   persist();
 
   // Packs the level as its own solution has it. (On this machine only: the Solver button, and a look at a moment with ?show.)

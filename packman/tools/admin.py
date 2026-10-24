@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Packman's admin panel: every player's packing of every level, in one table. On this machine only.
+"""Packman's admin panel: every player's packing of every level, in one table; the players, with their emails and
+what their saved games say; and every email the game sends, as it looks and as it went. On this machine only.
 
     python3 packman/tools/admin.py          then open http://localhost:8790
 
@@ -17,6 +18,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 GAME = os.path.dirname(HERE)
 ROOT = os.path.dirname(GAME)
 CONFIG = os.path.join(ROOT, 'extras', 'cloudflare-worker', 'packman-scores.wrangler.jsonc')
+MAIL = os.path.join(ROOT, 'extras', 'cloudflare-worker', 'packman-mail.js')   # the emails, as the worker makes them
+ART = os.path.join(GAME, 'mail')                                               # and their pictures (tools/mail-art.py)
 
 # the levels in the order they are played, chapter by chapter, as the game deals them
 LEVELS_JS = r"""
@@ -31,12 +34,32 @@ def levels():
     out = subprocess.run(['node', '-e', LEVELS_JS, GAME], capture_output=True, text=True, check=True)
     return json.loads(out.stdout)
 
-def scores():
+def d1(*sql):
+    """The rows of each statement, read in one go."""
     out = subprocess.run(['npx', '--yes', '--prefer-offline', 'wrangler', 'd1', 'execute', 'packman', '--remote', '--json', '-c', CONFIG,
-                          '--command', 'SELECT level, pid, name, t, m, at FROM scores'],
-                         capture_output=True, text=True, cwd=ROOT)
-    try: return json.loads(out.stdout)[0]['results']
+                          '--command', '; '.join(sql)], capture_output=True, text=True, cwd=ROOT)
+    try: return [r['results'] for r in json.loads(out.stdout)]
     except Exception: raise RuntimeError((out.stdout + out.stderr).strip()[-600:] or 'wrangler said nothing')
+
+SCORES = 'SELECT level, pid, name, t, m, at FROM scores'
+PLAYERS = 'SELECT pid, name, email, made, seen, country, device, quiet, save FROM players'
+MAILS = 'SELECT id, pid, email, kind, subject, at, ok, rid, error, about FROM mails ORDER BY id DESC LIMIT 2000'
+
+def summary(p):
+    """A player as the panel shows them: their saved game boiled down to what it says about them."""
+    try: s = json.loads(p.pop('save') or 'null') or {}
+    except Exception: s = {}
+    done = s.get('done') or {}
+    p.update(packed=len(done), playing=s.get('last') or '', played=round(sum((d or {}).get('t', 0) for d in done.values()), 1),
+             mute=bool(s.get('mute')), size=len(json.dumps(s)) if s else 0)
+    return p
+
+def data():
+    try: scores, players, mails = d1(SCORES, PLAYERS, MAILS)
+    except RuntimeError as e:
+        if 'no such table' not in str(e): raise
+        scores, players, mails = d1(SCORES)[0], [], []   # (the worker makes the other tables the first time it is asked anything)
+    return {'levels': levels(), 'scores': scores, 'players': [summary(p) for p in players], 'mails': mails, 'at': int(time.time())}
 
 class Panel(BaseHTTPRequestHandler):
     def send(self, code, body, kind):
@@ -52,8 +75,12 @@ class Panel(BaseHTTPRequestHandler):
             return self.send(403, 'localhost only', 'text/plain')
         path = self.path.split('?')[0]
         if path == '/': return self.send(200, PAGE, 'text/html; charset=utf-8')
+        if path == '/mail.js': return self.send(200, open(MAIL, encoding='utf-8').read(), 'text/javascript; charset=utf-8')
+        if path.startswith('/art/'):
+            f = os.path.join(ART, os.path.basename(path))
+            if os.path.isfile(f): return self.send(200, open(f, 'rb').read(), 'image/gif' if f.endswith('.gif') else 'image/png')
         if path == '/data':
-            try: body = {'levels': levels(), 'scores': scores(), 'at': int(time.time())}
+            try: body = data()
             except Exception as e: return self.send(500, json.dumps({'error': str(e)}), 'application/json')
             return self.send(200, json.dumps(body), 'application/json')
         self.send(404, 'not here', 'text/plain')
@@ -127,6 +154,33 @@ dialog .sub { color: var(--soft); margin-bottom: 12px; }
 dialog dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; }
 dialog dt { color: var(--soft); }
 dialog dd { margin: 0; font-variant-numeric: tabular-nums; }
+nav.tabs { display: flex; gap: 2px; padding: 0 16px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+nav.tabs button { font: inherit; font-weight: 600; color: var(--soft); background: none; border: 0; border-bottom: 2px solid transparent; padding: 8px 12px; margin-bottom: -1px; cursor: pointer; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+nav.tabs button small { font-weight: 400; color: var(--faint); margin-left: 4px; }
+[hidden] { display: none !important; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 0 16px 14px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.tile b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; }
+.tile span { color: var(--soft); font-size: 12px; }
+.tile small { display: block; color: var(--faint); font-size: 11px; margin-top: 2px; }
+table.list { width: 100%; }
+table.list thead th { top: 0; cursor: pointer; user-select: none; }
+table.list thead th[data-sort]:hover { color: var(--accent); }
+table.list td.num, table.list th.num { text-align: right; }
+.wrap.list { max-height: calc(100vh - 260px); }
+.dim { color: var(--faint); }
+.ok { color: var(--good); font-weight: 600; } .bad { color: #d94848; font-weight: 600; }
+.mails { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 14px; padding: 0 16px 16px; }
+.mail { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.mail header { display: block; padding: 12px 14px 8px; }
+.mail h3 { margin: 0; font-size: 15px; } .mail .when2 { color: var(--soft); margin-top: 2px; }
+.mail .subj { margin-top: 8px; } .mail .subj b { color: var(--soft); font-weight: 500; margin-right: 6px; }
+.mail .count { color: var(--faint); font-size: 12px; margin-top: 4px; }
+.mail iframe { display: block; width: 100%; height: 640px; border: 0; border-top: 1px solid var(--line); background: #fff; }
+.mail pre { margin: 0; padding: 12px 14px; height: 640px; overflow: auto; border-top: 1px solid var(--line); white-space: pre-wrap; font: 12px/1.5 ui-monospace, Menlo, monospace; }
+.mail .seg { margin: 0 14px 10px; }
+h2.part { font-size: 14px; margin: 6px 16px 10px; }
 dialog button { margin-top: 14px; font: inherit; padding: 6px 12px; border-radius: 7px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
 .err { margin: 16px; padding: 12px; border-radius: 8px; background: rgba(220,60,60,.12); color: var(--ink); white-space: pre-wrap; }
 .loading { padding: 40px 16px; color: var(--soft); }
@@ -136,7 +190,31 @@ dialog button { margin-top: 14px; font: inherit; padding: 6px 12px; border-radiu
 <header>
   <h1>Packman admin</h1>
   <div class="stats" id="stats"></div>
+  <span class="bar" style="padding:0;margin-left:auto"><button id="refresh">Refresh</button><button id="theme" title="Light or dark">◐</button></span>
 </header>
+<nav class="tabs" role="tablist">
+  <button role="tab" data-tab="scores" aria-selected="true">Scores</button>
+  <button role="tab" data-tab="players" aria-selected="false">Players<small id="n-players"></small></button>
+  <button role="tab" data-tab="emails" aria-selected="false">Emails<small id="n-mails"></small></button>
+</nav>
+<section id="v-players" hidden>
+  <div class="tiles" id="p-tiles"></div>
+  <div class="bar">
+    <input id="pq" type="search" placeholder="Find a player or an email" aria-label="Find a player or an email">
+    <label><input type="checkbox" id="p-noemail"> Only players with no email yet</label>
+  </div>
+  <div class="wrap list" id="p-wrap"><div class="loading">Reading the players…</div></div>
+</section>
+<section id="v-emails" hidden>
+  <h2 class="part">Every email the game sends</h2>
+  <div class="mails" id="m-kinds"></div>
+  <h2 class="part">Sent</h2>
+  <div class="bar"><input id="mq" type="search" placeholder="Find an email address" aria-label="Find an email address">
+    <select id="m-kind" aria-label="Kind"><option value="">Every kind</option></select>
+    <label><input type="checkbox" id="m-failed"> Only the ones that failed</label></div>
+  <div class="wrap list" id="m-wrap"><div class="loading">Reading the emails…</div></div>
+</section>
+<section id="v-scores">
 <div class="bar">
   <input id="q" type="search" placeholder="Find a player" aria-label="Find a player">
   <select id="sort" aria-label="Sort players">
@@ -150,13 +228,13 @@ dialog button { margin-top: 14px; font: inherit; padding: 6px 12px; border-radiu
     <button id="d-short" aria-pressed="true">Compact</button><button id="d-long" aria-pressed="false">Detailed</button>
   </span>
   <label><input type="checkbox" id="gone"> Removed levels</label>
-  <button id="refresh">Refresh</button>
-  <button id="theme" title="Light or dark">◐</button>
-</div>
+  </div>
 <div class="note">Each cell is a player's best packing of a level, the one the board keeps: fewest moves, then the least time.
 Start is when that packing began (when it was sent, less how long it took). Tries and other packings are not recorded.</div>
 <div class="wrap" id="wrap"><div class="loading">Reading the board…</div></div>
+</section>
 <dialog id="card"></dialog>
+<script src="/mail.js"></script>
 <script>
 (function () {
   var data = null, long = false, showGone = false;
@@ -277,11 +355,129 @@ Start is when that packing began (when it was sent, less how long it took). Trie
     $('card').showModal();
   }
 
+  // ---- Players: everyone the board or the accounts know, by id ----
+  var raw = null, pSort = 'active', pDesc = true;
+  function people() {
+    var by = {}, M = data;
+    M.people.forEach(function (p) { by[p.pid] = { pid: p.pid, name: p.name, board: p.done, boardTime: p.time, first: p.first, last: p.last }; });
+    raw.players.forEach(function (a) {
+      var p = by[a.pid] = by[a.pid] || { pid: a.pid, board: 0, boardTime: 0, first: Infinity, last: 0 };
+      p.name = a.name; p.email = a.email; p.made = a.made; p.seen = a.seen; p.country = a.country; p.device = a.device;
+      p.packed = a.packed; p.playing = a.playing; p.played = a.played; p.size = a.size; p.quiet = a.quiet;
+    });
+    var sent = {};
+    raw.mails.forEach(function (m) { if (m.pid) sent[m.pid] = (sent[m.pid] || 0) + 1; });
+    return Object.keys(by).map(function (k) {
+      var p = by[k]; p.mails = sent[k] || 0;
+      p.joined = Math.min(p.made || Infinity, p.first); if (!isFinite(p.joined)) p.joined = null;
+      p.active = Math.max(p.seen || 0, p.last || 0) || null;
+      p.levels = Math.max(p.packed || 0, p.board || 0);
+      return p;
+    });
+  }
+  function tally(list, key) {
+    var c = {}; list.forEach(function (p) { var k = p[key]; if (k) c[k] = (c[k] || 0) + 1; });
+    return Object.keys(c).sort(function (a, b) { return c[b] - c[a]; }).map(function (k) { return k + ' ' + c[k]; });
+  }
+  function renderPlayers() {
+    if (!raw) return;
+    var all = people(), now = Date.now() / 1000, day = 86400;
+    var withEmail = all.filter(function (p) { return p.email; });
+    var count = function (f) { return all.filter(f).length; };
+    var kinds = tally(withEmail.map(function (p) { return { k: (p.device || '').split(' · ')[0] }; }), 'k');
+    var tiles = [
+      ['Players', all.length, withEmail.length + ' with an email'],
+      ['New this week', count(function (p) { return p.joined && now - p.joined < 7 * day; }), count(function (p) { return p.joined && now - p.joined < day; }) + ' today'],
+      ['Active today', count(function (p) { return p.active && now - p.active < day; }), count(function (p) { return p.active && now - p.active < 7 * day; }) + ' this week'],
+      ['No email yet', all.length - withEmail.length, 'asked on their next visit'],
+      ['Levels packed', all.reduce(function (x, p) { return x + p.levels; }, 0), (all.length ? (all.reduce(function (x, p) { return x + p.levels; }, 0) / all.length).toFixed(1) : 0) + ' a player'],
+      ['Devices', kinds.length ? kinds[0].split(' ')[1] : 0, kinds.join(' · ') || 'from players with an email'],
+      ['Countries', tally(withEmail, 'country').length, tally(withEmail, 'country').slice(0, 4).join(' · ')],
+      ['Emails sent', raw.mails.filter(function (m) { return m.ok; }).length, raw.mails.filter(function (m) { return !m.ok; }).length + ' failed · ' + count(function (p) { return p.quiet; }) + ' turned off'],
+    ];
+    $('p-tiles').innerHTML = tiles.map(function (t) { return '<div class="tile"><span>' + esc(t[0]) + '</span><b>' + esc(t[1]) + '</b><small>' + esc(t[2]) + '</small></div>'; }).join('');
+    var q = $('pq').value.trim().toLowerCase(), only = $('p-noemail').checked;
+    var rows = all.filter(function (p) { return (!q || (p.name + ' ' + (p.email || '') + ' ' + p.pid).toLowerCase().indexOf(q) >= 0) && (!only || !p.email); });
+    rows.sort(function (a, b) {
+      var x = a[pSort], y = b[pSort];
+      if (x == null || x === '') return 1; if (y == null || y === '') return -1;
+      var d = typeof x === 'string' ? x.localeCompare(y) : x - y;
+      return pDesc ? -d : d;
+    });
+    var cols = [['name', 'Name'], ['email', 'Email'], ['joined', 'Joined'], ['active', 'Last seen'], ['levels', 'Levels', 1], ['boardTime', 'Time on the board', 1],
+                ['playing', 'On level'], ['device', 'Device'], ['country', 'Country'], ['mails', 'Emails', 1], ['pid', 'Id']];
+    var h = '<table class="list"><thead><tr>' + cols.map(function (c) { return '<th data-sort="' + c[0] + '"' + (c[2] ? ' class="num"' : '') + '>' + c[1] + (pSort === c[0] ? (pDesc ? ' ↓' : ' ↑') : '') + '</th>'; }).join('') + '</tr></thead><tbody>';
+    rows.forEach(function (p) {
+      h += '<tr><td><b>' + esc(p.name || '') + '</b></td><td>' + (p.email ? esc(p.email) : '<span class="dim">none yet</span>') + '</td>' +
+        '<td>' + (p.joined ? stamp(p.joined) : '') + '</td><td>' + (p.active ? ago(p.active) : '') + '</td>' +
+        '<td class="num">' + p.levels + '</td><td class="num">' + (p.boardTime ? dur(p.boardTime) : '') + '</td>' +
+        '<td>' + esc(p.playing || '') + '</td><td>' + esc(p.device || '') + '</td><td>' + esc(p.country || '') + '</td>' +
+        '<td class="num">' + (p.mails || '') + (p.quiet ? ' <span class="dim" title="Turned off the emails about the board and new levels">· off</span>' : '') + '</td><td class="dim">' + esc(p.pid.slice(0, 8)) + '</td></tr>';
+    });
+    $('p-wrap').innerHTML = h + '</tbody></table>' + (rows.length ? '' : '<div class="loading">Nobody here.</div>');
+    $('p-wrap').querySelector('thead').onclick = function (e) {
+      var th = e.target.closest('th'); if (!th) return;
+      if (pSort === th.dataset.sort) pDesc = !pDesc; else { pSort = th.dataset.sort; pDesc = !/^(name|email|playing|device|country|pid)$/.test(pSort); }
+      renderPlayers();
+    };
+    $('n-players').textContent = all.length;
+  }
+
+  // ---- Emails: each kind as it looks (made here by the worker's own code, with a made-up player), then every one sent ----
+  var textOf = {};
+  function renderKinds() {
+    var art = location.origin + '/art/', sent = {};   // (the pictures from this machine, as they will be on the site)
+    (raw ? raw.mails : []).forEach(function (m) { sent[m.kind] = (sent[m.kind] || 0) + 1; });
+    $('m-kinds').innerHTML = PackmanMail.kinds.map(function (k) {
+      return '<article class="mail" data-kind="' + k.kind + '"><header><h3>' + esc(k.title) + '</h3><div class="when2">' + esc(k.when) + '</div>' +
+        '<div class="subj"><b>Subject</b><span></span></div><div class="count">' + (sent[k.kind] || 0) + ' sent</div></header>' +
+        '<span class="seg"><button aria-pressed="true" data-v="html">Email</button><button aria-pressed="false" data-v="text">Plain text</button></span>' +
+        '<iframe title="' + esc(k.title) + '" sandbox></iframe><pre hidden></pre></article>';
+    }).join('');
+    Array.prototype.forEach.call($('m-kinds').children, function (a) {
+      var k = PackmanMail.kinds.filter(function (x) { return x.kind === a.dataset.kind; })[0], d = {};
+      Object.keys(k.sample).forEach(function (f) { d[f] = k.sample[f]; }); d.art = art;
+      var m = PackmanMail.make(k.kind, d);
+      a.querySelector('.subj span').textContent = m.subject;
+      a.querySelector('iframe').srcdoc = m.html; a.querySelector('pre').textContent = m.text;
+      a.querySelector('.seg').onclick = function (e) {
+        var v = e.target.dataset.v; if (!v) return;
+        a.querySelectorAll('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.v === v); });
+        a.querySelector('iframe').hidden = v !== 'html'; a.querySelector('pre').hidden = v !== 'text';
+      };
+    });
+    var sel = $('m-kind');
+    if (sel.options.length === 1) PackmanMail.kinds.forEach(function (k) { var o = document.createElement('option'); o.value = k.kind; o.textContent = k.title; sel.appendChild(o); });
+  }
+  function renderMails() {
+    if (!raw) return;
+    var q = $('mq').value.trim().toLowerCase(), kind = $('m-kind').value, failed = $('m-failed').checked, title = {};
+    PackmanMail.kinds.forEach(function (k) { title[k.kind] = k.title; });
+    var rows = raw.mails.filter(function (m) { return (!q || m.email.indexOf(q) >= 0) && (!kind || m.kind === kind) && (!failed || !m.ok); });
+    var h = '<table class="list"><thead><tr><th>Sent</th><th>To</th><th>Email</th><th>About</th><th>Subject</th><th>How it went</th><th>Resend id</th></tr></thead><tbody>';
+    rows.forEach(function (m) {
+      h += '<tr><td>' + stamp(m.at) + ' <span class="dim">· ' + ago(m.at) + '</span></td><td>' + esc(m.email) + '</td><td>' + esc(title[m.kind] || m.kind) + '</td><td>' + esc(m.about || '') + '</td><td>' + esc(m.subject || '') + '</td>' +
+        '<td>' + (m.ok ? '<span class="ok">sent</span>' : '<span class="bad">failed</span> <span class="dim">' + esc(m.error || '') + '</span>') + '</td><td class="dim">' + esc(m.rid || '') + '</td></tr>';
+    });
+    $('m-wrap').innerHTML = h + '</tbody></table>' + (rows.length ? '' : '<div class="loading">None yet.</div>');
+    $('n-mails').textContent = raw.mails.length;
+  }
+  $('pq').oninput = renderPlayers; $('p-noemail').onchange = renderPlayers;
+  $('mq').oninput = renderMails; $('m-kind').onchange = renderMails; $('m-failed').onchange = renderMails;
+  function tab(name) {
+    document.querySelectorAll('nav.tabs button').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tab === name); });
+    ['scores', 'players', 'emails'].forEach(function (v) { $('v-' + v).hidden = v !== name; });
+    try { localStorage.setItem('pm-admin-tab', name); } catch (e) {}
+  }
+  document.querySelector('nav.tabs').onclick = function (e) { var b = e.target.closest('button'); if (b) tab(b.dataset.tab); };
+  try { tab(localStorage.getItem('pm-admin-tab') || 'scores'); } catch (e) {}
+  renderKinds();
+
   function load() {
     $('refresh').disabled = true;
     fetch('/data', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
       if (d.error) throw new Error(d.error);
-      data = model(d); render();
+      raw = d; data = model(d); render(); renderPlayers(); renderKinds(); renderMails();
     }).catch(function (e) {
       $('wrap').innerHTML = '<div class="err">Could not read the board.\n\n' + esc(e.message) + '\n\nIs wrangler signed in? (npx wrangler login)</div>';
     }).then(function () { $('refresh').disabled = false; });

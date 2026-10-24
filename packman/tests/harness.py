@@ -28,7 +28,7 @@ def served():
 
 def saved(level='Home', **more):
     """A player's saved game: named, past the welcome, and about to open this level."""
-    d = {'v': 3, 'done': {}, 'last': level, 'name': 'Packer', 'pid': 'test-0000-0000-0000-0000', 'seen': True, 'eyeTip': 1}
+    d = {'v': 3, 'done': {}, 'last': level, 'name': 'Packer', 'email': 'packer@example.com', 'pid': 'test-0000-0000-0000-0000', 'seen': True, 'eyeTip': 1}
     d.update(more); return d
 
 # Run before anything of the page's own: the same "random" numbers every time, so the same deal; the saved game;
@@ -77,7 +77,9 @@ async def opened(browser, base, path='/packman/', level='Home', save=None, store
         await page.clock.pause_at(1760000001000)
     await page.goto(base + path)
     for _ in range(100):   # the lettering loaded (asked from here: the page's own timers are stopped)
-        if await page.evaluate('document.fonts.status === "loaded"'): break
+        try:
+            if await page.evaluate('document.fonts.status === "loaded"'): break
+        except Exception: pass   # (a page that loads itself again, as one opened by a link from an email does, is asked again)
         await asyncio.sleep(0.05)
     if still and settle: await page.clock.run_for(settle)   # the deal done and settled
     return page

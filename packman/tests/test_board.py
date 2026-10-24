@@ -51,7 +51,7 @@ def answer(request):
     """The stand-in board: it takes whatever is sent and says the player is second of nine."""
     return {'top': people(5), 'of': 9, 'rank': 2, 'levels': 50}
 
-def sent(page): return [json.loads(body) for method, url, body in page.asked if method == 'POST']
+def sent(page): return [json.loads(body) for method, url, body in page.asked if method == 'POST' and url.split('?')[0].endswith('/api/packman')]   # (the wins, not the saved game)
 
 async def win(t, name, level='Four Square', **more):
     """Open the level as this player on the real site, pack it by hand, and wait for the win sheet."""
