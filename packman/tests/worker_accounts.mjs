@@ -176,4 +176,29 @@ ok(s === 400 && d.error !== 'level', 'a score sent under a level\'s old name is 
 [s, d] = await call('/player', { pid: D, name: 'Didi', email: 'di@example.com', save: { name: 'Didi', email: 'di@example.com', named: 6, done: { 'Rival 1': { t: 40, m: 3 } }, sent: { 'Rival 1': 1 }, last: 'Rival 2' } });
 ok(d.save.done['Opening Hand'] && !d.save.done['Rival 1'] && d.save.sent['Opening Hand'] && d.save.last === 'Square Off', 'a save from before the names is kept under them');
 
+// ---- deleting a game, everywhere ----
+await call('', { level: 'Flip', pid: D, name: 'Didi', t: 9, m: 4, p: [] }, 'POST');
+const E = 'eeeeeeee-0000-0000-0000-000000000005';
+await call('/player', { pid: E, name: 'Ed', email: 'ed@example.com', save: { done: {} } });
+sql.prepare("INSERT INTO scores (level, pid, name, t, m, at) VALUES ('Flip', ?, 'Ed', 9, 4, 1)").run(E);
+[s, d] = await call('?pid=' + E, null, 'DELETE');
+ok(s === 200 && d.gone === 1 && sql.prepare('SELECT COUNT(*) c FROM players WHERE pid = ?').get(E).c === 1, 'without all, only the line on the board goes');
+sql.prepare("INSERT INTO scores (level, pid, name, t, m, at) VALUES ('Flip', ?, 'Ed', 9, 4, 1)").run(E);
+[s, d] = await call('?pid=' + E + '&all=1', null, 'DELETE');
+const left = (t) => sql.prepare('SELECT COUNT(*) c FROM ' + t + ' WHERE pid = ?').get(E).c;
+ok(s === 200 && d.gone === 1 && d.all && !left('scores') && !left('players') && !left('links') && !left('mails'), 'with all, the line, the account, its links and its emails all go');
+[s, d] = await call('/player', { pid: E, name: 'Ed', email: 'ed@example.com', save: { done: { Flip: { t: 9, m: 4 } } } });
+ok(s === 410 && d.error === 'deleted' && !left('players'), 'another device still playing it is told it was deleted, and nothing is kept');
+[s, d] = await call('', { level: 'Flip', pid: E, name: 'Ed', t: 9, m: 4, p: [] }, 'POST');
+ok(s === 410 && d.error === 'deleted' && !left('scores'), 'nor is a win of it put back on the board');
+[s, d] = await call('/player', { pid: 'ffffffff-0000-0000-0000-000000000006', name: 'Ed', email: 'ed@example.com', save: { done: {} } });
+ok(s === 200 && d.fresh, 'the email is free again, for a new game');
+
+// ---- an email sent by hand ----
+[s, d] = await call('/admin/send', { kind: 'level', email: 'ada@example.com', level: 'Opening Hand' });
+ok(s === 403, 'not without the key');
+env.ADMIN_KEY = 'sesame'; const n1 = sent.length;
+let r = await W.fetch(new Request('https://www.garvitgupta.com/api/packman/admin/send', { method: 'POST', headers: { Authorization: 'Bearer sesame' }, body: JSON.stringify({ kind: 'level', email: 'ada@example.com', level: 'Rival 1' }) }), env, ctx);
+ok(r.status === 200 && sent.length === n1 + 1 && /Opening Hand is open/.test(sent[n1].subject) && /\?play=Opening%20Hand/.test(sent[n1].html), 'with it, the email is sent, whatever they have packed');
+
 if (failed) process.exitCode = 1;

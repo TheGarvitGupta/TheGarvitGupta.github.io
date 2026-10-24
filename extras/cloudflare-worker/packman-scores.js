@@ -1570,6 +1570,8 @@ async function tables(db) {
 		// and every email sent, or tried
 		// (about: what it was about, as the level a "new level" email was for)
 		db.prepare("CREATE TABLE IF NOT EXISTS mails (id INTEGER PRIMARY KEY AUTOINCREMENT, pid TEXT, email TEXT NOT NULL, kind TEXT NOT NULL, subject TEXT, at INTEGER NOT NULL, ok INTEGER NOT NULL, rid TEXT, error TEXT, about TEXT)"),
+		// the ids of games deleted, and nothing else of them: another device still playing one is told, and starts afresh
+		db.prepare("CREATE TABLE IF NOT EXISTS deleted (pid TEXT PRIMARY KEY, at INTEGER NOT NULL)"),
 	]);
 	// the columns added since the tables were first made (there already, the database says so, and that is all)
 	for (const q of ["ALTER TABLE players ADD COLUMN key TEXT", "ALTER TABLE players ADD COLUMN quiet INTEGER NOT NULL DEFAULT 0", "ALTER TABLE mails ADD COLUMN about TEXT"]) {
@@ -1620,6 +1622,39 @@ async function tooMany(db, request, what = "", most = PER_HOUR) {
 	return r && r.n > most;
 }
 
+const isDeleted = async (db, pid) => !!(await db.prepare("SELECT 1 AS x FROM deleted WHERE pid = ?").bind(pid).first());
+
+// DELETE /api/packman?pid=&all=1: a player deletes their game, everywhere: their line on the board, their account and
+// saved game, their links, the emails sent them; and the id is noted, so their other devices start afresh too. (Without
+// all, only the line on the board goes: the id a device had before it opened a game from a link.)
+async function erase(db, pid, all) {
+	const gone = await db.prepare("DELETE FROM scores WHERE pid = ?").bind(pid).run();
+	if (all) await db.batch([
+		db.prepare("DELETE FROM players WHERE pid = ?").bind(pid), db.prepare("DELETE FROM links WHERE pid = ?").bind(pid),
+		db.prepare("DELETE FROM mails WHERE pid = ?").bind(pid),
+		db.prepare("INSERT OR IGNORE INTO deleted (pid, at) VALUES (?, ?)").bind(pid, nowSec()),
+	]);
+	return json({ gone: gone.meta ? gone.meta.changes : 0, all: !!all });
+}
+
+// POST /api/packman/admin/send {kind, email, level?} with the ADMIN_KEY secret: one email sent by hand (as one Packman
+// sends, to a player there is), for trying them out
+async function adminSend(db, env, request) {
+	if (!env.ADMIN_KEY || request.headers.get("Authorization") !== "Bearer " + env.ADMIN_KEY) return json({ error: "no" }, 403);
+	const b = await request.json().catch(() => ({}));
+	const p = await db.prepare("SELECT pid, name, email FROM players WHERE email = ?").bind(cleanEmail(b.email)).first();
+	if (!p) return json({ error: "who" }, 404);
+	let ok;
+	if (b.kind === "level") {
+		const l = BY_NAME.get(PackmanSync.named(b.level || "")), k = LEVELS.filter((x) => x.rival).indexOf(l);
+		if (!l) return json({ error: "level" }, 400);
+		ok = await mail(db, env, p.email, p.pid, "level", { name: p.name, level: l.name, intro: l.intro, picture: k >= 0 ? "rival-" + (k + 1) + ".gif" : "",
+			link: SITE + "?play=" + encodeURIComponent(l.name), quiet: await quietLink(db, p.pid) }, l.name);
+	} else if (b.kind === "signin" || b.kind === "welcome") ok = await mail(db, env, p.email, p.pid, b.kind, { name: p.name, link: await link(db, p.pid, b.kind === "signin") });
+	else return json({ error: "kind" }, 400);
+	return json({ ok: !!ok });
+}
+
 async function submit(db, request, env, ctx) {
 	let b;
 	try { b = await request.json(); } catch (e) { return json({ error: "body" }, 400); }
@@ -1627,6 +1662,7 @@ async function submit(db, request, env, ctx) {
 	if (!level) return json({ error: "level" }, 400);
 	const pid = String(b.pid || "");
 	if (!/^[A-Za-z0-9-]{16,48}$/.test(pid)) return json({ error: "pid" }, 400);
+	if (await isDeleted(db, pid)) return json({ error: "deleted" }, 410);
 	const name = cleanName(b.name);
 	if (!name || BLOCKED.test(name.replace(/[^a-z]/gi, ""))) return json({ error: "name" }, 400);
 	const t = Math.round(Number(b.t) * 10) / 10, m = Math.round(Number(b.m));
@@ -1709,6 +1745,7 @@ async function player(db, env, request, ctx) {
 	try { b = await request.json(); } catch (e) { return json({ error: "body" }, 400); }
 	const pid = String(b.pid || "");
 	if (!goodPid(pid)) return json({ error: "pid" }, 400);
+	if (await isDeleted(db, pid)) return json({ error: "deleted" }, 410);   // deleted on another device: this one starts afresh
 	if (b.save != null && (typeof b.save !== "object" || JSON.stringify(b.save).length > SAVE_MOST)) return json({ error: "too big" }, 413);
 	const was = await db.prepare("SELECT email, save FROM players WHERE pid = ?").bind(pid).first();
 	let kept = null;
@@ -1866,14 +1903,14 @@ export default {
 			if (route === "recover" && request.method === "POST") return await recover(db, env, request);
 			if (route === "signin" && request.method === "GET") return await signin(db, url.searchParams.get("t") || "");
 			if (route === "quiet") return await quiet(db, request, url);
+			if (/\/admin\/send\/?$/.test(url.pathname) && request.method === "POST") return await adminSend(db, env, request);
 			if (request.method === "POST") return await submit(db, request, env, ctx);
 			const query = url.searchParams, pid = query.get("pid") || "";
 			if (pid && !/^[A-Za-z0-9-]{16,48}$/.test(pid)) return json({ error: "pid" }, 400);
 			if (request.method === "DELETE") {
 				// A player takes their own line off the board. The id is the only key to it, and only their browser has it.
 				if (!pid) return json({ error: "pid" }, 400);
-				const gone = await db.prepare("DELETE FROM scores WHERE pid = ?").bind(pid).run();
-				return json({ gone: gone.meta ? gone.meta.changes : 0 });
+				return await erase(db, pid, query.get("all") === "1");
 			}
 			if (request.method !== "GET") return json({ error: "method" }, 405);
 			const rows = Math.min(MOST, Math.max(1, Math.floor(Number(query.get("top")) || TOP)));

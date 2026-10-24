@@ -114,6 +114,32 @@ async def test_a_game_got_back_opens_on_its_next_level(t):
     assert s['level'] != 'Home' and s['level'] not in s['save']['done'], s['level']   # (the first of the seventeen not packed here)
     assert not page.errors, page.errors
 
+async def test_delete_everything_deletes_it_on_the_server_too(t):
+    page = await player(await t.page(live=True, board=board(), save=saved('Home', done={'Flip': {'t': 9, 'm': 4}})))
+    await page.click('#reset-ask'); await tick(page, 500)
+    assert await sheet(page) == 'm-reset' and 'every device' in await page.inner_text('#m-reset')
+    assert not await page.query_selector('#reset-board'), 'there is still a choice to keep some of it'
+    await page.click('#reset-go'); await page.wait_for_load_state(); await tick(page, 3000); page = await player(page)
+    s = await page.evaluate('T.state().save')
+    assert not s.get('done') and s.get('pid') != 'test-0000-0000-0000-0000', s
+    gone = [u for m, u, b in page.asked if m == 'DELETE']
+    assert any(u.endswith('?pid=test-0000-0000-0000-0000&all=1') for u in gone), gone
+    assert await page.evaluate('localStorage.getItem("packman.erase")') == '[]', 'and it is still waiting to go'
+    assert not await shown(page, 'name-gone')
+    assert not page.errors, page.errors
+
+async def test_a_game_deleted_on_another_device_starts_afresh_here(t):
+    def answer(request):
+        if request.url.split('?')[0].endswith('/player'): return {'error': 'deleted'}
+        return board()(request)
+    page = await t.page(live=True, board=answer, save=saved('Home', done={'Flip': {'t': 9, 'm': 4}}))   # (it asks the server a moment after it opens)
+    await page.wait_for_url('**reset=**'); await page.wait_for_load_state(); await tick(page, 3000); page = await player(page)
+    s = await page.evaluate('T.state().save')
+    assert not s.get('done') and not s.get('email'), s
+    assert await sheet(page) == 'm-name' and await shown(page, 'name-gone'), 'it does not say why'
+    assert not [u for m, u, b in page.asked if m == 'DELETE' and 'all=1' in u], 'it was deleted again'
+    assert not page.errors, page.errors
+
 async def test_a_used_link_says_so_and_offers_a_new_one(t):
     page = await t.page('/packman/?signin=' + TOKEN, live=True, board=board(), save=saved('Home'))
     await tick(page, 3000); page = await player(page)

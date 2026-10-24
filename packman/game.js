@@ -117,7 +117,8 @@
   // A reset leaves a note for the page that loads after it, which forgets everything once more before it
   // reads anything: whatever may have been written back in the moment between the two.
   try {
-    if (sessionStorage.getItem('packman.reset')) { sessionStorage.removeItem('packman.reset'); localStorage.removeItem(STORE); localStorage.removeItem('packer.v1'); }
+    var RESET = sessionStorage.getItem('packman.reset');   // ('elsewhere': deleted on another device, which the name sheet says)
+    if (RESET) { sessionStorage.removeItem('packman.reset'); localStorage.removeItem(STORE); localStorage.removeItem('packer.v1'); }
   } catch (e) {}
   // progress saved back when the game was called Packer carries over
   try { var raw = JSON.parse(localStorage.getItem(STORE) || localStorage.getItem('packer.v1')); if (raw && raw.done) save = raw; } catch (e) {}
@@ -2978,6 +2979,7 @@
     $('name').value = nameless() ? '' : save.name;
     $('email').value = save.email || '';
     $('name-taken').hidden = true; $('name-back').hidden = !!save.email;
+    $('name-gone').hidden = RESET !== 'elsewhere' || !!save.email;
     $('name-go').textContent = save.name && save.email ? 'Save' : 'Start \u2192';
     openSheet($('m-name'));
   }
@@ -3020,7 +3022,8 @@
     var body = { pid: save.pid, name: called(), email: save.email, save: save };
     if (leaving) { try { fetch(SCORES + '/player', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); } catch (e) {} return; }
     ask(SCORES + '/player', body).then(function (d) {
-      if (d.error === 'taken') { save.email = ''; persist(); askName(); }   // given while the board was out of reach, and somebody else's
+      if (d.error === 'deleted') wipe(true);   // the game was deleted on another device: so it is here
+      else if (d.error === 'taken') { save.email = ''; persist(); askName(); }   // given while the board was out of reach, and somebody else's
       else if (!d.ok) pushed = false;
       else if (d.save) fold(d.save);
     }).catch(function () { pushed = false; });
@@ -3174,6 +3177,7 @@
       return skip ? ask(SCORES + '?pid=' + save.pid) : ask(SCORES, score);
     }).then(function (d) {
       if (mark !== sent) return;   // another win has gone since
+      if (d.error === 'deleted') return wipe(true);
       if (d.error === 'name') {   // the board will not take that name: fall back to the stand-in and send it again
         save.name = alias(me); persist(); score.name = save.name;
         return report(score);
@@ -3246,6 +3250,7 @@
       var l = due.shift(), d = l && save.done[l.name], as = called();
       if (!l) { syncing = false; if (save.as !== called()) sync(); return; }   // renamed while this was going on
       ask(SCORES, { level: l.name, pid: save.pid, name: as, t: d.t, m: d.m, p: l.solution }).then(function (r) {
+        if (r.error === 'deleted') return wipe(true);
         if (r.top || r.error === 'score') { save.sent[l.name] = 1; if (r.top) save.as = as; persist(); }   // on the board, or never going to be
         if (r.top || r.error === 'score' || r.error === 'unpacked') setTimeout(next, 250); else syncing = false;   // anything else: try again next time
       }).catch(function () { syncing = false; });
@@ -3367,40 +3372,44 @@
   $('b-board').addEventListener('click', showBoard);
   $('b-help').addEventListener('click', showHelp);
 
-  // Starting from nothing: everything this browser remembers of the game is forgotten, and the page is
-  // loaded afresh as for a new player. The leaderboard keeps the old scores, under an id nobody has any
-  // more, unless the box on the sheet is ticked: then this player's line is taken off the board as well.
+  // Deleting the game: everything this browser remembers of it is forgotten, and the page is loaded afresh as for a new
+  // player; and the server is asked to delete it too (the board's line, the account, the saved game), so every other
+  // device playing it is told, and starts afresh as well.
   function forget() {
     // both names the progress has been kept under: left behind, the old one would be read back in as if it were the player's
     try { localStorage.removeItem(STORE); localStorage.removeItem('packer.v1'); } catch (e) {}
   }
-  function wipe(board) {
-    // Taking the line off the board is not waited for. The id it is kept under is put on a list of its
-    // own, which outlives the reset, and the board is asked to drop it now and every time the game is
-    // opened until it says it has: so the reset always happens, and the line goes as soon as the board can be reached.
-    if (board) { try { localStorage.setItem(GONE, JSON.stringify(gone().concat(save.pid))); } catch (e) {} }
+  function wipe(elsewhere) {
+    // Deleting it on the server is not waited for. The id is put on a list of its own, which outlives the reset, and the
+    // server is asked to delete it now and every time the game is opened until it says it has: so the reset always
+    // happens, and the rest goes as soon as the server can be reached. (Deleted elsewhere, it is gone there already.)
+    if (!elsewhere && !LOCAL) { try { localStorage.setItem(ERASE, JSON.stringify(gone(ERASE).concat(save.pid))); } catch (e) {} }
     wiped = true;
     clearInterval(ticker); clearTimeout(shakeTimer); clearTimeout(partyTimer);
     forget();
-    try { sessionStorage.setItem('packman.reset', '1'); } catch (e) {}
+    try { sessionStorage.setItem('packman.reset', elsewhere ? 'elsewhere' : '1'); } catch (e) {}
     location.replace(location.pathname + '?reset=' + Date.now());   // a new address, so the browser cannot hand back the old page
   }
-  var GONE = 'packman.gone';
-  function gone() { try { var l = JSON.parse(localStorage.getItem(GONE)); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
+  // GONE: ids whose line is to come off the board (a device's own, given up for a game opened from a link); ERASE: games
+  // deleted, to be deleted on the server as well
+  var GONE = 'packman.gone', ERASE = 'packman.erase';
+  function gone(key) { try { var l = JSON.parse(localStorage.getItem(key || GONE)); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
   function purge() {
     if (LOCAL) return;
-    gone().forEach(function (pid) {
-      fetch(SCORES + '?pid=' + pid, { method: 'DELETE' })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (d) {
-          if (!d || d.gone == null) return;   // not taken off yet: it is asked again next time
-          try { localStorage.setItem(GONE, JSON.stringify(gone().filter(function (p) { return p !== pid; }))); } catch (e) {}
-        }).catch(function () {});
+    [[GONE, ''], [ERASE, '&all=1']].forEach(function (k) {
+      gone(k[0]).forEach(function (pid) {
+        fetch(SCORES + '?pid=' + pid + k[1], { method: 'DELETE' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            if (!d || d.gone == null) return;   // not done yet: it is asked again next time
+            try { localStorage.setItem(k[0], JSON.stringify(gone(k[0]).filter(function (p) { return p !== pid; }))); } catch (e) {}
+          }).catch(function () {});
+      });
     });
   }
   purge();
-  $('reset-ask').addEventListener('click', function () { $('reset-board').checked = false; openSheet($('m-reset')); });
-  $('reset-go').addEventListener('click', function () { wipe($('reset-board').checked); });
+  $('reset-ask').addEventListener('click', function () { openSheet($('m-reset')); });
+  $('reset-go').addEventListener('click', function () { wipe(); });
   var armed = 0;
   function disarm() { clearTimeout(armed); armed = 0; $('b-reset').classList.remove('sure'); }
   $('b-reset').addEventListener('click', function () {
