@@ -147,7 +147,7 @@ async def test_the_first_level_of_each_chapter_is_where_the_game_thinks(t):
 async def test_every_duel_is_set_out_right(t):
     """A Rival level is a duel on the squares of a box with straight sides: Packman's shapes are some of the level's,
     the ones that stand are bricks, a rock is on a square of the box, and it opens on a Sunday, a week after the one
-    before it (the first, on 25 October 2026)."""
+    before it (the first, let out two days early, on Friday 23 October 2026; the second on Sunday 1 November)."""
     import datetime
     L, _ = await levels(t)
     duels = [l for l in L if l['rival']]
@@ -164,8 +164,9 @@ async def test_every_duel_is_set_out_right(t):
         for q in R.get('rocks') or []:
             if not (0 <= q[0] < W and 0 <= q[1] < H): out.append('a rock off the box: %s' % q)
         if not l['opens']: out.append('has no day to open on')
-        elif datetime.date.fromisoformat(l['opens']).weekday() != 6: out.append('opens on %s, not a Sunday' % l['opens'])
+        elif datetime.date.fromisoformat(l['opens']).weekday() != 6 and l is not duels[0]: out.append('opens on %s, not a Sunday' % l['opens'])
         return '; '.join(out)
     each(duels, wrong)
     days = [datetime.date.fromisoformat(l['opens']) for l in duels]
-    assert days[0] == datetime.date(2026, 10, 25) and all((b - a).days == 7 for a, b in zip(days, days[1:])), 'the Rival levels open on %s' % [str(d) for d in days]
+    assert days[0] == datetime.date(2026, 10, 23) and days[1] == datetime.date(2026, 11, 1) and all((b - a).days == 7 for a, b in zip(days[1:], days[2:])), \
+        'the Rival levels open on %s' % [str(d) for d in days]

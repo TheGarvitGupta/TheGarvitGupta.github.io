@@ -1203,7 +1203,7 @@ var PackmanLevels = (function () {
     },
     {
       name: 'Rival 1',
-      opens: '2026-10-25',   // one a week, on Sundays: until its day a level can be looked at, not played
+      opens: '2026-10-23',   // let out two days early; then one a week, on Sundays: until its day a level can be looked at, not played
       rival: { sam: [3, 4, 5] },   // Packman's shapes, in the order it plays them (each side plays its own in order, turn about, and whoever cannot fit theirs loses)
       intro: 'Take turns with Packman: your bricks lie down, its stand up. Whoever cannot fit their next brick loses.',
       hint: 'Lay your first brick in the middle of a row. When Packman stands one at an end, lay your next across the far corner, so the squares left are no column of two.',

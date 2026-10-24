@@ -47,7 +47,7 @@ async def test_a_level_before_its_day_is_shown_and_cannot_be_played(t):
     """Online, a Rival level can be opened before its Sunday, but only looked at: a banner says when it opens, nothing
     can be picked up, and no spot is shown."""
     page = await level(t, 'Rival 1', live=True)
-    await page.clock.set_system_time(datetime.datetime(2026, 10, 23, 12)); await page.reload(); await tick(page, 3000); page = await player(page)   # the Friday before the first
+    await page.clock.set_system_time(datetime.datetime(2026, 10, 22, 12)); await page.reload(); await tick(page, 3000); page = await player(page)   # the day before the first
     assert await page.evaluate('!document.getElementById("soon").hidden'), 'no banner'
     assert 'Opens' in await page.inner_text('#soon')
     before = await page.evaluate('T.pieces()[0]')
