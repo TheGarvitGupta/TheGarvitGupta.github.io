@@ -1358,7 +1358,7 @@ var PackmanMail = (function () {
     },
     level: {
       title: 'A new level is open',
-      when: 'Sent the morning a level opens (a Rival on its Sunday), to each player who can play it: the level before it packed.',
+      when: 'Sent the morning a level opens (a Game Night duel on its Sunday), to each player who can play it: the level before it packed.',
       sample: { name: 'Ada', level: 'Square Off', intro: 'Now you play a square first. Your bricks lie down, Packman\u2019s stand up. Whoever cannot fit theirs loses.', picture: 'rival-2.gif', link: SITE + '?play=Square%20Off',
         quiet: 'https://www.garvitgupta.com/api/packman/quiet?k=0123456789abcdef' },
       make: function (d) {

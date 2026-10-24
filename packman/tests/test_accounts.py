@@ -100,6 +100,20 @@ async def test_a_link_opens_the_game_from_the_email(t):
     assert await page.evaluate('localStorage.getItem("packman.gone")') == '[]', 'and it is still waiting to go'
     assert not page.errors, page.errors
 
+async def test_a_game_got_back_opens_on_its_next_level(t):
+    """Not level 1 of this device: the game's own chapter, at its first level not packed yet."""
+    got = {'pid': 'game-1111-2222-3333-4444', 'name': 'Ada', 'email': 'ada@example.com',
+           'save': {'v': 3, 'done': {'Rival 1': {'t': 90, 'm': 6}}, 'sent': {'Rival 1': 1}, 'last': 'Rival 1', 'seen': True, 'name': 'Ada', 'email': 'ada@example.com'}}
+    page = await t.page('/packman/?signin=' + TOKEN, live=True, board=board(back=got), save=saved('Home', email=None, name='Bo'))
+    await tick(page, 3000); page = await player(page)
+    assert (await page.evaluate('T.state()'))['level'] == 'Square Off'
+    got['save']['done'] = {}; got['save']['last'] = 'Flip'
+    page = await t.page('/packman/?signin=' + TOKEN, live=True, board=board(back=got), save=saved('Home', email=None, name='Bo', done={'Home': {'t': 5, 'm': 4}}))
+    await tick(page, 3000); page = await player(page)
+    s = await page.evaluate('T.state()')
+    assert s['level'] != 'Home' and s['level'] not in s['save']['done'], s['level']   # (the first of the seventeen not packed here)
+    assert not page.errors, page.errors
+
 async def test_a_used_link_says_so_and_offers_a_new_one(t):
     page = await t.page('/packman/?signin=' + TOKEN, live=True, board=board(), save=saved('Home'))
     await tick(page, 3000); page = await player(page)

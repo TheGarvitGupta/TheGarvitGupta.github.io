@@ -3071,11 +3071,22 @@
   $('recover-form').addEventListener('submit', function (e) { e.preventDefault(); sendBack(); });
   // The game from the link takes this one's place; anything this device packed that it has not, or packed better here,
   // comes along with it, to be sent to the board under the game's own id.
+  // Where a game got back opens: in the chapter it was last played in, the first level of it not packed yet (or failing
+  // that, the first one anywhere that is open and not packed); with everything packed, where it was.
+  function landing(g, was) {
+    var done = g.done || {}, at = NAMES.indexOf(PackmanSync.named(was || '')), k = at >= 0 ? chap(LEVELS[at]) : 0;
+    var open = function (n) { return n === FIRST[chap(LEVELS[n])] || !!done[LEVELS[n - 1].name]; };
+    var next = function (ok) { for (var n = 0; n < LEVELS.length; n++) if (!done[LEVELS[n].name] && open(n) && ok(n)) return n; return -1; };
+    var n = next(function (n) { return chap(LEVELS[n]) === k; });
+    if (n < 0) n = next(function () { return true; });
+    return n >= 0 ? LEVELS[n].name : at >= 0 ? LEVELS[at].name : g.last;
+  }
   function adopt(d) {
     var here = JSON.parse(JSON.stringify(save));
     here.sent = {}; here.pid = d.pid; here.named = 0;   // (what this device sent went under its own id, which is going)
     var got = PackmanSync.merge(here, d.save && d.save.done ? d.save : { v: 3, done: {}, seen: true });
     got.pid = d.pid; got.name = d.name; got.email = d.email;
+    got.last = landing(got, d.save && d.save.last);
     wiped = true;   // (nothing of this one is written back over it)
     try {
       localStorage.setItem(STORE, JSON.stringify(got));

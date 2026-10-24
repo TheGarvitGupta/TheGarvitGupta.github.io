@@ -198,6 +198,7 @@ body:has(#stage.eyes) .sky i{opacity:0}   /* and none of them shows round the ta
 #name-back{margin-top:14px}
 #recover-form{margin-top:16px} #recover-form .btn{padding:11px 22px 12px; font-size:18px}
 #recover-sent{margin:16px 0 0; color:var(--text)} #recover-back{margin-top:14px}
+body:has(#m-recover.open) #m-name .card{visibility:hidden}   /* (getting a game back from the name sheet: one card at a time, the name sheet back on Back) */
 #m-recover.done #recover-form{display:none}
 .lb{margin-top:16px; text-align:left}
 .lb-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px; font-size:16px}
