@@ -623,7 +623,7 @@ var PackmanLevels = (function () {
       solution: [[-1, -1, 0], [0, 1, 0], [1.5, -0.5, 90], [1.5, 1, 0], [-1.5, 0, 0], [-1.5, 1, 0], [0.5, 0, 0], [-0.5, 0, 0], [0.5, -1, 0]]
     },
     {
-      name: 'Rival 1',
+      name: 'Opening Hand',
       opens: '2026-10-23',   // let out two days early; then one a week, on Sundays: until its day a level can be looked at, not played
       rival: { sam: [3, 4, 5] },   // Packman's shapes, in the order it plays them (each side plays its own in order, turn about, and whoever cannot fit theirs loses)
       intro: 'Take turns with Packman: your bricks lie down, its stand up. Whoever cannot fit their next brick loses.',
@@ -633,7 +633,7 @@ var PackmanLevels = (function () {
       solution: [[0, -0.5, 0], [1, 0.5, 0], [9, 9, 0], [-1.5, 0, 90], [9, 9, 90], [9, 9, 90]]   // (a duel has no packing: shapes that never go in are kept off the board)
     },
     {
-      name: 'Rival 2',
+      name: 'Square Off',
       opens: '2026-11-01',
       rival: { sam: [3, 4, 5] },   // Packman's shapes, in the order it plays them (each side plays its own in order, turn about, and whoever cannot fit theirs loses)
       intro: 'Now you play a square first. Your bricks lie down, Packman’s stand up. Whoever cannot fit theirs loses.',
@@ -643,7 +643,7 @@ var PackmanLevels = (function () {
       solution: [[0, 0, 0], [-0.5, -1, 0], [0.5, 1, 0], [9, 9, 90], [9, 9, 90], [9, 9, 90]]   // (a duel has no packing: shapes that never go in are kept off the board)
     },
     {
-      name: 'Rival 3',
+      name: 'Rock Bottom',
       opens: '2026-11-08',
       rival: { sam: [4, 5, 6, 7], stand: [4, 5, 7], rocks: [[0, 1], [3, 1]] },   // rocks: squares of the box (column, row) nothing can go on
       intro: 'Two rocks are in the box: nothing can go on them. Your bricks lie down, Packman’s stand up.',
@@ -653,7 +653,7 @@ var PackmanLevels = (function () {
       solution: [[9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 90], [9, 9, 0], [9, 9, 90]]
     },
     {
-      name: 'Rival 4',
+      name: 'House Rules',
       opens: '2026-11-15',
       rival: { sam: [5, 6, 7, 8, 9], stand: [5, 7, 8, 9], first: true },   // first: Packman opens
       intro: 'This time Packman goes first. Answer it well.',
@@ -663,7 +663,7 @@ var PackmanLevels = (function () {
       solution: [[9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 0], [9, 9, 90], [9, 9, 90], [9, 9, 90]]
     },
     {
-      name: 'Rival 5',
+      name: 'Double Cross',
       opens: '2026-11-22',
       rival: { sam: [5, 6, 7, 8, 9], stand: [2, 5, 7, 8, 9] },
       intro: 'Turncoats: one of your bricks stands up, and one of Packman’s lies down. Watch the queues.',
@@ -673,7 +673,7 @@ var PackmanLevels = (function () {
       solution: [[9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 0], [9, 9, 90], [9, 9, 90], [9, 9, 90]]
     },
     {
-      name: 'Rival 6',
+      name: 'The Long Game',
       opens: '2026-11-29',
       rival: { sam: [5, 6, 7, 8, 9], stand: [5, 6, 7, 9] },
       intro: 'A long, low table. Your bricks lie down, Packman’s stand up. Whoever cannot fit their next shape loses.',
@@ -683,7 +683,7 @@ var PackmanLevels = (function () {
       solution: [[9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 90], [9, 9, 90], [9, 9, 90], [9, 9, 0], [9, 9, 90]]
     },
     {
-      name: 'Rival 7',
+      name: 'Endgame',
       opens: '2026-12-06',
       rival: { sam: [5, 6, 7, 8, 9] },
       intro: 'The last duel, and the toughest. Your bricks lie down, Packman’s stand up. Whoever cannot fit their next shape loses.',

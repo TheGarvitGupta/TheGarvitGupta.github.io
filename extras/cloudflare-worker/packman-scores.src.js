@@ -152,7 +152,7 @@ async function tooMany(db, request, what = "", most = PER_HOUR) {
 async function submit(db, request, env, ctx) {
 	let b;
 	try { b = await request.json(); } catch (e) { return json({ error: "body" }, 400); }
-	const level = BY_NAME.get(b && b.level);
+	const level = BY_NAME.get(b && PackmanSync.named(b.level));   // (a page open from before a level was renamed sends its old name)
 	if (!level) return json({ error: "level" }, 400);
 	const pid = String(b.pid || "");
 	if (!/^[A-Za-z0-9-]{16,48}$/.test(pid)) return json({ error: "pid" }, 400);
@@ -230,20 +230,27 @@ async function link(db, pid, once) {
 	return SITE + "?signin=" + t;
 }
 
-// POST /api/packman/player {pid, name, email, save}: who the player is, and their saved game as it is now. A new
-// email gets the welcome; one that another player already has is turned away, so they can ask for a link to it.
+// POST /api/packman/player {pid, name, email, save}: who the player is, and their saved game as this device has it. It is
+// made one with the game as the player's other devices have left it (sync.js), kept, and sent back, for the device to
+// fold in. A new email gets the welcome; one that another player already has is turned away, so they can ask for a link to it.
 async function player(db, env, request, ctx) {
 	let b;
 	try { b = await request.json(); } catch (e) { return json({ error: "body" }, 400); }
-	const pid = String(b.pid || ""), name = cleanName(b.name), email = cleanEmail(b.email);
+	const pid = String(b.pid || "");
 	if (!goodPid(pid)) return json({ error: "pid" }, 400);
+	if (b.save != null && (typeof b.save !== "object" || JSON.stringify(b.save).length > SAVE_MOST)) return json({ error: "too big" }, 413);
+	const was = await db.prepare("SELECT email, save FROM players WHERE pid = ?").bind(pid).first();
+	let kept = null;
+	try { kept = was && was.save ? JSON.parse(was.save) : null; } catch (e) {}
+	const both = b.save ? PackmanSync.merge(b.save, kept || {}) : kept;
+	// the name and the email given last, on whichever device (an old one can send what it had before they were changed)
+	const name = cleanName((both && both.name) || b.name), email = cleanEmail((both && both.email) || b.email);
 	if (!EMAIL.test(email)) return json({ error: "email" }, 400);
 	if (!name) return json({ error: "name" }, 400);
-	let save = null;
-	if (b.save != null) { save = JSON.stringify(b.save); if (save.length > SAVE_MOST) return json({ error: "too big" }, 413); }
+	const save = both ? JSON.stringify(both) : null;
+	if (save && save.length > SAVE_MOST) return json({ error: "too big" }, 413);
 	const other = await db.prepare("SELECT pid FROM players WHERE email = ?").bind(email).first();
 	if (other && other.pid !== pid) return json({ error: "taken" }, 409);
-	const was = await db.prepare("SELECT email FROM players WHERE pid = ?").bind(pid).first();
 	const fresh = !was || was.email !== email;
 	if (fresh && await tooMany(db, request, "player|", 10)) return json({ error: "slow down" }, 429);
 	const now = nowSec(), where = (request.cf && request.cf.country) || null, on = device(request.headers.get("User-Agent"));
@@ -255,7 +262,7 @@ async function player(db, env, request, ctx) {
 		const send = async () => mail(db, env, email, pid, "welcome", { name, link: await link(db, pid, false) });
 		if (ctx && ctx.waitUntil) ctx.waitUntil(send()); else await send();
 	}
-	return json({ ok: true, fresh });
+	return json({ ok: true, fresh, save: both || undefined });
 }
 
 // POST /api/packman/recover {email}: a link to that email's game, if there is one. The answer is the same either way.
@@ -267,8 +274,11 @@ async function recover(db, env, request) {
 	if (await tooMany(db, request, "recover|", 10)) return json({ error: "slow down" }, 429);
 	const p = await db.prepare("SELECT pid, name FROM players WHERE email = ?").bind(email).first();
 	if (p) {
-		const recent = await db.prepare("SELECT COUNT(*) AS c FROM mails WHERE email = ? AND kind = 'signin' AND at > ?").bind(email, nowSec() - HOUR).first();
-		if (!recent || recent.c < 5) await mail(db, env, email, p.pid, "signin", { name: p.name, link: await link(db, p.pid, true) });
+		// five links an hour to one address, counting only the ones that went (one that failed to go is no reason to send fewer);
+		// past that it says so, rather than seeming to send one that never comes
+		const recent = await db.prepare("SELECT COUNT(*) AS c FROM mails WHERE email = ? AND kind = 'signin' AND ok = 1 AND at > ?").bind(email, nowSec() - HOUR).first();
+		if (recent && recent.c >= 5) return json({ error: "slow down" }, 429);
+		if (!await mail(db, env, email, p.pid, "signin", { name: p.name, link: await link(db, p.pid, true) })) return json({ error: "send" }, 502);
 	}
 	return json({ ok: true });
 }
@@ -317,7 +327,7 @@ async function announce(db, env, now = Date.now(), wait = 600) {
 			const t = tried.get(p.pid);
 			if (t && (t.ok > 0 || t.c >= 3)) continue;
 			let done = {};
-			try { done = (JSON.parse(p.save) || {}).done || {}; } catch (e) {}
+			try { done = PackmanSync.renamed(JSON.parse(p.save) || {}).done || {}; } catch (e) {}
 			if (done[l.name] || (before && !done[before.name])) continue;
 			if (n++ >= LEVEL_EACH_GO) return n - 1;   // the rest next hour
 			await mail(db, env, p.email, p.pid, "level", { name: p.name, level: l.name, intro: l.intro, picture: k >= 0 ? "rival-" + (k + 1) + ".gif" : "",

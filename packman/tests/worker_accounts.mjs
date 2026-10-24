@@ -73,6 +73,17 @@ ok(sql.prepare('SELECT COUNT(*) c FROM mails WHERE ok = 1').get().c === 3, 'ever
 const p = sql.prepare('SELECT * FROM players').get(); ok(p.device === 'phone · Safari', 'device: ' + p.device);
 env.RESEND_API_KEY = ''; await call('/player', { pid: B, name: 'Bo', email: 'bo@example.com' }); env.RESEND_API_KEY = 'k';
 const f = sql.prepare("SELECT * FROM mails WHERE email = 'bo@example.com'").get(); ok(f && f.ok === 0 && /RESEND/.test(f.error), 'a failed send is logged with why');
+{ // getting a game back, many times in an hour: the ones that failed to go are not counted, and past five it says so
+  const n0 = sent.length;
+  down = true; for (let k = 0; k < 3; k++) [s, d] = await call('/recover', { email: 'ada@example.com' }, 'POST', '9.9.9.' + k); down = false;
+  ok(s === 502 && d.error === 'send', 'a link that could not be sent says so');
+  let got = 0;
+  for (let k = 0; k < 5; k++) { [s, d] = await call('/recover', { email: 'ada@example.com' }, 'POST', '8.8.8.' + k); if (s === 200) got++; }
+  ok(got === 5 && sent.length === n0 + 5, 'the failed ones take nothing from the five an hour (' + got + ')');
+  [s, d] = await call('/recover', { email: 'ada@example.com' }, 'POST', '7.7.7.7');
+  ok(s === 429 && d.error === 'slow down' && sent.length === n0 + 5, 'a sixth in the hour is turned down, and says so');
+  clock += 3601 * 1000;
+}
 [s, d] = await call('', null); ok(s === 200 && 'top' in d, 'the board still answers');
 
 // ---- passed on the board ----
@@ -125,7 +136,7 @@ clock = Date.parse(R[0].opens + 'T10:30:00Z'); await run();
 let lm = mails('level');
 ok(lm.length === 2 && lm.every((m) => m.subject === R[0].name + ' is open in Packman') && lm.map(to).sort().join() === 'bo@example.com,cy@example.com',
   'the first Rival: everyone who has not packed it (Ada has): ' + lm.map(to));
-ok(/\?play=Rival%201/.test(lm[0].html) && /rival-1\.gif/.test(lm[0].html) && /Play now/.test(lm[0].html) && lm[0].headers['List-Unsubscribe'], 'a link straight to it, its picture, and a way to turn them off');
+ok(/\?play=Opening%20Hand/.test(lm[0].html) && /rival-1\.gif/.test(lm[0].html) && /Play now/.test(lm[0].html) && lm[0].headers['List-Unsubscribe'], 'a link straight to it, its picture, and a way to turn them off');
 clock += 3600 * 1000; await run();
 ok(mails('level').length === 2, 'nobody hears twice');
 clock = Date.parse(R[1].opens + 'T11:00:00Z'); sent = []; await run();
@@ -141,5 +152,28 @@ await call(quietUrl.replace('https://www.garvitgupta.com/api/packman', ''), null
 await call('/player', { pid: A, name: 'Ada', email: 'ada@example.com', save: { done: { [R[0].name]: 1, [R[1].name]: 1 } } });
 clock = Date.parse(R[2].opens + 'T11:00:00Z'); sent = []; await run();
 ok(!mails('level').length, 'nor anyone who turned them off');
+
+// ---- one player, two devices: what each sends is made one with what the other did ----
+const D = 'dddddddd-0000-0000-0000-000000000004', day = '2026-11-01';
+await call('/player', { pid: D, name: 'Di', email: 'di@example.com', save: { name: 'Di', email: 'di@example.com', named: 1, done: { Flip: { t: 9, m: 4 } }, sent: { Flip: 1 }, hints: { 'chapter 0': { n: 2, day } }, mute: true } });
+// the laptop, which has not heard of the phone's Flip, packs Home, and was renamed before the phone was
+[s, d] = await call('/player', { pid: D, name: 'Dee', email: 'di@example.com', save: { name: 'Dee', email: 'di@example.com', named: 0, done: { Home: { t: 30, m: 6 }, Flip: { t: 12, m: 5 } }, hints: { 'chapter 0': { n: 3, day } }, mute: false } });
+ok(s === 200 && d.save && d.save.done.Flip.m === 4 && d.save.done.Home.m === 6, 'the laptop hears of the phone\'s level, and keeps its own');
+ok(d.save.sent.Flip === 1 && !d.save.sent.Home, 'the phone\'s better Flip is the one on the board; the laptop\'s Home is still to send');
+ok(d.save.hints['chapter 0'].n === 2, 'a hint used on the phone is used on the laptop too');
+ok(d.save.name === 'Di' && sql.prepare('SELECT name FROM players WHERE pid = ?').get(D).name === 'Di', 'the name given last wins, not the device that spoke last');
+ok(d.save.mute === false, 'the laptop keeps its own sound');
+const kept = JSON.parse(sql.prepare('SELECT save FROM players WHERE pid = ?').get(D).save);
+ok(kept.done.Flip.m === 4 && kept.done.Home.m === 6, 'and the server keeps both');
+[s, d] = await call('/player', { pid: D, name: 'Di', email: 'di@example.com', save: { name: 'Di', email: 'di@example.com', named: 1, done: { Flip: { t: 9, m: 4 } }, sent: { Flip: 1 } } });
+ok(d.save.done.Home && d.save.done.Home.m === 6, 'the phone, sending what it had, loses nothing the laptop did');
+[s, d] = await call('/player', { pid: D, name: 'Di', email: 'di@example.com', save: { name: 'Didi', email: 'di@example.com', named: 5, done: {} } });
+ok(d.save.name === 'Didi' && sql.prepare('SELECT name FROM players WHERE pid = ?').get(D).name === 'Didi', 'a later rename on either device sticks');
+
+// ---- the levels that were renamed ----
+[s, d] = await call('', { level: 'Rival 1', pid: D, name: 'Di', t: 30, m: 3, p: [[9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0], [9, 9, 0]] }, 'POST');
+ok(s === 400 && d.error !== 'level', 'a score sent under a level\'s old name is judged as the level it is now (' + d.error + ')');
+[s, d] = await call('/player', { pid: D, name: 'Didi', email: 'di@example.com', save: { name: 'Didi', email: 'di@example.com', named: 6, done: { 'Rival 1': { t: 40, m: 3 } }, sent: { 'Rival 1': 1 }, last: 'Rival 2' } });
+ok(d.save.done['Opening Hand'] && !d.save.done['Rival 1'] && d.save.sent['Opening Hand'] && d.save.last === 'Square Off', 'a save from before the names is kept under them');
 
 if (failed) process.exitCode = 1;

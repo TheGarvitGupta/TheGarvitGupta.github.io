@@ -799,7 +799,8 @@ body.rivals #pips{display:none}
 /* Rival: a rock on a square of the box, that nothing can go on */
 .rock{fill:#6E7B72; stroke:#3F4A43; stroke-width:calc(2px * var(--u)); filter:drop-shadow(0 calc(2px * var(--u)) 0 rgba(0,0,0,.25))}
 /* a level not out yet: under it, the day it opens */
-.lv.soon{margin-bottom:14px; align-self:start}   /* (not stretched to the taller row: in Safari a square would widen with it) */
+.lv.soon{margin-bottom:14px}
+#grid .lv{align-self:start}   /* (none stretched to a row made taller by a date under one: in Safari a square would widen with it) */
 .lv .when{position:absolute; left:0; right:0; bottom:-17px; font-size:10.5px; font-weight:600; color:var(--mut); text-align:center}
 /* A level not out yet: everything on the board dimmed and still, and over it a banner with the day it opens and how long to go */
 #soon{position:absolute; z-index:5; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; align-items:center; gap:12px; padding:12px 22px 13px 16px;

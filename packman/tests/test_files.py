@@ -4,7 +4,7 @@ import importlib.util, os, re, subprocess
 from harness import ROOT, GAME, read
 
 PAGES = ['index.html', 'personalities.html', 'reel/index.html', 'tools/check.html']
-SCRIPTS = ['geom.js', 'levels.js', 'faces.js', 'sounds.js', 'game.js', 'reel/reel.js']
+SCRIPTS = ['geom.js', 'levels.js', 'faces.js', 'sounds.js', 'sync.js', 'game.js', 'reel/reel.js']
 ASKED = re.compile(r'''(?:src|href)=["']([^"'#]+)["']''')
 
 def asked(page):

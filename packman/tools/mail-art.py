@@ -9,7 +9,7 @@ with its own faces and moods. A frame is taken with every animation on the page 
 
     logo.png          the name, at the top of every email
     passed.gif        a smug square hops over a sad one: for "you've been passed"
-    rival-<n>.gif     each Rival level as it is dealt, its next piece glowing: for "a new level is open"
+    rival-<n>.gif     each Game Night level as it is dealt, its next piece glowing: for "a new level is open"
 """
 import asyncio, io, os, sys
 from PIL import Image
@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.join(GAME, 'tests'))
 import harness
 
 OUT = os.path.join(GAME, 'mail')
+DUELS = ['Opening Hand', 'Square Off', 'Rock Bottom', 'House Rules', 'Double Cross', 'The Long Game', 'Endgame']   # the Game Night levels, in order
 WIDE = 560   # every picture this wide (the email shows them at half that, for sharp screens)
 
 # Everything but the board, gone: a picture is the pieces, the box and the dotted ground under them.
@@ -102,7 +103,7 @@ async def passed(browser, base):
 
 async def rival(browser, base, n):
     """The level as it is dealt: the box, both trays, and the player's next piece glowing and nudging, once round."""
-    page = await page_of(browser, base, 'Rival %d' % n)   # (as on a phone: Packman's tray, the box, then yours)
+    page = await page_of(browser, base, DUELS[n - 1])   # (as on a phone: Packman's tray, the box, then yours)
     await page.evaluate('document.querySelector(".tray.you .pill text").textContent = "You"')   # (whoever it is sent to)
     r = await page.evaluate(UNION + '("#bin, .piece, .tray")')
     box = around(r, 14)

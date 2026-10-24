@@ -36,7 +36,7 @@
     'Dolphin', 'Moose', 'Raven', 'Gecko', 'Bison', 'Puffin', 'Hare', 'Seal', 'Yak', 'Crane', 'Lemur', 'Ibex'];
   // Three chapters: the seventeen, then the powers, then the bricks and hexagons. The file lists the
   // powers last (they were written last), so the levels are put in chapter order here.
-  var CHAPTERS = ['Seventeen', 'Powers', 'Bricks and hexagons', 'Twists', 'Inventions', 'Rivals'];
+  var CHAPTERS = ['Seventeen', 'Powers', 'Bricks and hexagons', 'Twists', 'Inventions', 'Game Night'];
   function chap(l) { return l.rival ? 5 : l.invent ? 4 : l.twist ? 3 : l.powers ? 1 : l.bonus ? 2 : 0; }   // (the fourth has powers on some levels and none on others)
   LEVELS = [0, 1, 2, 3, 4, 5].reduce(function (all, k) { return all.concat(LEVELS.filter(function (l) { return chap(l) === k; })); }, []);
   var FIRST = CHAPTERS.map(function (c, k) { return LEVELS.map(chap).indexOf(k); });   // where each chapter starts
@@ -121,9 +121,9 @@
   } catch (e) {}
   // progress saved back when the game was called Packer carries over
   try { var raw = JSON.parse(localStorage.getItem(STORE) || localStorage.getItem('packer.v1')); if (raw && raw.done) save = raw; } catch (e) {}
-  // Minefield was called Short Fuse for its first day: a win of it then is a win of it now, so the level after it stays open.
-  if (save.done && save.done['Short Fuse']) { if (!save.done.Minefield) save.done.Minefield = save.done['Short Fuse']; delete save.done['Short Fuse']; }
-  if (save.last === 'Short Fuse') save.last = 'Minefield';
+  // A level that has been renamed (Minefield was Short Fuse for its first day, the Rival levels were numbered for theirs):
+  // a win of it then is a win of it now, so the level after it stays open.
+  PackmanSync.renamed(save);
   // The board turned away a win of Kaleidoscope in fewer moves than it has shapes, copies and all, and the win
   // was never sent again. It takes them now: once, whatever was sent of it goes up again.
   if (!save.kaleido) { if (save.sent) delete save.sent.Kaleidoscope; save.kaleido = 1; }
@@ -2843,11 +2843,12 @@
     return h;
   }
   function midnight() { var d = new Date(); d.setHours(24, 0, 0, 0); return d.getTime(); }
-  // How long until the next one comes back: hours, then minutes inside the last hour, then seconds inside the
-  // last minute, each rounded down. With 7 hours 59 minutes to go it says 7 hours.
+  // How long until something comes (the hints back, a level open): days once it is a day or more, else hours, else minutes,
+  // else seconds, each to the nearest. With 7 hours 59 minutes to go it says 8 hours; with 197 hours, 8 days.
   function wait(ms) {
-    var n = ms >= 36e5 ? Math.floor(ms / 36e5) : ms >= 6e4 ? Math.floor(ms / 6e4) : Math.max(1, Math.floor(ms / 1000));
-    return n + (ms >= 36e5 ? ' hour' : ms >= 6e4 ? ' minute' : ' second') + (n === 1 ? '' : 's');
+    var u = ms >= 23.5 * 36e5 ? [864e5, ' day'] : ms >= 59.5 * 6e4 ? [36e5, ' hour'] : ms >= 59.5e3 ? [6e4, ' minute'] : [1e3, ' second'];
+    var n = Math.max(1, Math.round(ms / u[0]));
+    return n + u[1] + (n === 1 ? '' : 's');
   }
   // the number on the hint button: what this chapter has left
   function countHints() {
@@ -2991,7 +2992,7 @@
     if (!name || name === alias(me)) return wanted($('name'));
     if (!EMAIL.test(email)) return wanted($('email'));
     $('name-taken').hidden = true;
-    function done() { save.name = name; save.email = email; persist(); $('name').blur(); $('email').blur(); closeSheet($('m-name')); }
+    function done() { save.name = name; save.email = email; save.named = Date.now(); persist(); $('name').blur(); $('email').blur(); closeSheet($('m-name')); }
     // (on this machine, and under the name that plays off the record, nothing is sent)
     if (LOCAL || /^swordfish$/i.test(name) || email === save.email) return done();
     var copy = JSON.parse(JSON.stringify(save)); copy.name = name; copy.email = email;
@@ -3007,21 +3008,38 @@
   $('name-back').addEventListener('click', function () { askBack($('email').value); });
   $('name-claim').addEventListener('click', function () { askBack($('email').value, true); });
 
-  // The saved game goes to the board's server a moment after it changes, under the player's email, for opening elsewhere.
-  var pushing = 0, pushed = true;
-  function pushNow(leaving) {
+  // The saved game goes to the board's server a moment after it changes, under the player's email, for opening elsewhere;
+  // and the server answers with the game as every device of the player's has left it, made one (sync.js), which is folded
+  // in here. So it is asked for whenever the game is opened or come back to, as well: a level packed on the phone is open
+  // on the laptop the next time it is looked at.
+  var pushing = 0, pushed = true, pulled = 0;
+  function pushNow(leaving, anyway) {
     clearTimeout(pushing); pushing = 0;
-    if (pushed || LOCAL || wiped || !save.email || offRecord()) return;
-    pushed = true;
+    if ((pushed && !anyway) || LOCAL || wiped || !save.email || offRecord()) return;
+    pushed = true; pulled = Date.now();
     var body = { pid: save.pid, name: called(), email: save.email, save: save };
     if (leaving) { try { fetch(SCORES + '/player', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); } catch (e) {} return; }
     ask(SCORES + '/player', body).then(function (d) {
       if (d.error === 'taken') { save.email = ''; persist(); askName(); }   // given while the board was out of reach, and somebody else's
       else if (!d.ok) pushed = false;
+      else if (d.save) fold(d.save);
     }).catch(function () { pushed = false; });
   }
   function push() { pushed = false; if (!pushing) pushing = setTimeout(pushNow, 2500); }
-  document.addEventListener('visibilitychange', function () { if (document.hidden && pushing) pushNow(true); });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { if (pushing) pushNow(true); }
+    else if (Date.now() - pulled > 20000) pushNow(false, true);   // back to the game: what the other devices have done since
+  });
+  // The game from the server, folded into this one. Only what changed is shown: the medals on the levels; the list of
+  // levels is made afresh each time it is opened, and a level packed elsewhere is open from then on.
+  function fold(theirs) {
+    var both = PackmanSync.merge(save, theirs);
+    if (PackmanSync.same(save, both)) return;
+    Object.keys(save).forEach(function (k) { if (!(k in both)) delete save[k]; });
+    Object.keys(both).forEach(function (k) { save[k] = both[k]; });
+    try { if (!wiped) localStorage.setItem(STORE, JSON.stringify(save)); } catch (e) {}   // (written, and not sent back: it is what the server has)
+    medals(); sync();
+  }
 
   // Getting a game back: a link to it is sent to its email, and opening the link here puts that game in place of this one.
   var backThen = null, SIGNIN = (/[?&]signin=([0-9a-f]{48})/.exec(location.search) || [])[1];
@@ -3044,7 +3062,8 @@
     go.disabled = true;
     ask(SCORES + '/recover', { email: email }).then(function (d) {
       go.disabled = false;
-      if (d.error === 'slow down') return backSays('That\u2019s a lot of links for one hour. Try again a little later.', true);
+      if (d.error === 'slow down') return backSays('That\u2019s a lot of links for one hour. Use the newest one already sent, or try again in an hour.', true);
+      if (d.error === 'send') return backSays('The email couldn\u2019t be sent just now. Try again in a minute.', true);
       if (!d.ok) return backSays('That didn\u2019t work. Check the email and try again.', true);
       backSays('If ' + email + ' has a game, a link to it is on its way. Open it on this device: it works once, for an hour. Nothing yet? Look in your spam folder.');
     }, function () { go.disabled = false; backSays('Couldn\u2019t reach the server. Check your connection and try again.', true); });
@@ -3053,12 +3072,10 @@
   // The game from the link takes this one's place; anything this device packed that it has not, or packed better here,
   // comes along with it, to be sent to the board under the game's own id.
   function adopt(d) {
-    var got = d.save && d.save.done ? d.save : { v: 3, done: {}, seen: true };
+    var here = JSON.parse(JSON.stringify(save));
+    here.sent = {}; here.pid = d.pid; here.named = 0;   // (what this device sent went under its own id, which is going)
+    var got = PackmanSync.merge(here, d.save && d.save.done ? d.save : { v: 3, done: {}, seen: true });
     got.pid = d.pid; got.name = d.name; got.email = d.email;
-    Object.keys(save.done).forEach(function (k) {
-      var a = save.done[k], b = got.done[k];
-      if (!b || a.m < b.m || (a.m === b.m && a.t < b.t)) { got.done[k] = a; if (got.sent) delete got.sent[k]; }
-    });
     wiped = true;   // (nothing of this one is written back over it)
     try {
       localStorage.setItem(STORE, JSON.stringify(got));
@@ -3262,7 +3279,7 @@
   // is asked with their id. It is kept, so the list of levels can show it at once, and is put right when the board answers.
   function keepPlaces(d) {
     if (!d || !d.places) return;
-    save.places = d.places; persist(); medals();
+    save.places = d.places; save.placed = Date.now(); persist(); medals();
   }
   // on each packed level in the list where the player is first, second or third there, a medal in place of the tick
   function medals() {
@@ -3560,7 +3577,7 @@
     });
   });
   var asked = /[?&#]level=(\d+)/.exec(location.search + location.hash), NAMES = LEVELS.map(function (l) { return l.name; });
-  var playing = /[?&]play=([^&#]+)/.exec(location.search), byName = playing ? NAMES.indexOf(decodeURIComponent(playing[1].replace(/\+/g, ' '))) : -1;   // (by name: the emails' Play now)
+  var playing = /[?&]play=([^&#]+)/.exec(location.search), byName = playing ? NAMES.indexOf(PackmanSync.named(decodeURIComponent(playing[1].replace(/\+/g, ' ')))) : -1;   // (by name: the emails' Play now)
   var first = asked ? +asked[1] - 1 : byName >= 0 ? byName : NAMES.indexOf(save.last);
   first = clamp(first, 0, LEVELS.length - 1);
   while (!unlocked(first)) first--;   // a link to a level not reached yet opens the furthest one that is
@@ -3575,7 +3592,7 @@
     if (!save.seen) showHelp();
   };
   sync();
-  function begin() { if (unsigned()) askName(opening); else opening(); }
+  function begin() { if (unsigned()) askName(opening); else opening(); setTimeout(function () { pushNow(false, true); }, 1200); }   // (and what the player's other devices have done)
   if (SIGNIN) signIn(begin); else begin();
   persist();
 

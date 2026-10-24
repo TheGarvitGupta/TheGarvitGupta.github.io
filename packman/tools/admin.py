@@ -261,7 +261,7 @@ Start is when that packing began (when it was sent, less how long it took). Trie
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function mean(a) { return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : null; }
   function median(a) { if (!a.length) return null; var b = a.slice().sort(function (x, y) { return x - y; }), k = b.length >> 1; return b.length % 2 ? b[k] : (b[k - 1] + b[k]) / 2; }
-  var CH = ['Seventeen', 'Powers', 'Bricks and hexagons', 'Twists', 'Inventions', 'Rivals'];
+  var CH = ['Seventeen', 'Powers', 'Bricks and hexagons', 'Twists', 'Inventions', 'Game Night'];
 
   function model(d) {
     var known = {}, cols = d.levels.map(function (l, i) { known[l.name] = true; return { name: l.name, chapter: l.chapter, shapes: l.shapes, no: i + 1 }; });

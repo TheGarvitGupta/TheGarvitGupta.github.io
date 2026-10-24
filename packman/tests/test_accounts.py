@@ -11,7 +11,7 @@ async def test_the_worker_keeps_players_and_sends_their_emails(t):
     """The worker, in Node with SQLite for its database: accounts, links, and every kind of email, when each is sent and when not."""
     r = subprocess.run(['node', os.path.join(ROOT, 'packman', 'tests', 'worker_accounts.mjs'), os.path.join(ROOT, 'extras', 'cloudflare-worker', 'packman-scores.js')],
                        capture_output=True, text=True)
-    assert r.returncode == 0 and 'FAIL' not in r.stdout and r.stdout.count('ok  ') >= 39, r.stdout + r.stderr[-1500:]
+    assert r.returncode == 0 and 'FAIL' not in r.stdout and r.stdout.count('ok  ') >= 47, r.stdout + r.stderr[-1500:]
 
 async def test_a_new_player_cannot_start_without_an_email(t):
     page = await player(await t.page(save=False))
@@ -148,14 +148,61 @@ async def test_every_email_has_its_pictures_a_way_in_and_plain_text(t):
         if m['kind'] in ('passed', 'level'): assert 'No more emails like this' in m['html'] and 'No more emails like this' in m['text'], '%s: no way to turn it off' % what
         else: assert 'No more emails' not in m['html'], '%s: a way to turn off an email that is not a notification' % what
         assert '<script' not in m['html'].lower() and 'undefined' not in m['html'] and 'undefined' not in m['text'], what
-    levels = [m for m in made if m['kind'] == 'level' and m['title'].startswith('Rival')]
-    assert len(levels) == 7 and all('Play now' in m['html'] and '?play=Rival%20' in m['html'] for m in levels)
+    levels = [m for m in made if m['kind'] == 'level' and m['title'] != 'A new level is open']
+    assert len(levels) == 7 and all('Play now' in m['html'] and '?play=' in m['html'] and 'rival-' in m['html'] for m in levels)
 
 async def test_play_now_opens_that_level(t):
-    page = await player(await t.page('/packman/?play=Rival%203'))
-    assert (await page.evaluate('T.state()'))['level'] == 'Rival 3'
-    page = await player(await t.page('/packman/?play=Rival+5'))
-    assert (await page.evaluate('T.state()'))['level'] == 'Rival 5'
+    page = await player(await t.page('/packman/?play=Rock%20Bottom'))
+    assert (await page.evaluate('T.state()'))['level'] == 'Rock Bottom'
+    page = await player(await t.page('/packman/?play=Double+Cross'))
+    assert (await page.evaluate('T.state()'))['level'] == 'Double Cross'
+    page = await player(await t.page('/packman/?play=Rival%201'))   # (the link in the first email, sent before the levels had names)
+    assert (await page.evaluate('T.state()'))['level'] == 'Opening Hand'
     page = await player(await t.page('/packman/?play=Nothing%20Like%20It', save=saved('Flip')))
     assert (await page.evaluate('T.state()'))['level'] == 'Flip', 'a name that is no level does not open the one they were on'
     assert not page.errors, page.errors
+
+# ---- one player on two devices ----
+
+async def test_what_another_device_did_is_folded_in(t):
+    """The server answers a save with the game as all the player's devices have it: a level packed on the other one opens
+    here, a hint used there is used here, and this device keeps its own sound and the level it is on."""
+    other = {'v': 3, 'name': 'Packer', 'email': 'packer@example.com', 'named': 1, 'pid': 'test-0000-0000-0000-0000', 'last': 'Rock Bottom', 'mute': True,
+             'done': {'Four Square': {'t': 5, 'm': 4}, 'Flip': {'t': 7, 'm': 4}}, 'sent': {'Four Square': 1, 'Flip': 1}, 'hints': {'chapter 0': {'n': 1, 'day': '2025-10-09'}}, 'seen': True}
+    def answer(request):
+        path = request.url.split('?')[0]
+        if path.endswith('/player'):
+            here = json.loads(request.post_data)['save']
+            day = (here.get('hints') or {}).get('chapter 0', {}).get('day', '2025-10-09')   # (the same day as here: one hint used there)
+            return {'ok': True, 'fresh': False, 'save': dict(other, mute=here.get('mute', False), last=here.get('last'), hints={'chapter 0': {'n': 1, 'day': day}})}
+        return {'top': [], 'of': 0, 'levels': 50}
+    page = await player(await t.page(live=True, board=answer, save=saved('Four Square', done={'Four Square': {'t': 6, 'm': 4}})))
+    await tick(page, 2500)   # (asked a moment after the game opens)
+    s = await page.evaluate('T.state().save')
+    assert s['done'].get('Flip') == {'t': 7, 'm': 4} and s['done']['Four Square'] == {'t': 5, 'm': 4}, s['done']
+    assert s['hints']['chapter 0']['n'] == 1 and not s.get('mute') and s['last'] == 'Four Square', s
+    stored = json.loads(await page.evaluate('localStorage.getItem("packman.v1")'))
+    assert 'Flip' in stored['done'], 'folded in, and not kept'
+    await page.click('#chip'); await tick(page, 800)
+    assert await page.evaluate('!document.querySelector("#grid .lv[data-name=\\"Home\\"]").classList.contains("shut")'), 'the level after the one packed elsewhere is still shut'
+    assert not page.errors, page.errors
+
+MERGE = r"""
+const S = require(process.argv[1]), out = [];
+const a = { pid: 'p', name: 'A', named: 2, done: { X: { t: 9, m: 4 }, Y: { t: 5, m: 3 } }, sent: { X: 1, Y: 1 }, hints: { c: { n: 2, day: '2026-01-02' }, d: { n: 0, day: '2026-01-01' } }, mute: true, seen: true };
+const b = { pid: 'p', name: 'B', named: 1, done: { X: { t: 8, m: 4 }, Z: { t: 1, m: 1 } }, sent: { X: 1 }, hints: { c: { n: 1, day: '2026-01-02' }, d: { n: 3, day: '2026-01-02' } }, mute: false, finished: true };
+const m = S.merge(a, b), n = S.merge(b, a);
+out.push(m.done.X.t === 8 && m.done.Y && m.done.Z, m.sent.X === 1 && m.sent.Y === 1 && !m.sent.Z, m.hints.c.n === 1 && m.hints.d.n === 3 && m.hints.d.day === '2026-01-02',
+  m.name === 'A' && n.name === 'A', m.mute === true && n.mute === false, m.seen && m.finished && n.seen && n.finished,
+  JSON.stringify(m.done) === JSON.stringify(Object.assign({}, n.done)) || Object.keys(m.done).sort().join() === Object.keys(n.done).sort().join(),
+  S.same(m, S.merge(m, b)), !S.same(a, m));
+console.log(JSON.stringify(out));
+"""
+
+async def test_the_merge_keeps_the_best_of_both(t):
+    r = subprocess.run(['node', '-e', MERGE, os.path.join(ROOT, 'packman', 'sync.js')], capture_output=True, text=True, check=True)
+    got = json.loads(r.stdout)
+    names = ['the better packing of each level, and every level of both', 'on the board if the packing kept was sent', 'a day\'s hints: the fewer left, or the later day\'s',
+             'the name given last', 'the sound is the device\'s own', 'flags once on either are on', 'either way round, the same levels', 'made one, again, it is the same', 'and it is not what it was']
+    bad = [n for n, ok in zip(names, got) if not ok]
+    assert not bad, bad
