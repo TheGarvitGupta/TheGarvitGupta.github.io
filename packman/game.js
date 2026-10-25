@@ -36,11 +36,13 @@
     'Dolphin', 'Moose', 'Raven', 'Gecko', 'Bison', 'Puffin', 'Hare', 'Seal', 'Yak', 'Crane', 'Lemur', 'Ibex'];
   // Three chapters: the seventeen, then the powers, then the bricks and hexagons. The file lists the
   // powers last (they were written last), so the levels are put in chapter order here.
-  var CHAPTERS = ['Seventeen', 'Powers', 'Bricks and hexagons', 'Twists', 'Inventions', 'Game Night'];
-  function chap(l) { return l.rival ? 5 : l.invent ? 4 : l.twist ? 3 : l.powers ? 1 : l.bonus ? 2 : 0; }   // (the fourth has powers on some levels and none on others)
-  LEVELS = [0, 1, 2, 3, 4, 5].reduce(function (all, k) { return all.concat(LEVELS.filter(function (l) { return chap(l) === k; })); }, []);
+  // (the first two are the main game, the seventeen levels: sixteen, and the hard one, on its own)
+  var CHAPTERS = ['First Steps', 'Seventeen', 'Powers', 'Bricks and hexagons', 'Twists', 'Inventions', 'Game Night'];
+  function chap(l) { return l.rival ? 6 : l.invent ? 5 : l.twist ? 4 : l.powers ? 2 : l.bonus ? 3 : l.alone ? 1 : 0; }   // (the fifth has powers on some levels and none on others)
+  function main(l) { return chap(l) < 2; }
+  LEVELS = CHAPTERS.map(function (c, k) { return k; }).reduce(function (all, k) { return all.concat(LEVELS.filter(function (l) { return chap(l) === k; })); }, []);
   var FIRST = CHAPTERS.map(function (c, k) { return LEVELS.map(chap).indexOf(k); });   // where each chapter starts
-  var MAIN = LEVELS.filter(function (l) { return !chap(l); }).length;   // the seventeen
+  var MAIN = LEVELS.filter(main).length;   // the seventeen
   function among(n) { return n - FIRST[chap(LEVELS[n])] + 1; }   // a level's number within its chapter
   function chapSize(k) { return LEVELS.filter(function (l) { return chap(l) === k; }).length; }
   var TURN = { square: 90, triangle: 120, domino: 180, hexagon: 60 };   // degrees before a shape looks the same again
@@ -2671,8 +2673,8 @@
     confetti(whole ? 320 : finale ? 190 : again && !faster ? 50 : 150);
     setTimeout(function () { if (won) tieRibbon(); }, calm ? 0 : 550);
 
-    var all = LEVELS.every(function (l) { return chap(l) || save.done[l.name]; }), total = { t: 0, m: 0 };
-    if (all) LEVELS.forEach(function (l) { if (!chap(l)) { total.t += save.done[l.name].t; total.m += save.done[l.name].m; } });
+    var all = LEVELS.every(function (l) { return !main(l) || save.done[l.name]; }), total = { t: 0, m: 0 };
+    if (all) LEVELS.forEach(function (l) { if (main(l)) { total.t += save.done[l.name].t; total.m += save.done[l.name].m; } });
     if (whole) { total = { t: 0, m: 0 }; LEVELS.forEach(function (l) { total.t += save.done[l.name].t; total.m += save.done[l.name].m; }); }   // of every level there is
     $('finale-sum').textContent = 'That was the hard one.';
     $('grand-sum').textContent = 'All ' + LEVELS.length + ' levels: ' + clock(total.t) + ' · ' + total.m + ' moves';
@@ -2836,21 +2838,10 @@
   // 'Show a spot' is on offer three times a day in each chapter, to spend on whichever of its levels they
   // are wanted: at midnight a chapter has its three again. What is kept for a chapter is how many it has
   // left (n), and the day they are for (day, as today() has it).
-  // The seventeenth level, the hard one, has five more of its own as well, each day: eight there, the five spent first.
-  var HINTS = 3, EXTRA = 5, waiter = 0;
-  function extra() {
-    if (level !== MAIN - 1) return null;
+  var HINTS = 3, waiter = 0;
+  function purse() {
     save.hints = save.hints || {};
-    var key = 'level ' + lv.name, h = save.hints[key], day = today();
-    if (!h || typeof h !== 'object' || h.day !== day) h = save.hints[key] = { n: EXTRA, day: day };
-    return h;
-  }
-  // what is left to spend here, today: the chapter's three, and the level's own five if it has them
-  function purse() { var a = chapterPurse(), b = extra(); return { n: a.n + (b ? b.n : 0), most: HINTS + (b ? EXTRA : 0) }; }
-  function spend() { var b = extra(); if (b && b.n > 0) b.n--; else chapterPurse().n--; }
-  function chapterPurse() {
-    save.hints = save.hints || {};
-    var key = 'chapter ' + (lv.rival ? 5 : lv.invent ? 4 : lv.twist ? 3 : lv.powers ? 2 : lv.bonus ? 1 : 0), h = save.hints[key], day = today();   // (numbered as the chapters were when hints were first kept this way)
+    var key = lv.alone ? 'chapter seventeen' : 'chapter ' + (lv.rival ? 5 : lv.invent ? 4 : lv.twist ? 3 : lv.powers ? 2 : lv.bonus ? 1 : 0), h = save.hints[key], day = today();   // (numbered as the chapters were when hints were first kept this way)
     // (kept the old way, as a list of times or a count with the time the next came back, it is this day's three, less any already spent today)
     if (!h || Array.isArray(h) || h.day == null) h = save.hints[key] = { n: h && !Array.isArray(h) && h.n != null ? Math.min(h.n, HINTS) : HINTS, day: day };
     if (h.day !== day) { h.n = HINTS; h.day = day; }
@@ -2877,7 +2868,7 @@
     $('hint-spot').disabled = !left || none;
     $('spots').textContent = left;
     $('hint-wait').hidden = (!!left && !none) || won;
-    if (!left) $('hint-wait').textContent = (h.most === HINTS ? 'Three' : 'Eight') + ' more at midnight, in ' + wait(midnight() - Date.now()) + '.';
+    if (!left) $('hint-wait').textContent = 'Three more at midnight, in ' + wait(midnight() - Date.now()) + '.';
     else if (none) $('hint-wait').textContent = early ? 'This level opens ' + opensOn(lv) + '.' : lv.rival ? (thinking ? 'Wait for Packman to play.' : 'Packman has you: no move wins from here. Tap ↺ to restart.') : 'The only spots left would give the chameleon away.';
   }
 
@@ -3334,6 +3325,7 @@
   function showLevels() {
     var grid = $('grid'), jump = $('jump'), count = 0, heads = [];
     grid.textContent = ''; jump.textContent = '';
+    var dated = false;
     LEVELS.forEach(function (l, n) {
       if (n === FIRST[chap(l)]) {
         var more = document.createElement('div');
@@ -3346,7 +3338,8 @@
       b.className = 'lv' + (done ? ' done' : '') + (n === level ? ' here' : '') + (shut ? ' locked' : '');
       b.disabled = shut;
       b.style.setProperty('--n', Math.min(among(n) + 2 * chap(l), 22));
-      var soon = !released(l);   // not out yet
+      var soon = !released(l) && !dated;   // not out yet, and the next to come out: the only one whose day is given
+      if (!released(l)) dated = true;
       b.dataset.name = l.name; b.dataset.label = label(n) + (soon ? ', ' + l.name + ', opens ' + opensOn(l) : shut ? ', locked until the one before it is packed' : ', ' + l.name + (done ? ', packed in ' + clock(done.t) : ''));
       b.setAttribute('aria-label', b.dataset.label);
       b.title = soon ? l.name + ' · opens ' + opensOn(l) : shut ? 'Pack the one before it first' : l.name + (done ? ' · best ' + clock(done.t) : '');
@@ -3388,7 +3381,7 @@
     if (purse().n < 1) return;
     var spot = pickSpot();
     if (!spot && (masked() || lv.rival)) return;   // nothing to show that would not unmask the chameleon; the hint is not used up
-    if (spot) { spend(); persist(); countHints(); }
+    if (spot) { purse().n--; persist(); countHints(); }
     closeSheet($('m-hint')); showGhost(spot);
     if (spot) sfx.spot();
   });

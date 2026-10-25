@@ -516,7 +516,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
 @keyframes stamp{from{transform:translateY(-22px); opacity:0}}
 
 /* three buttons that take the list of levels straight to a chapter; they stay at the top as it scrolls */
-.jump{position:sticky; top:0; z-index:3; display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin:12px -6px 0; padding:8px 6px; background:var(--card)}
+.jump{position:sticky; top:0; z-index:3; display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin:12px -6px 0; padding:8px 6px; background:var(--card)}
 .jump button{flex:1; min-width:0; padding:6px 4px 7px; font-weight:600; font-size:13.5px; line-height:1.15; color:var(--text); background:var(--wash);
   border:var(--bw) solid var(--ink); border-radius:13px; transition:transform .12s var(--pop)}
 .jump button:hover{transform:translateY(-2px)} .jump button:active{transform:translateY(1px)}
@@ -599,7 +599,7 @@ kbd{font:inherit; font-weight:600; font-size:.88em; padding:1px 6px 2px; border:
   .dock{gap:6px} .spin{gap:5px} .dock .rb{min-width:44px; padding:0 5px; font-size:14.5px} .angle{padding:0 9px 0 4px} .angle input{width:44px}
   .dock .tip{font-size:14px}
   .grid{gap:8px} .lv{border-radius:13px; font-size:15px}
-  .card{padding:20px 16px 18px} .jump{gap:4px; grid-template-columns:repeat(3, 1fr)} .jump button{font-size:12.5px; padding:5px 2px 6px} .jump small{font-size:10.5px}   /* six chapters on a phone: two rows of three */
+  .card{padding:20px 16px 18px} .jump{gap:4px; grid-template-columns:repeat(4, 1fr)} .jump button{font-size:12px; padding:5px 2px 6px} .jump small{font-size:10.5px}   /* seven chapters on a phone: four, then three */
 }
 /* six buttons and the name do not fit side by side on a phone: the name gives way, the face stays */
 @media (max-width:460px){ .word{display:none} }

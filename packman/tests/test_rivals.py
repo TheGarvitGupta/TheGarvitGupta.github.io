@@ -79,19 +79,26 @@ async def test_on_this_machine_every_level_is_open(t):
     assert await page.evaluate('document.getElementById("soon").hidden')
     assert not page.errors, page.errors
 
-async def test_the_seventeenth_level_has_five_spots_more_of_its_own(t):
+async def test_seventeen_is_a_chapter_of_its_own_with_its_own_three_spots(t):
     page = await level(t, 'Seventeen')
-    await page.click('#b-hint'); await tick(page, 400)
-    assert int(await page.inner_text('#spots')) == 8
-    for k in range(5):
-        await page.click('#hint-spot'); await tick(page, 800)
-        assert await sheet(page) != 'm-hint', 'no spot shown: %s' % await page.inner_text('#m-hint')
+    assert await page.inner_text('#chip') == 'Ch 2 · 1 / 1'
+    for k in range(3):
         await page.click('#b-hint'); await tick(page, 400)
-    assert int(await page.inner_text('#spots')) == 3, 'its own five were not spent first'
-    await page.keyboard.press('Escape'); await tick(page, 600)
+        assert int(await page.inner_text('#spots')) == 3 - k
+        await page.click('#hint-spot'); await tick(page, 800)
     await page.evaluate('Packman.play("Home")'); await tick(page, 600)
+    assert (await page.inner_text('#chip')).startswith('Level') and (await page.inner_text('#chip')).endswith('/ 16')
     await page.click('#b-hint'); await tick(page, 400)
-    assert int(await page.inner_text('#spots')) == 3, 'the five were for the chapter'
+    assert int(await page.inner_text('#spots')) == 3, 'First Steps shares its three with Seventeen'
+    assert not page.errors, page.errors
+
+async def test_seventeen_is_open_from_the_start(t):
+    page = await level(t, 'Four Square', live=True)
+    await page.click('#chip'); await tick(page, 700)
+    names = await page.evaluate('[].map.call(document.querySelectorAll(".jump button"), function (b) { return b.firstChild.textContent; })')
+    assert names[:2] == ['First Steps', 'Seventeen'] and len(names) == 7, names
+    tile = await page.evaluate('(function () { var b = document.querySelector(\'#grid .lv[data-name="Seventeen"]\'); return { shut: b.disabled, label: b.dataset.label }; })()')
+    assert not tile['shut'] and tile['label'].startswith('Chapter 2, level 1'), tile
     assert not page.errors, page.errors
 
 async def test_a_locked_level_cannot_be_opened_from_the_list(t):
@@ -117,7 +124,7 @@ async def test_three_spots_a_day(t):
     assert not page.errors, page.errors
 
 async def test_the_levels_list_keeps_its_shape_around_the_days_they_open(t):
-    """In the list a level not out yet has the day it opens under it. Every tile stays a square inside the sheet, and
+    """In the list the next level to come out has the day it opens under it, and none after it does. Every tile stays a square inside the sheet, and
     Close stays under the last of them, before the first is out and after (Safari once widened them past the edge)."""
     for when in ((2026, 10, 22, 19), (2026, 10, 23, 19)):
         for w, h in ((393, 852), (1280, 800)):
@@ -131,5 +138,5 @@ async def test_the_levels_list_keeps_its_shape_around_the_days_they_open(t):
                        dates: [].map.call(document.querySelectorAll('#grid .lv.soon .when'), function (e) { return e.textContent; }) }; })()''')
             what = '%s at %dpx' % ('before' if when[2] == 22 else 'after', w)
             assert not r['over'] and r['below'] and r['squares'], '%s: %s' % (what, r)
-            assert len(r['dates']) == (7 if when[2] == 22 else 6) and r['dates'][-1] == '6 Dec', '%s: %s' % (what, r['dates'])
+            assert r['dates'] == (['23 Oct'] if when[2] == 22 else ['1 Nov']), '%s: %s' % (what, r['dates'])
             await page.context.close()   # (one page at a time: four of the site at once, each with its clock moved, is more than it serves in time)
