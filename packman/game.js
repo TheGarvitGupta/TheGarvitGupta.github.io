@@ -36,13 +36,12 @@
     'Dolphin', 'Moose', 'Raven', 'Gecko', 'Bison', 'Puffin', 'Hare', 'Seal', 'Yak', 'Crane', 'Lemur', 'Ibex'];
   // Three chapters: the seventeen, then the powers, then the bricks and hexagons. The file lists the
   // powers last (they were written last), so the levels are put in chapter order here.
-  // (the first two are the main game, the seventeen levels: sixteen, and the hard one, on its own)
-  var CHAPTERS = ['First Steps', 'Seventeen', 'Powers', 'Bricks and hexagons', 'Twists', 'Inventions', 'Game Night'];
-  function chap(l) { return l.rival ? 6 : l.invent ? 5 : l.twist ? 4 : l.powers ? 2 : l.bonus ? 3 : l.alone ? 1 : 0; }   // (the fifth has powers on some levels and none on others)
-  function main(l) { return chap(l) < 2; }
+  // (the first and the last are the main game, the seventeen levels: sixteen, and the hard one, on its own, to end on)
+  var CHAPTERS = ['First Steps', 'Powers', 'Bricks and hexagons', 'Twists', 'Inventions', 'Game Night', 'Seventeen'];
+  function chap(l) { return l.alone ? 6 : l.rival ? 5 : l.invent ? 4 : l.twist ? 3 : l.powers ? 1 : l.bonus ? 2 : 0; }   // (the fourth has powers on some levels and none on others)
+  function main(l) { return chap(l) === 0 || chap(l) === 6; }
   LEVELS = CHAPTERS.map(function (c, k) { return k; }).reduce(function (all, k) { return all.concat(LEVELS.filter(function (l) { return chap(l) === k; })); }, []);
   var FIRST = CHAPTERS.map(function (c, k) { return LEVELS.map(chap).indexOf(k); });   // where each chapter starts
-  var MAIN = LEVELS.filter(main).length;   // the seventeen
   function among(n) { return n - FIRST[chap(LEVELS[n])] + 1; }   // a level's number within its chapter
   function chapSize(k) { return LEVELS.filter(function (l) { return chap(l) === k; }).length; }
   var TURN = { square: 90, triangle: 120, domino: 180, hexagon: 60 };   // degrees before a shape looks the same again
@@ -2666,7 +2665,7 @@
     sfx.win();
     if (faster) sfx.best();
     cheer();
-    var finale = level === MAIN - 1 && !again;
+    var finale = !!lv.alone && !again;
     // The whole game, the first time the last of its levels is packed, whichever level that is: that is the big one. The seventeenth has a party of its own, a smaller one.
     var whole = !save.finished && LEVELS.every(function (l) { return save.done[l.name]; });
     if (whole) { save.finished = true; persist(); finale = false; }
@@ -2679,7 +2678,7 @@
     $('finale-sum').textContent = 'That was the hard one.';
     $('grand-sum').textContent = 'All ' + LEVELS.length + ' levels: ' + clock(total.t) + ' · ' + total.m + ' moves';
     if (whole) grand(); else if (finale) party();
-    $('win-all').hidden = !(whole || (all && level === MAIN - 1)); $('win-one').hidden = !$('win-all').hidden;   // the last win shows the totals alone
+    $('win-all').hidden = !(whole || (all && lv.alone)); $('win-one').hidden = !$('win-all').hidden;   // the last win shows the totals alone
     shareAll = whole; $('win-share').classList.toggle('star', whole);   // and its way on is to tell somebody
     $('all-time').textContent = clock(total.t);
     $('all-moves').textContent = total.m;

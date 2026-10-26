@@ -81,7 +81,7 @@ async def test_on_this_machine_every_level_is_open(t):
 
 async def test_seventeen_is_a_chapter_of_its_own_with_its_own_three_spots(t):
     page = await level(t, 'Seventeen')
-    assert await page.inner_text('#chip') == 'Ch 2 · 1 / 1'
+    assert await page.inner_text('#chip') == 'Ch 7 · 1 / 1'
     for k in range(3):
         await page.click('#b-hint'); await tick(page, 400)
         assert int(await page.inner_text('#spots')) == 3 - k
@@ -96,9 +96,9 @@ async def test_seventeen_is_open_from_the_start(t):
     page = await level(t, 'Four Square', live=True)
     await page.click('#chip'); await tick(page, 700)
     names = await page.evaluate('[].map.call(document.querySelectorAll(".jump button"), function (b) { return b.firstChild.textContent; })')
-    assert names[:2] == ['First Steps', 'Seventeen'] and len(names) == 7, names
+    assert names[0] == 'First Steps' and names[-1] == 'Seventeen' and len(names) == 7, names
     tile = await page.evaluate('(function () { var b = document.querySelector(\'#grid .lv[data-name="Seventeen"]\'); return { shut: b.disabled, label: b.dataset.label }; })()')
-    assert not tile['shut'] and tile['label'].startswith('Chapter 2, level 1'), tile
+    assert not tile['shut'] and tile['label'].startswith('Chapter 7, level 1'), tile
     assert not page.errors, page.errors
 
 async def test_a_locked_level_cannot_be_opened_from_the_list(t):
@@ -131,7 +131,7 @@ async def test_the_levels_list_keeps_its_shape_around_the_days_they_open(t):
             page = await level(t, 'Home', live=True, width=w, height=h)
             await page.clock.set_system_time(datetime.datetime(*when)); await page.reload(); await tick(page, 3000); page = await player(page)
             await page.click('#chip'); await tick(page, 1500)
-            await page.click('.jump button:last-child'); await tick(page, 1500)
+            await page.click('.jump button:has-text("Game Night")'); await tick(page, 1500)
             r = await page.evaluate('''(function () { var g = document.getElementById('grid').getBoundingClientRect(), all = [].slice.call(document.querySelectorAll('#grid .lv')),
               close = document.querySelector('#m-levels [data-close]').getBoundingClientRect(), b = all.map(function (e) { return e.getBoundingClientRect(); });
               return { over: b.filter(function (x) { return x.right > g.right + 1; }).length, below: close.top >= b[b.length - 1].bottom, squares: b.every(function (x) { return Math.abs(x.width - x.height) < 2; }),

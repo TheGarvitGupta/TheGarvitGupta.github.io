@@ -25,7 +25,7 @@ ART = os.path.join(GAME, 'mail')                                               #
 LEVELS_JS = r"""
 const vm = require('vm'), fs = require('fs'), path = require('path'), c = {}; c.window = c; vm.createContext(c);
 for (const f of ['geom.js', 'levels.js']) vm.runInContext(fs.readFileSync(path.join(process.argv[1], f), 'utf8'), c);
-const chap = (l) => l.rival ? 6 : l.invent ? 5 : l.twist ? 4 : l.powers ? 2 : l.bonus ? 3 : l.alone ? 1 : 0;
+const chap = (l) => l.alone ? 6 : l.rival ? 5 : l.invent ? 4 : l.twist ? 3 : l.powers ? 1 : l.bonus ? 2 : 0;
 const L = [0, 1, 2, 3, 4, 5, 6].flatMap((k) => c.PackmanLevels.filter((l) => chap(l) === k));
 console.log(JSON.stringify(L.map((l) => ({ name: l.name, chapter: chap(l), shapes: l.pieces.length }))));
 """
@@ -261,7 +261,7 @@ Start is when that packing began (when it was sent, less how long it took). Trie
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function mean(a) { return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : null; }
   function median(a) { if (!a.length) return null; var b = a.slice().sort(function (x, y) { return x - y; }), k = b.length >> 1; return b.length % 2 ? b[k] : (b[k - 1] + b[k]) / 2; }
-  var CH = ['First Steps', 'Seventeen', 'Powers', 'Bricks and hexagons', 'Twists', 'Inventions', 'Game Night'];
+  var CH = ['First Steps', 'Powers', 'Bricks and hexagons', 'Twists', 'Inventions', 'Game Night', 'Seventeen'];
 
   function model(d) {
     var known = {}, cols = d.levels.map(function (l, i) { known[l.name] = true; return { name: l.name, chapter: l.chapter, shapes: l.shapes, no: i + 1 }; });
