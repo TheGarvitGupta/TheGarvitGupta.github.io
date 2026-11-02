@@ -555,4 +555,42 @@
     .path-detail.on {
         padding: 18px 18px 4px;
     }
+    /* the card is as tall as the sport picked, and grows or shrinks to the next (js/loaders.js) */
+    .path-reel {
+        transition: height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    /* biking: its two figures side by side, a tile each */
+    .path-detail:not(.empty):has([data-stat="rideLife"]) {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        align-content: start;
+        padding-bottom: 18px;
+    }
+    .path-detail:has([data-stat="rideLife"]) .path-fig {
+        padding: 14px 14px 12px;
+        background-color: #fff;
+        border: 1px solid #efefef;
+        border-radius: 14px;
+    }
+    .path-detail:has([data-stat="rideLife"]) .path-big,
+    .path-detail:has([data-stat="rideLife"]) .path-mid {
+        font-size: 28px;
+        line-height: 32px;
+    }
+    .path-detail:has([data-stat="rideLife"]) .path-sub {
+        padding-top: 4px;
+    }
+    /* skiing: a region's resorts may take two lines */
+    .path-regions li {
+        white-space: normal;
+    }
+    .path-map {
+        margin: 2px 0 4px;
+    }
+    /* camping: the coast and the highways stop at the map's edge, not the card's */
+    .path-loop {
+        clip-path: inset(-2px -6px);
+        margin: 0 0 14px;
+    }
 }
