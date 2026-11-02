@@ -354,42 +354,170 @@
     width: var(--p, 0%);
     transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.2s;
 }
-/* one quiet disc a race, the year inside it */
+/* one quiet disc a race, the year inside it. A hover, a tap or a focus on one opens its result
+   in a card over the row, and the arrow at the card's corner opens the result itself (js/loaders.js) */
 .path-medals {
+    position: relative;
     display: flex;
     gap: 6px;
     padding: 7px 0 16px;
 }
-.path-medals i {
+.path-medal {
+    --x: calc(var(--n) * 34px + 14px);   /* the middle of this disc along the row */
+}
+.path-medal > button {
+    display: block;
     width: 28px;
     height: 28px;
+    padding: 0;
     box-sizing: border-box;
     font-family: 'Montserrat', sans-serif;
     font-size: 9px;
     line-height: 26px;
-    font-style: normal;
     text-align: center;
     color: #333;
+    background: none;
     border: 1px solid #dcdcdc;
     border-radius: 50%;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
-.path-medals i::before {
+.path-medal > button::before {
     content: attr(data-y);
 }
-/* a medal with its result online opens it */
-.path-medals a {
-    text-decoration: none;
+.path-medal.open > button {
+    transform: translateY(-2px);
+    color: #fff;
+    background-color: #000;
+    border-color: #000;
 }
-.path-medals a i {
-    transition: border-color 0.2s, color 0.2s;
-}
-.path-medals a:hover i, .path-medals a:focus-visible i {
-    color: #000;
-    border-color: #888;
-}
-.path-detail.on .path-medals i {
+.path-detail.on .path-medal > button {
     animation: path-glide 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
     animation-delay: calc(0.1s + var(--n) * 50ms);
+}
+/* the card stands over the row, centred on its disc but never past the column's edge,
+   and grows up out of the disc */
+.path-tip {
+    --left: max(0px, calc(var(--x) - 84px));
+    position: absolute;
+    z-index: 3;
+    left: var(--left);
+    bottom: calc(100% - 1px);
+    width: 168px;
+    box-sizing: border-box;
+    padding: 9px 30px 10px 12px;
+    font-size: 11px;
+    line-height: 15px;
+    color: #9a9a9a;
+    background-color: #111;
+    border-radius: 10px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px) scale(0.92);
+    transform-origin: calc(var(--x) - var(--left)) 100%;
+    transition: opacity 0.15s ease, transform 0.2s ease, visibility 0s 0.2s;
+}
+/* its point, over the disc */
+.path-tip::before {
+    content: '';
+    position: absolute;
+    left: calc(var(--x) - var(--left) - 5px);
+    top: 100%;
+    border: 5px solid transparent;
+    border-top-color: #111;
+}
+/* the gap down to the disc is the card's own, so a pointer on its way up keeps it open */
+.path-tip::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    height: 9px;
+}
+.path-medal.open > .path-tip {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: opacity 0.2s ease, transform 0.35s cubic-bezier(0.22, 1.4, 0.36, 1), visibility 0s;
+}
+.path-tip small,
+.path-tip b,
+.path-tip > span {
+    display: block;
+    white-space: nowrap;
+}
+.path-tip small {
+    font-size: 10px;
+    letter-spacing: 0.2px;
+}
+.path-tip b {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: normal;
+    font-size: 19px;
+    line-height: 25px;
+    color: #fff;
+}
+/* the time comes up a beat after the card */
+.path-medal.open .path-tip b,
+.path-medal.open .path-tip > span {
+    animation: path-glide 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: 0.06s;
+}
+.path-medal.open .path-tip > span {
+    animation-delay: 0.11s;
+}
+.path-go {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+.path-go svg {
+    display: block;
+    width: 12px;
+    height: 12px;
+    margin: 5px;
+    fill: none;
+    stroke: #fff;
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.path-go:hover,
+.path-go:focus-visible {
+    background-color: rgba(255, 255, 255, 0.14);
+}
+.path-go:hover svg,
+.path-go:focus-visible svg {
+    transform: translate(1px, -1px);
+}
+/* with no figures yet over the first race, its card has no room above, so it hangs below */
+.path-fig[hidden] + .path-fig[hidden] + .path-sub + .path-medals .path-tip {
+    bottom: auto;
+    top: calc(100% - 9px);
+    transform-origin: calc(var(--x) - var(--left)) 0;
+    transform: translateY(-6px) scale(0.92);
+}
+.path-fig[hidden] + .path-fig[hidden] + .path-sub + .path-medals .path-medal.open > .path-tip {
+    transform: none;
+}
+.path-fig[hidden] + .path-fig[hidden] + .path-sub + .path-medals .path-tip::before {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: #111;
+}
+.path-fig[hidden] + .path-fig[hidden] + .path-sub + .path-medals .path-tip::after {
+    top: auto;
+    bottom: 100%;
 }
 /* skiing: the world in dots, a blue one on each region, and the resorts listed by region */
 .path-map {
@@ -526,8 +654,9 @@
     from { opacity: 0; transform: translateY(16px); }
 }
 @media (prefers-reduced-motion: reduce) {
-    .path-in .path-rise, .path-detail.on .path-medals i, .path-detail.on .path-camp, .path-detail.on .path-regions li { animation: none; }
+    .path-in .path-rise, .path-detail.on .path-medal > button, .path-medal.open .path-tip b, .path-medal.open .path-tip > span, .path-detail.on .path-camp, .path-detail.on .path-regions li { animation: none; }
     .path-detail.on .path-fill { transition: none; }
+    .path-tip, .path-fig[hidden] + .path-fig[hidden] + .path-sub + .path-medals .path-tip { transform: none; }
 }
 
 /* The Packman tile: the game playing itself, drawn by js/packman-tile.js */

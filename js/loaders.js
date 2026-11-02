@@ -167,3 +167,71 @@ $(function () {
 	mark();
 	new MutationObserver(mark).observe(reel, { subtree: true, attributes: true, attributeFilter: ["hidden"] });   // the figures arrive later (js/strava.js)
 })();
+
+/* Race medals: a hover over a disc (or a focus on it) opens its result in a card over the row, and a tap
+   does on a phone; a tap anywhere else, Escape, or a swipe to another sport puts it away. The arrow at the
+   card's corner opens the result itself. Paces and distances are kept in miles and shown in the chosen units. */
+(function () {
+	var medals = document.querySelectorAll(".path-medal");
+	if (!medals.length) return;
+	var openOne = null, shutTimer = null, openedAt = 0;
+
+	function metric() { return window.GG && window.GG.units === "metric"; }
+	function units(tip) {
+		var m = metric();
+		tip.querySelectorAll(".path-pace").forEach(function (el) {
+			var s = Math.round(m ? el.dataset.s / 1.609344 : +el.dataset.s);
+			el.textContent = Math.floor(s / 60) + ":" + ("0" + s % 60).slice(-2) + (m ? "/km" : "/mi");
+		});
+		tip.querySelectorAll(".path-dist").forEach(function (el) {
+			el.textContent = m ? (el.dataset.m / 1000).toFixed(1) + " km" : (el.dataset.m / 1609.344).toFixed(1) + " mi";
+		});
+	}
+	function open(medal) {
+		clearTimeout(shutTimer);
+		if (openOne === medal) return;
+		shut();
+		units(medal.querySelector(".path-tip"));
+		openedAt = Date.now();
+		medal.classList.add("open");
+		medal.querySelector("button").setAttribute("aria-expanded", "true");
+		openOne = medal;
+	}
+	function shut() {
+		clearTimeout(shutTimer);
+		if (!openOne) return;
+		openOne.classList.remove("open");
+		openOne.querySelector("button").setAttribute("aria-expanded", "false");
+		openOne = null;
+	}
+	// a pointer that leaves gets a moment to reach the card before it goes
+	function shutSoon() { clearTimeout(shutTimer); shutTimer = setTimeout(shut, 180); }
+
+	medals.forEach(function (medal) {
+		var button = medal.querySelector("button");
+		button.setAttribute("aria-expanded", "false");
+		medal.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse") open(medal); });
+		medal.addEventListener("pointerleave", function (e) { if (e.pointerType === "mouse") shutSoon(); });
+		// a tap opens it, and a second tap on the same disc puts it away (but not the click that
+		// follows the focus or the hover that has just opened it); a mouse leaves it open while over it
+		var by = "";
+		button.addEventListener("pointerdown", function (e) { by = e.pointerType; });
+		button.addEventListener("click", function () {
+			if (openOne === medal && by !== "mouse" && Date.now() - openedAt > 400) shut(); else open(medal);
+		});
+		medal.addEventListener("focusin", function () { open(medal); });
+		medal.addEventListener("focusout", function (e) { if (!medal.contains(e.relatedTarget)) shutSoon(); });
+	});
+	document.addEventListener("click", function (e) {
+		if (openOne && !openOne.contains(e.target)) shut();
+	});
+	document.addEventListener("keydown", function (e) {
+		if (e.key === "Escape" && openOne) { var b = openOne.querySelector("button"); shut(); b.blur(); }
+	});
+	var reel = document.querySelector(".path-reel");
+	if (reel) reel.addEventListener("scroll", shut, { passive: true });
+	document.querySelectorAll(".path-play > li").forEach(function (li) {
+		li.addEventListener("mouseenter", shut);
+		li.addEventListener("click", shut);
+	});
+})();
