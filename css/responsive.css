@@ -486,3 +486,73 @@
         display: none;
     }
 }
+
+/* On a phone the sports are a segmented control, a pill that slides to the one picked (js/loaders.js
+   sets --on), and what each has to show sits in a card under it */
+@media screen and (max-width: 760px) {
+    .path-play {
+        --on: 0;
+        position: relative;
+        max-width: none;
+        margin: 0;
+        padding: 3px;
+        background-color: #f1f1f1;
+        border-radius: 14px;
+    }
+    .path-play::before {
+        content: '';
+        position: absolute;
+        top: 3px;
+        bottom: 3px;
+        left: 3px;
+        width: calc((100% - 6px) / 4);
+        background-color: #fff;
+        border-radius: 11px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 3px 10px rgba(0, 0, 0, 0.06);
+        transform: translateX(calc(var(--on) * 100%));
+        transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .path-play > li {
+        position: relative;
+        flex: 1 1 0;
+        width: auto;
+        padding: 9px 0 8px;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .path-play > li > svg,
+    .path-play > li:hover > svg,
+    .path-play > li.on > svg {
+        width: 26px;
+        height: 26px;
+        margin: 0 auto;
+        padding: 2px;
+        background: none;
+        border: 0;
+        border-radius: 0;
+        stroke: #8a8a8a;
+        transform: none;
+        transition: stroke 0.3s ease;
+    }
+    .path-play > li.on > svg {
+        stroke: #111;
+    }
+    .path-play > li > span {
+        margin: 4px 0 0;
+        transition: color 0.3s ease;
+    }
+    .path-play > li.on > span {
+        color: #111;
+    }
+    /* the card: the pages still swipe edge to edge inside it */
+    .path-reel {
+        min-height: 0;
+        margin: 12px 0 0;
+        background-color: #fafafa;
+        border: 1px solid #efefef;
+        border-radius: 18px;
+    }
+    .path-detail,
+    .path-detail.on {
+        padding: 18px 18px 4px;
+    }
+}

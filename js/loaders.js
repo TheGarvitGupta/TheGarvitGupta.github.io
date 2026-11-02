@@ -139,6 +139,7 @@ $(function () {
 		}
 	}
 	function pick(n) {
+		if (sports.length) sports[0].parentNode.style.setProperty("--on", n);   // the phone's sliding pill
 		for (var i = 0; i < sports.length; i++) {
 			sports[i].classList.toggle("on", i === n);
 			pages[i].classList.toggle("on", i === n);
@@ -170,7 +171,9 @@ $(function () {
 
 /* Race medals: a hover over a disc (or a focus on it) opens its result in a card over the row, and a tap
    does on a phone; a tap anywhere else, Escape, or a swipe to another sport puts it away. The arrow at the
-   card's corner opens the result itself. Paces and distances are kept in miles and shown in the chosen units. */
+   card's corner opens the result itself. Paces and distances are kept in miles and shown in the chosen units.
+   A mouse is followed from one place: at each move, what is under it says which card is open, if any,
+   so cards that overlap the row above never fight over it. */
 (function () {
 	var medals = document.querySelectorAll(".path-medal");
 	if (!medals.length) return;
@@ -189,6 +192,7 @@ $(function () {
 	}
 	function open(medal) {
 		clearTimeout(shutTimer);
+		shutTimer = null;
 		if (openOne === medal) return;
 		shut();
 		units(medal.querySelector(".path-tip"));
@@ -198,29 +202,80 @@ $(function () {
 		openOne = medal;
 	}
 	function shut() {
+		hold();
 		clearTimeout(shutTimer);
+		shutTimer = null;
 		if (!openOne) return;
 		openOne.classList.remove("open");
 		openOne.querySelector("button").setAttribute("aria-expanded", "false");
 		openOne = null;
 	}
 	// a pointer that leaves gets a moment to reach the card before it goes
-	function shutSoon() { clearTimeout(shutTimer); shutTimer = setTimeout(shut, 180); }
+	function shutSoon() { if (openOne && !shutTimer) shutTimer = setTimeout(shut, 220); }
+
+	// The mouse. A disc under it opens its card at once, unless a card is open and the pointer is
+	// heading up into it (on its way to the arrow, it may cross a neighbouring disc), when the neighbour
+	// takes over only if the pointer stays on it a moment. Where the card lies over a disc of the row
+	// above, a pause there hands over to that disc. The card, and the gap down to its disc, keep it open.
+	var wait = null, waitFor = null;
+	function hold() { clearTimeout(wait); wait = null; waitFor = null; }
+	function after(ms, medal) {
+		if (waitFor === medal) return;
+		hold();
+		waitFor = medal;
+		wait = setTimeout(function () { wait = null; waitFor = null; open(medal); }, ms);
+	}
+	function discAt(x, y, except) {
+		var stack = document.elementsFromPoint(x, y);
+		for (var i = 0; i < stack.length; i++) {
+			var b = stack[i].closest && stack[i].closest(".path-medal > button");
+			if (b && b.parentNode !== except) return b.parentNode;
+		}
+		return null;
+	}
+	document.addEventListener("pointermove", function (e) {
+		if (e.pointerType !== "mouse") return;
+		var t = e.target instanceof Element ? e.target : null;
+		var disc = t && t.closest(".path-medal > button");
+		if (disc) {
+			var medal = disc.parentNode;
+			clearTimeout(shutTimer); shutTimer = null;
+			if (!openOne) { hold(); return open(medal); }
+			if (medal === openOne) return hold();
+			var dx = e.movementX || 0, dy = e.movementY || 0;
+			if (dy < 0 && Math.abs(dx) <= 3 * -dy) return after(120, medal);
+			hold();
+			return open(medal);
+		}
+		if (openOne && t && openOne.querySelector(".path-tip").contains(t)) {
+			clearTimeout(shutTimer); shutTimer = null;
+			if (t.closest(".path-go")) return hold();
+			hold();   // moving: wait for a pause before looking under the card
+			var under = discAt(e.clientX, e.clientY, openOne);
+			if (under) after(150, under);
+			return;
+		}
+		hold();
+		shutSoon();
+	}, { passive: true });
+	document.documentElement.addEventListener("pointerleave", function (e) { if (e.pointerType === "mouse") { hold(); shutSoon(); } });
 
 	medals.forEach(function (medal) {
 		var button = medal.querySelector("button");
-		button.setAttribute("aria-expanded", "false");
-		medal.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse") open(medal); });
-		medal.addEventListener("pointerleave", function (e) { if (e.pointerType === "mouse") shutSoon(); });
-		// a tap opens it, and a second tap on the same disc puts it away (but not the click that
-		// follows the focus or the hover that has just opened it); a mouse leaves it open while over it
 		var by = "";
+		button.setAttribute("aria-expanded", "false");
 		button.addEventListener("pointerdown", function (e) { by = e.pointerType; });
+		// a tap opens it, and a second tap on the same disc puts it away (but not the click that follows
+		// the focus that has just opened it); a mouse click leaves it open
 		button.addEventListener("click", function () {
 			if (openOne === medal && by !== "mouse" && Date.now() - openedAt > 400) shut(); else open(medal);
+			by = "";
 		});
-		medal.addEventListener("focusin", function () { open(medal); });
-		medal.addEventListener("focusout", function (e) { if (!medal.contains(e.relatedTarget)) shutSoon(); });
+		// the keyboard: a focus opens it, and a focus elsewhere puts it away
+		button.addEventListener("focus", function () { if (!by) open(medal); });
+		medal.addEventListener("focusout", function (e) {
+			if (openOne === medal && !medal.contains(e.relatedTarget) && !medal.matches(":hover")) shutSoon();
+		});
 	});
 	document.addEventListener("click", function (e) {
 		if (openOne && !openOne.contains(e.target)) shut();
@@ -230,6 +285,7 @@ $(function () {
 	});
 	var reel = document.querySelector(".path-reel");
 	if (reel) reel.addEventListener("scroll", shut, { passive: true });
+	window.addEventListener("scroll", function () { if (openOne && !openOne.matches(":hover")) shut(); }, { passive: true });
 	document.querySelectorAll(".path-play > li").forEach(function (li) {
 		li.addEventListener("mouseenter", shut);
 		li.addEventListener("click", shut);

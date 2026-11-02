@@ -210,26 +210,32 @@ html.dark-mode .path-medal.open > button {
     border-color: #e0e0e0;
 }
 html.dark-mode .path-tip {
-    color: #6a6a6a;
-    background-color: #e0e0e0;
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+    color: #666666;
+    background: linear-gradient(180deg, #f7f7f7, #e2e2e2 70%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5), 0 14px 34px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 html.dark-mode .path-tip::before {
-    border-top-color: #e0e0e0;
+    border-top-color: #e2e2e2;
 }
 html.dark-mode .path-fig[hidden] + .path-fig[hidden] + .path-sub + .path-medals .path-tip::before {
     border-top-color: transparent;
-    border-bottom-color: #e0e0e0;
+    border-bottom-color: #f7f7f7;
+}
+html.dark-mode .path-tip small {
+    color: #7a7a7a;
 }
 html.dark-mode .path-tip b {
     color: #141414;
+}
+html.dark-mode .path-go {
+    background-color: rgba(0, 0, 0, 0.07);
 }
 html.dark-mode .path-go svg {
     stroke: #141414;
 }
 html.dark-mode .path-go:hover,
 html.dark-mode .path-go:focus-visible {
-    background-color: rgba(0, 0, 0, 0.08);
+    background-color: rgba(0, 0, 0, 0.14);
 }
 html.dark-mode .path-road {
     stroke: #2c2c2c;
@@ -326,4 +332,29 @@ html.dark-mode .message-received-child {
 }
 html.dark-mode .copyright {
     color: rgba(255, 255, 255, 0.3);
+}
+@media screen and (max-width: 760px) {
+    html.dark-mode .path-play {
+        background-color: #1c1c1c;
+    }
+    html.dark-mode .path-play::before {
+        background-color: #333333;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+    html.dark-mode .path-play > li > svg,
+    html.dark-mode .path-play > li:hover > svg,
+    html.dark-mode .path-play > li.on > svg {
+        background: none;
+        stroke: #8a8a8a;
+    }
+    html.dark-mode .path-play > li.on > svg {
+        stroke: #f0f0f0;
+    }
+    html.dark-mode .path-play > li.on > span {
+        color: #f0f0f0;
+    }
+    html.dark-mode .path-reel {
+        background-color: #181818;
+        border-color: #262626;
+    }
 }
