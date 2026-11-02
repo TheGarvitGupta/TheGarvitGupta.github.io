@@ -224,6 +224,9 @@ html.dark-mode .path-fig[hidden] + .path-fig[hidden] + .path-sub + .path-medals 
 html.dark-mode .path-tip b {
     color: #141414;
 }
+html.dark-mode .path-tip b em {
+    color: #6a6a6a;
+}
 html.dark-mode .path-go svg {
     stroke: #141414;
 }

@@ -460,6 +460,17 @@
     line-height: 25px;
     color: #fff;
 }
+/* a word beside the time, in two short lines */
+.path-tip b em {
+    display: inline-block;
+    margin-left: 7px;
+    font-family: 'Open Sans', sans-serif;
+    font-style: normal;
+    font-size: 9.5px;
+    line-height: 11px;
+    vertical-align: 3px;
+    color: #9a9a9a;
+}
 /* the time comes up a beat after the card */
 .path-medal.open .path-tip b,
 .path-medal.open .path-tip > span {
