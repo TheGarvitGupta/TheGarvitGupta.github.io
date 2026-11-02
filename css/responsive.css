@@ -555,9 +555,9 @@
     .path-detail.on {
         padding: 18px 18px 4px;
     }
-    /* the card is as tall as the sport picked, and grows or shrinks to the next (js/loaders.js) */
+    /* the card is as tall as the tallest sport, whichever is picked, so nothing under it ever moves */
     .path-reel {
-        transition: height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        align-items: stretch;
     }
     /* biking: its two figures side by side, a tile each */
     .path-detail:not(.empty):has([data-stat="rideLife"]) {

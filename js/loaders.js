@@ -138,18 +138,12 @@ $(function () {
 			pages[i].classList.toggle("empty", !full(i));
 		}
 	}
-	// on a phone the card is as tall as the page picked
-	function fit() {
-		if (!swiped()) { reel.style.height = ""; return; }
-		for (var i = 0; i < pages.length; i++) if (pages[i].classList.contains("on")) reel.style.height = pages[i].offsetHeight + "px";
-	}
 	function pick(n) {
 		if (sports.length) sports[0].parentNode.style.setProperty("--on", n);   // the phone's sliding pill
 		for (var i = 0; i < sports.length; i++) {
 			sports[i].classList.toggle("on", i === n);
 			pages[i].classList.toggle("on", i === n);
 		}
-		fit();
 	}
 	function go(n) {
 		if (!full(n)) return;
@@ -172,10 +166,7 @@ $(function () {
 		if (best >= 0 && !pages[best].classList.contains("on")) pick(best);
 	}, { passive: true });
 	mark();
-	fit();
-	new MutationObserver(function () { mark(); fit(); }).observe(reel, { subtree: true, attributes: true, attributeFilter: ["hidden"] });   // the figures arrive later (js/strava.js)
-	window.addEventListener("resize", fit);
-	document.fonts && document.fonts.ready.then(fit);
+	new MutationObserver(mark).observe(reel, { subtree: true, attributes: true, attributeFilter: ["hidden"] });   // the figures arrive later (js/strava.js)
 })();
 
 /* Race medals: a hover over a disc (or a focus on it) opens its result in a card over the row, and a tap
