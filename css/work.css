@@ -376,6 +376,17 @@
 .path-medals i::before {
     content: attr(data-y);
 }
+/* a medal with its result online opens it */
+.path-medals a {
+    text-decoration: none;
+}
+.path-medals a i {
+    transition: border-color 0.2s, color 0.2s;
+}
+.path-medals a:hover i, .path-medals a:focus-visible i {
+    color: #000;
+    border-color: #888;
+}
 .path-detail.on .path-medals i {
     animation: path-glide 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
     animation-delay: calc(0.1s + var(--n) * 50ms);

@@ -204,6 +204,10 @@ html.dark-mode .path-medals i {
     color: #cccccc;
     border-color: #444444;
 }
+html.dark-mode .path-medals a:hover i, html.dark-mode .path-medals a:focus-visible i {
+    color: #ffffff;
+    border-color: #888888;
+}
 html.dark-mode .path-road {
     stroke: #2c2c2c;
 }
